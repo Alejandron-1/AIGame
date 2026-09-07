@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧑‍🤝‍🧑 排队找第几 - 一年级基数序数练习</title>
+<style>
+/* ===== 全局 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    /* 清新浅蓝教学风（需求文档指定） */
+    background: linear-gradient(180deg, #e8f4fd 0%, #d6ecfa 100%);
+    min-height: 100vh;
+    color: #2c3e50;
+    user-select: none;
+    -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 22px 30px 40px; }
+
+/* ===== 顶部：标题 + 功能按钮 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.top h1 { font-size: clamp(28px, 3.4vw, 44px); font-weight: 800; letter-spacing: 3px; }
+.top h1 small { font-size: clamp(13px, 1.3vw, 17px); color: #6a8caf; margin-left: 12px; letter-spacing: 1px; font-weight: normal; }
+.fbtns { display: flex; gap: 12px; }
+.fbtn {
+    padding: 12px 22px; border-radius: 14px; font-size: clamp(15px, 1.5vw, 19px);
+    font-weight: bold; color: #fff; transition: all .15s;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .15);
+}
+.fbtn:active { transform: translateY(2px); box-shadow: none; }
+.fbtn.blue  { background: #4a90e2; }
+.fbtn.purple{ background: #9b7ede; }
+.fbtn:hover { filter: brightness(1.1); }
+
+/* ===== 题干展示区 ===== */
+.qbox {
+    margin: 26px auto 6px; text-align: center;
+    background: #fff; border-radius: 20px; padding: 22px 20px;
+    box-shadow: 0 5px 16px rgba(74, 144, 226, .14);
+    border: 3px solid #bfe0f7;
+}
+.qtext { font-size: clamp(24px, 2.8vw, 38px); font-weight: 800; letter-spacing: 2px; line-height: 1.4; }
+.qtext .hl { color: #e74c3c; }
+.qtext .hlb { color: #1a72c4; }
+
+/* ===== 交互区：方向提示 + 排队人物 ===== */
+.stage {
+    position: relative; margin-top: 30px; padding: 0 90px;
+    display: flex; align-items: center; justify-content: center;
+}
+.dirhint {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: clamp(18px, 2vw, 26px); font-weight: 800; color: #1a72c4;
+    background: #fff; border: 3px solid #bfe0f7; border-radius: 16px;
+    padding: 12px 14px; white-space: nowrap; transition: all .2s;
+}
+.dirhint.left  { left: 0; }
+.dirhint.right { right: 0; }
+.dirhint.active { animation: pulse 1s ease-in-out infinite; border-color: #ffd200; background: #fffbe6; box-shadow: 0 0 16px rgba(255, 210, 0, .55); }
+@keyframes pulse { 50% { transform: translateY(-50%) scale(1.08); } }
+
+.queue { display: flex; gap: clamp(12px, 2vw, 26px); justify-content: center; flex-wrap: nowrap; }
+.person {
+    width: clamp(110px, 13vw, 170px); cursor: pointer;
+    background: #fff; border-radius: 18px; padding: 12px 8px 10px;
+    border: 4px solid #d7e9f7; transition: all .15s;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, .12);
+}
+.person:hover { transform: translateY(-4px); border-color: #9ccdf0; }
+.person svg { display: block; width: 100%; }
+.person .pnum {
+    margin-top: 8px; text-align: center; font-size: clamp(18px, 1.9vw, 25px);
+    font-weight: 800; color: #2c3e50;
+    background: #eef6fd; border-radius: 10px; padding: 4px 0;
+}
+.person.sel { border-color: #e74c3c; background: #fff5f5; transform: scale(1.06); box-shadow: 0 6px 18px rgba(231, 76, 60, .3); }
+.person.sel .pnum { background: #e74c3c; color: #fff; }
+.person.ok { border-color: #2ecc71; background: #f0fff6; animation: pop .35s; }
+.person.ok .pnum { background: #2ecc71; color: #fff; }
+.person.shake { animation: shake .4s; }
+@keyframes pop { 40% { transform: scale(1.15); } }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+/* ===== 反馈横幅（答对后可点击进下一题） ===== */
+.feedback {
+    margin: 30px auto 0; max-width: 720px; min-height: 74px;
+    border-radius: 18px; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(20px, 2.3vw, 30px); font-weight: 800; letter-spacing: 2px;
+    transition: all .2s;
+}
+.feedback.hidden { visibility: hidden; }
+.feedback.good { background: #e9fbf1; color: #1e8449; border: 3px solid #a9dfbf; }
+.feedback.good.next { cursor: pointer; animation: breathe 1.2s ease-in-out infinite; }
+.feedback.good.next:hover { filter: brightness(1.03); }
+@keyframes breathe { 50% { transform: scale(1.03); } }
+.feedback.bad { background: #fef0e7; color: #b9770e; border: 3px solid #f5cba7; }
+
+/* ===== 底部：模式切换 + 教学提示 ===== */
+.bottom {
+    margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.modes { display: flex; gap: 16px; }
+.mbtn {
+    padding: 13px 30px; border-radius: 16px; font-size: clamp(16px, 1.7vw, 21px);
+    font-weight: 800; background: #fff; color: #5d7fa3;
+    border: 3px solid #cfe4f5; transition: all .15s;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, .07);
+}
+.mbtn:hover { border-color: #4a90e2; }
+.mbtn.on { background: #4a90e2; color: #fff; border-color: #4a90e2; box-shadow: 0 4px 0 #3573bd; }
+.modes .mtip { align-self: center; font-size: 13.5px; color: #8aa8c4; }
+.teach {
+    font-size: clamp(14px, 1.5vw, 18px); color: #5d7fa3; background: rgba(255,255,255,.7);
+    padding: 10px 22px; border-radius: 12px; text-align: center; line-height: 1.6;
+}
+
+/* ===== Toast 轻提示 ===== */
+#toast {
+    position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%);
+    background: rgba(44, 62, 80, .92); color: #fff;
+    padding: 12px 24px; border-radius: 12px; font-size: 15.5px; z-index: 60;
+    opacity: 0; pointer-events: none; transition: all .25s;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 顶部：标题 + 功能按钮 -->
+  <div class="top">
+    <h1>🧑‍🤝‍🧑 排队找第几<small>基数 · 序数 · 左右方位</small></h1>
+    <div class="fbtns">
+      <button class="fbtn blue" id="btnNew">🔄 重新出题</button>
+      <button class="fbtn purple" id="btnSpeak">🔊 试听声音</button>
+    </div>
+  </div>
+
+  <!-- 题干展示区 -->
+  <div class="qbox"><div class="qtext" id="qtext"></div></div>
+
+  <!-- 核心交互区：方向提示 + 5个排队小朋友 -->
+  <div class="stage">
+    <div class="dirhint left" id="hintL">左边 →</div>
+    <div class="queue" id="queue"></div>
+    <div class="dirhint right" id="hintR">← 右边</div>
+  </div>
+
+  <!-- 反馈横幅：答对后点击进入下一题 -->
+  <div class="feedback hidden" id="feedback"></div>
+
+  <!-- 底部：模式切换 + 教学提示 -->
+  <div class="bottom">
+    <div class="modes">
+      <button class="mbtn" data-mode="ordinal">1️⃣ 找「第几个」</button>
+      <button class="mbtn" data-mode="cardinal">2️⃣ 找「几个」</button>
+      <span class="mtip">未选中 = 两种题型混合随机出题</span>
+    </div>
+    <div class="teach" id="teachTip"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ================= 常量 ================= */
+const COUNT = 5;   // 排队人数（固定5人）
+const TIPS = {
+    ordinal:  '📖 提示：看清数的方向，找准对应的第几个。',
+    cardinal: '📖 提示：「前几个」表示连续的一共有几个，要按顺序数。',
+};
+/* 五个小朋友的卡通头像配色（肤色/发色/衣色） */
+const KIDS = [
+    { skin: '#ffd9b3', hair: '#4a3728', shirt: '#ff6b6b', hairStyle: 'short' },
+    { skin: '#ffe3c8', hair: '#2c2c2c', shirt: '#4a90e2', hairStyle: 'twin' },
+    { skin: '#f5cba7', hair: '#6d4c41', shirt: '#2ecc71', hairStyle: 'cap' },
+    { skin: '#ffd9b3', hair: '#8d5524', shirt: '#f39c12', hairStyle: 'long' },
+    { skin: '#ffe3c8', hair: '#1a1a1a', shirt: '#9b59b6', hairStyle: 'short' },
+];
+
+/* ================= 工具与音效 ================= */
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+let audioCtx = null;
+function beep(f, d = 0.12, t = 'sine', vol = 0.16) {
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.16), 90); };
+const sBad  = () => beep(180, 0.3, 'sawtooth');
+const sClick = () => beep(600, 0.05);
+const sWin  = () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.2), i * 130)); };
+
+let toastTimer = 0;
+function toast(text) {
+    const t = $('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ================= 语音朗读（浏览器本地中文语音） ================= */
+function speak(text) {
+    try {
+        if (!('speechSynthesis' in window)) { toast('当前浏览器不支持语音朗读'); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text.replace(/[。？]/g, ''));
+        u.lang = 'zh-CN';
+        u.rate = 0.85;                       // 放慢语速，适合一年级听
+        const zh = speechSynthesis.getVoices().find(v => v.lang && v.lang.indexOf('zh') === 0);
+        if (zh) u.voice = zh;
+        speechSynthesis.speak(u);
+    } catch (e) { toast('语音朗读不可用'); }
+}
+/* 音频列表可能异步加载，先触发一次让声音就绪 */
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
+
+/* ================= 卡通头像 SVG（想换头像造型，改这里即可） ================= */
+function kidSVG(k) {
+    let hairTop = '', hairExtra = '';
+    if (k.hairStyle === 'short') hairTop = `<path d="M22 38 Q35 14 60 14 Q85 14 98 38 Q80 26 60 26 Q40 26 22 38Z" fill="${k.hair}"/>`;
+    if (k.hairStyle === 'twin') hairTop = `<path d="M20 40 Q35 14 60 14 Q85 14 100 40 Q80 25 60 25 Q40 25 20 40Z" fill="${k.hair}"/>` +
+        `<circle cx="16" cy="44" r="10" fill="${k.hair}"/><circle cx="104" cy="44" r="10" fill="${k.hair}"/>`;
+    if (k.hairStyle === 'cap') hairTop = `<path d="M20 36 Q35 12 60 12 Q88 12 100 36 L104 42 L16 42Z" fill="${k.shirt}"/>` +
+        `<rect x="14" y="40" width="92" height="9" rx="4.5" fill="${k.shirt}" opacity="0.85"/>`;
+    if (k.hairStyle === 'long') hairTop = `<path d="M18 76 L18 38 Q35 13 60 13 Q85 13 102 38 L102 76 Q92 60 88 40 Q74 28 60 28 Q46 28 32 40 Q28 60 18 76Z" fill="${k.hair}"/>`;
+    return `<svg viewBox="0 0 120 128" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="48" r="34" fill="${k.skin}"/>
+        ${hairTop}
+        <circle cx="48" cy="52" r="4.2" fill="#2c3e50"/>
+        <circle cx="72" cy="52" r="4.2" fill="#2c3e50"/>
+        <circle cx="49.5" cy="50.5" r="1.4" fill="#fff"/>
+        <circle cx="73.5" cy="50.5" r="1.4" fill="#fff"/>
+        <circle cx="38" cy="62" r="5" fill="#ff9d9d" opacity="0.55"/>
+        <circle cx="82" cy="62" r="5" fill="#ff9d9d" opacity="0.55"/>
+        <path d="M52 64 Q60 72 68 64" stroke="#2c3e50" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M30 122 L30 106 Q30 88 60 88 Q90 88 90 106 L90 122Z" fill="${k.shirt}"/>
+        <circle cx="60" cy="104" r="6" fill="#fff" opacity="0.5"/>
+    </svg>`;
+}
+
+/* ================= 游戏状态 ================= */
+let Q = null;          // 当前题目 { mode, dir:'left'|'right', n, qtext, targets:[从起点数的正确点击顺序(存从左数位置1~5)] }
+let lockMode = null;   // null=混合随机；'ordinal'/'cardinal'=锁定模式
+let selOrdinal = 0;    // 序数模式当前选中位置（0=无）
+let cardinalPicked = []; // 基数模式已点顺序（存从左数位置）
+let busy = false;      // 判题动画锁
+
+/* ================= 出题 ================= */
+function newQuestion() {
+    Q = genQuestion();
+    selOrdinal = 0;
+    cardinalPicked = [];
+    busy = false;
+    renderAll();
+}
+function genQuestion() {
+    const mode = lockMode || (Math.random() < 0.5 ? 'ordinal' : 'cardinal');
+    const dir = Math.random() < 0.5 ? 'left' : 'right';
+    const n = randInt(1, COUNT);                      // 数字永不超出人数范围
+    const dirText = dir === 'left' ? '左边' : '右边';
+    const qtext = mode === 'ordinal'
+        ? `从${dirText}数，请点出<span class="hlb">第${n}</span>个小朋友。`
+        : `从${dirText}数，请依次点出<span class="hlb">前${n}</span>个小朋友。`;
+    /* 正确点击顺序：从起点数第1、2、…个 → 换算成"从左数"的位置（基数题用） */
+    const targets = [];
+    for (let i = 1; i <= n; i++) targets.push(dir === 'left' ? i : COUNT - i + 1);
+    /* 序数题正确答案：从方向数第n个 → 从左数的位置（注意不是起点第1个！） */
+    const answer = dir === 'left' ? n : COUNT - n + 1;
+    return { mode, dir, n, qtext, targets, answer };
+}
+/* 完整题干纯文本（供语音朗读） */
+function questionPlain() {
+    const dirText = Q.dir === 'left' ? '左边' : '右边';
+    return Q.mode === 'ordinal'
+        ? `从${dirText}数，请点出第${Q.n}个小朋友`
+        : `从${dirText}数，请依次点出前${Q.n}个小朋友`;
+}
+
+/* ================= 渲染 ================= */
+function renderAll() {
+    /* 题干（含高亮数字） */
+    $('qtext').innerHTML = Q.qtext;
+    /* 方向提示：起点侧高亮脉动 */
+    $('hintL').classList.toggle('active', Q.dir === 'left');
+    $('hintR').classList.toggle('active', Q.dir === 'right');
+    /* 人物选中/正确态 */
+    document.querySelectorAll('.person').forEach((el, i) => {
+        const pos = i + 1;
+        el.classList.remove('sel', 'ok');
+        if (Q.mode === 'ordinal' && selOrdinal === pos) el.classList.add('sel');
+        if (Q.mode === 'cardinal' && cardinalPicked.includes(pos)) el.classList.add('sel');
+    });
+    /* 教学提示随题型切换 */
+    $('teachTip').textContent = TIPS[Q.mode];
+    /* 隐藏反馈横幅 */
+    const fb = $('feedback');
+    fb.className = 'feedback hidden';
+    fb.textContent = '';
+}
+/* 初始化排队人物（只建一次） */
+function buildQueue() {
+    const box = $('queue');
+    box.innerHTML = '';
+    for (let i = 0; i < COUNT; i++) {
+        const el = document.createElement('div');
+        el.className = 'person';
+        el.innerHTML = kidSVG(KIDS[i]) + `<div class="pnum">${i + 1}</div>`;
+        el.onclick = () => onPersonClick(i + 1, el);
+        box.appendChild(el);
+    }
+}
+
+/* ================= 点击判题 ================= */
+function onPersonClick(pos, el) {
+    if (busy) return;
+    if (Q.mode === 'ordinal') clickOrdinal(pos, el);
+    else clickCardinal(pos, el);
+}
+/* 序数模式：单选，选中即判（点自己=取消） */
+function clickOrdinal(pos, el) {
+    if (selOrdinal === pos) {          // 二次点击取消选中
+        selOrdinal = 0;
+        sClick();
+        renderAll();
+        return;
+    }
+    selOrdinal = pos;
+    sClick();
+    renderAll();
+    if (pos === Q.answer) {            // 答对（答案=从方向数第n个的位置）
+        onCorrect(el);
+    } else {                           // 答错：清空可重答
+        onWrong(el, `❌ 再试一试，${Q.dir === 'left' ? '左' : '右'}边数第${Q.n}个不是它哦`);
+    }
+}
+/* 基数模式：必须按方向从第1个开始连续点（点最后一个已选=取消） */
+function clickCardinal(pos, el) {
+    if (cardinalPicked.length >= Q.n) return;   // 已点满，忽略多余点击
+    const k = cardinalPicked.length;
+    if (k > 0 && pos === cardinalPicked[k - 1]) {   // 取消最后点的一个
+        cardinalPicked.pop();
+        sClick();
+        renderAll();
+        return;
+    }
+    if (pos === Q.targets[k]) {        // 点对了下一个（顺序正确）
+        cardinalPicked.push(pos);
+        sClick();
+        renderAll();
+        if (cardinalPicked.length === Q.n) onCorrect(el);   // 点满判对
+    } else {                           // 跳着点/顺序不对：直接判错清空
+        onWrong(el, '❌ 要按顺序数，从第1个开始点哦，再试一试！');
+    }
+}
+function onCorrect(el) {
+    busy = true;
+    sGood(); setTimeout(sWin, 160);
+    el.classList.remove('sel');
+    el.classList.add('ok');
+    const fb = $('feedback');
+    fb.className = 'feedback good next';
+    fb.textContent = Q.mode === 'ordinal'
+        ? `🎉 答对啦！就是第${Q.n}个！ 👉 点这里下一题`
+        : `🎉 答对啦！前${Q.n}个一共有${Q.n}个！ 👉 点这里下一题`;
+    fb.onclick = () => { sClick(); newQuestion(); };
+}
+function onWrong(el, msg) {
+    busy = true;
+    sBad();
+    el.classList.add('shake');
+    const fb = $('feedback');
+    fb.className = 'feedback bad';
+    fb.textContent = msg;
+    setTimeout(() => {
+        el.classList.remove('shake');
+        busy = false;
+        selOrdinal = 0;                // 清空选择，可重新作答
+        cardinalPicked = [];
+        renderAll();
+        fb.className = 'feedback bad';
+        fb.textContent = msg;
+    }, 450);
+}
+
+/* ================= 顶部按钮与模式切换 ================= */
+$('btnNew').onclick = () => { sClick(); newQuestion(); };
+$('btnSpeak').onclick = () => { sClick(); speak(questionPlain()); };
+
+document.querySelectorAll('.mbtn').forEach(btn => {
+    btn.onclick = () => {
+        sClick();
+        const m = btn.dataset.mode;
+        lockMode = (lockMode === m) ? null : m;   // 再点一次取消锁定=混合随机
+        document.querySelectorAll('.mbtn').forEach(b => b.classList.toggle('on', b.dataset.mode === lockMode));
+        newQuestion();                            // 切换模式立即按新模式出题，防止残留
+    };
+});
+
+/* ================= 初始化 ================= */
+buildQueue();
+newQuestion();
+</script>
+</body>
+</html>

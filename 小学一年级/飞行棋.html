@@ -70,6 +70,8 @@
         gap: 10px; color: #889; text-align: center;
     }
     .board .emptymap .big { font-size: 44px; }
+    /* 路径连接层：按序号把格子连成道路 */
+    .pathlayer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     .node {
         position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;
     }
@@ -253,18 +255,20 @@ function savePlayers() { localStorage.setItem(SAVE_PLAYERS, JSON.stringify(state
 function saveSettings() { localStorage.setItem(SAVE_SETTINGS, JSON.stringify({ t: state.threshold })); }
 function saveStocks() { localStorage.setItem(SAVE_STOCKS, JSON.stringify(state.stocks)); }
 
-/* 内置示例地图：20 格蛇形路径（5列×4行），与编辑器「示例地图」一致 */
+/* 内置示例地图：20 格蛇形路径（5列×4行，格子紧凑相连成路），与编辑器「示例地图」一致 */
 function makeDemoMap() {
-    const nodes = [], ROWS = 4, COLS = 5;
+    const nodes = [], COLS = 5;
     const texts = ['出发啦！', '向前冲！', '好运来！', '继续加油！', '真棒！', '保持住！', '冲呀！', '胜利在望！', '别停！', '快到了！'];
+    const XS = [10, 26, 42, 58, 74];        // 每列中心
+    const YS = [16, 38, 60, 82];            // 每行中心
     for (let i = 0; i < 20; i++) {
         const row = Math.floor(i / COLS);
         let col = i % COLS;
         if (row % 2 === 1) col = COLS - 1 - col; // 蛇形回绕
         const n = {
             id: i + 1, seq: i + 1,
-            x: 12 + col * 19, y: 15 + row * 24,
-            w: 62, h: 62, shape: 'rounded', color: '#4A90E2', opacity: 85,
+            x: XS[col], y: YS[row],
+            w: 84, h: 84, shape: 'rounded', color: '#4A90E2', opacity: 85,
             type: 'show', text: texts[i % texts.length], prize: '', prizeEmoji: '',
             perk: '免作业卡', punishType: 'back', punishVal: 2,
             fx: false, isStart: false, isEnd: false, showLabel: false,
@@ -326,6 +330,24 @@ function renderMap() {
     $('mapName').textContent = state.map.name || ('棋盘（' + nodes.length + ' 格）');
     board.style.background = state.map.bgColor || '#e8f5e9';
     if (state.map.bgImg) board.style.backgroundImage = `url(${state.map.bgImg})`;
+
+    // 路径连接层：按序号把格子中心连成虚线道路（背景之上、格子之下）
+    board.querySelectorAll('.pathlayer').forEach(p => p.remove());
+    if (nodes.length > 1) {
+        const W = board.clientWidth || 1000, H = board.clientHeight || 560;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'pathlayer');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        const px = n => ({ x: n.x / 100 * W, y: n.y / 100 * H });
+        let segs = '';
+        for (let i = 0; i < nodes.length - 1; i++) {
+            const a = px(nodes[i]), b = px(nodes[i + 1]);
+            segs += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`;
+        }
+        svg.innerHTML = `<g stroke="#5d7a95" stroke-width="5" stroke-dasharray="12 9" stroke-linecap="round" opacity="0.8">${segs}</g>`;
+        board.insertBefore(svg, board.querySelector('.node'));
+    }
 
     // 格子
     nodes.forEach(n => {
@@ -671,6 +693,7 @@ loadPersist();
 drawDice(6);
 render();
 logLine('欢迎来到飞行棋！');
+window.addEventListener('resize', render);   // 窗口尺寸变化时重算路径连接线
 </script>
 </body>
 </html>

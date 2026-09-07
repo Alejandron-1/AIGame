@@ -55,6 +55,8 @@
     }
     .canvas.adding { cursor: crosshair; }
     .canvas-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    /* 路径连接层：按序号把格子连成道路 */
+    .pathlayer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     .canvas .placeholder {
         position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
         color: #9aa8b8; pointer-events: none; text-align: center; gap: 8px;
@@ -141,6 +143,9 @@
         <button class="tbtn" id="newBtn">🆕 新建</button>
         <button class="tbtn" id="loadBtn">📂 读取</button>
         <button class="tbtn" id="saveBtn">💾 保存地图</button>
+        <button class="tbtn" id="exportBtn" title="导出为文件，可备份或拷到其他电脑使用">⬇️ 导出</button>
+        <button class="tbtn" id="importBtn" title="从导出的文件导入地图">⬆️ 导入</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
         <button class="tbtn green" id="demoBtn" title="一键载入一张20格的示例地图">✨ 示例地图</button>
         <button class="tbtn" id="playBtn" title="保存地图并进入游戏台（积分/骰子/走棋）">🎮 进入游戏</button>
     </div>
@@ -338,9 +343,34 @@ function render() {
     state.nodes.forEach(n => {
         canvas.appendChild(makeNodeEl(n));
     });
+    // 路径连接层（画在背景之上、格子之下）
+    renderPathLayer();
     renderNodeList();
     renderProp();
     updateBanner();
+    scheduleAutoSave();   // 任何改动自动保存（防抖）
+}
+
+/* 路径连接层：按序号 seq 顺序，把相邻格子中心用虚线连起来，形成行走路线 */
+function renderPathLayer() {
+    canvas.querySelectorAll('.pathlayer').forEach(p => p.remove());
+    if (state.nodes.length < 2) return;
+    const W = canvas.clientWidth || 1000, H = canvas.clientHeight || 560;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'pathlayer');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    const sorted = state.nodes.slice().sort((a, b) => a.seq - b.seq);
+    const px = n => ({ x: n.x / 100 * W, y: n.y / 100 * H });
+    let segs = '';
+    for (let i = 0; i < sorted.length - 1; i++) {
+        const a = px(sorted[i]), b = px(sorted[i + 1]);
+        segs += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`;
+    }
+    svg.innerHTML = `<g stroke="#5d7a95" stroke-width="5" stroke-dasharray="12 9" stroke-linecap="round" opacity="0.8">${segs}</g>`;
+    const firstNode = canvas.querySelector('.node');
+    if (firstNode) canvas.insertBefore(svg, firstNode);
+    else canvas.appendChild(svg);
 }
 
 function makeNodeEl(n) {
@@ -530,10 +560,38 @@ function renderNodeList() {
 
 /* ================= 保存 / 读取 / 新建 ================= */
 const SAVE_KEY = 'rewardmap_editor';
-function save() {
-    const data = { nodes: state.nodes.map(n => ({ ...n })), nextId: state.nextId, bgColor: state.bgColor, bgImg: state.bgImg };
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    toast('💾 地图已保存到本机');
+function save(silent) {
+    const build = (withBg) => ({ nodes: state.nodes.map(n => ({ ...n })), nextId: state.nextId, bgColor: state.bgColor, bgImg: withBg ? state.bgImg : null });
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(build(true)));
+    } catch (e) {
+        // 背景图过大超出浏览器存储配额：降级为只保存格子与底色，保证地图不丢
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(build(false)));
+            if (!silent) toast('⚠️ 背景图过大未能保存，格子已保存');
+        } catch (e2) {
+            if (!silent) toast('❌ 保存失败：浏览器存储空间不足，请导出文件备份');
+        }
+        return;
+    }
+    if (!silent) {
+        toast('💾 地图已保存到本机');
+        flashBtn($('saveBtn'), '✅ 已保存');   // 按钮上直接给反馈，明确可见
+    }
+}
+/* 按钮文字短暂变化提示 */
+function flashBtn(btn, text) {
+    if (!btn) return;
+    if (btn._origText === undefined) btn._origText = btn.textContent;
+    btn.textContent = text;
+    clearTimeout(btn._flashT);
+    btn._flashT = setTimeout(() => { btn.textContent = btn._origText; }, 1200);
+}
+/* 自动保存：所有改动经由 render() 触发，防抖 800ms 后静默保存 */
+let _autoSaveT = 0;
+function scheduleAutoSave() {
+    clearTimeout(_autoSaveT);
+    _autoSaveT = setTimeout(() => save(true), 800);
 }
 function load() {
     try {
@@ -555,6 +613,40 @@ function newMap() {
     toast('已新建空白地图');
 }
 
+/* 导出 / 导入地图文件（.json，可备份或跨电脑使用） */
+$('exportBtn').onclick = () => {
+    if (!state.nodes.length && !state.bgImg) { toast('当前是空地图，没有可导出的内容'); return; }
+    const data = { nodes: state.nodes, nextId: state.nextId, bgColor: state.bgColor, bgImg: state.bgImg, savedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '飞行棋地图_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    toast('⬇️ 地图文件已导出');
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const data = JSON.parse(reader.result);
+            if (!data || !Array.isArray(data.nodes) || !data.nodes.length) { toast('❌ 文件里没有地图数据'); return; }
+            state.nodes = data.nodes;
+            state.nextId = data.nextId || data.nodes.length + 1;
+            state.bgColor = data.bgColor || '#e8f5e9';
+            state.bgImg = data.bgImg || null;
+            state.selectedId = null;
+            render();
+            toast(`📂 已导入地图（${data.nodes.length} 格）`);
+        } catch (err) { toast('❌ 文件格式错误，请选择导出的 .json 文件'); }
+    };
+    reader.readAsText(f);
+};
+
 /* ================= 工具栏绑定 ================= */
 function setTool(t) {
     state.tool = t;
@@ -566,12 +658,41 @@ $('toolAdd').onclick = () => { setTool('add'); if (state.nodes.length) toast('�
 $('toolMove').onclick = () => setTool('move');
 $('toolDelete').onclick = () => { setTool('delete'); toast('🗑️ 点击要删除的格子'); };
 $('toolUpload').onclick = () => $('bgFile').click();
-$('bgFile').onchange = (e) => {
+/* 背景图压缩：手机/相机原图动辄好几MB，直接存会超出浏览器配额导致保存失败。
+   统一缩放到最大1600px宽再编码，PNG透明素材优先保留，过大则转JPEG。 */
+function compressImage(file, maxW = 1600) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('read'));
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('decode'));
+            img.onload = () => {
+                const scale = Math.min(1, maxW / img.width);
+                const w = Math.max(1, Math.round(img.width * scale));
+                const h = Math.max(1, Math.round(img.height * scale));
+                const cv = document.createElement('canvas');
+                cv.width = w; cv.height = h;
+                cv.getContext('2d').drawImage(img, 0, 0, w, h);
+                const isPng = /image\/png/i.test(file.type);
+                let out = cv.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85);
+                if (out.length > 1200000) out = cv.toDataURL('image/jpeg', 0.8);   // 仍过大则转JPEG
+                resolve(out);
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+$('bgFile').onchange = async (e) => {
     const f = e.target.files[0];
+    e.target.value = '';
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => { state.bgImg = reader.result; render(); toast('🖼️ 背景图已加载'); };
-    reader.readAsDataURL(f);
+    try {
+        state.bgImg = await compressImage(f);
+        render();
+        toast('🖼️ 背景图已加载并压缩');
+    } catch (err) { toast('❌ 图片读取失败，请换一张试试'); }
 };
 $('bgColor').oninput = e => { state.bgColor = e.target.value; render(); };
 $('shapeSel').onchange = e => { state.defaultShape = e.target.value; if (state.selectedId) { const n = nodeById(state.selectedId); n.shape = e.target.value; render(); } };
@@ -611,7 +732,7 @@ $('pStart').onclick = () => { const n = nodeById(state.selectedId); if (n) { n.i
 $('pEnd').onclick = () => { const n = nodeById(state.selectedId); if (n) { n.isEnd = !n.isEnd; if (n.isEnd) n.isStart = false; render(); } };
 $('delBtn').onclick = () => { if (state.selectedId !== null) doDelete(state.selectedId); };
 
-$('saveBtn').onclick = save;
+$('saveBtn').onclick = () => save();   // 注意：必须包一层箭头函数，否则点击事件对象会被当成 silent 参数吞掉提示
 $('loadBtn').onclick = load;
 $('newBtn').onclick = newMap;
 
@@ -640,11 +761,13 @@ const PRESETS = {
     s() {
         const nodes = [], ROWS = 4, COLS = 5;
         const texts = ['出发啦！', '向前冲！', '好运来！', '继续加油！', '真棒！', '保持住！', '冲呀！', '胜利在望！', '别停！', '快到了！'];
+        const XS = [10, 26, 42, 58, 74];        // 每列中心（16:9画布上格子几乎相邻，连成一条路）
+        const YS = [16, 38, 60, 82];            // 每行中心
         for (let i = 0; i < 20; i++) {
             const row = Math.floor(i / COLS);
             let col = i % COLS;
             if (row % 2 === 1) col = COLS - 1 - col; // 蛇形回绕
-            const n = mkNode(i + 1, i + 1, 12 + col * 19, 15 + row * 24, 62, '#4A90E2');
+            const n = mkNode(i + 1, i + 1, XS[col], YS[row], 84, '#4A90E2');
             n.text = texts[i % texts.length];
             if (i === 5) { n.type = 'prize'; n.prize = '文具盲盒'; n.prizeEmoji = '🎁'; n.fx = true; }
             if (i === 8) { n.type = 'punish'; n.punishType = 'back'; n.punishVal = 2; n.text = '遇到鲨鱼'; }
@@ -657,9 +780,16 @@ const PRESETS = {
     },
     z() {
         const nodes = [];
-        for (let i = 0; i < 6; i++) nodes.push(mkNode(i + 1, i + 1, 10 + i * 14, 15, 60, '#9B59B6'));      // 顶部横线
-        for (let i = 0; i < 6; i++) nodes.push(mkNode(7 + i, 7 + i, 80 - i * 12, 27 + i * 9, 60, '#9B59B6')); // 斜线
-        for (let i = 0; i < 6; i++) nodes.push(mkNode(13 + i, 13 + i, 22 + i * 14, 82, 60, '#9B59B6'));       // 底部横线
+        const COLOR = '#9B59B6';
+        // 顶部横排：左 → 右（6格）
+        for (let i = 0; i < 6; i++) nodes.push(mkNode(i + 1, i + 1, 12 + i * 14.8, 15, 78, COLOR));
+        // 斜线：右上 → 左下（4格）
+        for (let i = 0; i < 4; i++) {
+            const t = (i + 1) / 5;
+            nodes.push(mkNode(7 + i, 7 + i, 86 - t * 72, 15 + t * 70, 78, COLOR));
+        }
+        // 底部横排：左 → 右（5格）
+        for (let i = 0; i < 5; i++) nodes.push(mkNode(11 + i, 11 + i, 14 + i * 18, 85, 78, COLOR));
         nodes[8].type = 'prize'; nodes[8].prize = '棒棒糖'; nodes[8].prizeEmoji = '🍭'; nodes[8].fx = true;
         nodes[11].type = 'punish'; nodes[11].punishType = 'back'; nodes[11].punishVal = 2;
         nodes[14].type = 'perk'; nodes[14].perk = '当一天班长'; nodes[14].fx = true;
@@ -725,9 +855,21 @@ function toast(msg) {
     t._h = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-/* 初始化 */
+/* 初始化：自动加载上次保存的地图（有则直接恢复，避免"保存了却看不见"） */
 setTool('move');
+(function initLoad() {
+    try {
+        const data = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (data && Array.isArray(data.nodes) && data.nodes.length) {
+            state.nodes = data.nodes;
+            state.nextId = data.nextId || data.nodes.length + 1;
+            state.bgColor = data.bgColor || '#e8f5e9';
+            state.bgImg = data.bgImg || null;
+        }
+    } catch (e) {}
+})();
 render();
+window.addEventListener('resize', render);   // 画布尺寸变化时重算连接线
 </script>
 </body>
 </html>

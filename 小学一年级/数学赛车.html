@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏁 数学赛车 Math Racing - 一年级口算竞速</title>
+<style>
+/* ===== 全局 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    /* 深色太空背景（需求文档指定） */
+    background: linear-gradient(180deg, #0b1026 0%, #1a2450 55%, #2b3a67 100%);
+    min-height: 100vh;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+.screen { position: relative; z-index: 1; min-height: 100vh; }
+
+/* ===== 星空背景 ===== */
+#stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.star { position: absolute; background: #fff; border-radius: 50%; opacity: .6; animation: twinkle linear infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .12; } 50% { opacity: .95; } }
+
+/* ===== 通用小按钮 ===== */
+.sbtn {
+    display: inline-block; padding: 9px 16px; border-radius: 12px;
+    font-size: 14.5px; font-weight: bold; color: #fff;
+    background: #4a90e2; transition: all .15s;
+}
+.sbtn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.sbtn:active { transform: scale(.94); }
+.sbtn.green  { background: #27ae60; }
+.sbtn.orange { background: #f39c12; }
+.sbtn.gray   { background: #5a6488; }
+.sbtn.pink   { background: #e8579b; }
+
+/* ===== 主页 ===== */
+#homeScreen { display: flex; align-items: center; justify-content: center; padding: 26px 20px; }
+.home { display: flex; gap: 26px; width: 100%; max-width: 1180px; align-items: stretch; }
+.home-main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+.hero { text-align: center; margin-bottom: 34px; }
+.hero h1 { font-size: clamp(38px, 4.6vw, 60px); letter-spacing: 4px; text-shadow: 0 4px 18px rgba(74, 158, 255, .45); }
+.hero h1 .en {
+    display: block; font-size: clamp(15px, 1.6vw, 21px); letter-spacing: 10px;
+    margin-top: 8px; color: #9fc3ff; font-weight: bold;
+}
+.hero p { margin-top: 14px; font-size: 17px; color: #c9d6f5; letter-spacing: 3px; }
+
+/* 模式选择卡片 */
+.modes { display: flex; gap: 18px; }
+.modecard {
+    flex: 1; background: rgba(255, 255, 255, .08);
+    border: 3px solid rgba(255, 255, 255, .16); border-radius: 20px;
+    padding: 24px 20px; text-align: center; cursor: pointer; transition: all .18s;
+}
+.modecard:hover { box-shadow: 0 0 18px rgba(120, 170, 255, .35); transform: translateY(-2px); }
+.modecard.sel {
+    border-color: #4a9eff; background: rgba(74, 158, 255, .16);
+    box-shadow: 0 0 22px rgba(74, 158, 255, .55);
+}
+.modecard .ic { font-size: 40px; }
+.modecard h3 { font-size: 22px; margin: 10px 0 8px; }
+.modecard p { font-size: 14px; color: #b9c6e8; line-height: 1.5; }
+
+/* 开始按钮 */
+.start-row { text-align: center; margin-top: 34px; }
+#btnStart {
+    font-size: 26px; font-weight: 800; color: #5b4300;
+    background: linear-gradient(180deg, #ffe066, #ffd200);
+    padding: 16px 62px; border-radius: 44px; letter-spacing: 3px;
+    box-shadow: 0 7px 0 #c9a600, 0 10px 24px rgba(255, 210, 0, .3);
+    transition: all .15s;
+}
+#btnStart:hover { transform: translateY(-2px); filter: brightness(1.05); }
+#btnStart:active { transform: translateY(4px); box-shadow: 0 2px 0 #c9a600; }
+.foot { text-align: center; margin-top: 26px; font-size: 12.5px; color: rgba(255, 255, 255, .4); }
+
+/* ===== 右侧设置面板 ===== */
+.side {
+    width: 330px; flex-shrink: 0;
+    background: rgba(13, 18, 40, .6); border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 20px; padding: 18px 16px; backdrop-filter: blur(5px);
+}
+.side h2 { font-size: 16px; color: #ffd200; margin-bottom: 4px; letter-spacing: 1px; }
+.mod { padding: 13px 2px; border-bottom: 1px dashed rgba(255, 255, 255, .16); }
+.mod:last-child { border-bottom: none; }
+.mod .mtitle { font-size: 15px; font-weight: bold; margin-bottom: 9px; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.row + .row { margin-top: 9px; }
+.hint { font-size: 12.5px; color: #a8b4d8; margin-top: 7px; line-height: 1.5; }
+input[type=range] { flex: 1; accent-color: #4a9eff; height: 22px; }
+.val { font-size: 13.5px; font-weight: bold; color: #ffd200; min-width: 64px; text-align: right; }
+input[type=number] {
+    width: 86px; font-size: 17px; font-weight: bold; padding: 7px 8px;
+    border-radius: 9px; border: 2px solid rgba(255, 255, 255, .25);
+    background: #f7f9ff; color: #2c3e50; font-family: inherit;
+}
+.filename { font-size: 12.5px; color: #a8b4d8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diffbtn {
+    flex: 1; padding: 8px 4px; border-radius: 10px; font-size: 13.5px; font-weight: bold;
+    background: rgba(255, 255, 255, .1); color: #c9d6f5; border: 2px solid transparent; transition: all .15s;
+}
+.diffbtn.on { border-color: #4a9eff; background: rgba(74, 158, 255, .2); color: #fff; }
+
+/* ===== 比赛页 ===== */
+#raceScreen { display: flex; flex-direction: column; }
+.rtop {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 22px; background: rgba(10, 14, 34, .55);
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+.rtitle { font-size: 22px; font-weight: 800; letter-spacing: 2px; }
+.rtitle small { font-size: 14px; color: #9fc3ff; margin-left: 10px; font-weight: normal; }
+.rwrap { flex: 1; width: 100%; max-width: 1250px; margin: 0 auto; padding: 18px 26px 30px; }
+
+/* 赛道 */
+.finish-tip { text-align: right; font-size: 15px; color: #ffd200; font-weight: bold; margin-bottom: 6px; padding-right: 4px; }
+.lane { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; }
+.lane + .lane { margin-top: 14px; }
+.ltag { text-align: center; }
+.lname { font-size: 17px; font-weight: 800; color: var(--pc); text-shadow: 0 0 12px rgba(255, 255, 255, .15); }
+.aiflash { margin-left: 4px; font-size: 17px; }
+.aiflash.good { color: #2ecc71; }
+.aiflash.bad { color: #ff7b7b; }
+.lscore { font-size: 14px; color: #c9d6f5; margin-top: 5px; }
+.road {
+    position: relative; height: 100px; border-radius: 14px; overflow: hidden;
+    background: linear-gradient(180deg, #454d78, #323a5e);
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, .35);
+}
+.road::before { /* 车道中线 */
+    content: ''; position: absolute; left: 0; right: 0; top: 50%;
+    border-top: 4px dashed rgba(255, 255, 255, .22);
+}
+.finish { /* 终点格子旗 */
+    position: absolute; top: 0; bottom: 0; right: 0; width: 38px;
+    background: repeating-conic-gradient(#e8ecf5 0% 25%, #262c49 25% 50%);
+    background-size: 18px 18px; opacity: .92;
+}
+.car {
+    position: absolute; bottom: 6px; left: 6px; width: 118px; z-index: 2;
+    transition: left .7s cubic-bezier(.3, 1.3, .55, 1);
+}
+.car svg { display: block; width: 100%; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .4)); }
+.car.boost { animation: boost .55s ease; }
+@keyframes boost { 30% { transform: translateX(10px) scale(1.05); } }
+
+/* ===== 答题面板 ===== */
+#answerArea { display: flex; gap: 18px; justify-content: center; margin-top: 20px; }
+.qpanel {
+    flex: 1; max-width: 560px;
+    background: rgba(255, 255, 255, .1); border: 3px solid var(--pc);
+    border-radius: 20px; padding: 18px 22px 16px;
+}
+.qpanel.solo { max-width: 720px; }
+.qhead { display: flex; justify-content: space-between; align-items: center; }
+.qname { font-size: 16px; font-weight: 800; color: var(--pc); }
+.qscore { font-size: 14.5px; color: #c9d6f5; }
+.qtext {
+    text-align: center; font-size: clamp(34px, 4vw, 52px); font-weight: 800;
+    letter-spacing: 3px; margin: 12px 0 12px; min-height: 1.25em;
+    text-shadow: 0 3px 14px rgba(74, 158, 255, .35);
+}
+.bar { height: 14px; background: rgba(255, 255, 255, .16); border-radius: 8px; overflow: hidden; }
+.bar-fill { height: 100%; width: 100%; border-radius: 8px; transition: width .1s linear; }
+.bar-fill.c1 { background: #2ecc71; }
+.bar-fill.c2 { background: #f39c12; }
+.bar-fill.c3 { background: #e74c3c; }
+.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; margin-top: 15px; }
+.opts button {
+    min-height: 68px; font-size: clamp(24px, 2.4vw, 34px); font-weight: 800;
+    color: #2c3e50; background: #f7f9ff; border-radius: 16px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .28); transition: all .12s;
+}
+.opts button:hover:not(:disabled) { transform: translateY(-2px); background: #fff; }
+.opts button:active:not(:disabled) { transform: scale(.95); }
+.opts button:disabled { cursor: default; opacity: .85; }
+.opts button.right { background: #2ecc71 !important; color: #fff; animation: pop .3s; opacity: 1; }
+.opts button.wrong { background: #e74c3c !important; color: #fff; animation: shake .4s; opacity: 1; }
+@keyframes pop { 40% { transform: scale(1.12); } }
+@keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+.qmsg { height: 30px; margin-top: 10px; text-align: center; font-size: 21px; font-weight: 800; }
+.qmsg.good { color: #2ecc71; }
+.qmsg.bad { color: #ff7b7b; }
+
+/* ===== 弹窗（通用 overlay） ===== */
+.overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(8, 10, 25, .68);
+    display: flex; align-items: center; justify-content: center;
+}
+.mpanel {
+    width: 92%; max-width: 520px; max-height: 86vh; overflow: auto;
+    background: #1c2340; border: 2px solid rgba(255, 255, 255, .18);
+    border-radius: 20px; padding: 26px 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+}
+.mpanel h3 { font-size: 22px; margin-bottom: 14px; }
+.mbody { font-size: 15px; line-height: 1.8; color: #d7e0f7; }
+.mbody pre {
+    background: #0e1329; border: 1px solid rgba(255, 255, 255, .12);
+    padding: 12px 14px; border-radius: 10px; font-size: 13.5px;
+    margin: 10px 0; overflow: auto; line-height: 1.6;
+}
+.mbody b { color: #ffd200; }
+.mbtns { display: flex; gap: 12px; justify-content: center; margin-top: 18px; }
+
+/* ===== 结算弹窗 ===== */
+#resultTitle { font-size: 34px; text-align: center; margin-bottom: 16px; letter-spacing: 2px; }
+.statrow { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.statcard {
+    min-width: 150px; text-align: center; padding: 14px 20px;
+    background: rgba(255, 255, 255, .08); border: 2px solid var(--pc); border-radius: 14px;
+}
+.statcard .sname { font-size: 16px; font-weight: 800; color: var(--pc); }
+.statcard .snum { font-size: 26px; font-weight: 800; margin: 8px 0 4px; }
+.statcard .spct { font-size: 13.5px; color: #a8b4d8; }
+.rbtns { display: flex; gap: 14px; justify-content: center; margin-top: 22px; }
+.rbtns .sbtn { font-size: 17px; padding: 12px 26px; border-radius: 14px; }
+
+/* ===== Toast 轻提示 ===== */
+#toast {
+    position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%);
+    background: rgba(20, 26, 54, .95); border: 1px solid rgba(255, 255, 255, .22);
+    padding: 12px 24px; border-radius: 12px; font-size: 15.5px; z-index: 60;
+    opacity: 0; pointer-events: none; transition: all .25s;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+
+/* ===== 撒花 ===== */
+.confetti { position: absolute; top: -16px; width: 10px; height: 15px; border-radius: 2px; animation: fall linear forwards; z-index: 1; }
+@keyframes fall { to { transform: translateY(108vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<!-- ================= 主页 ================= -->
+<div id="homeScreen" class="screen">
+  <div class="home">
+    <div class="home-main">
+      <div class="hero">
+        <h1>🏁 数学赛车<span class="en">MATH RACING</span></h1>
+        <p>答题加速 · 智胜终点</p>
+      </div>
+      <div class="modes">
+        <div class="modecard sel" data-mode="single">
+          <div class="ic">🎮</div>
+          <h3>单人模式</h3>
+          <p>挑战自我，与AI赛车竞速突破极限</p>
+        </div>
+        <div class="modecard" data-mode="dual">
+          <div class="ic">⚔️</div>
+          <h3>双人对战</h3>
+          <p>同台竞技，谁与争锋</p>
+        </div>
+      </div>
+      <div class="start-row">
+        <button id="btnStart">开始游戏 →</button>
+      </div>
+      <div class="foot">PC 课堂使用 · 推荐 Chrome / Edge · 刷新后设置还原</div>
+    </div>
+
+    <!-- 右侧设置面板 -->
+    <div class="side">
+      <h2>⚙️ 设置面板</h2>
+
+      <div class="mod">
+        <div class="mtitle">🎵 自定义BGM</div>
+        <div class="row">
+          <label class="sbtn" for="bgmFile">导入音乐</label>
+          <input type="file" id="bgmFile" accept=".mp3,.wav,.ogg,audio/*" hidden>
+          <span class="filename" id="bgmName">未选择音乐</span>
+        </div>
+        <div class="row">
+          <button class="sbtn gray" id="bgmToggle" style="width:46px">▶</button>
+          <input type="range" id="bgmVol" min="0" max="100" value="60">
+          <span class="val" id="bgmVolVal">60%</span>
+        </div>
+      </div>
+
+      <div class="mod">
+        <div class="mtitle">📚 题库管理</div>
+        <div class="row">
+          <button class="sbtn pink" id="btnAuto">🎲 自动出题</button>
+          <label class="sbtn green" for="csvFile">导入CSV题库</label>
+          <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+        </div>
+        <div class="hint" id="bankLabel">出题模式：🎲 自动出题（按难度生成）</div>
+        <div class="row">
+          <button class="sbtn orange" id="btnSample">⚡ 样例题库</button>
+          <button class="sbtn gray" id="btnHelp">📄 格式说明</button>
+        </div>
+      </div>
+
+      <div class="mod">
+        <div class="mtitle">⏱️ 游戏速度</div>
+        <div class="row">
+          🐢<input type="range" id="speedRange" min="5" max="30" value="12">🐇
+          <span class="val" id="speedLabel">12 秒</span>
+        </div>
+        <div class="hint">每题作答倒计时时长（5~30秒）</div>
+      </div>
+
+      <div class="mod">
+        <div class="mtitle">🏁 赛道长度</div>
+        <div class="row">
+          <input type="number" id="qCount" min="3" max="30" value="10">
+          <span class="hint" style="margin-top:0">题（3~30），先答满者冲线获胜 🏁</span>
+        </div>
+      </div>
+
+      <div class="mod" id="aiDiffMod">
+        <div class="mtitle">🎯 难度选择</div>
+        <div class="row">
+          <button class="diffbtn" data-diff="easy">简单</button>
+          <button class="diffbtn on" data-diff="mid">中等</button>
+          <button class="diffbtn" data-diff="hard">困难</button>
+        </div>
+        <div class="hint" id="diffLabel">中等：20以内一位数（最多3个数） · AI正确率 70%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 比赛页 ================= -->
+<div id="raceScreen" class="screen hidden">
+  <div class="rtop">
+    <button class="sbtn gray" id="btnBack">🔙 返回主页</button>
+    <div class="rtitle">🏁 数学赛车<small id="raceMode"></small></div>
+    <button class="sbtn gray" id="btnSound">🔊 音效</button>
+  </div>
+  <div class="rwrap">
+    <div class="finish-tip">终点 → 🏁</div>
+    <div id="trackBox"></div>
+    <div id="answerArea"></div>
+  </div>
+</div>
+
+<!-- ================= 通用弹窗 ================= -->
+<div id="modalOverlay" class="overlay hidden">
+  <div class="mpanel">
+    <h3 id="modalTitle"></h3>
+    <div class="mbody" id="modalBody"></div>
+    <div class="mbtns" id="modalBtns"></div>
+  </div>
+</div>
+
+<!-- ================= 结算弹窗 ================= -->
+<div id="resultOverlay" class="overlay hidden">
+  <div class="mpanel">
+    <div id="resultTitle"></div>
+    <div class="statrow" id="resultStats"></div>
+    <div id="resultTime" style="text-align:center;margin-top:14px;font-size:14.5px;color:#a8b4d8;"></div>
+    <div class="rbtns">
+      <button class="sbtn green" id="btnAgain">🔁 再来一局</button>
+      <button class="sbtn gray" id="btnHome">🏠 返回主页</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ================= 文案常量（想换主题文字，从这里改） ================= */
+const T = {
+    csvBad:       'CSV格式错误，请查看格式说明',
+    csvBadTip:    '要求两列：第一列题干，第二列答案（数字）。<br>可点击 <b>📄 格式说明</b> 查看制作方法与示例。',
+    feedbackMs:   1000,   // 答对/答错提示停留时长（毫秒），之后自动进入下一题
+};
+
+/* ================= 可调参数 =================
+   难度同时决定「题目难度」和「AI 正确率」：
+   简单 = 10以内一位数加减（2个数）      · AI 50%
+   中等 = 20以内一位数加减（最多3个数）  · AI 70%
+   困难 = 两位数加减（2个数，不进位为主）· AI 85% */
+const AI_RATES = { easy: 0.5, mid: 0.7, hard: 0.85 };
+const DIFF_INFO = {
+    easy: '简单：10以内加减（2个数） · AI正确率 50%',
+    mid:  '中等：20以内一位数（最多3个数） · AI正确率 70%',
+    hard: '困难：两位数加减（2个数） · AI正确率 85%',
+};
+
+/* 内置样例题库：一年级 10/20 以内加减法（可自行增删） */
+const SAMPLE_BANK = [
+    { q: '3+5=?', a: 8 },  { q: '9-2=?', a: 7 },   { q: '6+4=?', a: 10 }, { q: '10-6=?', a: 4 },
+    { q: '2+7=?', a: 9 },  { q: '8-3=?', a: 5 },   { q: '5+5=?', a: 10 }, { q: '12-4=?', a: 8 },
+    { q: '7+6=?', a: 13 }, { q: '15-5=?', a: 10 }, { q: '4+8=?', a: 12 }, { q: '11-3=?', a: 8 },
+    { q: '6+6=?', a: 12 }, { q: '14-7=?', a: 7 },  { q: '8+9=?', a: 17 }, { q: '16-8=?', a: 8 },
+    { q: '9+9=?', a: 18 }, { q: '13-6=?', a: 7 },  { q: '7+7=?', a: 14 }, { q: '18-9=?', a: 9 },
+];
+
+/* ================= 工具函数 ================= */
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) {           // 洗牌（返回新数组）
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+/* ================= 音效（Web Audio 合成，无外部文件） ================= */
+let soundOn = true, audioCtx = null;
+function beep(f, d = 0.12, t = 'sine', vol = 0.16) {
+    if (!soundOn) return;
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const sClick = () => beep(600, 0.05);
+const sGood  = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.16), 90); };
+const sBad   = () => beep(180, 0.3, 'sawtooth');
+const sBoost = () => { beep(440, 0.06, 'triangle'); setTimeout(() => beep(660, 0.09, 'triangle'), 60); };
+const sWin   = () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.22), i * 140)); };
+const sOver  = () => { [523, 392, 330, 262].forEach((f, i) => setTimeout(() => beep(f, 0.24), i * 160)); };
+
+/* ================= 星空背景 ================= */
+function makeStars() {
+    const box = $('stars');
+    for (let i = 0; i < 80; i++) {
+        const s = document.createElement('span');
+        s.className = 'star';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        const size = 1 + Math.random() * 2.2;
+        s.style.width = s.style.height = size + 'px';
+        s.style.animationDuration = (1.5 + Math.random() * 2.5) + 's';
+        s.style.animationDelay = (Math.random() * 3) + 's';
+        box.appendChild(s);
+    }
+}
+
+/* ================= 赛车 SVG（想换赛车图片/造型，改这里即可） ================= */
+function carSVG(c, d) {
+    return `<svg viewBox="0 0 130 70" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="24" width="15" height="9" rx="3" fill="${d}"/>
+        <rect x="9" y="28" width="7" height="9" fill="${d}"/>
+        <path d="M38 32 Q44 13 62 13 L78 13 Q94 13 101 32 Z" fill="${c}"/>
+        <rect x="10" y="30" width="110" height="22" rx="11" fill="${c}"/>
+        <path d="M46 30 Q51 19 62 19 L68 19 L68 30 Z" fill="#dff1ff"/>
+        <rect x="73" y="19" width="15" height="11" rx="3" fill="#dff1ff"/>
+        <rect x="113" y="34" width="8" height="7" rx="3" fill="#ffd200"/>
+        <rect x="11" y="34" width="6" height="6" rx="2" fill="#ff5252"/>
+        <circle cx="36" cy="53" r="10" fill="#23283d" stroke="#12162a" stroke-width="2.5"/>
+        <circle cx="36" cy="53" r="4.5" fill="#aeb8c9"/>
+        <circle cx="96" cy="53" r="10" fill="#23283d" stroke="#12162a" stroke-width="2.5"/>
+        <circle cx="96" cy="53" r="4.5" fill="#aeb8c9"/>
+    </svg>`;
+}
+
+/* ================= 全局状态 ================= */
+let BANK = [];        // 自定义题库 [{q:'3+5=?', a:8}]（自动出题模式下不使用）
+let deck = [];        // 题库模式的抽题堆（洗牌抽取，用完重发）
+let S = null;         // 本局状态（每局重建）
+let selMode = 'single';
+let aiDiff = 'mid';
+let qSource = 'auto'; // 出题来源：'auto' 自动出题（默认） | 'bank' CSV/样例题库
+
+/* ================= BGM ================= */
+const bgm = new Audio();
+bgm.loop = true;
+let bgmUrl = null;
+$('bgmFile').onchange = e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    if (bgmUrl) URL.revokeObjectURL(bgmUrl);
+    bgmUrl = URL.createObjectURL(f);
+    bgm.src = bgmUrl;
+    $('bgmName').textContent = f.name;
+    playBGM();
+};
+$('bgmVol').oninput = e => {
+    bgm.volume = e.target.value / 100;
+    $('bgmVolVal').textContent = e.target.value + '%';
+};
+bgm.volume = 0.6;
+$('bgmToggle').onclick = () => { bgm.paused ? playBGM() : bgm.pause(); };
+function playBGM() {
+    if (!bgm.src) return;
+    bgm.play().then(() => { $('bgmToggle').textContent = '⏸'; }).catch(() => {});
+}
+bgm.onpause = () => { $('bgmToggle').textContent = '▶'; };
+function tryPlayBGM() { if (bgm.src && bgm.paused) playBGM(); }   // 开始游戏（用户点击）后尝试播放
+
+/* ================= CSV 题库导入 ================= */
+function readCSVFile(file, cb) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const buf = new Uint8Array(reader.result);
+        let text = '';
+        try { text = new TextDecoder('utf-8', { fatal: false }).decode(buf); } catch (e) { text = ''; }
+        if (text.indexOf('\uFFFD') >= 0) {           // UTF-8 解码出现乱码 → 尝试 GBK（WPS/Excel 中文默认编码）
+            try { text = new TextDecoder('gbk').decode(buf); } catch (e) {}
+        }
+        cb(text);
+    };
+    reader.readAsArrayBuffer(file);
+}
+function parseCSVText(raw) {
+    raw = raw.replace(/^\uFEFF/, '');                // 去 BOM
+    const lines = raw.split(/\r?\n/);
+    const bank = [];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        if (i === 0 && /^question\s*,\s*answer$/i.test(line)) continue;   // 跳过表头
+        const pos = line.lastIndexOf(',');           // 按最后一个逗号切分，题干里可以带逗号
+        if (pos < 1) continue;
+        const q = line.slice(0, pos).trim();
+        const a = Number(line.slice(pos + 1).trim());
+        if (!q || !Number.isFinite(a)) continue;
+        bank.push({ q, a });
+    }
+    return bank;
+}
+$('csvFile').onchange = e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    readCSVFile(f, text => {
+        const bank = parseCSVText(text);
+        if (bank.length === 0) { showModal('⚠️ ' + T.csvBad, T.csvBadTip); return; }
+        BANK = bank;
+        qSource = 'bank';
+        deck = [];
+        updateBankLabel();
+        sGood();
+        toast(`导入成功：CSV题库 ${bank.length} 道题`);
+    });
+};
+$('btnSample').onclick = () => {
+    sClick();
+    BANK = SAMPLE_BANK.map(x => ({ q: x.q, a: x.a }));
+    qSource = 'bank';
+    deck = [];
+    updateBankLabel();
+    toast(`已加载样例题库：${BANK.length} 道题`);
+};
+/* 一键切回自动出题 */
+$('btnAuto').onclick = () => {
+    sClick();
+    qSource = 'auto';
+    updateBankLabel();
+    toast('已切换为自动出题（按难度实时生成）');
+};
+function updateBankLabel() {
+    $('bankLabel').textContent = qSource === 'auto'
+        ? '出题模式：🎲 自动出题（按难度生成）'
+        : `CSV题库：${BANK.length} 道题`;
+}
+
+/* ================= 自动出题（按难度实时生成，无限出题） =================
+   简单：一位数、2个数，10以内（和≤10 / 差≥1）
+   中等：一位数、最多3个数，中间过程非负、结果0~20
+   困难：两位数、2个数，不进位不借位为主（含少量20以内退位减），结果0~100 */
+function mkQ(a, op, b) { return { q: `${a}${op}${b}=?`, a: op === '+' ? a + b : a - b }; }
+function qEasy() {
+    if (Math.random() < 0.5) {                       // 加法：和 ≤ 10
+        const a = randInt(1, 9);
+        return mkQ(a, '+', randInt(1, 10 - a));
+    }
+    const a = randInt(2, 9);                         // 减法：差 ≥ 1
+    return mkQ(a, '-', randInt(1, a - 1));
+}
+function qMid() {
+    const n = Math.random() < 0.5 ? 2 : 3;           // 2个数 或 3个数
+    for (let t = 0; t < 200; t++) {
+        let val = randInt(1, 9), s = String(val), ok = true;
+        for (let i = 1; i < n; i++) {
+            const x = randInt(1, 9);
+            const plus = Math.random() < 0.5 || val - x < 0;   // 减不开就改加法，保证过程非负
+            s += (plus ? '+' : '-') + x;
+            val = plus ? val + x : val - x;
+        }
+        if (val > 20 || val < 0) continue;           // 结果限制在 20 以内
+        return { q: s + '=?', a: val };
+    }
+    return { q: '2+3=?', a: 5 };
+}
+function qHard() {
+    for (let t = 0; t < 200; t++) {
+        const kind = Math.random();
+        if (kind < 0.3) {                            // 整十数 ± 整十数
+            const a = randInt(1, 9) * 10, b = randInt(1, 9) * 10;
+            if (Math.random() < 0.5) { if (a + b <= 100) return mkQ(a, '+', b); }
+            else if (a !== b) return mkQ(Math.max(a, b), '-', Math.min(a, b));
+        } else if (kind < 0.65) {                    // 两位数 ± 一位数
+            const a = randInt(10, 99), b = randInt(1, 9);
+            if (Math.random() < 0.3 && a <= 18) {    // 少量 20以内退位减（一年级下册重点）
+                const c = randInt(1, 9), hi = randInt(11, 18), lo = randInt(hi - 9, 9);
+                if (hi - lo >= 1) return mkQ(hi, '-', lo);
+            } else if (Math.random() < 0.5) {
+                if (a % 10 + b <= 9) return mkQ(a, '+', b);   // 不进位
+            } else {
+                if (a % 10 >= b && a - b >= 1) return mkQ(a, '-', b);  // 不借位
+            }
+        } else {                                     // 两位数 ± 两位数（不进位不借位）
+            const a = randInt(10, 89);
+            if (Math.random() < 0.5) {
+                const b = randInt(10, 100 - a - 1);
+                if (b >= 10 && a % 10 + b % 10 <= 9 && Math.floor(a / 10) + Math.floor(b / 10) <= 9) return mkQ(a, '+', b);
+            } else {
+                const b = randInt(10, a - 1);
+                if (b >= 10 && a % 10 >= b % 10) return mkQ(a, '-', b);
+            }
+        }
+    }
+    return { q: '20+10=?', a: 30 };
+}
+const GEN = { easy: qEasy, mid: qMid, hard: qHard };
+
+/* 抽一道题：自动出题模式实时生成；题库模式洗牌抽取，不重复直到用完再重发 */
+function drawQuestion() {
+    if (qSource === 'auto') return GEN[aiDiff]();
+    if (!deck.length) deck = shuffle(BANK);
+    return deck.pop();
+}
+
+
+/* 格式说明弹窗 */
+$('btnHelp').onclick = () => {
+    sClick();
+    showModal('📄 CSV 格式说明', `
+        游戏默认 <b>🎲 自动出题</b>（无需导入，按难度实时生成）；导入 CSV 仅用于自定义题目内容。<br><br>
+        用 <b>WPS / Excel</b> 制作两列表格，另存为 <b>CSV（UTF-8 编码）</b>：<br>
+        <pre>question,answer
+3+5=?,8
+9-2=?,7
+12-4=?,8</pre>
+        · 第一列表头填 <b>question</b>（题干），第二列填 <b>answer</b>（答案，数字）<br>
+        · 第二行起每行一道题，题干里可以带逗号（如应用题）<br>
+        · 保存时编码请选择 <b>UTF-8</b>，避免中文乱码<br>
+        · 导入后题目不重复抽取，用完自动洗牌重新发题<br>
+        · 想切回自动出题，点击「🎲 自动出题」即可`);
+};
+
+/* ================= 主页交互 ================= */
+document.querySelectorAll('.modecard').forEach(card => {
+    card.onclick = () => {
+        sClick();
+        selMode = card.dataset.mode;
+        document.querySelectorAll('.modecard').forEach(c => c.classList.toggle('sel', c === card));
+    };
+});
+document.querySelectorAll('.diffbtn').forEach(btn => {
+    btn.onclick = () => {
+        sClick();
+        aiDiff = btn.dataset.diff;
+        document.querySelectorAll('.diffbtn').forEach(b => b.classList.toggle('on', b === btn));
+        $('diffLabel').textContent = DIFF_INFO[aiDiff];
+    };
+});
+$('speedRange').oninput = e => { $('speedLabel').textContent = e.target.value + ' 秒'; };
+$('btnStart').onclick = () => startGame();
+
+/* ================= 开局 ================= */
+function makePlayer(name, color, dark, isAI) {
+    return {
+        name, color, dark, isAI,
+        correct: 0, answered: 0, curQ: null,
+        locked: false, timerId: 0, flashTimer: 0,
+        panel: null, carEl: null, laneScore: null, panelScore: null, flashEl: null,
+    };
+}
+function startGame() {
+    if (S) {   // 清理上一局
+        S.running = false;
+        S.players.forEach(p => clearInterval(p.timerId));
+        clearTimeout(S.aiTimerId);
+    }
+    /* 赛道长度 = 冲线所需答对题数；题目无限出，先答满者获胜 */
+    const trackLen = Math.max(3, Math.min(30, parseInt($('qCount').value, 10) || 10));
+    const timeLimit = Math.max(5, Math.min(30, parseInt($('speedRange').value, 10) || 12));
+    let players;
+    if (selMode === 'single') {
+        players = [
+            makePlayer('🙋 你', '#ff6b9d', '#e04780', false),
+            makePlayer('🤖 AI', '#4a90e2', '#3573bd', true),
+        ];
+    } else {
+        players = [
+            makePlayer('🟥 玩家A', '#ff6b6b', '#e04747', false),
+            makePlayer('🟩 玩家B', '#2ecc71', '#23a455', false),
+        ];
+    }
+    S = {
+        mode: selMode, trackLen, timeLimit,
+        aiRate: AI_RATES[aiDiff], diff: aiDiff,
+        players, running: true, finished: false, aiTimerId: 0,
+        startAt: performance.now(),
+    };
+    buildRaceUI();
+    showScreen('race');
+    S.players.forEach(p => { if (!p.isAI) renderQuestion(p); });
+    if (selMode === 'single') aiNext();
+    tryPlayBGM();   // 借用户点击手势启动 BGM
+}
+
+/* ================= 比赛页渲染 ================= */
+function buildRaceUI() {
+    $('raceMode').textContent = (S.mode === 'single' ? '· 单人挑战' : '· 双人对战') + ` · 先答对 ${S.trackLen} 题冲线`;
+
+    /* 赛道：一条车道一名选手 */
+    const tb = $('trackBox');
+    tb.innerHTML = '';
+    S.players.forEach(p => {
+        const lane = document.createElement('div');
+        lane.className = 'lane';
+        lane.style.setProperty('--pc', p.color);
+        lane.innerHTML = `
+            <div class="ltag">
+                <div class="lname">${p.name}<span class="aiflash"></span></div>
+                <div class="lscore">⭐ 0/${S.trackLen}</div>
+            </div>
+            <div class="road">
+                <div class="finish"></div>
+                <div class="car">${carSVG(p.color, p.dark)}</div>
+            </div>`;
+        tb.appendChild(lane);
+        p.laneScore = lane.querySelector('.lscore');
+        p.carEl = lane.querySelector('.car');
+        p.flashEl = lane.querySelector('.aiflash');
+    });
+
+    /* 答题面板：单人 1 个，双人 2 个（AI 没有面板） */
+    const aa = $('answerArea');
+    aa.innerHTML = '';
+    S.players.forEach(p => {
+        if (p.isAI) return;
+        const pan = document.createElement('div');
+        pan.className = 'qpanel' + (S.mode === 'single' ? ' solo' : '');
+        pan.style.setProperty('--pc', p.color);
+        pan.innerHTML = `
+            <div class="qhead"><span class="qname">${p.name}</span><span class="qscore">⭐ 0/${S.trackLen}</span></div>
+            <div class="qtext"></div>
+            <div class="bar"><div class="bar-fill c1"></div></div>
+            <div class="opts"></div>
+            <div class="qmsg"></div>`;
+        aa.appendChild(pan);
+        p.panel = pan;
+        p.panelScore = pan.querySelector('.qscore');
+    });
+}
+
+/* 生成 4 个选项：1 个正确答案 + 3 个干扰项（非负、20以内、邻近值优先、互不重复） */
+function makeOptions(a) {
+    const hi = Math.max(20, a);
+    const set = new Set([a]);
+    const cands = [];
+    for (const d of [1, 2, 3, 4, 5, 9, 8, 7, 6, 10]) cands.push(a - d, a + d);   // 邻近值优先
+    shuffle(cands);
+    for (const c of cands) {
+        if (set.size >= 4) break;
+        if (c < 0 || c > hi || set.has(c)) continue;
+        set.add(c);
+    }
+    let x = 0;   // 兜底（几乎不会触发）
+    while (set.size < 4 && x <= hi) set.add(x++);
+    return shuffle([...set]);
+}
+
+function renderQuestion(p) {
+    if (!S.running || S.finished) return;   // 比赛已结束（对手冲线），停止出题
+    p.curQ = drawQuestion();
+    const q = p.curQ;
+    p.panel.querySelector('.qtext').textContent = q.q;
+    const opts = p.panel.querySelector('.opts');
+    opts.innerHTML = '';
+    makeOptions(q.a).forEach(v => {
+        const b = document.createElement('button');
+        b.textContent = v;
+        b.dataset.v = v;
+        b.onclick = () => chooseAnswer(p, b);
+        opts.appendChild(b);
+    });
+    setMsg(p, '', '');
+    p.locked = false;
+    startTimer(p);
+}
+
+/* ================= 倒计时 ================= */
+function startTimer(p) {
+    const total = S.timeLimit * 1000;
+    const deadline = performance.now() + total;
+    const fill = p.panel.querySelector('.bar-fill');
+    clearInterval(p.timerId);
+    p.timerId = setInterval(() => {
+        const remain = deadline - performance.now();
+        const frac = Math.max(0, Math.min(1, remain / total));
+        fill.style.width = (frac * 100) + '%';
+        fill.className = 'bar-fill ' + (frac > 0.5 ? 'c1' : frac > 0.2 ? 'c2' : 'c3');
+        if (remain <= 0) { clearInterval(p.timerId); onTimeout(p); }   // 超时判错，自动跳题
+    }, 100);
+}
+
+/* ================= 答题 ================= */
+function markOptions(p, correctVal, wrongBtn) {
+    p.panel.querySelectorAll('.opts button').forEach(b => {
+        b.disabled = true;
+        if (Number(b.dataset.v) === correctVal) b.classList.add('right');
+        else if (b === wrongBtn) b.classList.add('wrong');
+    });
+}
+function chooseAnswer(p, btn) {
+    if (!S.running || p.locked || S.finished) return;   // 锁定防连点
+    p.locked = true;
+    clearInterval(p.timerId);
+    const q = p.curQ;
+    const ok = Number(btn.dataset.v) === q.a;
+    p.answered++;
+    markOptions(p, q.a, ok ? null : btn);
+    if (ok) { p.correct++; moveCar(p); sGood(); setMsg(p, '✓ 答对！', 'good'); }
+    else    { sBad(); setMsg(p, `✗ 答错了，正确答案是 ${q.a}`, 'bad'); }
+    afterAnswer(p);
+}
+function onTimeout(p) {
+    if (p.locked || !S.running || S.finished) return;
+    p.locked = true;
+    const q = p.curQ;
+    p.answered++;
+    markOptions(p, q.a, null);
+    sBad();
+    setMsg(p, `⏰ 时间到！正确答案是 ${q.a}`, 'bad');
+    afterAnswer(p);
+}
+/* 每题结算后的走向：答满冲线数 → 赛车抵达终点，比赛立即结束；否则自动出下一题 */
+function afterAnswer(p) {
+    updateScore(p);
+    if (p.correct >= S.trackLen) { setTimeout(() => endGame(p), 800); return; }
+    setTimeout(() => renderQuestion(p), T.feedbackMs);
+}
+function setMsg(p, text, cls) {
+    const m = p.panel.querySelector('.qmsg');
+    m.textContent = text;
+    m.className = 'qmsg ' + cls;
+}
+
+/* ================= 赛车移动与计分 ================= */
+function moveCar(p) {
+    const prog = Math.min(1, p.correct / S.trackLen);
+    p.carEl.style.left = `calc((100% - 175px) * ${prog} + 6px)`;
+    p.carEl.classList.add('boost');
+    setTimeout(() => p.carEl.classList.remove('boost'), 600);
+    sBoost();
+}
+function updateScore(p) {
+    const txt = `⭐ ${p.correct}/${S.trackLen}`;
+    if (p.laneScore) p.laneScore.textContent = txt;
+    if (p.panelScore) p.panelScore.textContent = txt;
+}
+
+/* ================= AI 自动答题（单人模式） =================
+   与玩家并行：每题在倒计时 40%~90% 之间的随机时刻出结果，
+   按 AI 正确率判定对错，同步移动 AI 赛车；AI 也答满冲线数获胜。 */
+function aiNext() {
+    const ai = S.players[1];
+    if (!S.running) return;
+    const delay = S.timeLimit * 1000 * (0.4 + Math.random() * 0.5);
+    S.aiTimerId = setTimeout(() => {
+        if (!S.running || S.finished) return;
+        const ok = Math.random() < S.aiRate;
+        ai.answered++;
+        if (ok) { ai.correct++; moveCar(ai); }
+        flashAI(ok);
+        updateScore(ai);
+        if (ai.correct >= S.trackLen) { setTimeout(() => endGame(ai), 800); return; }   // AI 冲线
+        aiNext();
+    }, delay);
+}
+function flashAI(ok) {
+    const ai = S.players[1];
+    ai.flashEl.textContent = ok ? '✓' : '✗';
+    ai.flashEl.className = 'aiflash ' + (ok ? 'good' : 'bad');
+    clearTimeout(ai.flashTimer);
+    ai.flashTimer = setTimeout(() => { ai.flashEl.textContent = ''; }, 900);
+}
+
+/* ================= 结算（先冲线者获胜，无平局） ================= */
+function endGame(winner) {
+    if (!S || S.finished) return;
+    S.finished = true;
+    S.running = false;
+    S.players.forEach(p => clearInterval(p.timerId));
+    clearTimeout(S.aiTimerId);
+
+    const dur = performance.now() - S.startAt;
+    const timeStr = dur >= 60000
+        ? `${Math.floor(dur / 60000)} 分 ${Math.round(dur % 60000 / 1000)} 秒`
+        : `${Math.round(dur / 1000)} 秒`;
+    const [a, b] = S.players;
+    let title;
+    if (winner === a) title = S.mode === 'single' ? '🎉 你赢了！' : '🏆 玩家A 获胜！';
+    else              title = S.mode === 'single' ? '🤖 AI 获胜，再接再厉！' : '🏆 玩家B 获胜！';
+    const humanWin = S.mode !== 'single' || winner === a;
+
+    $('resultTitle').textContent = title;
+    $('resultStats').innerHTML = S.players.map(p => {
+        const pct = p.answered ? Math.round(p.correct / p.answered * 100) : 0;
+        return `<div class="statcard" style="--pc:${p.color}">
+            <div class="sname">${p.name}</div>
+            <div class="snum">${p.correct} 题</div>
+            <div class="spct">答对冲线 · 已答 ${p.answered} 题 · 正确率 ${pct}%</div>
+        </div>`;
+    }).join('');
+    $('resultTime').textContent = `⏱ 比赛用时：${timeStr}`;
+    $('resultOverlay').classList.remove('hidden');
+    if (humanWin) { sWin(); confetti($('resultOverlay')); }
+    else sOver();
+}
+$('btnAgain').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); startGame(); };
+$('btnHome').onclick = () => { sClick(); goHome(); };
+
+/* 撒花庆祝（先清掉上一局的残留粒子） */
+function confetti(container) {
+    container.querySelectorAll('.confetti').forEach(c => c.remove());
+    const colors = ['#ff6b9d', '#ffd200', '#4a9eff', '#2ecc71', '#b388ff', '#ff9f43'];
+    for (let i = 0; i < 70; i++) {
+        const c = document.createElement('i');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.background = colors[i % colors.length];
+        c.style.animationDelay = (Math.random() * 1.2) + 's';
+        c.style.animationDuration = (2.2 + Math.random() * 1.8) + 's';
+        container.appendChild(c);
+    }
+}
+
+/* ================= 弹窗 / Toast / 页面切换 ================= */
+function showModal(title, html, btns) {
+    $('modalTitle').textContent = title;
+    $('modalBody').innerHTML = html;
+    const bb = $('modalBtns');
+    bb.innerHTML = '';
+    (btns || [{ text: '知道了', cls: 'blue' }]).forEach(b => {
+        const el = document.createElement('button');
+        el.className = 'sbtn ' + (b.cls || 'blue');
+        el.textContent = b.text;
+        el.onclick = () => { $('modalOverlay').classList.add('hidden'); if (b.cb) b.cb(); };
+        bb.appendChild(el);
+    });
+    $('modalOverlay').classList.remove('hidden');
+}
+let toastTimer = 0;
+function toast(text) {
+    const t = $('toast');
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function showScreen(name) {
+    $('homeScreen').classList.toggle('hidden', name !== 'home');
+    $('raceScreen').classList.toggle('hidden', name !== 'race');
+}
+function goHome() {
+    if (S) {
+        S.running = false;
+        S.players.forEach(p => clearInterval(p.timerId));
+        clearTimeout(S.aiTimerId);
+    }
+    $('resultOverlay').classList.add('hidden');
+    showScreen('home');
+}
+$('btnBack').onclick = () => { sClick(); goHome(); };
+$('btnSound').onclick = e => {
+    soundOn = !soundOn;
+    e.target.textContent = soundOn ? '🔊 音效' : '🔇 静音';
+    if (soundOn) sClick();
+};
+
+/* ================= 初始化 ================= */
+makeStars();
+updateBankLabel();
+</script>
+</body>
+</html>

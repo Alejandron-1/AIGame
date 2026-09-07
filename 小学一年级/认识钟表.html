@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕐 认识钟表 - 一年级整时半时课堂教具</title>
+<style>
+/* ===== 全局 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    /* 浅白护眼课本风（需求文档指定） */
+    background: linear-gradient(180deg, #fbfbf8 0%, #eef2f0 100%);
+    min-height: 100vh;
+    color: #2c3e50;
+    user-select: none;
+    -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+.wrap { max-width: 1150px; margin: 0 auto; padding: 22px 30px 44px; }
+
+/* ===== 顶部：标题 + 模式切换 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.top h1 { font-size: clamp(28px, 3.2vw, 42px); font-weight: 800; letter-spacing: 3px; }
+.top h1 small { font-size: clamp(13px, 1.3vw, 17px); color: #8a9a94; margin-left: 12px; letter-spacing: 1px; font-weight: normal; }
+.modetabs { display: flex; gap: 12px; }
+.mtab {
+    padding: 12px 24px; border-radius: 14px; font-size: clamp(15px, 1.6vw, 19px);
+    font-weight: 800; background: #fff; color: #63766f;
+    border: 3px solid #d5e0da; transition: all .15s;
+}
+.mtab.on { background: #2e9e5b; color: #fff; border-color: #2e9e5b; box-shadow: 0 4px 0 #1f7a43; }
+.mtab:active { transform: scale(.96); }
+
+/* ===== 中部核心区 ===== */
+.stage {
+    margin: 24px auto 0; background: #fff; border-radius: 26px;
+    border: 3px solid #e2e9e5; box-shadow: 0 8px 24px rgba(60, 90, 75, .1);
+    padding: 28px 24px 24px; text-align: center;
+}
+/* 随机模式筛选条 */
+.filters { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.fchip {
+    padding: 8px 18px; border-radius: 20px; font-size: 14.5px; font-weight: bold;
+    background: #f2f6f4; color: #63766f; border: 2px solid transparent; transition: all .15s;
+}
+.fchip.on { background: #e8f6ee; color: #1f7a43; border-color: #2e9e5b; }
+/* 情景模式场景标题 */
+.scenecap { font-size: clamp(18px, 2vw, 26px); font-weight: 800; color: #1f7a43; margin-bottom: 14px; letter-spacing: 2px; }
+.scenecap small { color: #8a9a94; font-size: 0.72em; margin-right: 10px; }
+
+/* 钟表 + 角色 布局 */
+.clockrow { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 3vw, 48px); }
+.clockbox { width: clamp(300px, 36vw, 460px); flex-shrink: 0; }
+.clockbox svg { display: block; width: 100%; }
+.sceneart { width: clamp(130px, 16vw, 210px); flex-shrink: 0; }
+.sceneart svg { display: block; width: 100%; }
+.sceneboy { width: clamp(90px, 10vw, 130px); flex-shrink: 0; }
+.sceneboy svg { display: block; width: 100%; }
+.actname { font-size: clamp(22px, 2.6vw, 34px); font-weight: 800; letter-spacing: 2px; margin-top: 10px; }
+
+/* ===== 答案文字 ===== */
+#answer {
+    min-height: 76px; margin-top: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(38px, 4.6vw, 62px); font-weight: 800; letter-spacing: 6px;
+    color: #e74c3c; transition: opacity .25s; opacity: 0;
+}
+#answer.show { opacity: 1; }
+#answer .hinttxt { font-size: 0.42em; color: #8a9a94; letter-spacing: 2px; font-weight: normal; margin-left: 16px; }
+
+/* ===== 底部按钮区 ===== */
+.btns { display: flex; gap: 18px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.bigbtn {
+    padding: 16px 40px; border-radius: 20px; font-size: clamp(17px, 1.9vw, 23px);
+    font-weight: 800; color: #fff; transition: all .15s; letter-spacing: 2px;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, .18);
+}
+.bigbtn:active { transform: translateY(3px); box-shadow: none; }
+.bigbtn.orange { background: #e67e22; }
+.bigbtn.blue   { background: #4a90e2; }
+.bigbtn.green  { background: #2e9e5b; }
+.bigbtn.gray   { background: #95a5a6; }
+.bigbtn:disabled { opacity: .45; cursor: default; }
+
+/* 情景模式进度圆点 */
+.dots { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: #d5e0da; transition: all .2s; }
+.dot.on { background: #2e9e5b; transform: scale(1.25); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 顶部：标题 + 模式切换 -->
+  <div class="top">
+    <h1>🕐 认识钟表<small>整时 · 半时 · 课堂口述教具</small></h1>
+    <div class="modetabs">
+      <button class="mtab on" data-mode="random">🎲 随机时间</button>
+      <button class="mtab" data-mode="story">📅 淘气的一天</button>
+    </div>
+  </div>
+
+  <!-- 中部核心区 -->
+  <div class="stage">
+    <!-- 随机模式 -->
+    <div id="randomPanel">
+      <div class="filters">
+        <button class="fchip on" data-kind="mix">混合出题</button>
+        <button class="fchip" data-kind="whole">只出整时</button>
+        <button class="fchip" data-kind="half">只出半时</button>
+      </div>
+      <div class="clockrow"><div class="clockbox" id="randClock"></div></div>
+    </div>
+
+    <!-- 情景模式：淘气的一天 -->
+    <div id="storyPanel" class="hidden">
+      <div class="scenecap" id="sceneCap"></div>
+      <div class="clockrow">
+        <div class="sceneboy" id="sceneBoy"></div>
+        <div class="clockbox" id="storyClock"></div>
+        <div class="sceneart" id="sceneArt"></div>
+      </div>
+      <div class="actname" id="actName"></div>
+    </div>
+
+    <!-- 答案文字（老师点击后显示） -->
+    <div id="answer"></div>
+  </div>
+
+  <!-- 底部按钮区 -->
+  <div class="btns">
+    <button class="bigbtn orange" id="btnAnswer">👀 显示正确答案</button>
+    <button class="bigbtn blue" id="btnNext">▶ 下一题</button>
+    <button class="bigbtn gray hidden" id="btnPrev">⬅ 上一站</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ================= 常量（想改时间池/情景内容，从这里改） ================= */
+/* 随机模式时间池：1~12 时 */
+const WHOLE_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+/* 情景模式：淘气的一天（顺序播放；hour=几时，half=true 表示半时） */
+const STORY = [
+    { hour: 7,  half: false, act: '起床啦',       icon: 'bed' },
+    { hour: 8,  half: false, act: '上课读书',     icon: 'book' },
+    { hour: 12, half: false, act: '吃午饭',       icon: 'rice' },
+    { hour: 4,  half: true,  act: '踢足球',       icon: 'ball' },
+    { hour: 6,  half: false, act: '看动画片',     icon: 'tv' },
+    { hour: 9,  half: false, act: '睡觉了',       icon: 'moon' },
+];
+
+/* ================= 游戏状态 ================= */
+let mode = 'random';     // 'random' | 'story'
+let kind = 'mix';        // 随机模式筛选：'mix' | 'whole' | 'half'
+let cur = null;          // 当前题目 { hour, half }
+let lastKey = '';        // 上一题标识（防重复）
+let answerOn = false;    // 答案是否显示
+let storyIdx = 0;        // 情景模式当前站
+
+/* ================= 工具 ================= */
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+function timeText(hour, half) { return half ? `${hour}时半` : `${hour}时`; }
+
+/* ================= 钟表 SVG 绘制（纯代码，无图片） =================
+   整时：分针(长)指12，时针(短)指 N
+   半时：分针(长)指6，时针在 N 和 N+1 中间 */
+function clockSVG(hour, half) {
+    const C = 150;                       // 圆心
+    let ticks = '';
+    for (let i = 0; i < 60; i++) {
+        const major = i % 5 === 0;
+        const a = i * 6 * Math.PI / 180;
+        const r1 = major ? 118 : 126, r2 = 134;
+        ticks += `<line x1="${C + r1 * Math.sin(a)}" y1="${C - r1 * Math.cos(a)}"
+            x2="${C + r2 * Math.sin(a)}" y2="${C - r2 * Math.cos(a)}"
+            stroke="${major ? '#2c3e50' : '#b8c4bf'}" stroke-width="${major ? 4 : 2}" stroke-linecap="round"/>`;
+    }
+    let nums = '';
+    for (let n = 1; n <= 12; n++) {
+        const a = n * 30 * Math.PI / 180;
+        nums += `<text x="${C + 98 * Math.sin(a)}" y="${C - 98 * Math.cos(a) + 10}"
+            text-anchor="middle" font-size="30" font-weight="800" fill="#2c3e50"
+            font-family="Microsoft YaHei, sans-serif">${n}</text>`;
+    }
+    /* 指针角度：从12点方向顺时针。时针 = N*30° +（半时加15°走到两数中间） */
+    const hourA = (hour % 12) * 30 + (half ? 15 : 0);
+    const minA = half ? 180 : 0;         // 半时分针指向6，整时指向12
+    return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="${C}" cy="${C}" r="142" fill="#fff" stroke="#2c3e50" stroke-width="9"/>
+        <circle cx="${C}" cy="${C}" r="135" fill="none" stroke="#e2e9e5" stroke-width="2"/>
+        ${ticks}${nums}
+        <line x1="${C}" y1="${C + 16}" x2="${C}" y2="${C - 66}" stroke="#2c3e50" stroke-width="11"
+            stroke-linecap="round" transform="rotate(${hourA} ${C} ${C})"/>
+        <line x1="${C}" y1="${C + 22}" x2="${C}" y2="${C - 104}" stroke="#2c3e50" stroke-width="6.5"
+            stroke-linecap="round" transform="rotate(${minA} ${C} ${C})"/>
+        <circle cx="${C}" cy="${C}" r="9" fill="#2c3e50"/>
+    </svg>`;
+}
+
+/* ================= 卡通小男孩（淘气）与场景图标 ================= */
+function boySVG() {
+    return `<svg viewBox="0 0 120 150" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="46" r="30" fill="#ffe3c8"/>
+        <path d="M32 40 Q38 14 60 14 Q82 14 88 40 Q70 28 60 28 Q50 28 32 40Z" fill="#4a3728"/>
+        <circle cx="49" cy="48" r="3.8" fill="#2c3e50"/><circle cx="71" cy="48" r="3.8" fill="#2c3e50"/>
+        <circle cx="50.3" cy="46.7" r="1.3" fill="#fff"/><circle cx="72.3" cy="46.7" r="1.3" fill="#fff"/>
+        <circle cx="40" cy="57" r="4.5" fill="#ff9d9d" opacity="0.6"/><circle cx="80" cy="57" r="4.5" fill="#ff9d9d" opacity="0.6"/>
+        <path d="M53 60 Q60 66 67 60" stroke="#2c3e50" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M38 138 L38 112 Q38 92 60 92 Q82 92 82 112 L82 138Z" fill="#ffd200"/>
+        <path d="M46 146 L46 138 L74 138 L74 146Z" fill="#4a90e2"/>
+        <rect x="24" y="98" width="12" height="30" rx="6" fill="#ffd200" transform="rotate(14 30 113)"/>
+        <rect x="84" y="98" width="12" height="30" rx="6" fill="#ffd200" transform="rotate(-14 90 113)"/>
+    </svg>`;
+}
+const SCENE_ICONS = {
+    bed:  `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <rect x="12" y="52" width="116" height="40" rx="8" fill="#9b7ede"/>
+        <rect x="12" y="40" width="20" height="52" rx="6" fill="#7a5fc0"/>
+        <rect x="30" y="44" width="42" height="18" rx="9" fill="#fff"/>
+        <rect x="12" y="88" width="10" height="20" fill="#5e4b8b"/><rect x="118" y="88" width="10" height="20" fill="#5e4b8b"/>
+        <path d="M104 30 Q108 18 118 18 Q126 18 124 28 Q120 40 108 44 L104 44Z" fill="#ffd200" opacity="0.85"/>
+    </svg>`,
+    book: `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M70 34 Q48 22 22 26 L22 92 Q48 88 70 100 Q92 88 118 92 L118 26 Q92 22 70 34Z" fill="#4a90e2"/>
+        <path d="M70 34 L70 100" stroke="#2c5f9e" stroke-width="4"/>
+        <path d="M32 42 Q50 38 62 44 M32 58 Q50 54 62 60 M32 74 Q50 70 62 76" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M78 44 Q90 38 108 42 M78 60 Q90 54 108 58 M78 76 Q90 70 108 74" stroke="#dce9f7" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    </svg>`,
+    rice: `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M26 54 L114 54 Q110 92 70 92 Q30 92 26 54Z" fill="#e74c3c"/>
+        <ellipse cx="70" cy="54" rx="44" ry="12" fill="#fff"/>
+        <ellipse cx="70" cy="52" rx="38" ry="10" fill="#f7f7f7"/>
+        <path d="M40 34 Q42 24 50 22 M70 32 Q70 22 70 18 M100 34 Q98 24 90 22" stroke="#8d5524" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>`,
+    ball: `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="70" cy="60" r="42" fill="#fff" stroke="#2c3e50" stroke-width="4"/>
+        <path d="M70 34 L82 44 L77 60 L63 60 L58 44Z" fill="#2c3e50"/>
+        <path d="M70 34 L70 20 M82 44 L98 38 M77 60 L88 76 M63 60 L52 76 M58 44 L42 38" stroke="#2c3e50" stroke-width="3.5"/>
+        <path d="M42 38 Q30 30 24 40 M98 38 Q110 30 116 40 M52 76 Q44 90 34 88 M88 76 Q96 90 106 88" stroke="#2c3e50" stroke-width="3.5" fill="none"/>
+    </svg>`,
+    tv:   `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <rect x="18" y="26" width="104" height="70" rx="10" fill="#2c3e50"/>
+        <rect x="26" y="34" width="76" height="54" rx="6" fill="#8ecdf5"/>
+        <circle cx="115" cy="42" r="4" fill="#fff"/><circle cx="115" cy="56" r="4" fill="#fff"/>
+        <path d="M50 8 L62 22 M90 8 L78 22" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>
+        <path d="M42 60 L56 46 L70 62 L84 50" stroke="#e74c3c" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </svg>`,
+    moon: `<svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M84 16 Q56 22 56 56 Q56 90 84 98 Q48 100 32 72 Q18 44 40 24 Q58 8 84 16Z" fill="#ffd200"/>
+        <circle cx="100" cy="34" r="3.5" fill="#f0c419"/><circle cx="112" cy="58" r="2.8" fill="#f0c419"/>
+        <circle cx="104" cy="84" r="3.2" fill="#f0c419"/><circle cx="26" cy="96" r="2.6" fill="#c9d6f5"/>
+    </svg>`,
+};
+
+/* ================= 随机模式 ================= */
+function nextRandom() {
+    let hour, half, key, guard = 0;
+    do {
+        half = kind === 'half' ? true : kind === 'whole' ? false : Math.random() < 0.5;
+        hour = pick(WHOLE_HOURS);
+        key = hour + (half ? 'h' : 'w');
+        guard++;
+    } while (key === lastKey && guard < 20);   // 不与上一题重复
+    lastKey = key;
+    cur = { hour, half };
+    answerOn = false;
+    $('btnNext').textContent = '▶ 下一题';
+    $('randClock').innerHTML = clockSVG(hour, half);
+    renderAnswer();
+}
+
+/* ================= 情景模式（淘气的一天） ================= */
+function renderStory() {
+    const s = STORY[storyIdx];
+    cur = { hour: s.hour, half: s.half };
+    answerOn = false;
+    $('sceneCap').innerHTML = `<small>淘气的一天 · 第 ${storyIdx + 1} 站</small>他在做什么？说一说时间`;
+    $('storyClock').innerHTML = clockSVG(s.hour, s.half);
+    $('sceneArt').innerHTML = SCENE_ICONS[s.icon];
+    $('sceneBoy').innerHTML = boySVG();
+    $('actName').textContent = s.act + ' ⏰';
+    renderAnswer();
+    /* 进度圆点 + 按钮状态 */
+    $('dots').innerHTML = STORY.map((_, i) => `<span class="dot${i === storyIdx ? ' on' : ''}"></span>`).join('');
+    $('btnPrev').disabled = storyIdx === 0;
+    $('btnNext').textContent = storyIdx === STORY.length - 1 ? '↺ 回到第一站' : '▶ 下一站';
+}
+function nextStory() {
+    storyIdx = (storyIdx + 1) % STORY.length;   // 循环播放
+    renderStory();
+}
+
+/* ================= 答案显示/隐藏 ================= */
+function renderAnswer() {
+    const el = $('answer');
+    if (answerOn) {
+        el.innerHTML = `${timeText(cur.hour, cur.half)}<span class="hinttxt">${cur.half ? '分针指向6，时针在两数中间' : '分针指向12'}</span>`;
+        el.classList.add('show');
+        $('btnAnswer').textContent = '🙈 隐藏答案';
+    } else {
+        el.classList.remove('show');
+        el.innerHTML = '';
+        $('btnAnswer').textContent = '👀 显示正确答案';
+    }
+}
+$('btnAnswer').onclick = () => { answerOn = !answerOn; renderAnswer(); };
+
+/* ================= 模式切换与按钮 ================= */
+document.querySelectorAll('.mtab').forEach(btn => {
+    btn.onclick = () => {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mtab').forEach(b => b.classList.toggle('on', b === btn));
+        const isRandom = mode === 'random';
+        $('randomPanel').classList.toggle('hidden', !isRandom);
+        $('storyPanel').classList.toggle('hidden', isRandom);
+        $('btnPrev').classList.toggle('hidden', isRandom);   // 上一站仅情景模式有
+        $('dots').classList.toggle('hidden', isRandom);
+        if (isRandom) nextRandom(); else renderStory();      // btnNext 两模式共用：下一题/下一站
+    };
+});
+document.querySelectorAll('.fchip').forEach(chip => {
+    chip.onclick = () => {
+        kind = chip.dataset.kind;
+        document.querySelectorAll('.fchip').forEach(c => c.classList.toggle('on', c === chip));
+        nextRandom();
+    };
+});
+$('btnNext').onclick = () => { if (mode === 'story') nextStory(); else nextRandom(); };
+$('btnPrev').onclick = () => { if (storyIdx > 0) { storyIdx--; renderStory(); } };
+
+/* ================= 初始化 ================= */
+nextRandom();
+</script>
+</body>
+</html>

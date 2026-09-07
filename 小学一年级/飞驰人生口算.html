@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏎️ 飞驰人生 - 三人竞速口算PK</title>
+<style>
+/* ===== 全局 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    /* 深色星空背景（需求文档指定） */
+    background: linear-gradient(180deg, #0b1026 0%, #1a2450 55%, #2b3a67 100%);
+    min-height: 100vh;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 星空 ===== */
+#stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.star { position: absolute; background: #fff; border-radius: 50%; opacity: .6; animation: twinkle linear infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .12; } 50% { opacity: .95; } }
+
+.wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 18px 24px 40px; }
+
+/* ===== 顶部 ===== */
+.top { text-align: center; margin-bottom: 18px; position: relative; }
+.top h1 { font-size: clamp(30px, 3.4vw, 46px); font-weight: 800; letter-spacing: 4px; text-shadow: 0 4px 18px rgba(74, 158, 255, .45); }
+.top .sub { margin-top: 8px; font-size: clamp(14px, 1.6vw, 19px); color: #c9d6f5; letter-spacing: 2px; }
+.top .rule { margin-top: 6px; font-size: clamp(13px, 1.4vw, 17px); color: #ffd200; font-weight: bold; }
+#btnRestart {
+    position: absolute; right: 0; top: 4px;
+    padding: 11px 22px; border-radius: 13px; font-size: 16px; font-weight: bold;
+    color: #fff; background: #5a6488; transition: all .15s;
+}
+#btnRestart:hover { filter: brightness(1.15); }
+#btnRestart:active { transform: scale(.94); }
+
+/* ===== 三栏玩家面板 ===== */
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.col {
+    background: rgba(255, 255, 255, .07);
+    border: 3px solid var(--pc); border-radius: 20px;
+    padding: 16px 16px 14px; display: flex; flex-direction: column;
+}
+.phead { display: flex; align-items: center; gap: 10px; }
+.pdot { width: 34px; height: 34px; border-radius: 50%; background: var(--pc); flex-shrink: 0; box-shadow: 0 0 12px var(--pc); }
+.pname { font-size: 21px; font-weight: 800; color: var(--pc); }
+.combo {
+    margin-left: auto; font-size: 15px; font-weight: 800; color: #2c3e50;
+    background: #ffd200; border-radius: 14px; padding: 4px 13px; transition: transform .15s;
+}
+.combo.hot { animation: comboPop .3s; }
+@keyframes comboPop { 40% { transform: scale(1.3); } }
+
+/* 题目卡片 */
+.qcard {
+    margin-top: 13px; background: rgba(74, 144, 226, .18);
+    border: 3px solid rgba(74, 144, 226, .55); border-radius: 16px;
+    text-align: center; padding: 20px 8px;
+    font-size: clamp(34px, 3.6vw, 52px); font-weight: 800; letter-spacing: 3px;
+    min-height: 1.5em;
+}
+/* 选项 2×2 */
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 13px; }
+.opts button {
+    min-height: 62px; font-size: clamp(24px, 2.3vw, 34px); font-weight: 800;
+    color: #2c3e50; background: #f7f9ff; border-radius: 14px;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, .28); transition: all .12s;
+}
+.opts button:hover:not(:disabled) { transform: translateY(-2px); background: #fff; }
+.opts button:active:not(:disabled) { transform: scale(.94); }
+.opts button:disabled { opacity: .45; cursor: default; }
+.opts button.right { background: #2ecc71 !important; color: #fff; animation: pop .3s; opacity: 1; }
+.opts button.wrong { background: #e74c3c !important; color: #fff; animation: shake .4s; opacity: 1; }
+@keyframes pop { 40% { transform: scale(1.12); } }
+@keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+/* 每题提示行 */
+.msg { height: 26px; margin-top: 8px; text-align: center; font-size: 17px; font-weight: 800; }
+.msg.good { color: #2ecc71; }
+.msg.bad { color: #ff9d9d; }
+
+/* ===== 赛道（10格） ===== */
+.track { margin-top: 12px; position: relative; height: 52px; }
+.cells { display: flex; gap: 4px; height: 100%; }
+.cell { flex: 1; border-radius: 8px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .18); }
+.cell.past { background: var(--pc); opacity: .55; }
+.cell.finish { background: repeating-conic-gradient(#e8ecf5 0% 25%, #3a4470 25% 50%); background-size: 14px 14px; }
+.car { position: absolute; bottom: 2px; left: 0; width: 44px; transition: left .5s cubic-bezier(.3, 1.3, .55, 1); }
+.car svg { display: block; width: 100%; filter: drop-shadow(0 0 2px #fff) drop-shadow(0 2px 4px rgba(0, 0, 0, .4)); }
+.car.boost { animation: boost .5s ease; }
+@keyframes boost { 30% { transform: translateX(6px) scale(1.08); } }
+
+/* ===== 胜利弹窗 ===== */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(8, 10, 25, .68); display: flex; align-items: center; justify-content: center; }
+.mpanel {
+    width: 92%; max-width: 560px; text-align: center;
+    background: #1c2340; border: 2px solid rgba(255, 255, 255, .18);
+    border-radius: 20px; padding: 30px 28px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+}
+#winTitle { font-size: 34px; font-weight: 800; letter-spacing: 2px; margin-bottom: 16px; }
+.statrow { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.statcard {
+    min-width: 140px; padding: 13px 16px; text-align: center;
+    background: rgba(255, 255, 255, .08); border: 2px solid var(--pc); border-radius: 14px;
+}
+.statcard .sname { font-size: 15.5px; font-weight: 800; color: var(--pc); }
+.statcard .snum { font-size: 25px; font-weight: 800; margin: 7px 0 4px; }
+.statcard .spct { font-size: 13px; color: #a8b4d8; }
+.rbtn { margin-top: 22px; padding: 13px 38px; border-radius: 15px; font-size: 18px; font-weight: 800; color: #fff; background: #2ecc71; }
+.rbtn:hover { filter: brightness(1.1); }
+
+/* ===== 撒花 / Toast ===== */
+.confetti { position: absolute; top: -16px; width: 10px; height: 15px; border-radius: 2px; animation: fall linear forwards; z-index: 1; }
+@keyframes fall { to { transform: translateY(108vh) rotate(720deg); } }
+#toast {
+    position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%);
+    background: rgba(20, 26, 54, .95); border: 1px solid rgba(255, 255, 255, .22);
+    padding: 12px 24px; border-radius: 12px; font-size: 15.5px; z-index: 60;
+    opacity: 0; pointer-events: none; transition: all .25s;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div class="wrap">
+  <!-- 顶部 -->
+  <div class="top">
+    <h1>🏎️ 飞驰人生</h1>
+    <div class="sub">20以内加减法口算小游戏</div>
+    <div class="rule">⚡ 最快答对 10 题就获胜！</div>
+    <button id="btnRestart">🔄 重新开始</button>
+  </div>
+
+  <!-- 三栏玩家面板 -->
+  <div class="cols" id="cols"></div>
+</div>
+
+<!-- 胜利弹窗 -->
+<div id="winOverlay" class="overlay hidden">
+  <div class="mpanel">
+    <div id="winTitle"></div>
+    <div class="statrow" id="winStats"></div>
+    <button class="rbtn" id="btnAgain">🔁 再来一局</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ================= 可调常量 ================= */
+const GOAL = 10;      // 冲线目标题数（赛道格数）
+const P_COLORS = [
+    { name: '学生1', color: '#4a9eff', dark: '#3573bd' },   // 蓝
+    { name: '学生2', color: '#ff6b6b', dark: '#e04747' },   // 红
+    { name: '学生3', color: '#ffd200', dark: '#d9ad00' },   // 黄
+];
+
+/* ================= 工具与音效 ================= */
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+let audioCtx = null;
+function beep(f, d = 0.12, t = 'sine', vol = 0.15) {
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(vol, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.16), 90); };
+const sBad  = () => beep(190, 0.25, 'sawtooth', 0.12);
+const sWin  = () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.22), i * 140)); };
+
+/* ================= 星空背景 ================= */
+(function makeStars() {
+    const box = $('stars');
+    for (let i = 0; i < 70; i++) {
+        const s = document.createElement('span');
+        s.className = 'star';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 100 + '%';
+        s.style.width = s.style.height = (1 + Math.random() * 2.2) + 'px';
+        s.style.animationDuration = (1.5 + Math.random() * 2.5) + 's';
+        s.style.animationDelay = (Math.random() * 3) + 's';
+        box.appendChild(s);
+    }
+})();
+
+/* ================= 小车 SVG（参数化颜色，想换造型改这里） ================= */
+function carSVG(c, d) {
+    return `<svg viewBox="0 0 130 70" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="24" width="15" height="9" rx="3" fill="${d}"/>
+        <rect x="9" y="28" width="7" height="9" fill="${d}"/>
+        <path d="M38 32 Q44 13 62 13 L78 13 Q94 13 101 32 Z" fill="${c}"/>
+        <rect x="10" y="30" width="110" height="22" rx="11" fill="${c}"/>
+        <path d="M46 30 Q51 19 62 19 L68 19 L68 30 Z" fill="#dff1ff"/>
+        <rect x="73" y="19" width="15" height="11" rx="3" fill="#dff1ff"/>
+        <rect x="113" y="34" width="8" height="7" rx="3" fill="#ffd200"/>
+        <circle cx="36" cy="53" r="10" fill="#23283d"/><circle cx="36" cy="53" r="4.5" fill="#aeb8c9"/>
+        <circle cx="96" cy="53" r="10" fill="#23283d"/><circle cx="96" cy="53" r="4.5" fill="#aeb8c9"/>
+    </svg>`;
+}
+
+/* ================= 出题：20以内加减（含0参与） =================
+   加法：a+b ≤ 20；减法：a ≤ 20 且 a ≥ b（差非负） */
+let gameOver = false;
+let P = [];   // 三名玩家状态
+function genExpr(others) {
+    let q, guard = 0;
+    do {
+        if (Math.random() < 0.5) {          // 加法
+            const a = randInt(0, 20);
+            const b = randInt(0, 20 - a);
+            q = { text: `${a}+${b}=?`, a: a + b };
+        } else {                            // 减法
+            const a = randInt(0, 20);
+            const b = randInt(0, a);
+            q = { text: `${a}-${b}=?`, a: a - b };
+        }
+        guard++;
+    } while (others.includes(q.text) && guard < 30);   // 同一轮三人当前题互不相同
+    return q;
+}
+/* 4个选项：1正确 + 3干扰（非负、≤20、邻近值优先、互不重复） */
+function makeOptions(ans) {
+    const set = new Set([ans]);
+    const cands = [];
+    for (const d of [1, 2, 3, 4, 5, 9, 8, 7, 6, 10]) cands.push(ans - d, ans + d);
+    shuffle(cands);
+    for (const c of cands) {
+        if (set.size >= 4) break;
+        if (c < 0 || c > 20 || set.has(c)) continue;
+        set.add(c);
+    }
+    let x = 0;
+    while (set.size < 4 && x <= 20) set.add(x++);
+    return shuffle([...set]);
+}
+
+/* ================= 玩家面板 ================= */
+function buildBoard() {
+    const cols = $('cols');
+    cols.innerHTML = '';
+    P = P_COLORS.map((pc, i) => {
+        const col = document.createElement('div');
+        col.className = 'col';
+        col.style.setProperty('--pc', pc.color);
+        col.innerHTML = `
+            <div class="phead">
+                <div class="pdot"></div>
+                <div class="pname">${pc.name}</div>
+                <div class="combo" id="combo${i}">0 连击</div>
+            </div>
+            <div class="qcard" id="q${i}"></div>
+            <div class="opts" id="opts${i}"></div>
+            <div class="msg" id="msg${i}"></div>
+            <div class="track">
+                <div class="cells" id="cells${i}">${'<div class="cell"></div>'.repeat(GOAL - 1)}<div class="cell finish"></div></div>
+                <div class="car" id="car${i}">${carSVG(pc.color, pc.dark)}</div>
+            </div>`;
+        cols.appendChild(col);
+        return {
+            idx: i, name: pc.name, color: pc.color,
+            progress: 0, combo: 0, answered: 0, correct: 0,
+            expr: null, ans: 0, colEl: col,
+            qEl: col.querySelector(`#q${i}`), optsEl: col.querySelector(`#opts${i}`),
+            msgEl: col.querySelector(`#msg${i}`), comboEl: col.querySelector(`#combo${i}`),
+            carEl: col.querySelector(`#car${i}`),
+        };
+    });
+}
+function renderQuestion(p) {
+    /* 出新题：与其他两名玩家当前题不相同 */
+    const others = P.filter(x => x !== p).map(x => x.expr ? x.expr.text : '');
+    p.expr = genExpr(others);
+    p.ans = p.expr.a;
+    p.qEl.textContent = p.expr.text;
+    p.optsEl.innerHTML = '';
+    makeOptions(p.ans).forEach(v => {
+        const b = document.createElement('button');
+        b.textContent = v;
+        b.onclick = () => onOption(p, b, v);
+        p.optsEl.appendChild(b);
+    });
+    setMsg(p, '', '');
+}
+function setMsg(p, text, cls) {
+    p.msgEl.textContent = text;
+    p.msgEl.className = 'msg ' + cls;
+}
+function setCombo(p) {
+    p.comboEl.textContent = p.combo + ' 连击';
+    if (p.combo > 0) {
+        p.comboEl.classList.remove('hot');
+        void p.comboEl.offsetWidth;      // 重启动画
+        p.comboEl.classList.add('hot');
+    }
+}
+function moveCar(p) {
+    p.carEl.style.left = `calc(${(p.progress / GOAL) * 100}% - ${p.progress * 4.4}px + 2px)`;
+    p.carEl.classList.add('boost');
+    setTimeout(() => p.carEl.classList.remove('boost'), 550);
+    const cells = p.colEl.querySelectorAll('.cell');
+    cells.forEach((c, i) => c.classList.toggle('past', i < p.progress));
+}
+
+/* ================= 答题判定 ================= */
+function onOption(p, btn, v) {
+    if (gameOver) return;
+    p.answered++;
+    if (v === p.ans) {
+        /* ✅ 答对：车前进、连击+1 */
+        p.correct++;
+        p.combo++;
+        setCombo(p);
+        btn.classList.add('right');
+        [...p.optsEl.children].forEach(b => b.disabled = true);   // 本题锁定
+        sGood();
+        setMsg(p, '✓ 答对！', 'good');
+        p.progress++;
+        moveCar(p);
+        if (p.progress >= GOAL) { setTimeout(() => endGame(p), 700); return; }
+        setTimeout(() => renderQuestion(p), 550);
+    } else {
+        /* ❌ 答错：连击清零、车不动、本题保留可继续重试（答错的选项禁用） */
+        p.combo = 0;
+        setCombo(p);
+        btn.classList.add('wrong');
+        btn.disabled = true;
+        sBad();
+        setMsg(p, '✗ 再想一想，还可以选别的', 'bad');
+    }
+}
+
+/* ================= 胜利结算 ================= */
+function endGame(winner) {
+    gameOver = true;
+    sWin();
+    $('winTitle').textContent = `🏆 ${winner.name} 获胜！`;
+    $('winStats').innerHTML = P.map(p => {
+        const pct = p.answered ? Math.round(p.correct / p.answered * 100) : 0;
+        return `<div class="statcard" style="--pc:${p.color}">
+            <div class="sname">${p.name}</div>
+            <div class="snum">${p.correct} 题</div>
+            <div class="spct">答对 · 正确率 ${pct}%</div>
+        </div>`;
+    }).join('');
+    $('winOverlay').classList.remove('hidden');
+    confetti($('winOverlay'));
+}
+function confetti(container) {
+    container.querySelectorAll('.confetti').forEach(c => c.remove());
+    const colors = ['#4a9eff', '#ff6b6b', '#ffd200', '#2ecc71', '#b388ff', '#ff9f43'];
+    for (let i = 0; i < 80; i++) {
+        const c = document.createElement('i');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.background = colors[i % colors.length];
+        c.style.animationDelay = (Math.random() * 1.2) + 's';
+        c.style.animationDuration = (2.2 + Math.random() * 1.8) + 's';
+        container.appendChild(c);
+    }
+}
+
+/* ================= 重新开始 ================= */
+function restart() {
+    gameOver = false;
+    $('winOverlay').classList.add('hidden');
+    buildBoard();
+    P.forEach(p => { renderQuestion(p); moveCar(p); });
+}
+$('btnRestart').onclick = () => { sClick(); restart(); };
+$('btnAgain').onclick = () => { sClick(); restart(); };
+
+/* ================= 初始化 ================= */
+restart();
+</script>
+</body>
+</html>
