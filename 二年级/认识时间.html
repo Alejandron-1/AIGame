@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>认识时间教学工具 - 精准版</title>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .container { display: flex; width: 95vw; max-width: 1000px; background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        
+        /* 左侧控制区 */
+        .sidebar { flex: 0.35; display: flex; flex-direction: column; gap: 12px; padding-right: 30px; border-right: 2px dashed #eee; justify-content: center; }
+        button { padding: 12px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; background-color: #f1f3f5; color: #333; transition: all 0.2s; text-align: left; padding-left: 20px; border: 1px solid #ddd; }
+        button:hover { background-color: #e2e6ea; }
+        button:active { transform: translateY(1px); }
+        
+        /* 激活状态的高亮按钮 */
+        .active-tool { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; color: #856404; box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2); }
+        
+        /* 右侧时钟区 */
+        .display-area { flex: 0.65; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding-left: 20px; user-select: none; }
+        
+        /* 顶部数字时间 */
+        #timeText { font-size: 54px; font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #333; height: 65px; margin-bottom: 25px; letter-spacing: 6px; border-bottom: 4px solid #4A90E2; padding: 0 30px; }
+        
+        canvas { cursor: grab; background: #fff; border-radius: 50%; box-shadow: inset 0 0 15px rgba(0,0,0,0.03), 0 15px 35px rgba(0,0,0,0.08); touch-action: none; }
+        canvas:active { cursor: grabbing; }
+        
+        /* 底部红色提示文字 */
+        #statusText { margin-top: 25px; color: #e91e63; font-weight: bold; font-size: 18px; height: 25px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <button id="btn-text" onclick="toggleText()">1 时间显示 / 隐藏</button>
+        <button id="btn-hour" onclick="setMode('hour')">2 时针 (单独操作)</button>
+        <button id="btn-minute" onclick="setMode('minute')">3 分针 (联动时针)</button>
+        <button id="btn-second" onclick="setMode('second')">4 秒针 (全联动)</button>
+        <button id="btn-timer" onclick="toggleTimer()">5 计时开始</button>
+        <button onclick="setToNow()">6 此时 (校准当前)</button>
+        <button onclick="addTime(1)">7 + 1 分钟</button>
+        <button onclick="addTime(5)">8 + 5 分钟</button>
+        <button onclick="randomTime()">9 随机时间</button>
+    </div>
+
+    <div class="display-area">
+        <div id="timeText">00:00:00</div>
+        <canvas id="clock" width="400" height="400"></canvas>
+        <div id="statusText">请选择左侧工具开始操作</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('clock');
+    const ctx = canvas.getContext('2d');
+    const R = canvas.width / 2;
+    ctx.translate(R, R); // 坐标原点移到画布中心
+
+    // 辅助数学函数，确保负数求余正确
+    function mod(n, m) { return ((n % m) + m) % m; }
+
+    // 核心状态：用三个独立的连续变量存储时、分、秒的精确位置
+    let valH = 10;
+    let valM = 9;
+    let valS = 5;
+
+    let showText = true;
+    let mode = null; 
+    let isTiming = false;
+    let ticker = null;
+    let timerStartSeconds = 0;
+
+    // 将系统时间同步到变量
+    function syncToDate(date) {
+        valS = date.getSeconds() + date.getMilliseconds() / 1000;
+        valM = date.getMinutes() + valS / 60;
+        valH = date.getHours() + valM / 60;
+    }
+    syncToDate(new Date()); // 初始化为当前时间
+
+    // 主绘图函数
+    function draw() {
+        ctx.clearRect(-R, -R, canvas.width, canvas.height);
+
+        // 1. 画表盘背景
+        ctx.beginPath(); ctx.arc(0, 0, R * 0.96, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.lineWidth = 5; ctx.strokeStyle = '#333'; ctx.stroke();
+
+        // 2. 画精确刻度 (仅旋转刻度线)
+        for (let i = 0; i < 60; i++) {
+            let angle = i * Math.PI / 30;
+            ctx.save(); 
+            ctx.rotate(angle); 
+            ctx.beginPath();
+            if (i % 5 === 0) {
+                // 大刻度
+                ctx.lineWidth = 4; ctx.moveTo(0, -R * 0.86); ctx.lineTo(0, -R * 0.96);
+            } else {
+                // 小刻度
+                ctx.lineWidth = 2; ctx.moveTo(0, -R * 0.91); ctx.lineTo(0, -R * 0.96);
+            }
+            ctx.strokeStyle = '#333'; ctx.stroke(); 
+            ctx.restore();
+        }
+
+        // 3. 画正立的数字 (彻底修复翻转问题)
+        ctx.fillStyle = "#222"; 
+        ctx.font = "bold 32px Arial"; 
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "middle";
+        for (let i = 1; i <= 12; i++) {
+            let angle = i * Math.PI / 6;
+            // 直接计算X/Y坐标，画布不旋转
+            let x = Math.sin(angle) * R * 0.74;
+            let y = -Math.cos(angle) * R * 0.74;
+            ctx.fillText(i.toString(), x, y);
+        }
+
+        // 4. 更新顶部数字时间显示
+        let intH = mod(Math.floor(valH), 12);
+        let displayH = (intH === 0 ? 12 : intH).toString().padStart(2, '0'); 
+        let displayM = mod(Math.floor(valM), 60).toString().padStart(2, '0');
+        let displayS = mod(Math.floor(valS), 60).toString().padStart(2, '0');
+        
+        document.getElementById('timeText').innerText = showText ? `${displayH} : ${displayM} : ${displayS}` : "?? : ?? : ??";
+
+        // 5. 计算指针角度
+        let angleH = (mod(valH, 12) / 12) * 2 * Math.PI;
+        let angleM = (mod(valM, 60) / 60) * 2 * Math.PI;
+        let angleS = (mod(valS, 60) / 60) * 2 * Math.PI;
+
+        // 6. 绘制指针 (尖锐对齐)
+        // 时针 (粗，偏黑)
+        drawHand(angleH, R * 0.55, 8, '#333', R * 0.1);
+        // 分针 (稍细，深灰)
+        drawHand(angleM, R * 0.78, 5, '#555', R * 0.15);
+        // 秒针 (超细，红色，带尾巴)
+        drawHand(angleS, R * 0.88, 2, '#FF3B30', R * 0.25);
+
+        // 中心圆帽
+        ctx.beginPath(); ctx.arc(0, 0, 7, 0, 2 * Math.PI); ctx.fillStyle = '#FF3B30'; ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fillStyle = '#000'; ctx.fill();
+    }
+
+    // 绘制指针函数 (支持向后延伸)
+    function drawHand(angle, length, width, color, tailLength) {
+        ctx.save(); 
+        ctx.rotate(angle); 
+        ctx.beginPath();
+        ctx.lineWidth = width; 
+        ctx.lineCap = "round"; 
+        ctx.strokeStyle = color;
+        // 从尾部画到尖端
+        ctx.moveTo(0, tailLength); 
+        ctx.lineTo(0, -length); 
+        ctx.stroke(); 
+        ctx.restore();
+    }
+
+    // --- 按钮与提示逻辑 ---
+    const statusText = document.getElementById('statusText');
+
+    function toggleText() { 
+        showText = !showText; 
+        draw(); 
+    }
+
+    function setMode(newMode) {
+        // 清除所有高亮
+        ['hour', 'minute', 'second'].forEach(m => document.getElementById('btn-' + m).classList.remove('active-tool'));
+        
+        if (mode === newMode) { 
+            mode = null; 
+            statusText.innerText = "请选择左侧工具开始操作";
+            statusText.style.color = "#999";
+        } else { 
+            mode = newMode; 
+            document.getElementById('btn-' + mode).classList.add('active-tool'); 
+            statusText.style.color = "#e91e63"; // 红色提示
+            if(mode === 'hour') statusText.innerText = "正在单独操作时针，分秒针不会联动旋转。";
+            if(mode === 'minute') statusText.innerText = "正在操作分针，时针会联动，秒针不动。";
+            if(mode === 'second') statusText.innerText = "正在操作秒针，分针和时针会联动。";
+        }
+        draw();
+    }
+
+    function toggleTimer() {
+        let btn = document.getElementById('btn-timer');
+        if (!isTiming) {
+            isTiming = true; 
+            timerStartSeconds = valH * 3600 + valM * 60 + valS;
+            btn.innerText = "5 停止并计算"; 
+            btn.classList.add('active-tool');
+            statusText.innerText = "时钟正常运行中...";
+            statusText.style.color = "#e91e63";
+            
+            ticker = setInterval(() => { 
+                valS += 1; 
+                valM += 1/60; 
+                valH += 1/3600; 
+                draw(); 
+            }, 1000);
+        } else {
+            isTiming = false; 
+            clearInterval(ticker);
+            let currentTotalSeconds = valH * 3600 + valM * 60 + valS;
+            let diff = Math.floor(currentTotalSeconds - timerStartSeconds);
+            btn.innerText = "5 计时开始"; 
+            btn.classList.remove('active-tool');
+            statusText.innerText = `刚才一共经过了: ${diff} 秒`;
+            statusText.style.color = "#4A90E2";
+        }
+    }
+
+    function setToNow() { 
+        showText = true; 
+        syncToDate(new Date()); 
+        draw(); 
+    }
+    
+    function addTime(mins) { 
+        valS += mins * 60; 
+        valM += mins; 
+        valH += mins / 60; 
+        draw(); 
+    }
+
+    function randomTime() {
+        showText = false;
+        valS = Math.floor(Math.random() * 60);
+        valM = Math.floor(Math.random() * 60) + valS / 60;
+        valH = Math.floor(Math.random() * 12) + valM / 60; 
+        draw();
+    }
+
+    // --- 鼠标拖拽联动逻辑 (完美的物理引擎) ---
+    let lastAngle = 0;
+    
+    canvas.addEventListener('mousedown', (e) => {
+        if (!mode) return;
+        const rect = canvas.getBoundingClientRect();
+        
+        // 计算鼠标角度 (-PI 到 PI)
+        const getAngle = (e) => {
+            const x = e.clientX - rect.left - R;
+            const y = e.clientY - rect.top - R;
+            return Math.atan2(y, x) + Math.PI / 2;
+        };
+        lastAngle = getAngle(e);
+
+        const onMove = (e) => {
+            let currentAngle = getAngle(e);
+            let delta = currentAngle - lastAngle;
+            
+            // 处理跨越 12点 (圆角缝隙) 的突变
+            if (delta > Math.PI) delta -= 2 * Math.PI;
+            if (delta < -Math.PI) delta += 2 * Math.PI;
+            
+            // 鼠标转了多少“圈”
+            let revs = delta / (2 * Math.PI); 
+
+            // 严格执行齿轮法则
+            if (mode === 'hour') { 
+                valH += revs * 12; // 仅改变时针
+            } 
+            else if (mode === 'minute') { 
+                let deltaM = revs * 60; 
+                valM += deltaM; 
+                valH += deltaM / 60; // 联动时针，秒针不动
+            } 
+            else if (mode === 'second') { 
+                let deltaS = revs * 60; 
+                valS += deltaS; 
+                valM += deltaS / 60; 
+                valH += deltaS / 3600; // 全联动
+            }
+            
+            lastAngle = currentAngle; 
+            draw();
+        };
+
+        const onUp = () => { 
+            window.removeEventListener('mousemove', onMove); 
+            window.removeEventListener('mouseup', onUp); 
+        };
+        
+        window.addEventListener('mousemove', onMove); 
+        window.addEventListener('mouseup', onUp);
+    });
+
+    // 初始绘制一次
+    draw();
+</script>
+
+</body>
+</html>

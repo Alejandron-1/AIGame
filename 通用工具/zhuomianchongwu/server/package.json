@@ -1,0 +1,21 @@
+{
+  "name": "classpet-server",
+  "version": "0.1.0",
+  "description": "课堂宠物养成系统 - 后端 API (Node.js + Express + 内置 SQLite)",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5",
+    "adm-zip": "^0.5.16",
+    "cors": "^2.8.5"
+  }
+}

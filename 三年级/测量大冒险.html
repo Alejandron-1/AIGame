@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测量大冒险 - 三年级上册 第3单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    /* 顶栏 */
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffd200; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    /* 内容区 */
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    /* —— 地图视图 —— */
+    .map-title { text-align: center; font-size: 26px; color: #2c3e50; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+    .road { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 8px; }
+    .node {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #f7f8ff;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid transparent; transition: all .2s;
+    }
+    .node:hover { border-color: #764ba2; transform: translateX(4px); }
+    .node.locked { opacity: 0.45; cursor: not-allowed; }
+    .node .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .node .info { flex: 1; }
+    .node .info .n { font-size: 17px; font-weight: bold; color: #2c3e50; }
+    .node .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .node .stars { font-size: 18px; letter-spacing: 2px; }
+    .node .lock { font-size: 20px; color: #bbb; }
+    /* —— 关卡视图 —— */
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #2c3e50; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #2ecc71, #27ae60); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #f7f8ff; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #eef0f7; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    }
+    .q-text { font-size: 30px; font-weight: bold; color: #2c3e50; text-align: center; line-height: 1.6; }
+    .q-text .hl { color: #c0392b; font-size: 40px; }
+    .q-text .unit { color: #8e44ad; }
+    .rate-hint {
+        background: #fdf3e7; border: 1px dashed #e59866; color: #a04000;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold;
+    }
+    /* 换算输入 */
+    .convert-row { display: flex; align-items: center; gap: 12px; }
+    .num-input {
+        width: 160px; height: 64px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #2c3e50; border-radius: 12px; outline: none; color: #2c3e50;
+        font-family: inherit;
+    }
+    .num-input:focus { border-color: #764ba2; box-shadow: 0 0 0 3px rgba(118,75,162,0.2); }
+    .convert-row .eq { font-size: 32px; font-weight: bold; color: #7f8c8d; }
+    .btn-main {
+        background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(118,75,162,0.4); }
+    /* 选择题 */
+    .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 620px; }
+    .opt {
+        padding: 14px 10px; border-radius: 14px; background: #fff; border: 2px solid #dfe6e9;
+        font-size: 22px; font-weight: bold; color: #2c3e50; cursor: pointer; text-align: center;
+        font-family: inherit; transition: all .15s;
+    }
+    .opt:hover { border-color: #764ba2; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    /* 反馈条 */
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    /* 结算 */
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    /* 错题本 */
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column;
+        overflow: hidden;
+    }
+    .modal h3 { color: #2c3e50; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">📏 测量大冒险</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/12</span>
+            <span>🏆 通关 <b id="cleared">0</b>/4</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <!-- 地图视图 -->
+    <div class="content" id="mapView">
+        <div class="map-title">🗺️ 测量大冒险地图</div>
+        <div class="map-sub">从长度小火车出发，一路闯到终极挑战！点击关卡开始冒险</div>
+        <div class="road" id="road"></div>
+    </div>
+
+    <!-- 关卡视图 -->
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回地图</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <!-- 错题本弹窗 -->
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#764ba2;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '测量大冒险_错题';
+const PROG_KEY  = '测量大冒险_进度';
+const STAGES = [
+    { icon:'🚂', name:'长度小火车',    desc:'毫米 · 厘米 · 分米 · 米 · 千米 单位换算', kind:'lenConvert' },
+    { icon:'🔍', name:'火眼金睛',      desc:'给物体选择合适的长度 / 重量单位',             kind:'chooseUnit' },
+    { icon:'⚖️', name:'重量天平',      desc:'克 · 千克 · 吨 单位换算',                     kind:'massConvert' },
+    { icon:'🏆', name:'终极挑战',      desc:'混合换算 + 比大小，你敢来吗？',                kind:'compare' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+// 长度单位（以毫米为基准）
+const LEN = [
+    { n:'毫米', f:1    },
+    { n:'厘米', f:10   },
+    { n:'分米', f:100  },
+    { n:'米',   f:1000 },
+    { n:'千米', f:1000000 },
+];
+// 质量单位（以克为基准）
+const MASS = [
+    { n:'克',   f:1     },
+    { n:'千克', f:1000  },
+    { n:'吨',   f:1000000 },
+];
+
+let progress = loadJSON(PROG_KEY, {});   // { stageIdx: 0|1|2|3 }
+let mistakes = loadJSON(STORE_KEY, []);  // [{s, q, u, r}]
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+
+/* ================= 题目生成 ================= */
+// 相邻单位换算题：return {text, unitA, unitB, answer}
+function makeConvert(units, allowBigRate, dimLabel) {
+    // 相邻对（按 f 排序后的相邻）
+    const pairs = [];
+    for (let i = 0; i < units.length - 1; i++) {
+        const rate = units[i+1].f / units[i].f;
+        if (allowBigRate || rate <= 1000) pairs.push([units[i], units[i+1], rate]);
+    }
+    const [smallU, bigU, rate] = pick(pairs);
+    const bigToSmall = Math.random() < 0.5;
+    if (bigToSmall) {
+        // 大化小：X 大单位 = ( ) 小单位
+        const cap = rate === 1000 ? 20 : 90;
+        const v = randInt(2, cap);
+        return { kind:'convert', text:`${v} ${bigU.n} = ( ) ${smallU.n}`,
+                 hint:`1 ${bigU.n} = ${rate} ${smallU.n}`, answer: v * rate, dim: dimLabel };
+    } else {
+        // 小化大：X 小单位 = ( ) 大单位（保证整除）
+        const v = randInt(2, 50) * rate;
+        return { kind:'convert', text:`${v} ${smallU.n} = ( ) ${bigU.n}`,
+                 hint:`${rate} ${smallU.n} = 1 ${bigU.n}`, answer: v / rate, dim: dimLabel };
+    }
+}
+
+// 选单位题
+const UNIT_CHOICE = [
+    { v: '一支铅笔长约',   n: 18,  dim:'len', correct:'厘米', others:['毫米','分米','米'] },
+    { v: '教室黑板长约',   n: 4,   dim:'len', correct:'米',   others:['厘米','分米','千米'] },
+    { v: '一枚硬币厚约',   n: 2,   dim:'len', correct:'毫米', others:['厘米','分米','米'] },
+    { v: '教室门高约',     n: 2,   dim:'len', correct:'米',   others:['厘米','毫米','千米'] },
+    { v: '数学书厚约',     n: 8,   dim:'len', correct:'毫米', others:['厘米','分米','米'] },
+    { v: '手指甲盖宽约',   n: 1,   dim:'len', correct:'厘米', others:['毫米','分米','米'] },
+    { v: '一棵大树高约',   n: 10,  dim:'len', correct:'米',   others:['厘米','分米','千米'] },
+    { v: '北京到广州约',   n: 2000, dim:'len', correct:'千米', others:['米','分米','厘米'] },
+    { v: '小明身高约',     n: 130, dim:'len', correct:'厘米', others:['米','分米','毫米'] },
+    { v: '课桌高约',       n: 70,  dim:'len', correct:'厘米', others:['米','分米','毫米'] },
+    { v: '操场跑道一圈约', n: 400, dim:'len', correct:'米',   others:['千米','分米','厘米'] },
+    { v: '一头大象重约',   n: 3,   dim:'mass', correct:'吨',  others:['千克','克','千克'] },
+    { v: '一个鸡蛋重约',   n: 50,  dim:'mass', correct:'克',  others:['千克','吨'] },
+    { v: '一袋大米重约',   n: 10,  dim:'mass', correct:'千克', others:['克','吨'] },
+    { v: '一个西瓜重约',   n: 5,   dim:'mass', correct:'千克', others:['克','吨'] },
+    { v: '一包薯片重约',   n: 100, dim:'mass', correct:'克',  others:['千克','吨'] },
+    { v: '一头鲸鱼重约',   n: 30,  dim:'mass', correct:'吨',  others:['千克','克'] },
+    { v: '一把椅子重约',   n: 4,   dim:'mass', correct:'千克', others:['克','吨'] },
+    { v: '一枚硬币重约',   n: 6,   dim:'mass', correct:'克',  others:['千克','吨'] },
+    { v: '一辆卡车载重约', n: 5,   dim:'mass', correct:'吨',  others:['千克','克'] },
+];
+function makeChoose() {
+    const t = pick(UNIT_CHOICE);
+    const pool = t.dim === 'len' ? LEN : MASS;
+    const base = [...new Set([t.correct, ...t.others])];
+    const opts = base.slice(0, Math.min(4, pool.length));
+    for (const u of pool) {
+        if (opts.length >= 4) break;
+        if (!opts.includes(u.n)) opts.push(u.n);
+    }
+    // 打乱
+    for (let i = opts.length - 1; i > 0; i--) { const j = rnd(i + 1); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+    return { kind:'choose', text:`${t.v} <span class="hl">${t.n}</span>（ ），填哪个单位合适？`,
+             answer: t.correct, opts, hint: '想一想生活中常见物体的长度 / 重量' };
+}
+
+// 比大小题：保证两个数量都是整数（同维度）
+function makeCompare(units, dimLabel) {
+    const a = pick(units), b = pick(units);
+    let anum, bnum, op;
+    if (a.f >= b.f) {
+        // 大单位在前：等价值 = anum × ratio（整数）
+        const ratio = a.f / b.f;
+        const cap = Math.min(9, Math.floor(50000 / ratio));
+        anum = randInt(1, Math.max(1, cap));
+        const eq = anum * ratio;
+        const mode = pick(['eq', 'gt', 'lt']);
+        if (mode === 'eq') { bnum = eq; op = '='; }
+        else if (mode === 'gt') { bnum = eq + 1; op = '<'; }
+        else { bnum = eq - 1; op = '>'; if (bnum < 1) { bnum = eq + 1; op = '<'; } }
+    } else {
+        // 大单位在后：等价值 bnum = anum / 10^k（anum 取 10^k 的倍数保证整数）
+        const k = Math.log10(b.f / a.f);
+        const base = Math.pow(10, k);
+        const cap = Math.min(9, Math.floor(50000 / base));
+        anum = base * randInt(1, Math.max(1, cap));
+        const eq = anum / base;
+        const mode = pick(['eq', 'gt', 'lt']);
+        if (mode === 'eq') { bnum = eq; op = '='; }
+        else if (mode === 'gt') { bnum = eq + 1; op = '<'; }
+        else { bnum = eq - 1; op = '>'; if (bnum < 1) { bnum = eq + 1; op = '<'; } }
+    }
+    return { kind:'compare', text:`${anum} ${a.n}（ ）${bnum} ${b.n}`,
+             answer: op, opts: ['>', '<', '='], hint: '先换成同一种单位再比大小' };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'lenConvert') return makeConvert(LEN, false, '长度');
+    if (kind === 'massConvert') return makeConvert(MASS, false, '质量');
+    if (kind === 'chooseUnit') return makeChoose();
+    // 终极关：混合
+    const r = Math.random();
+    if (r < 0.35) return makeConvert(LEN, true, '长度');
+    if (r < 0.6) return makeConvert(MASS, true, '质量');
+    if (r < 0.8) return makeChoose();
+    return makeCompare(Math.random() < 0.5 ? LEN : MASS, '');
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const road = $('road');
+    road.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'node' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        road.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = JSON.stringify(qq.text);
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'convert') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="convert-row">
+                <input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?">
+            </div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput');
+        inp.focus();
+        $('submitBtn').onclick = submitConvert;
+        inp.onkeydown = e => { if (e.key === 'Enter') submitConvert(); };
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b.dataset.v, b));
+    }
+}
+
+function submitConvert() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) { $('ansInput').classList.add('err'); return; }
+    judge(v === q.answer, v);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else { btn.classList.add('wrong'); }
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        mistakes.push({ s: STAGES[curStage].name, q: q.text.replace(/<[^>]+>/g, ''), u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一关已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回地图'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

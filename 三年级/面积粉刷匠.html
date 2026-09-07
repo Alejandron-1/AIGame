@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>面积粉刷匠 - 三年级下册 第5单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #4fc3f7 0%, #1565c0 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #0d47a1, #1565c0);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffd54f; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    .map-title { text-align: center; font-size: 26px; color: #0d47a1; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .house { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .room {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #e8f4fd;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #bbdefb; transition: all .2s;
+    }
+    .room:hover { border-color: #1565c0; transform: translateX(4px); }
+    .room.locked { opacity: 0.45; cursor: not-allowed; }
+    .room .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .room .info { flex: 1; }
+    .room .info .n { font-size: 17px; font-weight: bold; color: #0d47a1; }
+    .room .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .room .stars { font-size: 18px; letter-spacing: 2px; }
+    .room .lock { font-size: 20px; color: #bbb; }
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #0d47a1; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #42a5f5, #1565c0); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #f3f9ff; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #d6e9fb; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 26px; font-weight: bold; color: #0d47a1; text-align: center; line-height: 1.7; }
+    .q-text .hl { color: #c0392b; font-size: 36px; }
+    .q-text .small { font-size: 17px; color: #888; }
+    /* 格子图 */
+    .grid-fig { display: flex; flex-wrap: wrap; width: fit-content; border: 3px solid #1565c0; background: #fff; }
+    .grid-fig .cell { width: 20px; height: 20px; border: 0.5px solid #90caf9; background: #e3f2fd; }
+    .num-input {
+        width: 160px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #0d47a1; border-radius: 12px; outline: none; color: #0d47a1;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #1565c0; box-shadow: 0 0 0 3px rgba(21,101,192,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #2196f3, #1565c0); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(21,101,192,0.4); }
+    .rate-hint {
+        background: #e3f2fd; border: 1px dashed #64b5f6; color: #0d47a1;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 660px; }
+    .opt {
+        padding: 13px 8px; border-radius: 14px; background: #fff; border: 2px solid #d6e9fb;
+        font-size: 20px; font-weight: bold; color: #0d47a1; cursor: pointer; text-align: center;
+        font-family: inherit; transition: all .15s;
+    }
+    .opt:hover { border-color: #1565c0; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #0d47a1; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #0d47a1; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">🎨 面积粉刷匠</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🏠 面积粉刷匠</div>
+        <div class="map-sub">数格子 → 算面积 → 分清周长和面积，把大房子粉刷得漂漂亮亮！</div>
+        <div class="house" id="house"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#1565c0;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '面积粉刷匠_错题';
+const PROG_KEY  = '面积粉刷匠_进度';
+const STAGES = [
+    { icon:'🧱', name:'数格子',     desc:'每格 1 平方厘米，数出图形面积',     kind:'grid' },
+    { icon:'📐', name:'算面积',     desc:'长方形面积 = 长 × 宽 · 正方形面积', kind:'area' },
+    { icon:'⚖️', name:'周长还是面积', desc:'单位换算 · 概念判断 · 经典易错题', kind:'mixed' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+function opts4(correct, dists) {
+    let arr = [...new Set([correct, ...dists])];
+    while (arr.length < 4) arr.push(randInt(2, 500));
+    return shuffle(arr.slice(0, 4));
+}
+
+/* ================= 题目生成 ================= */
+// 关1：数格子（每格1平方厘米）
+function makeGrid() {
+    let w, h, total;
+    do { w = randInt(3, 10); h = randInt(3, 10); total = w * h; } while (total > 110);
+    let cells = '';
+    for (let i = 0; i < total; i++) cells += '<div class="cell"></div>';
+    const fig = `<div class="grid-fig" style="width:${w * 20}px">${cells}</div>`;
+    const perimeter = (w + h) * 2;
+    const opts = opts4(total, [perimeter, w + h, total + 1, total - 1, (w + 1) * h]);
+    return { kind:'grid',
+             text:`下面长方形的面积是（ ）平方厘米？<span class="small"><br>（每小格表示 1 平方厘米）</span>`,
+             fig, answer: total, opts,
+             hint:`数一数一共有几格：长 ${w} 格 × 宽 ${h} 格，面积 = 长 × 宽` };
+}
+
+// 关2：算面积
+function makeArea() {
+    const isSq = Math.random() < 0.4;
+    if (isSq) {
+        const a = randInt(3, 20);
+        return { kind:'area', text:`一个<span class="hl">正方形</span>的边长是 ${a} 厘米，它的面积是（ ）平方厘米？`,
+                 answer: a * a, hint:`正方形面积 = 边长 × 边长 = ${a} × ${a}` };
+    }
+    const a = randInt(4, 20), b = randInt(3, 15);
+    const obj = pick(['长方形菜地', '长方形书桌', '长方形地毯', '长方形相框', '长方形窗户']);
+    return { kind:'area', text:`一块${obj}，长 <span class="hl">${a}</span> 米，宽 <span class="hl">${b}</span> 米，面积是（ ）平方米？`,
+             answer: a * b, hint:`长方形面积 = 长 × 宽 = ${a} × ${b}` };
+}
+
+// 关3：周长vs面积 混合题库
+const MIXED_BANK = [
+    { text:'物体的表面或封闭图形的（ ），叫做它的面积。', opts:['大小','周长','长度','宽度'], ans:0 },
+    { text:'边长为 4 厘米的正方形，下列说法正确的是（ ）。', opts:['周长和面积一样大','周长是 16 厘米，面积是 16 平方厘米','周长是 16 平方厘米','面积是 16 厘米'], ans:1 },
+    { text:'长方形的面积 = （ ）', opts:['长 × 宽','（长 + 宽）× 2','长 + 宽','长 × 宽 × 2'], ans:0 },
+    { text:'1 平方米 = （ ）平方分米', opts:['10','100','1000','10000'], ans:1 },
+    { text:'1 平方分米 = （ ）平方厘米', opts:['10','100','1000','10000'], ans:1 },
+    { text:'2 平方米 = （ ）平方分米', opts:['20','200','2000','20000'], ans:1 },
+    { text:'3 平方分米 = （ ）平方厘米', opts:['30','300','3000','30000'], ans:1 },
+    { text:'一间教室地面的面积大约是 50（ ）', opts:['平方米','平方分米','平方厘米','米'], ans:0 },
+    { text:'一枚邮票的面积大约是 4（ ）', opts:['平方厘米','平方分米','平方米','厘米'], ans:0 },
+    { text:'课桌桌面的面积大约是 24（ ）', opts:['平方分米','平方厘米','平方米','分米'], ans:0 },
+    { text:'测量操场面积，用（ ）作单位比较合适', opts:['平方米','平方厘米','平方分米','米'], ans:0 },
+    { text:'两个周长相等的长方形，它们的面积（ ）', opts:['一定相等','不一定相等','一定不相等','无法比较'], ans:1 },
+    { text:'两个面积相等的正方形，它们的周长（ ）', opts:['一定相等','不一定相等','一定不相等','无法比较'], ans:0 },
+    { text:'下面说法正确的是（ ）', opts:['周长是长度，单位是厘米；面积是大小，单位是平方厘米','周长和面积的单位可以互换','周长就是面积','面积一定比周长大'], ans:0 },
+    { text:'边长为 5 米的正方形花坛，它的面积是（ ）', opts:['25 平方米','20 平方米','25 米','20 米'], ans:0 },
+    { text:'一个长方形长 8 厘米、宽 3 厘米，面积是（ ）', opts:['24 平方厘米','22 平方厘米','24 厘米','11 平方厘米'], ans:0 },
+];
+function makeMixed() {
+    const t = pick(MIXED_BANK);
+    const opts = [...t.opts];
+    const answer = opts[t.ans];
+    shuffle(opts);
+    return { kind:'mixed', text:t.text, answer, opts,
+             hint:'想一想：面积是"大小"，单位是平方厘米/平方分米/平方米' };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'grid') return makeGrid();
+    if (kind === 'area') return makeArea();
+    return makeMixed();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const house = $('house');
+    house.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'room' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        house.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.kind === 'mixed' ? qq.text : (qq.fig ? qq.hint : qq.text);
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'grid') {
+        card.innerHTML = `${q.fig}<div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+    } else if (q.kind === 'area') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="convert-row"><input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?"></div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput');
+        inp.focus();
+        $('submitBtn').onclick = submit;
+        inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b.dataset.v, b));
+    }
+}
+
+function submit() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) return;
+    judge(v === q.answer, v);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一个房间已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

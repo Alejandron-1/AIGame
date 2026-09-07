@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味数学闯关 - 增强版</title>
+    <style>
+        :root {
+            /* 鲜艳的高对比度颜色 */
+            --key-num-bg: #3498db;       /* 亮蓝色 */
+            --key-true-bg: #2ecc71;      /* 鲜绿色 - 对 */
+            --key-false-bg: #e74c3c;     /* 鲜红色 - 错 */
+            --glass-bg: rgba(255, 255, 255, 0.15); 
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Comic Sans MS', 'YouYuan', 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            background-color: #333;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 180px 1fr 350px; /* 右侧稍微宽一点放判断题按钮 */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- 左侧导航栏 --- */
+        .sidebar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-right: 1px solid var(--glass-border);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .sidebar h2 {
+            color: #fff;
+            text-align: center;
+            text-shadow: var(--text-shadow);
+            margin-top: 0;
+            font-size: 24px;
+            line-height: 1.4;
+        }
+
+        .nav-btn {
+            padding: 15px 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 900;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .nav-btn:hover { transform: translateY(-2px); background: #fff; }
+        .nav-btn.secondary { background: rgba(255, 255, 255, 0.6); font-size: 14px; padding: 10px; }
+
+        /* --- 中间游戏区 --- */
+        .game-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 32px;
+            font-weight: 900;
+            color: #f1c40f;
+            text-shadow: var(--text-shadow);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 25px;
+            border-radius: 50px;
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        /* 题目容器：带淡淡白色背景区域 */
+        .question-container {
+            background: rgba(255, 255, 255, 0.85); /* 淡淡的白色，高透明度但可读 */
+            backdrop-filter: blur(15px); /* 强力磨砂，让文字更清晰 */
+            -webkit-backdrop-filter: blur(15px);
+            padding: 40px 60px;
+            border-radius: 30px;
+            border: 4px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 80%;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .question-text {
+            font-size: 110px; /* 超大字号 */
+            font-weight: 900; /* 特粗字体 */
+            color: #2c3e50;   /* 深色文字，对比白色背景更清晰 */
+            line-height: 1.2;
+            text-shadow: none; /* 白色背景下不需要黑色描边 */
+            margin: 0;
+            word-break: break-word;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- 右侧键盘区 --- */
+        .keypad-area {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 1px solid var(--glass-border);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .display-screen {
+            width: 90%;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            font-size: 50px;
+            text-align: center;
+            line-height: 75px;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        /* 判断题模式下的网格布局 (2列) */
+        .keypad-grid.bool-mode {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .key-btn {
+            padding: 25px 0;
+            font-size: 32px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 900;
+            color: white;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 10px 10px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        .key-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.3);
+        }
+
+        .key-btn.num { background: var(--key-num-bg); }
+        .key-btn.clear { background: var(--key-false-bg); font-size: 24px; }
+        .key-btn.confirm { background: var(--key-true-bg); font-size: 36px; }
+        
+        /* 判断题专用大按钮 */
+        .key-btn.btn-true { 
+            background: var(--key-true-bg); 
+            font-size: 48px; 
+            padding: 40px 0;
+            grid-column: span 1;
+        }
+        .key-btn.btn-false { 
+            background: var(--key-false-bg); 
+            font-size: 48px; 
+            padding: 40px 0;
+            grid-column: span 1;
+        }
+
+        /* --- 设置面板 --- */
+        .settings-panel {
+            display: none;
+            position: absolute;
+            top: 5%; left: 25%;
+            width: 50%; 
+            max-height: 90%;
+            background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(15px);
+            z-index: 50;
+            padding: 30px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: #fff;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .settings-panel h2 { color: #f1c40f; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 0; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 18px; color: #ddd; }
+        .form-group input {
+            width: 100%; padding: 12px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px; font-size: 16px; background: rgba(255,255,255,0.1); color: #fff; box-sizing: border-box;
+        }
+        .image-gallery { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .gallery-item { width: 80px; height: 80px; object-fit: cover; border: 3px solid transparent; cursor: pointer; border-radius: 10px; background: #fff; }
+        .gallery-item.selected { border-color: #f1c40f; transform: scale(1.1); }
+        .close-settings {
+            position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white;
+            border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px;
+        }
+
+        /* --- 弹窗 --- */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 30px;
+            text-align: center; max-width: 500px; animation: popIn 0.4s;
+            border: 5px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.6);
+        }
+        .feedback-img { max-width: 220px; max-height: 220px; border-radius: 15px; margin: 10px auto; display: block; border: 3px solid #eee; }
+        .feedback-text { font-size: 36px; font-weight: 900; margin: 15px 0; }
+        .correct-text { color: #2ecc71; }
+        .wrong-text { color: #e74c3c; }
+        .hint-text { color: #7f8c8d; font-size: 16px; margin-top: 20px; }
+
+        #fileInputBg, #fileInputHintCorrect, #fileInputHintWrong, #importFile { display: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 左侧导航 -->
+    <div class="sidebar">
+        <h2>🎓 数学大闯关<br><span style="font-size:16px; font-weight:normal;">增强版</span></h2>
+        <button class="nav-btn" onclick="showPanel('game')">🎮 返回游戏</button>
+        <button class="nav-btn" onclick="showPanel('questions')">📝 题目设置</button>
+        <button class="nav-btn" onclick="showPanel('background')">🎨 背景/图库</button>
+        <div style="flex-grow: 1;"></div>
+        <button class="nav-btn secondary" onclick="exportData()">💾 导出题目包</button>
+        <button class="nav-btn secondary" onclick="document.getElementById('importFile').click()">📂 导入题目包</button>
+        <input type="file" id="importFile" accept=".json" onchange="importData(this)">
+    </div>
+
+    <!-- 中间游戏区 -->
+    <div class="game-area" id="gamePanel">
+        <div class="score-board">⭐ 得分：<span id="score">0</span></div>
+        
+        <!-- 题目显示区域 (带白色背景) -->
+        <div class="question-container">
+            <div class="question-text" id="questionText">准备开始...</div>
+        </div>
+        
+        <!-- 题目设置面板 -->
+        <div id="questionSettings" class="settings-panel">
+            <button class="close-settings" onclick="showPanel('game')">✕ 关闭</button>
+            <h2>📝 题目管理</h2>
+            <div class="form-group">
+                <label>添加新题目</label>
+                <p style="font-size:14px; color:#aaa; margin-bottom:10px;">
+                    💡 <b>计算题</b>: 答案填数字 (如: 8)<br>
+                    💡 <b>判断题</b>: 答案填 "对" 或 "错" (或者 "T"/"F")
+                </p>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="newQ" placeholder="问题 (如: 5 + 3 = ? 或 5+3=9 对吗?)" style="flex:2;">
+                    <input type="text" id="newA" placeholder="答案 (数字 或 对/错)" style="flex:1;">
+                    <button class="nav-btn" style="padding:10px 20px;" onclick="addQuestion()">➕ 添加</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>题目列表 (<span id="qCount">0</span>)</label>
+                <ul id="questionList" style="list-style:none; padding:0; max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px;"></ul>
+            </div>
+            <button class="nav-btn" style="background:#e74c3c; color:white; width:100%;" onclick="clearAllQuestions()">🗑️ 清空所有题目</button>
+        </div>
+
+        <!-- 背景设置面板 -->
+        <div id="bgSettings" class="settings-panel">
+            <button class="close-settings" onclick="showPanel('game')">✕ 关闭</button>
+            <h2>🎨 视觉设置</h2>
+            <div class="form-group">
+                <label>1. 更换背景图片</label>
+                <button class="nav-btn" style="width:100%; background:#3498db; color:white;" onclick="document.getElementById('fileInputBg').click()">📷 选择本地背景图</button>
+                <input type="file" id="fileInputBg" accept="image/*" onchange="handleBgUpload(this)">
+            </div>
+            <div class="form-group">
+                <label>2. 正确提示图库</label>
+                <button class="nav-btn" style="background:#2ecc71; color:white;" onclick="document.getElementById('fileInputHintCorrect').click()">➕ 添加正确图片</button>
+                <input type="file" id="fileInputHintCorrect" accept="image/*" onchange="handleHintUpload('correct', this)">
+                <div class="image-gallery" id="galleryCorrect"></div>
+            </div>
+            <div class="form-group">
+                <label>3. 错误提示图库</label>
+                <button class="nav-btn" style="background:#e74c3c; color:white;" onclick="document.getElementById('fileInputHintWrong').click()">➕ 添加错误图片</button>
+                <input type="file" id="fileInputHintWrong" accept="image/*" onchange="handleHintUpload('wrong', this)">
+                <div class="image-gallery" id="galleryWrong"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右侧键盘 (动态变化) -->
+    <div class="keypad-area">
+        <div class="display-screen" id="userInput"></div>
+        
+        <!-- 数字键盘模式 -->
+        <div class="keypad-grid" id="numKeypad">
+            <button class="key-btn num" onclick="pressKey('1')">1</button>
+            <button class="key-btn num" onclick="pressKey('2')">2</button>
+            <button class="key-btn num" onclick="pressKey('3')">3</button>
+            <button class="key-btn num" onclick="pressKey('4')">4</button>
+            <button class="key-btn num" onclick="pressKey('5')">5</button>
+            <button class="key-btn num" onclick="pressKey('6')">6</button>
+            <button class="key-btn num" onclick="pressKey('7')">7</button>
+            <button class="key-btn num" onclick="pressKey('8')">8</button>
+            <button class="key-btn num" onclick="pressKey('9')">9</button>
+            <button class="key-btn clear" onclick="clearInput()">C</button>
+            <button class="key-btn num" onclick="pressKey('0')">0</button>
+            <button class="key-btn confirm" onclick="submitAnswer('true')">✓</button>
+        </div>
+
+        <!-- 判断题键盘模式 (默认隐藏) -->
+        <div class="keypad-grid bool-mode" id="boolKeypad" style="display:none;">
+            <button class="key-btn btn-true" onclick="submitAnswer('true')">✅ 对</button>
+            <button class="key-btn btn-false" onclick="submitAnswer('false')">❌ 错</button>
+        </div>
+    </div>
+</div>
+
+<!-- 反馈弹窗 -->
+<div id="feedbackModal" class="modal" onclick="nextQuestion()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <img id="feedbackImg" class="feedback-img" src="" alt="Feedback">
+        <div id="feedbackText" class="feedback-text"></div>
+        <div class="hint-text">👆 点击任意地方继续</div>
+    </div>
+</div>
+
+<script>
+    // --- 数据状态 ---
+    let questions = [];
+    let score = 0;
+    let userInput = "";
+    let isBoolMode = false; // 当前是否为判断题模式
+
+    // 默认图片
+    let bgImage = null;
+    let hintImages = {
+        correct: ['https://cdn-icons-png.flaticon.com/512/742/742751.png'], 
+        wrong: ['https://cdn-icons-png.flaticon.com/512/742/742739.png']    
+    };
+    let selectedHints = { correct: 0, wrong: 0 };
+
+    // --- 预设丰富题库 (30道) ---
+    const defaultQuestions = [
+        // 计算题
+        {q: "1 + 1 = ?", a: "2"}, {q: "5 + 3 = ?", a: "8"}, {q: "10 - 4 = ?", a: "6"},
+        {q: "2 + 2 = ?", a: "4"}, {q: "9 + 1 = ?", a: "10"}, {q: "6 - 3 = ?", a: "3"},
+        {q: "4 + 4 = ?", a: "8"}, {q: "7 - 2 = ?", a: "5"}, {q: "3 + 6 = ?", a: "9"},
+        {q: "8 - 5 = ?", a: "3"}, {q: "2 * 3 = ?", a: "6"}, {q: "4 * 2 = ?", a: "8"},
+        {q: "5 * 2 = ?", a: "10"}, {q: "10 / 2 = ?", a: "5"}, {q: "6 / 3 = ?", a: "2"},
+        {q: "15 + 5 = ?", a: "20"}, {q: "20 - 10 = ?", a: "10"}, {q: "12 + 8 = ?", a: "20"},
+        // 判断题 (答案设为 "对" 或 "错")
+        {q: "5 + 3 = 9 对吗？", a: "错"}, {q: "2 + 2 = 4 对吗？", a: "对"},
+        {q: "10 - 5 = 4 对吗？", a: "错"}, {q: "3 * 3 = 9 对吗？", a: "对"},
+        {q: "6 + 6 = 13 对吗？", a: "错"}, {q: "8 - 4 = 4 对吗？", a: "对"},
+        {q: "1 比 2 大 对吗？", a: "错"}, {q: "10 比 5 大 对吗？", a: "对"},
+        {q: "圆形有4个角 对吗？", a: "错"}, {q: "三角形有3条边 对吗？", a: "对"}
+    ];
+
+    window.onload = function() {
+        loadData();
+        if(questions.length === 0) {
+            questions = JSON.parse(JSON.stringify(defaultQuestions)); // 深拷贝
+            saveData();
+        }
+        renderQuestionList();
+        renderGalleries();
+        nextQuestion();
+    };
+
+    // --- 核心逻辑 ---
+    function nextQuestion() {
+        document.getElementById('feedbackModal').style.display = 'none';
+        clearInput();
+        
+        if (questions.length === 0) {
+            document.getElementById('questionText').innerText = "暂无题目\n请去左侧设置添加";
+            setKeypadMode(false);
+            return;
+        }
+
+        currentQuestionIndex = Math.floor(Math.random() * questions.length);
+        const q = questions[currentQuestionIndex];
+        document.getElementById('questionText').innerText = q.q;
+
+        // 自动判断题型
+        // 如果答案是 "对", "错", "T", "F", "Yes", "No" (不区分大小写)，则开启判断题模式
+        const ans = q.a.trim().toLowerCase();
+        const isBool = ["对", "错", "t", "f", "yes", "no", "true", "false"].includes(ans);
+        
+        setKeypadMode(isBool);
+    }
+
+    function setKeypadMode(isBool) {
+        isBoolMode = isBool;
+        const numPad = document.getElementById('numKeypad');
+        const boolPad = document.getElementById('boolKeypad');
+        const inputScreen = document.getElementById('userInput');
+
+        if (isBool) {
+            numPad.style.display = 'none';
+            boolPad.style.display = 'grid';
+            inputScreen.style.display = 'none'; // 判断题不需要输入框显示数字
+        } else {
+            numPad.style.display = 'grid';
+            boolPad.style.display = 'none';
+            inputScreen.style.display = 'block';
+        }
+    }
+
+    function pressKey(key) {
+        if (!isBoolMode && userInput.length < 8) {
+            userInput += key;
+            updateDisplay();
+        }
+    }
+
+    function clearInput() {
+        userInput = "";
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        document.getElementById('userInput').innerText = userInput;
+    }
+
+    function submitAnswer(userChoice) {
+        const currentQ = questions[currentQuestionIndex];
+        let isCorrect = false;
+
+        if (isBoolMode) {
+            // 判断题逻辑
+            const userVal = userChoice === 'true' ? "对" : "错";
+            const correctVal = currentQ.a.trim().toLowerCase();
+            
+            // 标准化比较
+            const normUser = userVal.toLowerCase();
+            const normCorrect = correctVal;
+            
+            if ((normUser === "对" && ["对", "t", "true", "yes"].includes(normCorrect)) ||
+                (normUser === "错" && ["错", "f", "false", "no"].includes(normCorrect))) {
+                isCorrect = true;
+            }
+        } else {
+            // 计算题逻辑
+            isCorrect = userInput.trim() === currentQ.a.trim();
+        }
+
+        const modal = document.getElementById('feedbackModal');
+        const img = document.getElementById('feedbackImg');
+        const text = document.getElementById('feedbackText');
+
+        if (isCorrect) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            const imgs = hintImages.correct;
+            img.src = imgs[selectedHints.correct] || imgs[0];
+            text.innerText = "太棒了！答对了！ (+10分)";
+            text.className = "feedback-text correct-text";
+        } else {
+            const imgs = hintImages.wrong;
+            img.src = imgs[selectedHints.wrong] || imgs[0];
+            const correctAns = currentQ.a;
+            text.innerText = `哎呀，错啦！\n正确答案是：${correctAns}`;
+            text.className = "feedback-text wrong-text";
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    // --- 界面控制 ---
+    function showPanel(panelName) {
+        document.getElementById('questionSettings').style.display = 'none';
+        document.getElementById('bgSettings').style.display = 'none';
+        if (panelName === 'questions') {
+            document.getElementById('questionSettings').style.display = 'block';
+            renderQuestionList();
+        } else if (panelName === 'background') {
+            document.getElementById('bgSettings').style.display = 'block';
+            renderGalleries();
+        }
+    }
+
+    // --- 题目管理 ---
+    function addQuestion() {
+        const q = document.getElementById('newQ').value;
+        const a = document.getElementById('newA').value;
+        if (q && a) {
+            questions.push({q, a});
+            saveData();
+            renderQuestionList();
+            document.getElementById('newQ').value = '';
+            document.getElementById('newA').value = '';
+            alert("题目添加成功！");
+        } else {
+            alert("请输入问题和答案");
+        }
+    }
+
+    function deleteQuestion(index) {
+        if(confirm("确定删除这道题吗？")) {
+            questions.splice(index, 1);
+            saveData();
+            renderQuestionList();
+        }
+    }
+
+    function clearAllQuestions() {
+        if(confirm("⚠️ 警告：确定要清空所有题目吗？")) {
+            questions = [];
+            saveData();
+            renderQuestionList();
+            nextQuestion();
+        }
+    }
+
+    function renderQuestionList() {
+        const list = document.getElementById('questionList');
+        document.getElementById('qCount').innerText = questions.length;
+        list.innerHTML = '';
+        questions.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.style.padding = "12px";
+            li.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+            li.style.display = "flex";
+            li.style.justifyContent = "space-between";
+            li.style.alignItems = "center";
+            li.innerHTML = `
+                <span style="font-size:16px;"><b style="color:#f1c40f">${item.q}</b> <span style="color:#aaa">=</span> <b style="color:#2ecc71">${item.a}</b></span>
+                <button style="background:#e74c3c;color:white;border:none;padding:5px 10px;cursor:pointer;border-radius:5px;font-weight:bold;" onclick="deleteQuestion(${index})">删除</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    // --- 图片与数据 ---
+    function handleBgUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                bgImage = e.target.result;
+                document.body.style.backgroundImage = `url(${bgImage})`;
+                saveData();
+                alert("✨ 背景已更换！");
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function handleHintUpload(type, input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                hintImages[type].push(e.target.result);
+                selectedHints[type] = hintImages[type].length - 1;
+                saveData();
+                renderGalleries();
+                alert("图片已添加到图库！");
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function renderGalleries() {
+        const renderGallery = (type, elementId) => {
+            const el = document.getElementById(elementId);
+            el.innerHTML = '';
+            if(hintImages[type].length === 0) el.innerHTML = '<span style="color:#aaa">暂无图片</span>';
+            hintImages[type].forEach((src, idx) => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = `gallery-item ${selectedHints[type] === idx ? 'selected' : ''}`;
+                img.onclick = () => { selectedHints[type] = idx; saveData(); renderGalleries(); };
+                el.appendChild(img);
+            });
+        };
+        renderGallery('correct', 'galleryCorrect');
+        renderGallery('wrong', 'galleryWrong');
+        if(bgImage) document.body.style.backgroundImage = `url(${bgImage})`;
+    }
+
+    function saveData() {
+        localStorage.setItem('mathGameData_v3', JSON.stringify({
+            questions, bgImage, hintImages, selectedHints, score
+        }));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('mathGameData_v3');
+        if (saved) {
+            const data = JSON.parse(saved);
+            questions = data.questions || [];
+            bgImage = data.bgImage || null;
+            hintImages = data.hintImages || hintImages;
+            selectedHints = data.selectedHints || {correct:0, wrong:0};
+            score = data.score || 0;
+            document.getElementById('score').innerText = score;
+            if(bgImage) document.body.style.backgroundImage = `url(${bgImage})`;
+        }
+    }
+
+    function exportData() {
+        const dataStr = localStorage.getItem('mathGameData_v3');
+        if (!dataStr) { alert("没有数据可导出"); return; }
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "数学闯关备份_" + new Date().toISOString().slice(0,10) + ".json";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.questions || data.bgImage) {
+                    localStorage.setItem('mathGameData_v3', e.target.result);
+                    alert("🎉 导入成功！页面将刷新。");
+                    location.reload();
+                } else { alert("文件格式不正确。"); }
+            } catch (err) { alert("文件解析失败。"); }
+        };
+        reader.readAsText(file);
+        input.value = '';
+    }
+</script>
+
+</body>
+</html>

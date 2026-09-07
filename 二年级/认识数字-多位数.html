@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>数位探秘 - 摆一摆 想一想 | 可调位数学习游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :root {
+            --bg-color: #e0f2ff;
+            --card-bg: #ffffff;
+            --wan-color: #e67e22;
+            --qian-color: #f39c12;
+            --bai-color: #2ecc71;
+            --shi-color: #3498db;
+            --ge-color: #9b59b6;
+            --pool-color: #ffcc00;
+            --record-bg: #f8f9fa;
+            --shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", Roboto, sans-serif;
+            background: linear-gradient(145deg, #b8e1fc 0%, #d4f1ff 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #c0392b;
+            font-size: 2rem;
+            text-shadow: 3px 3px 0 #fff9c4;
+            margin: 0 0 20px 0;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        /* 通用卡片样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 32px;
+            padding: 20px 18px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(2px);
+            transition: transform 0.2s;
+        }
+
+        /* 左侧控制与小球池 */
+        .pool-section {
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .digit-selector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 16px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-shadow: inset 0 1px 3px #0001;
+        }
+        .digit-selector-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        .digit-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .digit-option {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #bdc3c7;
+            background: white;
+            font-weight: bold;
+            color: #7f8c8d;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .digit-option:hover {
+            background: #ecf0f1;
+        }
+        .digit-option.active {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 20px;
+            background: #fef9e6;
+            padding: 8px 20px;
+            border-radius: 60px;
+            box-shadow: inset 0 1px 3px #0001, 0 2px 4px #fff8;
+        }
+
+        .controls span {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e67e22;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-minus { background-color: #e67e22; }
+        .btn-plus { background-color: #2ecc71; }
+        .btn-minus:hover { background-color: #d35400; transform: scale(1.02);}
+        .btn-plus:hover { background-color: #27ae60; transform: scale(1.02);}
+
+        .ball-pool {
+            width: 220px;
+            min-height: 320px;
+            background: var(--pool-color);
+            border-radius: 28px;
+            padding: 16px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: inset 0 0 0 3px #ffdd77, 0 8px 18px rgba(0,0,0,0.15);
+            transition: all 0.1s;
+        }
+
+        /* 中间动态位数工作区 */
+        .workspace-section {
+            flex: 1;
+            min-width: 580px;
+            max-width: 880px;
+        }
+
+        .zones-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .drop-zone {
+            flex: 1;
+            min-width: 96px;
+            background: #fef7e0;
+            border-radius: 28px;
+            padding: 12px 6px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: all 0.1s;
+        }
+
+        /* 数位颜色循环，最多支持5种颜色 */
+        .drop-zone[data-digit-index="0"] { background: linear-gradient(145deg, #ffd89b, #e67e22); } /* 最高位 */
+        .drop-zone[data-digit-index="1"] { background: linear-gradient(145deg, #ffe2a4, #f39c12); }
+        .drop-zone[data-digit-index="2"] { background: linear-gradient(145deg, #b9f6ca, #2ecc71); }
+        .drop-zone[data-digit-index="3"] { background: linear-gradient(145deg, #a9d6ff, #3498db); }
+        .drop-zone[data-digit-index="4"] { background: linear-gradient(145deg, #e0bbff, #9b59b6); } /* 个位 */
+
+        .zone-label {
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.2);
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 40px;
+            color: white;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+            margin-bottom: 12px;
+        }
+
+        .ball-container {
+            min-height: 140px;
+            background: rgba(255,255,240,0.5);
+            border-radius: 28px;
+            padding: 10px 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin: 8px 0;
+            transition: all 0.1s;
+        }
+
+        .digit-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: #ffffffcc;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 32px;
+            color: #2c3e50;
+            margin-top: 6px;
+        }
+
+        .result-text {
+            background: #fff3cf;
+            border-radius: 60px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #d35400;
+            box-shadow: inset 0 1px 4px #0001, 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* 右侧记录区 */
+        .record-section {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .record-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #9b59b6;
+            color: white;
+            padding: 6px 20px;
+            border-radius: 50px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .record-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: #3498db;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 36px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            flex: 1;
+            text-align: center;
+        }
+
+        .action-btn.clear-btn {
+            background: #e67e22;
+        }
+
+        .action-btn:hover {
+            filter: brightness(0.92);
+            transform: scale(0.98);
+        }
+
+        .record-list {
+            background: var(--record-bg);
+            min-height: 280px;
+            max-height: 360px;
+            width: 100%;
+            border-radius: 28px;
+            padding: 16px 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-content: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+            box-shadow: inset 0 0 0 2px #fff8, 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .record-item {
+            width: 58px;
+            height: 58px;
+            background: linear-gradient(145deg, #8e44ad, #9b59b6);
+            color: white;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #4a235a;
+            transition: 0.1s ease;
+            animation: bounceIn 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.2) rotate(-10deg); opacity: 0; }
+            80% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stats {
+            font-size: 1rem;
+            background: #ecf0f1;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* 小球样式 (缩小适配五位区域) */
+        .ball {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: inset -4px -2px 0 rgba(0,0,0,0.1), 2px 4px 8px rgba(0,0,0,0.2);
+            transition: 0.05s linear;
+        }
+        .ball:active {
+            cursor: grabbing;
+        }
+        .color-1 { background: radial-gradient(circle at 35% 35%, #ff9a8b, #e63946); }
+        .color-2 { background: radial-gradient(circle at 35% 35%, #74b9ff, #1e6fdf); }
+        .color-3 { background: radial-gradient(circle at 35% 35%, #55efc4, #00b894); }
+        .color-4 { background: radial-gradient(circle at 35% 35%, #ffeaa7, #fdcb6e); }
+
+        @media (max-width: 860px) {
+            .ball { width: 32px; height: 32px; }
+            .ball-container { gap: 6px; }
+            .zone-label { font-size: 1rem; }
+            .result-text { font-size: 1.4rem; }
+            .record-item { width: 48px; height: 48px; font-size: 1.2rem; }
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50dd;
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            z-index: 999;
+            pointer-events: none;
+            animation: fadeOut 1.8s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(10px);}
+            15% { opacity: 1; transform: translateX(-50%) translateY(0);}
+            85% { opacity: 1; transform: translateX(-50%) translateY(0);}
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px);}
+        }
+    
+        .hidden-digit { 
+            filter: blur(8px); 
+            opacity: 0.3; 
+            user-select: none;
+        }
+        .big-number { 
+            font-size: 3rem !important; 
+            letter-spacing: 8px;
+        }
+        .digit-placeholder {
+            font-size: 2rem;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+        .revealed-digit {
+            animation: revealPulse 0.4s ease;
+        }
+        @keyframes revealPulse {
+            0% { transform: scale(0.8); filter: blur(4px); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); filter: blur(0); }
+        }
+        .action-btn { 
+            transition: all 0.1s; 
+        }
+        .action-btn:active {
+            transform: scale(0.92);
+            filter: brightness(0.9);
+        }
+
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<h1>🧮 摆一摆 · 想一想 🧠 <span style="font-size: 1.2rem;">灵活数位挑战</span></h1>
+
+<div class="game-container">
+    <!-- 左侧控制与小球仓库区 -->
+    <div class="card pool-section">
+        <!-- 新增加的位数选择器 -->
+        <div class="digit-selector">
+            <div class="digit-selector-title">🎚️ 选择数位：</div>
+            <div class="digit-options" id="digit-options">
+                <div class="digit-option active" data-digits="5">5位数</div>
+                <div class="digit-option" data-digits="4">4位数</div>
+                <div class="digit-option" data-digits="3">3位数</div>
+                <div class="digit-option" data-digits="2">2位数</div>
+                <div class="digit-option" data-digits="1">1位数</div>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="btn btn-minus" id="btn-minus">−</button>
+            <span id="total-count">3</span>
+            <button class="btn btn-plus" id="btn-plus">+</button>
+        </div>
+        <div id="ball-pool" class="ball-pool" ondrop="drop(event, 'pool')" ondragover="allowDrop(event)">
+            <!-- 动态小球会渲染在此 -->
+        </div>
+        <div class="stats" style="margin-top: 12px;">✨ 拖拽小球到数位区 ✨</div>
+    </div>
+
+    <!-- 中间动态位数工作区 -->
+    <div class="card workspace-section">
+        <div id="zones-container" class="zones-container">
+            <!-- 数位区域将由JS动态生成在此 -->
+        </div>
+        <div id="result-area" class="result-text">
+            🎯 组成的数字：<span id="result-num" class="big-number">?</span>
+        </div>
+    </div>
+
+    <!-- 右侧记录区 + 手动记录按钮 -->
+    <div class="card record-section">
+        <div class="record-header">📋 记录区</div>
+        <div class="record-buttons">
+            <button id="record-btn" class="action-btn" style="font-size:1.1rem; padding:12px 20px;">👀 查看答案并记录</button>
+            <button id="clear-record-btn" class="action-btn clear-btn">🗑️ 清空记录</button>
+        </div>
+        <div id="record-list" class="record-list">
+            <!-- 初始没有任何记录数字，符合“不要一来显示数字” -->
+        </div>
+        <div class="stats">已记录总数：<span id="record-count">0</span></div>
+        <div class="stats" style="font-size:0.85rem; background:#ffe6e6; padding:8px;">💡 先摆球→思考数字→按按钮看答案</div>
+    </div>
+</div>
+
+<script>
+    // ---------- 动态数位游戏逻辑 ----------
+    // 答案揭示状态
+    let answerRevealed = false;
+    // 当前游戏的数位数量（默认为5，对应五位数）
+    let currentDigitCount = 5;
+    // 中文数位名称，从最高位到个位
+    const digitNames = ["万", "千", "百", "十", "个"];
+    // 存储数位区域的DOM容器和值显示元素
+    let digitContainers = {}; // 如： { '0': divElement, '1': divElement ... }
+    let digitValueSpans = {}; // 如： { '0': spanElement, '1': spanElement ... }
+    // 动态生成的数位区域容器
+    const zonesContainerDiv = document.getElementById('zones-container');
+    // 小球总数
+    let totalBalls = 3;
+    // 记录已组成的数字
+    let recordsSet = new Set();
+
+    // 获取DOM元素
+    const poolDiv = document.getElementById('ball-pool');
+    const totalSpan = document.getElementById('total-count');
+    const recordListDiv = document.getElementById('record-list');
+    const recordCountSpan = document.getElementById('record-count');
+    const resultSpan = document.getElementById('result-num');
+
+    // 辅助: 显示浮层消息
+    function showMessage(msg, isError = true) {
+        let toast = document.createElement('div');
+        toast.className = 'toast-msg';
+        toast.innerText = msg;
+        toast.style.background = isError ? '#e67e22dd' : '#2ecc71dd';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1800);
+    }
+
+    // 1. 动态创建数位区域
+    function createDigitZones(digitCount) {
+        // 清空现有区域
+        zonesContainerDiv.innerHTML = '';
+        digitContainers = {};
+        digitValueSpans = {};
+
+        for (let i = 0; i < digitCount; i++) {
+            // 计算数位名称索引，从最高位开始
+            const nameIndex = digitNames.length - digitCount + i;
+            const digitName = digitNames[nameIndex];
+
+            // 创建区域DOM
+            const zoneDiv = document.createElement('div');
+            zoneDiv.className = 'drop-zone';
+            zoneDiv.setAttribute('data-digit-index', i); // 用索引标识颜色
+            zoneDiv.id = `digit-zone-${i}`;
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'zone-label';
+            labelDiv.textContent = digitName + ' 位';
+
+            const containerDiv = document.createElement('div');
+            containerDiv.className = 'ball-container';
+            containerDiv.id = `digit-container-${i}`;
+            containerDiv.ondrop = (ev) => drop(ev, `digit-${i}`);
+            containerDiv.ondragover = allowDrop;
+
+            const valueDiv = document.createElement('div');
+            valueDiv.className = 'digit-value';
+            valueDiv.innerHTML = `📌 ${digitName}：<span id="digit-val-${i}" class="digit-placeholder">?</span>`;
+
+            zoneDiv.appendChild(labelDiv);
+            zoneDiv.appendChild(containerDiv);
+            zoneDiv.appendChild(valueDiv);
+            zonesContainerDiv.appendChild(zoneDiv);
+
+            // 存储引用
+            digitContainers[i] = containerDiv;
+            digitValueSpans[i] = document.getElementById(`digit-val-${i}`);
+        }
+    }
+
+    // 2. 切换数位数量
+    function changeDigitCount(newCount) {
+        if (newCount === currentDigitCount) return;
+        currentDigitCount = newCount;
+        // 更新UI
+        createDigitZones(currentDigitCount);
+        // 清空所有记录
+        recordsSet.clear();
+        renderRecordList();
+        // 重置答案状态
+        answerRevealed = false;
+        resetAnswerDisplay();
+        // 重置小球布局
+        resetPoolAndClearZones();
+        showMessage(`已切换到 ${currentDigitCount} 位数模式，记录已清空`, false);
+    }
+
+    // 3. 重置答案显示（当小球移动或切换位数时）
+    function resetAnswer() {
+        if (!answerRevealed) return;
+        answerRevealed = false;
+        resetAnswerDisplay();
+        showMessage('📝 重新摆放了，请再次思考！', false);
+    }
+
+    function resetAnswerDisplay() {
+        // 重置结果为 ?
+        resultSpan.innerText = '?'.repeat(Math.max(1, currentDigitCount - 4)); // 对超过4位的用?占位
+        resultSpan.className = 'big-number digit-placeholder';
+        // 重置各数位显示为 ?
+        for (let i = 0; i < currentDigitCount; i++) {
+            if (digitValueSpans[i]) {
+                digitValueSpans[i].innerText = '?';
+                digitValueSpans[i].className = 'digit-placeholder';
+            }
+        }
+    }
+
+    // 4. 获取当前各数位小球数量
+    function getDigitCounts() {
+        const counts = {};
+        for (let i = 0; i < currentDigitCount; i++) {
+            counts[i] = digitContainers[i] ? digitContainers[i].children.length : 0;
+        }
+        return counts;
+    }
+
+    // 5. 根据各数位小球数量计算最终数值
+    function computeNumberFromDigits() {
+        const cnt = getDigitCounts();
+        let number = 0;
+        for (let i = 0; i < currentDigitCount; i++) {
+            // 计算位权：例如5位数，索引0是万位(10^4)，索引1是千位(10^3)...
+            const power = currentDigitCount - 1 - i;
+            number += cnt[i] * Math.pow(10, power);
+        }
+        return number;
+    }
+
+    // 6. 刷新界面显示
+    function updateDisplay() {
+        if (answerRevealed) {
+            const cnt = getDigitCounts();
+            // 更新各数位数值显示
+            for (let i = 0; i < currentDigitCount; i++) {
+                if (digitValueSpans[i]) {
+                    digitValueSpans[i].innerText = cnt[i];
+                }
+            }
+            // 更新最终结果（如果所有球都已摆放）
+            if (poolDiv.children.length === 0) {
+                const finalNum = computeNumberFromDigits();
+                resultSpan.innerText = finalNum;
+            }
+        }
+    }
+
+    // 7. 揭示答案
+    function revealAnswer() {
+        // 检查球是否全部摆放
+        if (poolDiv.children.length > 0) {
+            showMessage('⚠️ 请先把所有小球摆到数位区！', true);
+            return false;
+        }
+
+        const cnt = getDigitCounts();
+        const finalNum = computeNumberFromDigits();
+
+        // 更新各数位显示
+        for (let i = 0; i < currentDigitCount; i++) {
+            if (digitValueSpans[i]) {
+                digitValueSpans[i].innerText = cnt[i];
+                digitValueSpans[i].className = 'revealed-digit';
+            }
+        }
+
+        // 更新中间结果
+        resultSpan.innerText = finalNum;
+        resultSpan.className = 'big-number revealed-digit';
+
+        answerRevealed = true;
+        showMessage('✨ 答案揭晓！', false);
+        return true;
+    }
+
+    // 8. 记录当前数字
+    function recordCurrentNumber() {
+        // 第一步：揭示答案（如果还没揭示）
+        if (!answerRevealed) {
+            const success = revealAnswer();
+            if (!success) return;
+        }
+        // 第二步：记录到右侧列表
+        executeRecord();
+    }
+
+    function executeRecord() {
+        const currentNumber = computeNumberFromDigits();
+        if (recordsSet.has(currentNumber)) {
+            showMessage(`数字 ${currentNumber} 已经记录过啦！`, true);
+        } else {
+            recordsSet.add(currentNumber);
+            renderRecordList();
+            showMessage(`✅ 已记录数字 ${currentNumber}！`, false);
+        }
+    }
+
+    // 9. 渲染右侧记录列表
+    function renderRecordList() {
+        recordListDiv.innerHTML = '';
+        const sortedRecords = Array.from(recordsSet).sort((a, b) => a - b);
+        for (let num of sortedRecords) {
+            const item = document.createElement('div');
+            item.className = 'record-item';
+            item.innerText = num;
+            recordListDiv.appendChild(item);
+        }
+        recordCountSpan.innerText = recordsSet.size;
+    }
+
+    // 10. 清空所有记录
+    function clearRecords() {
+        if (recordsSet.size === 0) {
+            showMessage('记录区已经是空的～', false);
+            return;
+        }
+        recordsSet.clear();
+        renderRecordList();
+        showMessage('🗑️ 已清空所有记录', false);
+    }
+
+    // 11. 重置所有小球到池子
+    function resetPoolAndClearZones() {
+        // 清空所有数位容器
+        for (let key in digitContainers) {
+            if (digitContainers[key]) {
+                digitContainers[key].innerHTML = '';
+            }
+        }
+        // 重置答案显示
+        resetAnswer();
+        // 重新生成池子小球
+        poolDiv.innerHTML = '';
+        for (let i = 0; i < totalBalls; i++) {
+            const ball = document.createElement('div');
+            ball.className = `ball color-${(i % 4) + 1}`;
+            ball.draggable = true;
+            ball.id = `ball-${Date.now()}-${i}-${Math.random()}`;
+            ball.setAttribute('data-id', ball.id);
+            ball.ondragstart = drag;
+            poolDiv.appendChild(ball);
+        }
+        updateDisplay();
+    }
+
+    // 12. 改变小球总数
+    function changeTotal(delta) {
+        let newVal = totalBalls + delta;
+        if (newVal < 1) newVal = 1;
+        if (newVal > 10) newVal = 10;
+        if (newVal === totalBalls) return;
+        totalBalls = newVal;
+        totalSpan.innerText = totalBalls;
+        // 总数改变后清空所有记录 & 重置界面
+        recordsSet.clear();
+        renderRecordList();
+        resetPoolAndClearZones();
+        showMessage(`小球总数变为 ${totalBalls} 个，记录已清空`, false);
+    }
+
+    // ----- 拖拽相关核心功能 -----
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("text/plain", ev.target.id);
+        ev.dataTransfer.effectAllowed = "move";
+    }
+
+    // 统一drop处理
+    function drop(ev, targetZone) {
+        ev.preventDefault();
+        const data = ev.dataTransfer.getData("text/plain");
+        const draggedBall = document.getElementById(data);
+        if (!draggedBall || !draggedBall.classList || !draggedBall.classList.contains('ball')) {
+            return;
+        }
+
+        let targetContainer = null;
+        if (targetZone === 'pool') {
+            targetContainer = poolDiv;
+        } else if (targetZone.startsWith('digit-')) {
+            const digitIndex = targetZone.split('-')[1];
+            if (digitContainers[digitIndex]) {
+                targetContainer = digitContainers[digitIndex];
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+
+        // 避免重复添加到相同父级
+        if (draggedBall.parentNode === targetContainer) {
+            return;
+        }
+
+        // 执行移动
+        targetContainer.appendChild(draggedBall);
+        // 如果答案已揭示，重置为未揭示状态
+        resetAnswer();
+        // 刷新显示
+        updateDisplay();
+    }
+
+    // 13. 初始化游戏
+    function initGame() {
+        // 初始化数位区域（默认为5）
+        createDigitZones(currentDigitCount);
+        // 清空记录集合并渲染空白记录区
+        recordsSet.clear();
+        renderRecordList();
+        // 重置所有状态和界面
+        resetPoolAndClearZones();
+        // 确保初始显示 ?
+        resetAnswerDisplay();
+    }
+
+    // 绑定按钮与交互事件
+    document.getElementById('btn-minus').onclick = () => changeTotal(-1);
+    document.getElementById('btn-plus').onclick = () => changeTotal(1);
+    document.getElementById('record-btn').onclick = recordCurrentNumber;
+    document.getElementById('clear-record-btn').onclick = clearRecords;
+
+    // 绑定位数选择按钮
+    const digitOptions = document.querySelectorAll('.digit-option');
+    digitOptions.forEach(option => {
+        option.onclick = function() {
+            // 更新活动状态
+            digitOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            // 切换位数
+            const newDigitCount = parseInt(this.getAttribute('data-digits'));
+            changeDigitCount(newDigitCount);
+        };
+    });
+
+    // 全局拖拽事件处理
+    window.addEventListener('dragover', function(e) {
+        e.preventDefault();
+    });
+
+    // 初始化
+    initGame();
+    console.log("灵活数位学具已启动 | 当前位数：" + currentDigitCount);
+</script>
+</body>
+</html>

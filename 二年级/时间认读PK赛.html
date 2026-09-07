@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间认读PK赛 - 二年级数学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .player-select {
+            background: #2a5298;
+            padding: 12px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .player-select select {
+            padding: 6px 15px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: white;
+            color: #2a5298;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 45px;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .question-info {
+            background: #3498db;
+            padding: 12px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .game-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .clock-container {
+            position: relative;
+        }
+
+        .clock {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ffffff 0%, #e6e9f0 100%);
+            border: 8px solid #2a5298;
+            position: relative;
+            box-shadow: 
+                0 10px 40px rgba(0,0,0,0.2),
+                inset 0 0 0 4px #3498db,
+                inset 0 0 20px rgba(52, 152, 219, 0.2);
+        }
+
+        .clock-number {
+            position: absolute;
+            font-size: 26px;
+            font-weight: bold;
+            color: #2c3e50;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .clock-tick {
+            position: absolute;
+            width: 3px;
+            height: 12px;
+            background: #34495e;
+            left: 50%;
+            transform-origin: center 150px;
+            margin-left: -1.5px;
+        }
+
+        .clock-tick.major {
+            width: 4px;
+            height: 18px;
+            background: #2a5298;
+            margin-left: -2px;
+        }
+
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 10px;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .hour-hand {
+            width: 8px;
+            height: 75px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            margin-left: -4px;
+        }
+
+        .minute-hand {
+            width: 6px;
+            height: 105px;
+            background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+            margin-left: -3px;
+        }
+
+        .second-hand {
+            width: 3px;
+            height: 115px;
+            background: #e74c3c;
+            margin-left: -1.5px;
+        }
+
+        .clock-center {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .players-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+            width: 100%;
+        }
+
+        .player-card {
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid;
+            transition: transform 0.3s;
+        }
+
+        .player-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .player-card.player-0 {
+            border-color: #3498db;
+        }
+
+        .player-card.player-1 {
+            border-color: #2ecc71;
+        }
+
+        .player-card.player-2 {
+            border-color: #e74c3c;
+        }
+
+        .player-card.player-3 {
+            border-color: #f39c12;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .player-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .player-score {
+            background: #3498db;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .time-display {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 36px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid #dfe6e9;
+            letter-spacing: 3px;
+        }
+
+        .time-display.active {
+            background: #d4edda;
+            border: 3px solid #28a745;
+            animation: pulse 0.5s;
+            color: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .key {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            border: 2px solid #dfe6e9;
+        }
+
+        .key:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .key:active {
+            transform: translateY(0);
+        }
+
+        .key.clear {
+            background: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+        }
+
+        .key.clear:hover {
+            background: #c0392b;
+        }
+
+        .key.confirm {
+            background: #2ecc71;
+            color: white;
+            border-color: #27ae60;
+        }
+
+        .key.confirm:hover {
+            background: #27ae60;
+        }
+
+        .leaderboard {
+            background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 3px solid #2a5298;
+        }
+
+        .leaderboard-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dfe6e9;
+        }
+
+        .leaderboard-table th {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .export-btn {
+            background: #2ecc71;
+        }
+
+        .export-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+        }
+
+        .clear-btn {
+            background: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            display: none;
+            min-width: 300px;
+        }
+
+        .message.show {
+            display: block;
+            animation: popIn 0.3s;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .message h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .message p {
+            font-size: 18px;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        .message.correct {
+            border: 5px solid #2ecc71;
+        }
+
+        .message.correct h2 {
+            color: #2ecc71;
+        }
+
+        .message.wrong {
+            border: 5px solid #e74c3c;
+        }
+
+        .message.wrong h2 {
+            color: #e74c3c;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .clock {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .clock-number {
+                font-size: 20px;
+            }
+            
+            .hour-hand {
+                height: 60px;
+            }
+            
+            .minute-hand {
+                height: 85px;
+            }
+            
+            .game-area {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="player-select">
+                <span>👥 玩家</span>
+                <select id="playerCount" onchange="updatePlayerCount()">
+                    <option value="2">2 人</option>
+                    <option value="3" selected>3 人</option>
+                    <option value="4">4 人</option>
+                </select>
+            </div>
+            
+            <button class="start-btn" id="startBtn" onclick="startGame()">
+                ▶ 开始抢答
+            </button>
+            
+            <div class="question-info">
+                ⚡ 第<span id="currentQuestion">1</span>题 / 共<span id="totalQuestions">5</span>题
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="clock-container">
+                <div class="clock" id="clock">
+                    <!-- Clock numbers and ticks will be generated by JavaScript -->
+                    <div class="clock-hand hour-hand" id="hourHand"></div>
+                    <div class="clock-hand minute-hand" id="minuteHand"></div>
+                    <div class="clock-hand second-hand" id="secondHand"></div>
+                    <div class="clock-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="players-area" id="playersArea">
+            <!-- Player cards will be generated by JavaScript -->
+        </div>
+
+        <div class="leaderboard">
+            <div class="leaderboard-title">
+                🏆 冠军榜
+            </div>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>学号</th>
+                        <th>答对题数</th>
+                        <th>用时(秒)</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                </tbody>
+            </table>
+            <div class="action-buttons">
+                <button class="action-btn export-btn" onclick="exportCSV()">
+                    📥 导出CSV
+                </button>
+                <button class="action-btn clear-btn" onclick="clearLeaderboard()">
+                    🗑️ 一键清空
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="closeMessage()"></div>
+    <div class="message" id="message">
+        <h2 id="messageTitle"></h2>
+        <p id="messageContent"></p>
+    </div>
+
+    <script>
+        // Game state
+        let players = [];
+        let currentPlayerCount = 3;
+        let currentQuestion = 1;
+        let totalQuestions = 5;
+        let currentHour = 0;
+        let currentMinute = 0;
+        let gameActive = false;
+        let leaderboard = JSON.parse(localStorage.getItem('timeGameLeaderboard')) || [];
+
+        // Player avatars and colors
+        const playerAvatars = ['🐰', '🐻', '', '🐨'];
+        const playerBorderColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12'];
+
+        // Initialize clock
+        function initClock() {
+            const clock = document.getElementById('clock');
+            
+            // Add numbers
+            for (let i = 1; i <= 12; i++) {
+                const number = document.createElement('div');
+                number.className = 'clock-number';
+                number.textContent = i;
+                const angle = (i * 30 - 90) * Math.PI / 180;
+                const radius = 125;
+                const x = Math.cos(angle) * radius + 160 - 20;
+                const y = Math.sin(angle) * radius + 160 - 20;
+                number.style.left = x + 'px';
+                number.style.top = y + 'px';
+                clock.appendChild(number);
+            }
+            
+            // Add ticks
+            for (let i = 0; i < 60; i++) {
+                const tick = document.createElement('div');
+                tick.className = 'clock-tick' + (i % 5 === 0 ? ' major' : '');
+                const angle = i * 6;
+                tick.style.transform = `rotate(${angle}deg)`;
+                clock.appendChild(tick);
+            }
+        }
+
+        // Update player count
+        function updatePlayerCount() {
+            currentPlayerCount = parseInt(document.getElementById('playerCount').value);
+            initPlayers();
+        }
+
+        // Initialize players
+        function initPlayers() {
+            players = [];
+            const playersArea = document.getElementById('playersArea');
+            playersArea.innerHTML = '';
+
+            for (let i = 0; i < currentPlayerCount; i++) {
+                players.push({
+                    id: i,
+                    name: `玩家${i + 1}`,
+                    score: 0,
+                    time: '00:00',
+                    input: '',
+                    avatar: playerAvatars[i]
+                });
+
+                const playerCard = createPlayerCard(i);
+                playersArea.appendChild(playerCard);
+            }
+        }
+
+        // Create player card
+        function createPlayerCard(index) {
+            const card = document.createElement('div');
+            card.className = `player-card player-${index}`;
+            card.id = `playerCard${index}`;
+            card.innerHTML = `
+                <div class="player-header">
+                    <div class="player-name">
+                        <div class="player-avatar">
+                            ${playerAvatars[index]}
+                        </div>
+                        <span>玩家${index + 1}</span>
+                    </div>
+                    <div class="player-score" id="score${index}">0</div>
+                </div>
+                <div class="time-display" id="timeDisplay${index}">00 : 00</div>
+                <div class="keypad">
+                    <button class="key" onclick="addNumber(${index}, 1)">1</button>
+                    <button class="key" onclick="addNumber(${index}, 2)">2</button>
+                    <button class="key" onclick="addNumber(${index}, 3)">3</button>
+                    <button class="key" onclick="addNumber(${index}, 4)">4</button>
+                    <button class="key" onclick="addNumber(${index}, 5)">5</button>
+                    <button class="key" onclick="addNumber(${index}, 6)">6</button>
+                    <button class="key" onclick="addNumber(${index}, 7)">7</button>
+                    <button class="key" onclick="addNumber(${index}, 8)">8</button>
+                    <button class="key" onclick="addNumber(${index}, 9)">9</button>
+                    <button class="key clear" onclick="clearInput(${index})">⌫</button>
+                    <button class="key" onclick="addNumber(${index}, 0)">0</button>
+                    <button class="key confirm" onclick="confirmAnswer(${index})">✓</button>
+                </div>
+            `;
+            return card;
+        }
+
+        // Add number to input
+        function addNumber(playerIndex, number) {
+            if (!gameActive) return;
+            
+            const player = players[playerIndex];
+            if (player.input.length < 4) {
+                player.input += number;
+                updateTimeDisplay(playerIndex);
+            }
+        }
+
+        // Clear input
+        function clearInput(playerIndex) {
+            const player = players[playerIndex];
+            player.input = player.input.slice(0, -1);
+            updateTimeDisplay(playerIndex);
+        }
+
+        // Update time display
+        function updateTimeDisplay(playerIndex) {
+            const player = players[playerIndex];
+            const display = document.getElementById(`timeDisplay${playerIndex}`);
+            let formatted = '00 : 00';
+            
+            if (player.input.length >= 2) {
+                const hour = player.input.slice(0, 2).padStart(2, '0');
+                const minute = player.input.slice(2, 4).padStart(2, '0');
+                formatted = `${hour} : ${minute}`;
+            } else if (player.input.length === 1) {
+                formatted = `0${player.input} : 00`;
+            }
+            
+            display.textContent = formatted;
+        }
+
+        // Confirm answer
+        function confirmAnswer(playerIndex) {
+            if (!gameActive) return;
+            
+            const player = players[playerIndex];
+            if (player.input.length < 3) {
+                showMessage('提示', '请输入完整时间！', 'wrong');
+                return;
+            }
+
+            const inputHour = parseInt(player.input.slice(0, 2));
+            const inputMinute = parseInt(player.input.slice(2, 4));
+
+            if (inputHour > 12 || inputMinute > 59) {
+                showMessage('提示', '时间格式错误！', 'wrong');
+                return;
+            }
+
+            // Check answer
+            if (inputHour === currentHour && inputMinute === currentMinute) {
+                // Correct answer
+                player.score++;
+                updateScore(playerIndex);
+                showMessage('正确！', `玩家${playerIndex + 1}答对了！\n时间是 ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`, 'correct');
+                
+                // Add to leaderboard
+                addToLeaderboard(player.name, player.score);
+                
+                // Next question
+                setTimeout(() => {
+                    if (currentQuestion < totalQuestions) {
+                        currentQuestion++;
+                        document.getElementById('currentQuestion').textContent = currentQuestion;
+                        generateTime();
+                        resetInputs();
+                    } else {
+                        endGame();
+                    }
+                }, 2000);
+            } else {
+                // Wrong answer
+                showMessage('错误', `玩家${playerIndex + 1}答错了！\n正确答案是 ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`, 'wrong');
+                resetInputs();
+            }
+        }
+
+        // Update score display
+        function updateScore(playerIndex) {
+            document.getElementById(`score${playerIndex}`).textContent = players[playerIndex].score;
+        }
+
+        // Reset all inputs
+        function resetInputs() {
+            players.forEach(player => {
+                player.input = '';
+                const display = document.getElementById(`timeDisplay${player.id}`);
+                display.textContent = '00 : 00';
+                display.classList.remove('active');
+            });
+        }
+
+        // Generate random time
+        function generateTime() {
+            currentHour = Math.floor(Math.random() * 12) + 1;
+            currentMinute = Math.floor(Math.random() * 12) * 5; // Only multiples of 5 for grade 2
+            
+            updateClock();
+        }
+
+        // Update clock display
+        function updateClock() {
+            const hourHand = document.getElementById('hourHand');
+            const minuteHand = document.getElementById('minuteHand');
+            const secondHand = document.getElementById('secondHand');
+
+            const hourDeg = (currentHour % 12) * 30 + currentMinute * 0.5;
+            const minuteDeg = currentMinute * 6;
+            const secondDeg = 0;
+
+            hourHand.style.transform = `rotate(${hourDeg}deg)`;
+            minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
+            secondHand.style.transform = `rotate(${secondDeg}deg)`;
+        }
+
+        // Start game
+        function startGame() {
+            gameActive = true;
+            currentQuestion = 1;
+            document.getElementById('currentQuestion').textContent = currentQuestion;
+            document.getElementById('startBtn').disabled = true;
+            
+            // Reset scores
+            players.forEach(player => {
+                player.score = 0;
+                updateScore(player.id);
+            });
+            
+            resetInputs();
+            generateTime();
+            showMessage('游戏开始', '请仔细观察钟表时间，\n第一个答对的玩家得分！', 'correct');
+        }
+
+        // End game
+        function endGame() {
+            gameActive = false;
+            document.getElementById('startBtn').disabled = false;
+            
+            // Find winner
+            let maxScore = 0;
+            let winners = [];
+            
+            players.forEach(player => {
+                if (player.score > maxScore) {
+                    maxScore = player.score;
+                    winners = [player];
+                } else if (player.score === maxScore) {
+                    winners.push(player);
+                }
+            });
+            
+            let message = `游戏结束！\n`;
+            if (winners.length === 1) {
+                message += `冠军是：${winners[0].name}\n得分：${maxScore}分`;
+            } else {
+                message += `并列冠军：${winners.map(w => w.name).join('、')}\n得分：${maxScore}分`;
+            }
+            
+            showMessage('游戏结束', message, 'correct');
+            updateLeaderboard();
+        }
+
+        // Show message
+        function showMessage(title, content, type) {
+            const message = document.getElementById('message');
+            const messageTitle = document.getElementById('messageTitle');
+            const messageContent = document.getElementById('messageContent');
+            const overlay = document.getElementById('overlay');
+            
+            messageTitle.textContent = title;
+            messageContent.textContent = content;
+            message.className = `message show ${type}`;
+            overlay.classList.add('show');
+            
+            setTimeout(() => {
+                closeMessage();
+            }, 3000);
+        }
+
+        // Close message
+        function closeMessage() {
+            document.getElementById('message').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        // Add to leaderboard
+        function addToLeaderboard(name, score) {
+            const studentId = prompt(`请输入${name}的学号：`, '');
+            if (studentId) {
+                const existingIndex = leaderboard.findIndex(item => item.studentId === studentId);
+                if (existingIndex >= 0) {
+                    leaderboard[existingIndex].correctCount = score;
+                    leaderboard[existingIndex].time = new Date().toLocaleTimeString();
+                } else {
+                    leaderboard.push({
+                        studentId: studentId,
+                        name: name,
+                        correctCount: score,
+                        time: new Date().toLocaleTimeString()
+                    });
+                }
+                localStorage.setItem('timeGameLeaderboard', JSON.stringify(leaderboard));
+                updateLeaderboard();
+            }
+        }
+
+        // Update leaderboard display
+        function updateLeaderboard() {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+            
+            leaderboard.sort((a, b) => b.correctCount - a.correctCount);
+            
+            leaderboard.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.studentId}</td>
+                    <td>${item.correctCount}</td>
+                    <td>${item.time}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Clear leaderboard
+        function clearLeaderboard() {
+            if (confirm('确定要清空排行榜吗？')) {
+                leaderboard = [];
+                localStorage.removeItem('timeGameLeaderboard');
+                updateLeaderboard();
+            }
+        }
+
+        // Export CSV
+        function exportCSV() {
+            if (leaderboard.length === 0) {
+                showMessage('提示', '排行榜为空！', 'wrong');
+                return;
+            }
+            
+            let csv = '\uFEFF学号,姓名,答对题数,用时(秒)\n';
+            leaderboard.forEach(item => {
+                csv += `${item.studentId},${item.name},${item.correctCount},${item.time}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `时间认读PK赛_排行榜_${new Date().toLocaleDateString()}.csv`;
+            link.click();
+        }
+
+        // Initialize
+        window.onload = function() {
+            initClock();
+            initPlayers();
+            updateLeaderboard();
+        };
+    </script>
+</body>
+</html>

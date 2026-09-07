@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>倍的认识小农场 - 三年级上册 第5单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #b9770e, #d68910);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #fff3b0; }
+    .iconbtn {
+        background: rgba(255,255,255,0.18); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.32); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    /* 地图 */
+    .map-title { text-align: center; font-size: 26px; color: #b9770e; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .farm { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .field {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #fef9e7;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #f9e79f; transition: all .2s;
+    }
+    .field:hover { border-color: #b9770e; transform: translateX(4px); }
+    .field.locked { opacity: 0.45; cursor: not-allowed; }
+    .field .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .field .info { flex: 1; }
+    .field .info .n { font-size: 17px; font-weight: bold; color: #b9770e; }
+    .field .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .field .stars { font-size: 18px; letter-spacing: 2px; }
+    .field .lock { font-size: 20px; color: #bbb; }
+    /* 关卡 */
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #b9770e; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #f1c40f, #e67e22); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #fef9e7; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #f9e79f; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 27px; font-weight: bold; color: #7d6608; text-align: center; line-height: 1.6; }
+    .q-text .hl { color: #c0392b; font-size: 38px; }
+    /* 圈一圈可视化 */
+    .group-visual { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 700px; }
+    .group-box {
+        border: 3px dashed #e67e22; border-radius: 14px; padding: 10px 14px;
+        display: flex; gap: 6px; background: #fffdf5;
+    }
+    .group-box .emoji { font-size: 30px; }
+    .group-cap { text-align: center; font-size: 13px; color: #a04000; font-weight: bold; margin-top: 6px; }
+    .num-input {
+        width: 160px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #b9770e; border-radius: 12px; outline: none; color: #b9770e;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #e67e22; box-shadow: 0 0 0 3px rgba(230,126,34,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #f7971e, #ffd200); color: #7d3c00; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(247,151,30,0.45); }
+    .rate-hint {
+        background: #fef5e7; border: 1px dashed #f0b27a; color: #a04000;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 640px; }
+    .opt {
+        padding: 14px 8px; border-radius: 14px; background: #fff; border: 2px solid #f9e79f;
+        font-size: 24px; font-weight: bold; color: #7d6608; cursor: pointer; text-align: center;
+        font-family: 'Courier New', monospace; transition: all .15s;
+    }
+    .opt:hover { border-color: #b9770e; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #b9770e; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #b9770e; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">🌻 倍的认识小农场</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🚜 倍的认识小农场</div>
+        <div class="map-sub">先圈一圈感受"倍"，再算一算，最后当个农场小管家！</div>
+        <div class="farm" id="farm"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回农场</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#b9770e;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '倍的认识小农场_错题';
+const PROG_KEY  = '倍的认识小农场_进度';
+const STAGES = [
+    { icon:'🐣', name:'圈一圈',   desc:'数一数有几个"组"，感受倍的含义',      kind:'circle' },
+    { icon:'🧮', name:'算一算',   desc:'求一个数是另一个数的几倍 · 求一个数的几倍', kind:'calc' },
+    { icon:'🧑‍🌾', name:'农场小管家', desc:'用倍的知识解决农场里的实际问题',      kind:'word' },
+];
+const QUESTIONS_PER_STAGE = 10;
+const EMOJIS = ['🐔','🥕','🍎','🌻','🐑','🍓','🥚','🌽'];
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+
+/* ================= 题目生成 ================= */
+// 圈一圈：可视化分组
+function makeCircle() {
+    const base = pick([2, 3, 4, 5, 6]);
+    const groups = pick([2, 3, 4, 5]);
+    const total = base * groups;
+    if (total > 30) return makeCircle();
+    const emoji = pick(EMOJIS);
+    // 可视化：groups 个分组框，每框 base 个 emoji
+    let html = '<div class="group-visual">';
+    for (let g = 0; g < groups; g++) {
+        html += `<div class="group-box">${emoji.repeat(base)}</div>`;
+    }
+    html += '</div><div class="group-cap">每 ${base} 个一组，一共 ${groups} 组</div>'.replace(/\$\{base\}/g, base).replace(/\$\{groups\}/g, groups);
+    // 选项
+    const opts = new Set([groups, groups + 1, groups - 1, groups + 2, groups - 2, 2]);
+    let arr = [...opts].filter(v => v >= 2 && v <= 8);
+    while (arr.length < 4) { const extra = randInt(2, 8); if (!arr.includes(extra)) arr.push(extra); }
+    arr = arr.slice(0, 4);
+    shuffle(arr);
+    shuffle(arr);
+    return { kind:'circle',
+             text:`一共有 <span class="hl">${total}</span> 个 ${emoji}，每 ${base} 个一组。<br>${total} 是 ${base} 的（ ）倍？`,
+             visual: html, answer: groups, opts: arr,
+             hint:'有 3 组，就是 3 倍；有几组，就是几倍！' };
+}
+
+// 算一算：求倍数 或 求几倍数
+function makeCalc() {
+    const mode = Math.random() < 0.5 ? 'times' : 'multiple';
+    if (mode === 'times') {
+        // 求倍数：total 是 base 的几倍？
+        const base = pick([3, 4, 5, 6, 7, 8, 9]);
+        const k = pick([2, 3, 4, 5, 6]);
+        const total = base * k;
+        return { kind:'calc', text:`<span class="hl">${total}</span> 是 ${base} 的（ ）倍？`,
+                 answer: k, hint:`想：${total} ÷ ${base} = ？` };
+    } else {
+        // 求几倍数：base 的 k 倍是多少？
+        const base = randInt(3, 12);
+        const k = pick([2, 3, 4, 5]);
+        return { kind:'calc', text:`${base} 的 <span class="hl">${k}</span> 倍是多少？`,
+                 answer: base * k, hint:`想：${base} × ${k} = ？` };
+    }
+}
+
+// 应用题题库
+const WORD_BANK = [
+    { text:'果园里有 4 行苹果树，每行 8 棵。苹果树一共有多少棵？', a: 32, dist:[12, 84, 24] },
+    { text:'小明有 3 支铅笔，小红的铅笔数是小明的 5 倍。小红有多少支铅笔？', a: 15, dist:[8, 35, 2] },
+    { text:'农场里有 6 只小鸭，小鸡的只数是小鸭的 4 倍。小鸡有多少只？', a: 24, dist:[10, 42, 64] },
+    { text:'有 24 个苹果，每 6 个装一盘。可以装几盘？（24 是 6 的几倍？）', a: 4, dist:[18, 6, 3] },
+    { text:'妈妈买了 5 千克梨，买苹果的质量是梨的 2 倍。苹果有多少千克？', a: 10, dist:[7, 25, 3] },
+    { text:'一只鸡有 2 条腿，一只兔子有 4 条腿。兔子的腿数是鸡的几倍？', a: 2, dist:[4, 6, 8] },
+    { text:'停车场有小汽车 9 辆，大客车比小汽车多，大客车是小汽车的 3 倍。大客车有多少辆？', a: 27, dist:[12, 21, 3] },
+    { text:'哥哥有 8 块糖，弟弟的糖数是哥哥的 4 倍。弟弟有多少块糖？', a: 32, dist:[12, 44, 4] },
+    { text:'一本书有 40 页，小丽已经看的页数是没看的 4 倍。小丽看了多少页？', a: 32, dist:[10, 36, 8] },
+    { text:'奶奶养了 7 只白兔，灰兔的只数是白兔的 3 倍。灰兔有多少只？', a: 21, dist:[10, 31, 4] },
+    { text:'每盒彩笔 6 支，5 盒彩笔一共有多少支？（6 的 5 倍）', a: 30, dist:[11, 56, 36] },
+    { text:'跳绳比赛，小红跳了 18 下，小明跳的是小红的 3 倍。小明跳了多少下？', a: 54, dist:[21, 15, 6] },
+];
+function makeWord() {
+    const t = pick(WORD_BANK);
+    const opts = new Set([t.a, ...t.dist]);
+    const arr = [...opts].slice(0, 4);
+    if (arr.length < 4) return makeWord();
+    shuffle(arr);
+    return { kind:'word', text:t.text, answer:t.a, opts:arr,
+             hint:'先想一想：求"几倍"用除法，求"一个数的几倍"用乘法' };
+}
+
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+function makeQuestion(kind) {
+    if (kind === 'circle') return makeCircle();
+    if (kind === 'calc') return makeCalc();
+    return makeWord();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const farm = $('farm');
+    farm.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'field' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        farm.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.kind === 'word' ? qq.text : qq.text.replace(/<[^>]+>/g, '');
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'circle') {
+        card.innerHTML = `
+            ${q.visual}
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o} 倍</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+    } else if (q.kind === 'calc') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="convert-row">
+                <input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?">
+            </div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput');
+        inp.focus();
+        $('submitBtn').onclick = submit;
+        inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    } else {
+        card.innerHTML = `
+            <div class="q-text" style="font-size:23px">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+    }
+}
+
+function submit() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) return;
+    judge(v === q.answer, v);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一块田地已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回农场'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

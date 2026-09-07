@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>水果分一分 · 自适应极速版</title>
+    <style>
+        /* --- 核心自适应设置 --- */
+        /* 默认根字体大小，方便使用 rem 进行全局缩放 */
+        html { font-size: 16px; }
+        @media (max-width: 900px) { html { font-size: 14px; } }
+        @media (max-width: 600px) { html { font-size: 12px; } }
+        @media (max-width: 400px) { html { font-size: 11px; } }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            touch-action: none;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', '幼圆', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f0f4f8; /* 简化背景，去掉渐变，提升渲染速度 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2vw; /* 使用视口宽度作为内边距 */
+        }
+
+        /* 整体容器：不再固定宽度，自适应撑开 */
+        .game-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); /* 极轻量阴影 */
+            padding: 2rem;
+            border: 0.4rem solid #ffd1a4;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* 统一模块间距 */
+        }
+
+        /* 头部统计区 */
+        .stats-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            background: #fff5eb;
+            border-radius: 2rem;
+            padding: 1rem 1.5rem;
+            border: 2px solid #ffb870;
+        }
+
+        .stat-box {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            padding: 0.5rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #d97706;
+            border: 2px solid #fbbf24;
+        }
+
+        .stat-box span {
+            background: #fef3c7;
+            border-radius: 1rem;
+            padding: 0.2rem 1rem;
+            font-size: 1.6rem;
+            color: #b45309;
+        }
+
+        .question-hint {
+            font-size: 1.4rem;
+            background: #fbbf24;
+            padding: 0.6rem 1.5rem;
+            border-radius: 1.5rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* 盘子区域：弹性布局，自动换行缩放 */
+        .plates-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            background: #f8fafc;
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 2px dashed #cbd5e1;
+            min-height: 200px;
+        }
+
+        /* 盘子：限制最小和最大宽度，其余空间平分 */
+        .plate {
+            background: #ffffff;
+            border: 4px solid #94a3b8;
+            border-radius: 2rem;
+            flex: 1 1 140px; /* 核心自适应：基础宽度140px，允许伸缩 */
+            max-width: 220px;
+            min-height: 180px;
+            padding: 1rem 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: border-color 0.1s; /* 移除 transform 动画，降低老机器负担 */
+        }
+
+        .plate.highlight {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
+
+        .plate-number {
+            font-size: 1.4rem;
+            background: #94a3b8;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .plate.highlight .plate-number { background: #fbbf24; }
+
+        .plate-fruits {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 0.5rem;
+            width: 100%;
+            min-height: 80px;
+            padding: 0.5rem;
+            border-radius: 1rem;
+        }
+
+        /* 水果图标：采用 rem 随屏幕缩放 */
+        .fruit-icon {
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        /* 底部水果池 */
+        .fruit-pool {
+            background: #dcfce7;
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 3px solid #86efac;
+        }
+
+        .pool-title {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #166534;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .remain-hint {
+            background: #ffffff;
+            padding: 0.4rem 1.2rem;
+            border-radius: 1.5rem;
+            color: #15803d;
+            border: 2px solid #86efac;
+        }
+
+        .pool-fruits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            min-height: 80px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .drag-fruit {
+            font-size: 3rem; /* 相对单位 */
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .drag-fruit.dragging {
+            opacity: 0.2; /* 拖拽时半透明，去除复杂滤镜 */
+            cursor: grabbing;
+        }
+
+        /* 按钮栏自适应 */
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            border: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 0.8rem 1.5rem;
+            border-radius: 1.5rem;
+            color: white;
+            cursor: pointer;
+            flex: 1 1 auto; /* 按钮也参与弹性缩放 */
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .btn:active { opacity: 0.8; }
+        .btn.check-btn { background: #fbbf24; border: 2px solid #fde68a; color: #92400e;}
+        .btn.reset-btn { background: #f87171; border: 2px solid #fecaca; }
+        .btn.next-btn { background: #34d399; border: 2px solid #a7f3d0; color: #064e3b;}
+
+        .message-area {
+            font-size: 1.2rem;
+            background: #f1f5f9;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1.5rem;
+            color: #475569;
+            border: 2px dashed #cbd5e1;
+            flex: 1 1 100%; /* 消息框默认占满一行 */
+            text-align: center;
+        }
+
+        /* 拖拽克隆体（极简模式） */
+        .drag-clone {
+            position: fixed;
+            font-size: 3rem;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            opacity: 0.8;
+            /* 移除了极其吃性能的 filter: drop-shadow */
+        }
+
+        /* 弹窗模态框（去除模糊效果） */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); /* 纯色半透明，老电脑福音 */
+            align-items: center;
+            justify-content: center;
+            z-index: 20000;
+            padding: 1rem; /* 防止贴边 */
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border: 4px solid #fbbf24;
+            border-radius: 2rem;
+            padding: 2rem;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal.fail .modal-content { border-color: #f87171; }
+
+        .close-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            background: #f87171;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #modalMessage {
+            font-size: 1.4rem;
+            margin: 1rem 0 1.5rem;
+            color: #334155;
+            font-weight: bold;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .modal-btn {
+            background: #34d399;
+            font-size: 1.4rem;
+            padding: 0.8rem 3rem;
+            border: none;
+            border-radius: 1.5rem;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .modal.fail .modal-btn { background: #f87171; }
+
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+    <div class="stats-panel">
+        <div class="stat-box">水果总数 <span id="totalFruitDisplay">9</span></div>
+        <div class="stat-box">盘子数 <span id="plateCountDisplay">3</span></div>
+        <div class="question-hint">每盘放几个? 剩几个?</div>
+    </div>
+
+    <div class="plates-area" id="platesArea"></div>
+
+    <div class="fruit-pool">
+        <div class="pool-title">
+            <span>👇 拖拽到盘子 (点错可点击拿回)</span>
+            <span class="remain-hint" id="remainCount">剩余: 9</span>
+        </div>
+        <div class="pool-fruits" id="fruitPool"></div>
+    </div>
+
+    <div class="action-bar">
+        <button class="btn check-btn" id="checkBtn">✅ 确认分法</button>
+        <button class="btn reset-btn" id="resetBtn">🔄 重新分</button>
+        <button class="btn next-btn" id="nextBtn">🎲 下一题</button>
+        <div class="message-area" id="message">把水果拖进盘子吧～</div>
+    </div>
+</div>
+
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="modalClose">&times;</span>
+        <div id="modalFireworks" style="font-size: 3rem; margin-bottom: 0.5rem;">✨🎉✨</div>
+        <div id="modalMessage">正确！</div>
+        <button class="modal-btn" id="modalOk">我知道啦</button>
+    </div>
+</div>
+
+<div id="cloneContainer"></div>
+
+<script>
+    (function() {
+        let totalFruits = 9;
+        let plateCount = 3;
+        let plateFruits = [0, 0, 0];
+        let fruitsRemaining = totalFruits;
+        const fruitTypes = ['🍎', '🍊', '🍓', '🍇', '🍑', '🍋'];
+        let currentFruitEmoji = '🍎';
+
+        let dragging = false;
+        let cloneElement = null;
+        let targetPlateIndex = -1;
+        
+        // 【性能优化】用于缓存盘子的位置坐标，避免拖拽时卡顿
+        let cachedPlateRects = []; 
+
+        const platesArea = document.getElementById('platesArea');
+        const fruitPoolDiv = document.getElementById('fruitPool');
+        const totalFruitSpan = document.getElementById('totalFruitDisplay');
+        const plateCountSpan = document.getElementById('plateCountDisplay');
+        const remainSpan = document.getElementById('remainCount');
+        const messageDiv = document.getElementById('message');
+        const cloneContainer = document.getElementById('cloneContainer');
+        
+        const modal = document.getElementById('resultModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalFireworks = document.getElementById('modalFireworks');
+
+        function refreshAllUI() {
+            totalFruitSpan.textContent = totalFruits;
+            plateCountSpan.textContent = plateCount;
+            const sumInPlates = plateFruits.reduce((a, b) => a + b, 0);
+            fruitsRemaining = totalFruits - sumInPlates;
+            remainSpan.textContent = `剩余: ${fruitsRemaining}`;
+
+            renderPlates();
+            renderFruitPool();
+            removeAllPlateHighlights();
+        }
+
+        function renderPlates() {
+            let htmlStr = '';
+            for (let i = 0; i < plateCount; i++) {
+                const count = plateFruits[i] || 0;
+                let fruitsHtml = '';
+                for (let j = 0; j < count; j++) {
+                    fruitsHtml += `<span class="fruit-icon in-plate" data-plate-idx="${i}" title="点击拿回">${currentFruitEmoji}</span>`;
+                }
+                htmlStr += `
+                    <div class="plate" id="plate-${i}">
+                        <div class="plate-number">${i + 1}</div>
+                        <div class="plate-fruits">${fruitsHtml}</div>
+                    </div>
+                `;
+            }
+            platesArea.innerHTML = htmlStr;
+        }
+
+        function renderFruitPool() {
+            let poolHtml = '';
+            for (let i = 0; i < fruitsRemaining; i++) {
+                poolHtml += `<span class="drag-fruit">${currentFruitEmoji}</span>`;
+            }
+            if (fruitsRemaining === 0) {
+                poolHtml = '<span style="font-size:1.4rem; color:#15803d; font-weight:bold;">🎉 全部分完啦，快点击确认！</span>';
+            }
+            fruitPoolDiv.innerHTML = poolHtml;
+        }
+
+        function removeAllPlateHighlights() {
+            document.querySelectorAll('.plate').forEach(p => p.classList.remove('highlight'));
+        }
+
+        function showModal(type, text) {
+            modalMessage.textContent = text;
+            if (type === 'success') {
+                modal.classList.remove('fail');
+                modalFireworks.innerHTML = '✨🎉 🏆 🎉✨';
+            } else {
+                modal.classList.add('fail');
+                modalFireworks.innerHTML = '🤔 哎呀...';
+            }
+            modal.style.display = 'flex';
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+        }
+
+        function nextProblem() {
+            totalFruits = Math.floor(Math.random() * 12) + 6; 
+            plateCount = Math.floor(Math.random() * 4) + 2;   
+            plateFruits = new Array(plateCount).fill(0);
+            currentFruitEmoji = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+            refreshAllUI();
+            messageDiv.textContent = '✨ 新题目来啦！快试试吧';
+            hideModal();
+        }
+
+        function checkDivision() {
+            const sumInPlates = plateFruits.reduce((a, b) => a + b, 0);
+            const remaining = totalFruits - sumInPlates;
+
+            if (sumInPlates === 0) {
+                showModal('fail', '🧐 盘子里空空如也，先把水果拖进去吧！');
+                return;
+            }
+
+            const first = plateFruits[0];
+            const allEqual = plateFruits.every(val => val === first);
+
+            if (!allEqual) {
+                showModal('fail', '❌ 这样不公平哦！每个盘子里的水果数量必须一样多！');
+                return;
+            }
+
+            const perPlate = first;
+            if (remaining >= plateCount) {
+                const canAdd = Math.floor(remaining / plateCount);
+                showModal('fail', `⏳ 还没分完哦！\n剩下的 ${remaining} 个水果，每个盘子还能再放 ${canAdd} 个进去呢！`);
+                return;
+            }
+
+            showModal('success', `✅ 分对啦！\n算式：${totalFruits} ÷ ${plateCount} = ${perPlate} (个) …… ${remaining} (个)\n\n💡 知识点：余数(${remaining}) 一定要小于除数(${plateCount})哦！`);
+        }
+
+        // 点击退回功能
+        platesArea.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('in-plate')) {
+                const idx = parseInt(target.getAttribute('data-plate-idx'));
+                if (plateFruits[idx] > 0) {
+                    plateFruits[idx]--;
+                    refreshAllUI();
+                    messageDiv.textContent = '👆 拿回了一个水果';
+                }
+            }
+        });
+
+        // --- 高性能拖拽逻辑 ---
+        function initDragEvents() {
+            fruitPoolDiv.addEventListener('mousedown', onDragStart);
+            fruitPoolDiv.addEventListener('touchstart', onDragStart, { passive: false });
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend', onDragEnd);
+        }
+
+        function onDragStart(e) {
+            const target = e.target;
+            if (!target.classList.contains('drag-fruit')) return;
+            e.preventDefault();
+            
+            if (fruitsRemaining <= 0) return;
+
+            dragging = true;
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+
+            // 【性能优化】在拖拽开始时，计算并缓存所有盘子的坐标信息。
+            // 这样在移动鼠标(onDragMove)时就不用频繁调用极吃性能的 getBoundingClientRect()
+            cachedPlateRects = [];
+            document.querySelectorAll('.plate').forEach((plate, idx) => {
+                const rect = plate.getBoundingClientRect();
+                cachedPlateRects.push({
+                    idx: idx,
+                    left: rect.left, right: rect.right,
+                    top: rect.top, bottom: rect.bottom,
+                    el: plate
+                });
+            });
+
+            cloneElement = document.createElement('div');
+            cloneElement.className = 'drag-clone';
+            cloneElement.textContent = currentFruitEmoji;
+            cloneElement.style.left = clientX + 'px';
+            cloneElement.style.top = clientY + 'px';
+            cloneContainer.appendChild(cloneElement);
+
+            target.classList.add('dragging');
+            document.body.style.overflow = 'hidden'; // 防止移动端拖拽时屏幕滚动
+        }
+
+        function onDragMove(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+
+            if (cloneElement) {
+                cloneElement.style.left = clientX + 'px';
+                cloneElement.style.top = clientY + 'px';
+            }
+
+            let hoverIndex = -1;
+            // 使用缓存的坐标进行极速碰撞检测
+            for (let i = 0; i < cachedPlateRects.length; i++) {
+                const r = cachedPlateRects[i];
+                if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+                    hoverIndex = r.idx;
+                    break;
+                }
+            }
+
+            if (hoverIndex !== targetPlateIndex) {
+                removeAllPlateHighlights();
+                if (hoverIndex !== -1) {
+                    cachedPlateRects[hoverIndex].el.classList.add('highlight');
+                }
+                targetPlateIndex = hoverIndex;
+            }
+        }
+
+        function onDragEnd(e) {
+            if (!dragging) return;
+            cloneContainer.innerHTML = '';
+            cloneElement = null;
+            document.querySelectorAll('.drag-fruit').forEach(el => el.classList.remove('dragging'));
+            document.body.style.overflow = ''; 
+
+            if (targetPlateIndex !== -1 && fruitsRemaining > 0) {
+                plateFruits[targetPlateIndex]++;
+                refreshAllUI();
+                messageDiv.textContent = `🍬 放入了 ${targetPlateIndex+1} 号盘子`;
+            }
+
+            removeAllPlateHighlights();
+            targetPlateIndex = -1;
+            dragging = false;
+        }
+
+        // 绑定按钮与弹窗
+        document.getElementById('checkBtn').addEventListener('click', checkDivision);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            plateFruits = new Array(plateCount).fill(0);
+            refreshAllUI();
+            messageDiv.textContent = '↩️ 已清空盘子，重新分吧';
+        });
+        document.getElementById('nextBtn').addEventListener('click', nextProblem);
+
+        const closeModalHandler = () => hideModal();
+        document.getElementById('modalClose').addEventListener('click', closeModalHandler);
+        document.getElementById('modalOk').addEventListener('click', closeModalHandler);
+        window.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        nextProblem();
+        initDragEvents();
+    })();
+</script>
+</body>
+</html>

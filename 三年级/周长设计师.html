@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>周长设计师 - 三年级上册 第7单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 1000px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #2d5016, #4a7c1f);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffd200; }
+    .iconbtn {
+        background: rgba(255,255,255,0.18); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.32); }
+    .modes { display: flex; gap: 8px; padding: 12px 22px 0; flex-wrap: wrap; }
+    .mode-tab {
+        padding: 8px 18px; border-radius: 25px; border: 2px solid #4a7c1f;
+        background: #fff; color: #4a7c1f; font-size: 15px; font-weight: bold; cursor: pointer;
+        font-family: inherit;
+    }
+    .mode-tab.active { background: #4a7c1f; color: #fff; }
+    .modes .note { margin-left: auto; align-self: center; font-size: 13px; color: #999; }
+    .body { display: flex; gap: 16px; padding: 8px 22px 20px; flex: 1; min-height: 0; }
+    .left {
+        flex: 0 0 590px; background: #f4fbf0; border-radius: 16px; border: 2px dashed #b8dc9c;
+        display: flex; align-items: center; justify-content: center; position: relative; min-height: 470px;
+    }
+    .left svg { width: 100%; height: 100%; }
+    .right { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .task {
+        background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        font-size: 18px; color: #333; line-height: 1.8; min-height: 90px;
+    }
+    .task b { color: #c0392b; }
+    .hint { font-size: 14px; color: #8a6d3b; background: #fff7e6; padding: 8px 12px; border-radius: 10px; }
+    .answer-area { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .num-input {
+        width: 120px; height: 50px; text-align: center; font-size: 30px; font-weight: bold;
+        border: 3px solid #4a7c1f; border-radius: 12px; outline: none; color: #2d5016; font-family: inherit;
+    }
+    .num-input:focus { border-color: #ffd200; box-shadow: 0 0 0 4px rgba(255,210,0,0.3); }
+    .btn {
+        padding: 10px 24px; border-radius: 25px; border: none; font-size: 17px; font-weight: bold;
+        cursor: pointer; font-family: inherit; color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #4a7c1f, #6fbf33); color: #fff;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.2); }
+    .btn.blue { background: linear-gradient(135deg, #2980b9, #3498db); color: #fff; }
+    .btn.gray { background: #bdc3c7; color: #555; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn.small { padding: 6px 14px; font-size: 15px; }
+    .feedback {
+        min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-size: 18px; font-weight: bold; border-radius: 12px; padding: 4px 14px;
+    }
+    .feedback.ok { color: #27ae60; background: #eafaf1; }
+    .feedback.bad { color: #c0392b; background: #fdedec; }
+    .controls { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; min-height: 56px; align-items: center; }
+    .choice {
+        min-width: 130px; padding: 12px 20px; font-size: 20px; font-weight: bold;
+        border: 3px solid #3498db; border-radius: 14px; background: #fff; cursor: pointer; color: #2c3e50; font-family: inherit;
+    }
+    .choice:hover { transform: scale(1.05); border-color: #ffd200; }
+    .choice.correct { border-color: #27ae60; background: #eafaf1; }
+    .choice.wrong { border-color: #e74c3c; background: #fdedec; }
+    /* 等周模式的小卡片 */
+    .pairs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pair-chip {
+        padding: 8px 14px; border-radius: 10px; background: #f0f7ea; border: 2px solid #cfe4bd;
+        font-size: 16px; font-weight: bold; color: #2d5016;
+    }
+    .pair-chip.hl { background: #ffd200; border-color: #f39c12; }
+    /* 弹窗 */
+    .overlay {
+        position: absolute; inset: 0; background: rgba(30,60,10,0.55);
+        display: flex; align-items: center; justify-content: center; z-index: 20;
+    }
+    .panel {
+        background: #fff; border-radius: 20px; padding: 30px 38px; max-width: 680px; max-height: 90%; overflow: auto;
+        text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .panel h2 { color: #2d5016; margin-bottom: 14px; font-size: 26px; }
+    .panel .sub { color: #777; margin-bottom: 16px; line-height: 1.7; }
+    .menu-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+    .menu-btn {
+        padding: 12px 22px; border-radius: 14px; border: 3px solid #4a7c1f; background: #fff;
+        font-size: 16px; font-weight: bold; cursor: pointer; font-family: inherit; color: #2d5016;
+    }
+    .menu-btn.sel { background: #4a7c1f; color: #fff; }
+    .stars { font-size: 44px; margin: 8px 0; }
+    .stars .dim { opacity: 0.25; }
+    .wronglist { text-align: left; margin: 12px auto; max-height: 170px; overflow: auto; }
+    .wronglist .row { font-size: 14px; padding: 4px 8px; color: #555; }
+    .wronglist .row:nth-child(odd) { background: #f2f7ee; }
+    .wronglist .row .a { color: #27ae60; font-weight: bold; }
+    .wronglist .row .y { color: #c0392b; }
+    .row-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .confetti { position: absolute; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; z-index: 30; animation: fly 0.9s ease-out forwards; }
+    @keyframes fly { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(120px) rotate(360deg); opacity: 0; } }
+    .shake { animation: shake 0.3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="game" id="game">
+    <div class="topbar">
+        <div class="title">🌻 周长设计师</div>
+        <div class="stats">
+            <span>🏆 得分 <b id="score">0</b></span>
+            <span>🔥 连对 <b id="streak">0</b></span>
+            <span>🎯 难度 <b id="level">1</b></span>
+            <span>第 <b id="round">1</b>/<span id="maxRound">10</span> 题</span>
+        </div>
+        <div>
+            <button class="iconbtn" id="soundBtn">🔊</button>
+            <button class="iconbtn" id="menuBtn">☰ 菜单</button>
+        </div>
+    </div>
+
+    <div class="modes" id="modes">
+        <button class="mode-tab active" data-m="mix">混合模式</button>
+        <button class="mode-tab" data-m="build">① 围栅栏·数周长</button>
+        <button class="mode-tab" data-m="calc">② 算周长·用公式</button>
+        <button class="mode-tab" data-m="iso">③ 等周变形·找围法</button>
+        <span class="note">三年级上册 · 长方形和正方形</span>
+    </div>
+
+    <div class="body">
+        <div class="left" id="left">
+            <svg id="grid" viewBox="0 0 560 460" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="right">
+            <div class="task" id="task"></div>
+            <div class="hint hidden" id="hint"></div>
+            <div class="answer-area" id="answerArea"></div>
+            <div class="feedback" id="feedback"></div>
+            <div class="controls" id="controls"></div>
+        </div>
+    </div>
+
+    <!-- 菜单 -->
+    <div class="overlay" id="menuOverlay">
+        <div class="panel">
+            <h2>🌻 周长设计师</h2>
+            <div class="sub">三年级上册 · 长方形和正方形<br>围栅栏数一数、用公式算一算、再找找同周长有哪些围法！</div>
+            <div style="font-weight:bold;color:#2d5016;">模式</div>
+            <div class="menu-row" id="modeRow"></div>
+            <div style="font-weight:bold;color:#2d5016;">起始难度</div>
+            <div class="menu-row" id="lvRow">
+                <button class="menu-btn sel" data-lv="1">🌱 简单</button>
+                <button class="menu-btn" data-lv="2">🌳 标准</button>
+                <button class="menu-btn" data-lv="3">🏔️ 挑战</button>
+            </div>
+            <div class="row-btns" style="margin-top:10px;">
+                <button class="btn" id="startBtn">🌿 开始设计</button>
+                <button class="btn gray" id="clearBtn">🗑️ 清空错题本</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结算 -->
+    <div class="overlay" id="resultOverlay" style="display:none;">
+        <div class="panel">
+            <h2 id="resultTitle"></h2>
+            <div class="stars" id="resultStars"></div>
+            <div class="sub" id="resultText"></div>
+            <div id="wrongBox" style="display:none;">
+                <div style="font-weight:bold;color:#c0392b;">错题本（自动记录）</div>
+                <div class="wronglist" id="wrongList"></div>
+            </div>
+            <div class="row-btns">
+                <button class="btn" id="againBtn">🔁 再来一轮</button>
+                <button class="btn blue" id="homeBtn">🏠 回到菜单</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const STORE_KEY = '周长设计师_错题';
+let soundOn = true, audioCtx = null;
+function beep(f, d = 0.12, t = 'sine') {
+    if (!soundOn) return;
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const goodTone = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.15), 90); };
+const badTone = () => beep(180, 0.25, 'sawtooth');
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function svgEl(t, a) { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; }
+function confetti(x, y) {
+    const wrap = $('left');
+    const colors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#e91e63', '#ff9800'];
+    for (let i = 0; i < 22; i++) {
+        const d = document.createElement('div');
+        d.className = 'confetti';
+        d.style.left = (x + randInt(-70, 70)) + 'px';
+        d.style.top = (y + randInt(-40, 10)) + 'px';
+        d.style.background = pick(colors);
+        d.style.animationDuration = (0.6 + Math.random() * 0.6) + 's';
+        wrap.appendChild(d);
+        setTimeout(() => d.remove(), 1200);
+    }
+}
+
+/* ============ 状态 ============ */
+let state = {
+    mode: 'mix', level: 1, round: 0, maxRound: 10,
+    score: 0, streak: 0, wrongs: [],
+    q: null, answered: false, ready: false,
+    grid: { cols: 8, rows: 6, cell: 40, ox: 60, oy: 400 },
+    rect: { w: 3, h: 3 },
+    dragging: false,
+    ant: { x: 0, y: 0, count: 0, timer: null },
+};
+
+/* ============ 网格绘制 ============ */
+function clearGrid() { const s = $('grid'); while (s.firstChild) s.removeChild(s.firstChild); }
+
+function drawGridScene(interactive) {
+    clearGrid();
+    const svg = $('grid');
+    const g = state.grid;
+    const r = state.rect;
+    // 坐标格子线
+    for (let i = 0; i <= g.cols; i++) {
+        svg.appendChild(svgEl('line', { x1: g.ox + i * g.cell, y1: g.oy, x2: g.ox + i * g.cell, y2: g.oy - g.rows * g.cell, stroke: '#d5e8cc', 'stroke-width': 1 }));
+    }
+    for (let j = 0; j <= g.rows; j++) {
+        svg.appendChild(svgEl('line', { x1: g.ox, y1: g.oy - j * g.cell, x2: g.ox + g.cols * g.cell, y2: g.oy - j * g.cell, stroke: '#d5e8cc', 'stroke-width': 1 }));
+    }
+    // 菜地格子
+    for (let i = 0; i < r.w; i++) {
+        for (let j = 0; j < r.h; j++) {
+            svg.appendChild(svgEl('rect', {
+                x: g.ox + i * g.cell + 1, y: g.oy - (j + 1) * g.cell + 1,
+                width: g.cell - 2, height: g.cell - 2, fill: '#c8e6c9', stroke: '#a5d6a7', 'stroke-width': 1
+            }));
+        }
+    }
+    // 栅栏
+    const x = g.ox, y = g.oy - r.h * g.cell, w = r.w * g.cell, h = r.h * g.cell;
+    svg.appendChild(svgEl('rect', { x, y, width: w, height: h, fill: 'none', stroke: '#8d6e63', 'stroke-width': 6 }));
+    // 四个角桩
+    [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([px, py]) => {
+        svg.appendChild(svgEl('circle', { cx: px, cy: py, r: 7, fill: '#8d6e63' }));
+    });
+    // 长、宽标注
+    if (r.h > 0 && r.w > 0) {
+        const lb = svgEl('text', { x: x + w / 2, y: y + h + 24, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 'bold', fill: '#c0392b' });
+        lb.textContent = `长 ${r.w} 米`;
+        const lt = svgEl('text', { x: x + w + 34, y: y + h / 2, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 'bold', fill: '#2d5016' });
+        lt.textContent = `宽 ${r.h} 米`;
+        svg.appendChild(lb); svg.appendChild(lt);
+    }
+    // 拖动把手
+    if (interactive) {
+        const handle = svgEl('circle', { cx: x + w, cy: y, r: 14, fill: '#ffd200', stroke: '#f39c12', 'stroke-width': 3, cursor: 'grab' });
+        handle.id = 'handle';
+        svg.appendChild(handle);
+    }
+    // 蚂蚁（起点 = 左下角，沿边线走）
+    state.ant.x = x; state.ant.y = y + h;
+    state.ant.count = 0;
+    const ant = svgEl('g', { id: 'ant' });
+    ant.appendChild(svgEl('circle', { cx: state.ant.x, cy: state.ant.y, r: 12, fill: '#5d4037' }));
+    ant.appendChild(svgEl('text', { x: state.ant.x, y: state.ant.y + 5, 'text-anchor': 'middle', 'font-size': 16, fill: '#fff' }));
+    ant.lastChild.textContent = '🐜';
+    svg.appendChild(ant);
+}
+
+function drawAnt() {
+    const ant = $('grid').querySelector('#ant');
+    if (!ant) return;
+    const c = ant.querySelector('circle'); c.setAttribute('cx', state.ant.x); c.setAttribute('cy', state.ant.y);
+    const t = ant.querySelector('text'); t.setAttribute('x', state.ant.x); t.setAttribute('y', state.ant.y + 5);
+}
+
+function setHint(html) {
+    const h = $('hint');
+    h.innerHTML = html;
+    h.classList.remove('hidden');
+}
+function clearHint() { $('hint').classList.add('hidden'); $('hint').innerHTML = ''; }
+
+/* 蚂蚁沿栅栏走一圈，数周长 */
+function walkAnt(cb) {
+    const r = state.rect, g = state.grid;
+    const cell = g.cell;
+    const moves = [];
+    for (let i = 0; i < r.w; i++) moves.push([1, 0]);
+    for (let i = 0; i < r.h; i++) moves.push([0, -1]);
+    for (let i = 0; i < r.w; i++) moves.push([-1, 0]);
+    for (let i = 0; i < r.h; i++) moves.push([0, 1]);
+    let k = 0;
+    setHint(`🐜 蚂蚁沿着栅栏走一圈数米数…… <b>已量 ${state.ant.count}</b> 米`);
+    state.ant.timer = setInterval(() => {
+        if (k >= moves.length) {
+            clearInterval(state.ant.timer); state.ant.timer = null;
+            setHint(`🐜 蚂蚁走完一圈，一共 <b>${state.ant.count} 米</b>！这就是栅栏的<b>周长</b>。`);
+            cb();
+            return;
+        }
+        state.ant.x += moves[k][0] * cell;
+        state.ant.y += moves[k][1] * cell;
+        state.ant.count++;
+        k++;
+        drawAnt();
+        setHint(`🐜 蚂蚁沿着栅栏走一圈数米数…… <b>已量 ${state.ant.count}</b> 米`);
+    }, 85);
+}
+
+/* ============ 出题 ============ */
+function gridSizeForLevel() {
+    const L = state.level;
+    if (L >= 3) return { cols: 10, rows: 8 };
+    if (L === 2) return { cols: 8, rows: 6 };
+    return { cols: 6, rows: 4 };
+}
+
+function genQuestion(mode) {
+    if (mode === 'build') return genBuild();
+    if (mode === 'calc') return genCalc();
+    return genIso();
+}
+
+/* 模式① 围栅栏 */
+function genBuild() {
+    const L = state.level;
+    const gw = L >= 3 ? 10 : L === 2 ? 8 : 6;
+    const gh = L >= 3 ? 8 : L === 2 ? 6 : 4;
+    // 目标：学生拖出任意长宽，所以我们只生成“目标周长”提示？改为直接动手
+    return {
+        kind: 'build',
+        gw, gh,
+        // 初始随机围一个
+        w: randInt(2, Math.max(2, gw - 2)),
+        h: randInt(2, Math.max(2, gh - 2)),
+    };
+}
+
+/* 模式② 算周长 */
+function genCalc() {
+    const L = state.level;
+    const type = pick(L >= 2 ? ['rect', 'rect', 'sq', 'word'] : ['rect', 'sq']);
+    if (type === 'sq') {
+        const a = randInt(L >= 2 ? 3 : 2, L >= 2 ? 12 : 8);
+        return { kind: 'calc', sub: 'sq', a, ans: a * 4 };
+    }
+    if (type === 'word') {
+        const a = randInt(5, 15), b = randInt(3, 9);
+        const obj = pick(['菜地', '果园', '游泳池', '花坛']);
+        return { kind: 'calc', sub: 'word', a, b, obj, ans: 2 * (a + b) };
+    }
+    const a = randInt(3, L >= 3 ? 15 : 9), b = randInt(2, Math.min(8, a - 1));
+    return { kind: 'calc', sub: 'rect', a, b, ans: 2 * (a + b) };
+}
+
+/* 模式③ 等周变形 */
+function genIso() {
+    const L = state.level;
+    const P = pick(L >= 3 ? [22, 24, 28] : L === 2 ? [18, 20, 24] : [12, 14, 16, 20]);
+    const S = P / 2;                 // 长+宽
+    const pairs = [];
+    for (let w = 1; w <= Math.floor(S / 2); w++) pairs.push({ w, l: S - w });
+    // 最接近正方形的围法
+    let best = pairs[0];
+    pairs.forEach(p => { if (Math.abs(p.l - p.w) < Math.abs(best.l - best.w)) best = p; });
+    // 选项
+    const cands = [best];
+    pairs.forEach(p => { if (p !== best && cands.length < 3) cands.push(p); });
+    shuffle(cands);
+    return { kind: 'iso', P, S, count: pairs.length, best, choices: cands, step: 1 };
+}
+
+/* ============ 渲染 ============ */
+function setModeTabs() {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.m === state.mode));
+}
+
+function renderQ() {
+    state.answered = false;
+    state.ready = false;
+    clearHint();
+    $('feedback').innerHTML = '';
+    $('controls').innerHTML = '';
+    $('answerArea').innerHTML = '';
+    const q = state.q;
+    if (q.kind === 'build') return renderBuild(q);
+    if (q.kind === 'calc') return renderCalc(q);
+    if (q.kind === 'iso') return renderIso(q);
+}
+
+function renderBuild(q) {
+    state.grid = gridSizeForLevel();
+    state.rect = { w: q.w, h: q.h };
+    drawGridScene(true);
+    $('task').innerHTML = `🌻 拖动<b>金色圆点</b>，围出一块菜园栅栏。<br>（每格是 1 米）`;
+    setHint('👆 按住金色圆点拖动，调整长和宽');
+    setupHandle();
+}
+
+let handleBound = false;
+
+function applyDrag(e) {
+    if (state.answered || state.ant.timer) return;   // 答题中/蚂蚁走圈时不允许拖动
+    const svg = $('grid');
+    const g = state.grid;
+    const r = svg.getBoundingClientRect();
+    const sx = (e.clientX - r.left) / r.width * 560;
+    const sy = (e.clientY - r.top) / r.height * 460;
+    const col = Math.max(2, Math.min(g.cols - 1, Math.round((sx - g.ox) / g.cell)));
+    const row = Math.max(2, Math.min(g.rows - 1, Math.round((g.oy - sy) / g.cell)));
+    state.rect.w = col; state.rect.h = row;
+    drawGridScene(true);
+    setupHandle();
+}
+
+function finishDrag() {
+    if (!state.dragging) return;
+    state.dragging = false;
+    if (state.answered || state.ant.timer) return;
+    state.ready = false;
+    $('answerArea').innerHTML = '';
+    walkAnt(() => {
+        state.ready = true;
+        $('task').innerHTML = `菜园长<b>${state.rect.w}</b>米，宽<b>${state.rect.h}</b>米。<br>🐜 蚂蚁走一圈量出了周长：栅栏一共多少米？`;
+        showInputAnswer();
+    });
+}
+
+function setupHandle() {
+    if (!handleBound) {
+        const svg = $('grid');
+        const onDown = (e) => {
+            if (state.dragging) return;
+            if (e.target && e.target.id !== 'handle' && !(e.target.closest && e.target.closest('#handle'))) return;
+            e.preventDefault();
+            state.dragging = true;
+            applyDrag(e);
+        };
+        const onMove = (e) => { if (!state.dragging) return; e.preventDefault(); applyDrag(e); };
+        const onUp = () => finishDrag();
+        svg.addEventListener('mousedown', onDown);
+        svg.addEventListener('touchstart', onDown, { passive: false });
+        svg.addEventListener('mousemove', onMove);
+        svg.addEventListener('touchmove', onMove, { passive: false });
+        svg.addEventListener('mouseup', onUp);
+        svg.addEventListener('touchend', onUp);
+        window.addEventListener('mouseup', onUp);
+        window.addEventListener('touchend', onUp);
+        handleBound = true;
+    }
+}
+
+function showInputAnswer() {
+    const area = $('answerArea');
+    area.innerHTML = '';
+    const inp = document.createElement('input');
+    inp.className = 'num-input'; inp.inputMode = 'numeric'; inp.type = 'text'; inp.maxLength = 3;
+    const btn = document.createElement('button');
+    btn.className = 'btn'; btn.textContent = '✓ 提交';
+    area.appendChild(inp); area.appendChild(btn);
+    inp.focus();
+    const doSubmit = () => {
+        const val = parseInt(inp.value, 10);
+        if (isNaN(val)) { flash('请输入数字'); return; }
+        checkAnswer(val);
+    };
+    btn.onclick = doSubmit;
+    inp.onkeydown = e => { if (e.key === 'Enter') doSubmit(); };
+}
+
+function renderCalc(q) {
+    // 画示意图
+    clearGrid();
+    const svg = $('grid');
+    const g = state.grid;
+    // 简单长方形示意图（不按格子）
+    const baseX = 80, baseY = 330, scale = 24;
+    const wpx = q.sub === 'sq' ? q.a * scale : q.a * scale;
+    const hpx = q.sub === 'sq' ? q.a * scale : q.b * scale;
+    const w = Math.min(wpx, 380), h = Math.min(hpx, 220);
+    const x = baseX, y = baseY - h;
+    svg.appendChild(svgEl('rect', { x, y, width: w, height: h, fill: '#d9f0d0', stroke: '#8d6e63', 'stroke-width': 5 }));
+    const lb = svgEl('text', { x: x + w / 2, y: baseY + 26, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 'bold', fill: '#c0392b' });
+    lb.textContent = q.sub === 'sq' ? `边长 ${q.a} 米` : `长 ${q.a} 米`;
+    const lt = svgEl('text', { x: x + w + 40, y: y + h / 2, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 'bold', fill: '#2d5016' });
+    lt.textContent = q.sub === 'sq' ? '' : `宽 ${q.b} 米`;
+    svg.appendChild(lb); svg.appendChild(lt);
+    if (q.sub === 'sq') {
+        svg.appendChild(svgEl('text', { x: x + 30, y: y - 14, 'font-size': 16, fill: '#c0392b' })).textContent = `每条边都相等：${q.a} 米`;
+    }
+    // 题目
+    if (q.sub === 'word') {
+        $('task').innerHTML = `一块<b>${q.obj}</b>，长 <b>${q.a}</b> 米，宽 <b>${q.b}</b> 米。<br>要在四周砌上栅栏，栅栏一共多少米？<b>（先想公式：周长 = (长＋宽)×2）</b>`;
+    } else if (q.sub === 'sq') {
+        $('task').innerHTML = `一个<b>正方形</b>花坛，边长 <b>${q.a}</b> 米，绕花坛走一圈是多少米？<b>（正方形周长 = 边长×4）</b>`;
+    } else {
+        $('task').innerHTML = `长方形<b>长 ${q.a} 米</b>，<b>宽 ${q.b} 米</b>，周长是多少米？`;
+    }
+    setHint(q.sub === 'sq' ? '四个边长一样长' : '长方形对边相等：周长 = 2×长 + 2×宽');
+    showInputAnswer();
+}
+
+function renderIso(q) {
+    clearGrid();
+    const svg = $('grid');
+    const g = state.grid;
+    // 画一排小栅栏示意图：总周长 P 米
+    const P = q.P;
+    const cx = 280, cy = 210;
+    svg.appendChild(svgEl('circle', { cx, cy, r: 120, fill: '#f2f8ee', stroke: '#a5d6a7', 'stroke-width': 3 }));
+    svg.appendChild(svgEl('text', { x: cx, y: cy - 16, 'text-anchor': 'middle', 'font-size': 20, fill: '#2d5016' })).textContent = '围栏总长';
+    svg.appendChild(svgEl('text', { x: cx, y: cy + 34, 'text-anchor': 'middle', 'font-size': 44, 'font-weight': 'bold', fill: '#c0392b' })).textContent = P + ' 米';
+    svg.appendChild(svgEl('text', { x: cx, y: cy + 70, 'text-anchor': 'middle', 'font-size': 15, fill: '#888' })).textContent = '只有这么多栅栏，你能围出几种？';
+    // 步骤 1
+    if (q.step === 1) {
+        $('task').innerHTML = `栅栏一共 <b>${P} 米</b>。<br>想一想：围成长方形，<b>长＋宽</b> 一共是多少米？<br><span style="color:#999">（周长 ÷ 2 = 长＋宽）</span>`;
+        showInputAnswer();
+    } else if (q.step === 2) {
+        $('task').innerHTML = `长＋宽 = <b>${q.S}</b> 米。<br>把所有<b>整数</b>围法找出来（宽 ≤ 长），一共几种？`;
+        // 显示辅助提示
+        setHint('例如：宽1米，长就是 S-1 米……从宽1米开始试到长=宽为止');
+        showInputAnswer();
+    } else {
+        // 步骤 3：选最接近正方形的围法
+        $('task').innerHTML = `在 <b>${q.S}</b> 米里（长＋宽），找出<b>最接近正方形</b>的围法（长和宽差得最小）。选一选：`;
+        const area = $('answerArea');
+        area.innerHTML = '';
+        const box = document.createElement('div');
+        box.className = 'pairs';
+        q.choices.forEach(p => {
+            const chip = document.createElement('div');
+            chip.className = 'pair-chip';
+            chip.textContent = `宽 ${p.w} 米 × 长 ${p.l} 米`;
+            chip.onclick = () => {
+                if (state.answered) return;
+                const ok = p.w === q.best.w && p.l === q.best.l;
+                chip.classList.add(ok ? 'correct' : 'wrong');
+                q.choices.forEach(x => { if (x.w === q.best.w && x.l === q.best.l) { const el = box.querySelectorAll('.pair-chip'); el.forEach(e => { if (e.textContent.includes(`宽 ${q.best.w} 米`)) e.classList.add('correct'); }); } });
+                checkAnswer(ok, `${p.w}×${p.l}`, `宽 ${q.best.w} 米 × 长 ${q.best.l} 米`);
+            };
+            box.appendChild(chip);
+        });
+        area.appendChild(box);
+        // 展示所有围法（答案形式）
+        const allBox = document.createElement('div');
+        allBox.className = 'pairs';
+        allBox.style.marginTop = '10px';
+        const pairs = [];
+        for (let w = 1; w <= Math.floor(q.S / 2); w++) pairs.push(`宽${w} 长${q.S - w}`);
+        allBox.innerHTML = `<span style="color:#999;font-size:13px">所有围法：</span>` + pairs.join('　');
+        area.appendChild(allBox);
+    }
+    $('controls').innerHTML = '';
+}
+
+function checkAnswer(val, yourText, rightText) {
+    if (state.answered) return;
+    state.answered = true;
+    const q = state.q;
+    let correct, right, your;
+    if (q.kind === 'build' || (q.kind === 'calc' && typeof val === 'number')) {
+        const ans = q.kind === 'build' ? 2 * (state.rect.w + state.rect.h) : q.ans;
+        correct = val === ans;
+        your = String(val);
+        right = String(ans) + (q.kind === 'build' ? ` 米（(${state.rect.w}＋${state.rect.h})×2）` : (q.kind === 'calc' ? ` 米` : ''));
+    } else if (q.kind === 'iso') {
+        const expect = q.step === 1 ? q.S : (q.step === 2 ? q.count : null);
+        if (q.step === 3) {
+            correct = val;
+            your = yourText;
+            right = rightText;
+        } else {
+            correct = Number(val) === expect;
+            your = String(val);
+            right = String(expect) + (q.step === 1 ? ' 米' : ' 种');
+        }
+    } else {
+        return;
+    }
+    const fb = $('feedback');
+    if (correct) {
+        state.streak++;
+        const gain = 8 + Math.min(state.streak, 4) * 2;
+        state.score += gain;
+        goodTone();
+        fb.className = 'feedback ok';
+        fb.innerHTML = `✅ 正确！ +${gain}分`;
+        confetti(200, 100);
+        if (state.level < 3 && state.streak >= 3) { state.level++; fb.innerHTML += '　🎯 难度升级！'; }
+        nextStep(q, true);
+    } else {
+        state.streak = 0;
+        state.score = Math.max(0, state.score - 5);
+        badTone();
+        fb.className = 'feedback bad';
+        fb.innerHTML = `❌ 正确答案是 <b>${right}</b>`;
+        recordWrong(q, your, right);
+        if (state.level > 1 && Math.random() < 0.5) state.level--;
+        nextStep(q, false);
+    }
+}
+
+/* 等周模式分步骤推进；其余题目推进到下一题 */
+function nextStep(q, ok) {
+    if (q.kind === 'iso') {
+        setTimeout(() => {
+            if (q.step === 1) {
+                // 回答错误也继续，但直接展示讲解？若答对进入步骤2
+                q.step = 2;
+                renderQ();
+            } else if (q.step === 2) {
+                q.step = 3;
+                renderQ();
+            } else {
+                nextRound();
+            }
+        }, ok ? 600 : 2000);
+        return;
+    }
+    setTimeout(nextRound, ok ? 700 : 2000);
+}
+
+function nextRound() {
+    state.round++;
+    $('round').textContent = state.round;
+    $('score').textContent = state.score;
+    $('streak').textContent = state.streak;
+    $('level').textContent = state.level;
+    if (state.round > state.maxRound) { showResult(); return; }
+    let mode = state.mode;
+    if (mode === 'mix') mode = pick(['build', 'build', 'calc', 'iso']);
+    state.q = genQuestion(mode);
+    renderQ();
+}
+
+function flash(msg) {
+    const fb = $('feedback');
+    fb.className = 'feedback bad';
+    fb.innerHTML = '💡 ' + msg;
+    setTimeout(() => { if (!state.answered) fb.innerHTML = ''; }, 1500);
+}
+
+function recordWrong(q, your, right) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    const text = q.kind === 'build' ? `围成 ${state.rect.w}×${state.rect.h} 求周长`
+        : q.kind === 'calc' ? (q.sub === 'sq' ? `边长${q.a}正方形周长` : (q.sub === 'word' ? `${q.obj}周长` : `长${q.a}宽${q.b}周长`))
+        : `等周：周长${q.P}，步骤${q.step}`;
+    list.unshift({ text, your, right });
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {}
+}
+
+/* ============ 结算 ============ */
+function showResult() {
+    $('answerArea').innerHTML = '';
+    $('task').innerHTML = '';
+    clearHint();
+    clearGrid();
+    const total = state.maxRound;
+    const rate = state.score / (total * 14);
+    let stars = rate >= 0.7 ? 3 : rate >= 0.45 ? 2 : rate >= 0.2 ? 1 : 0;
+    let txt = `本局 ${total} 题，得分 ${state.score}，最高难度 ${state.level} 级。`;
+    if (stars === 3) txt += ' 你是周长设计师大师！';
+    else if (stars === 2) txt += ' 很棒！围栅栏你肯定没问题。';
+    else if (stars === 1) txt += ' 加油，多围几次就明白了。';
+    else txt += ' 别灰心，先看看错题本。';
+    $('resultTitle').textContent = stars >= 2 ? '🎉 太棒了！' : '🌻 学习结束';
+    let shtml = '';
+    for (let i = 0; i < 3; i++) shtml += `<span class="${i < stars ? '' : 'dim'}">⭐</span>`;
+    $('resultStars').innerHTML = shtml;
+    $('resultText').innerHTML = txt;
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    if (list.length) {
+        $('wrongBox').style.display = '';
+        $('wrongList').innerHTML = list.slice(0, 12).map((w, i) =>
+            `<div class="row">${i + 1}. ${w.text} —— 你答：<span class="y">${w.your}</span>，正确：<span class="a">${w.right}</span></div>`
+        ).join('');
+    } else $('wrongBox').style.display = 'none';
+    $('resultOverlay').style.display = 'flex';
+    beep(stars >= 2 ? 784 : 392, 0.4);
+}
+
+/* ============ 菜单 ============ */
+function buildMenu() {
+    const row = $('modeRow');
+    row.innerHTML = '';
+    const items = [
+        { m: 'mix', t: '🌿 混合' },
+        { m: 'build', t: '① 围栅栏' },
+        { m: 'calc', t: '② 算周长' },
+        { m: 'iso', t: '③ 等周变形' },
+    ];
+    items.forEach(it => {
+        const b = document.createElement('button');
+        b.className = 'menu-btn' + (it.m === state.mode ? ' sel' : '');
+        b.textContent = it.t;
+        b.onclick = () => {
+            state.mode = it.m;
+            row.querySelectorAll('.menu-btn').forEach(x => x.classList.remove('sel'));
+            b.classList.add('sel');
+        };
+        row.appendChild(b);
+    });
+    document.querySelectorAll('#lvRow .menu-btn').forEach(b => {
+        b.onclick = () => {
+            document.querySelectorAll('#lvRow .menu-btn').forEach(x => x.classList.remove('sel'));
+            b.classList.add('sel');
+            state.level = Number(b.dataset.lv);
+            state.startLevel = Number(b.dataset.lv);
+        };
+    });
+}
+
+function startRound() {
+    state.round = 0;
+    state.score = 0;
+    state.streak = 0;
+    state.level = state.startLevel || 1;
+    state.answered = false;
+    $('menuOverlay').style.display = 'none';
+    $('resultOverlay').style.display = 'none';
+    nextRound();
+}
+
+$('startBtn').onclick = startRound;
+$('againBtn').onclick = startRound;
+$('homeBtn').onclick = () => { $('resultOverlay').style.display = 'none'; $('menuOverlay').style.display = 'flex'; buildMenu(); };
+$('menuBtn').onclick = () => { $('menuOverlay').style.display = 'flex'; buildMenu(); };
+$('soundBtn').onclick = () => { soundOn = !soundOn; $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; };
+$('clearBtn').onclick = () => { localStorage.removeItem(STORE_KEY); alert('错题本已清空！'); };
+document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.onclick = () => {
+        state.mode = tab.dataset.m;
+        setModeTabs();
+    };
+});
+
+buildMenu();
+setModeTabs();
+// 初始画面
+state.q = { kind: 'build', w: 3, h: 3 };
+state.grid = gridSizeForLevel();
+state.rect = { w: 3, h: 3 };
+renderQ();
+</script>
+</body>
+</html>

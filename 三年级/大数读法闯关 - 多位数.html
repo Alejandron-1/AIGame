@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大数读法闯关（三/四/五位数版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background-color: #e6f7ff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .main-title {
+            font-size: 42px;
+            color: #ff6b8b;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            letter-spacing: 4px;
+        }
+        .title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .number-display {
+            font-size: 48px;
+            color: #e63946;
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            letter-spacing: 4px;
+            transition: all 0.3s;
+        }
+        .digit-table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 100%;
+            display: none;
+        }
+        .digit-table th, .digit-table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .digit-table th {
+            background-color: #e9ecef;
+        }
+
+        /* 每一位独立柔和染色 */
+        .color-wan  { background-color: #a4e8fc; } /* 万位：天蓝 */
+        .color-qian { background-color: #b3f7c8; } /* 千位：浅绿 */
+        .color-bai  { background-color: #ffe69c; } /* 百位：浅黄 */
+        .color-shi  { background-color: #ffc2f2; } /* 十位：浅粉 */
+        .color-ge   { background-color: #d5c8ff; } /* 个位：浅紫 */
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 25px 0;
+        }
+        .toggle-btn, .action-btn, .digit-length-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn, .digit-length-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .toggle-btn.active, .digit-length-btn.active {
+            background: #007bff;
+            color: white;
+        }
+        .action-btn {
+            background: #e63946;
+            color: white;
+            width: 100%;
+            max-width: 400px;
+        }
+        .action-btn:hover {
+            background: #c53030;
+        }
+        .reading-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 20px;
+            color: #856404;
+            display: none;
+        }
+        .digit-length-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-title">大数读法闯关</h1>
+        <div class="digit-length-group">
+            <button class="digit-length-btn" data-length="3">三位数</button>
+            <button class="digit-length-btn" data-length="4">四位数</button>
+            <button class="digit-length-btn active" data-length="5">五位数</button>
+        </div>
+        <div class="title">请读出下面的数字：</div>
+        <div class="number-display" id="numberDisplay">12345</div>
+
+        <table class="digit-table" id="digitTable">
+            <thead id="digitTableHead">
+                <tr>
+                    <th>万位</th>
+                    <th>千位</th>
+                    <th>百位</th>
+                    <th>十位</th>
+                    <th>个位</th>
+                </tr>
+            </thead>
+            <tbody id="digitTableBody">
+                <tr></tr>
+            </tbody>
+        </table>
+
+        <div class="controls">
+            <button class="toggle-btn" id="toggleDigitTable">显示数位表</button>
+            <button class="toggle-btn" id="toggleColor">数位染色</button>
+        </div>
+
+        <button class="action-btn" id="showReading">显示读法</button>
+        <button class="action-btn" id="nextQuestion" style="margin-top: 15px; background: #28a745;">下一题</button>
+
+        <div class="reading-display" id="readingDisplay"></div>
+    </div>
+
+    <script>
+        // 生成不同位数的随机题目库（三/四/五位数）
+        function generateQuestionBank() {
+            const banks = {
+                3: [], // 三位数
+                4: [], // 四位数
+                5: []  // 五位数
+            };
+            const titles = [
+                "社区居民总数：", "文具店进货数量：", "公园游客人数：", "运动会报名人数：",
+                "图书馆藏书数量：", "农场农作物数量：", "超市日销售额：", "校园活动参与人数：",
+                "快递配送总量：", "公益捐赠物品数：", "山区小学学生数：", "科技馆接待人数：",
+                "城市绿化树木数：", "书店图书销量：", "游泳馆入场人数：", "共享单车使用次数：",
+                "果园水果产量：", "防疫物资发放数：", "马拉松参赛人数：", "儿童乐园游玩人数：",
+                "乡村公路里程数：", "音乐节观众人数：", "校园广播播放次数：", "湿地公园鸟类数量：",
+                "社区志愿者人数：", "博物馆展品数量：", "书店儿童读物数：", "城市充电桩数量：",
+                "爱心捐赠书包数：", "图书角绘本总数："
+            ];
+
+            // 生成三位数（100-999）
+            for (let i = 0; i < 30; i++) {
+                const num = Math.floor(Math.random() * 900 + 100).toString();
+                banks[3].push({ num, title: titles[i] });
+            }
+
+            // 生成四位数（1000-9999）
+            for (let i = 0; i < 30; i++) {
+                const num = Math.floor(Math.random() * 9000 + 1000).toString();
+                banks[4].push({ num, title: titles[i] });
+            }
+
+            // 五位数（原题目库）
+            banks[5] = [
+                { num: "27541", title: "社区居民总数：" },
+                { num: "51893", title: "文具店进货数量：" },
+                { num: "73026", title: "公园游客人数：" },
+                { num: "19475", title: "运动会报名人数：" },
+                { num: "82109", title: "图书馆藏书数量：" },
+                { num: "35682", title: "农场农作物数量：" },
+                { num: "64357", title: "超市日销售额：" },
+                { num: "28714", title: "校园活动参与人数：" },
+                { num: "59203", title: "快递配送总量：" },
+                { num: "71596", title: "公益捐赠物品数：" },
+                { num: "14082", title: "山区小学学生数：" },
+                { num: "37915", title: "科技馆接待人数：" },
+                { num: "85247", title: "城市绿化树木数：" },
+                { num: "26139", title: "书店图书销量：" },
+                { num: "54806", title: "游泳馆入场人数：" },
+                { num: "91372", title: "共享单车使用次数：" },
+                { num: "42658", title: "果园水果产量：" },
+                { num: "78043", title: "防疫物资发放数：" },
+                { num: "15729", title: "马拉松参赛人数：" },
+                { num: "30964", title: "儿童乐园游玩人数：" },
+                { num: "62417", title: "乡村公路里程数：" },
+                { num: "89531", title: "音乐节观众人数：" },
+                { num: "21875", title: "校园广播播放次数：" },
+                { num: "53190", title: "湿地公园鸟类数量：" },
+                { num: "76428", title: "社区志愿者人数：" },
+                { num: "18305", title: "博物馆展品数量：" },
+                { num: "47261", title: "书店儿童读物数：" },
+                { num: "81649", title: "城市充电桩数量：" },
+                { num: "32570", title: "爱心捐赠书包数：" },
+                { num: "69032", title: "图书角绘本总数：" }
+            ];
+
+            return banks;
+        }
+
+        // 初始化题库
+        const questionBanks = generateQuestionBank();
+        let currentDigitLength = 5; // 默认五位数
+        let currentQuestion = questionBanks[currentDigitLength][0];
+        let isDigitTableVisible = false;
+        let isColorEnabled = false;
+        let isReadingVisible = false;
+
+        // 初始化
+        function init() {
+            renderNumber();
+            renderDigitTable();
+            updateUI();
+            bindDigitLengthEvents();
+        }
+
+        // 绑定位数选择事件
+        function bindDigitLengthEvents() {
+            const lengthBtns = document.querySelectorAll('.digit-length-btn');
+            lengthBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 切换激活状态
+                    lengthBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // 更新当前位数
+                    currentDigitLength = parseInt(btn.dataset.length);
+                    // 重置当前题目
+                    currentQuestion = questionBanks[currentDigitLength][0];
+                    isReadingVisible = false;
+                    // 重新渲染
+                    renderNumber();
+                    renderDigitTable();
+                    updateUI();
+                });
+            });
+        }
+
+        // 渲染数字（适配位数、每一位独立染色）
+        function renderNumber() {
+            document.querySelector(".title").textContent = currentQuestion.title;
+            // 根据当前位数补零/截断
+            let numStr = currentQuestion.num.padStart(currentDigitLength, '0').slice(-currentDigitLength);
+            
+            let displayStr = numStr;
+            if (isColorEnabled) {
+                // 位数映射：3位(百/十/个)、4位(千/百/十/个)、5位(万/千/百/十/个)
+                const colorMaps = {
+                    3: ['color-bai', 'color-shi', 'color-ge'],
+                    4: ['color-qian', 'color-bai', 'color-shi', 'color-ge'],
+                    5: ['color-wan', 'color-qian', 'color-bai', 'color-shi', 'color-ge']
+                };
+                const classes = colorMaps[currentDigitLength];
+                displayStr = numStr.split('').map((c, i) => 
+                    `<span class="${classes[i]}">${c}</span>`
+                ).join('');
+            }
+
+            document.getElementById("numberDisplay").innerHTML = displayStr;
+        }
+
+        // 渲染数位表（适配不同位数）
+        function renderDigitTable() {
+            // 更新数位表头
+            const headMap = {
+                3: ['百位', '十位', '个位'],
+                4: ['千位', '百位', '十位', '个位'],
+                5: ['万位', '千位', '百位', '十位', '个位']
+            };
+            const heads = headMap[currentDigitLength];
+            const thead = document.getElementById('digitTableHead');
+            thead.innerHTML = `<tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+            // 渲染数位表内容
+            const numStr = currentQuestion.num.padStart(currentDigitLength, ' ').slice(-currentDigitLength);
+            const tbody = document.getElementById("digitTableBody");
+            tbody.innerHTML = "";
+            const tr = document.createElement("tr");
+            const colorMaps = {
+                3: ['color-bai', 'color-shi', 'color-ge'],
+                4: ['color-qian', 'color-bai', 'color-shi', 'color-ge'],
+                5: ['color-wan', 'color-qian', 'color-bai', 'color-shi', 'color-ge']
+            };
+            const colorClasses = colorMaps[currentDigitLength];
+
+            for (let i = 0; i < currentDigitLength; i++) {
+                const td = document.createElement("td");
+                td.textContent = numStr[i] === ' ' ? '' : numStr[i];
+                if (isColorEnabled) td.classList.add(colorClasses[i]);
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+
+        // 多位数标准读法（适配三/四/五位数）
+        function numberToChinese(numStr) {
+            const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+            // 统一补零到5位，方便处理
+            const fullNum = numStr.padStart(5, '0');
+            const [w, q, b, s, g] = fullNum.split('');
+            
+            let res = '';
+            // 处理五位数的万位
+            if (currentDigitLength >= 5 && w !== '0') {
+                res += digits[w] + '万';
+            }
+
+            // 处理千位（四/五位数）
+            let hasNonZero = false; // 标记是否出现过非零数字（用于零的处理）
+            if (currentDigitLength >= 4 && q !== '0') {
+                res += digits[q] + '千';
+                hasNonZero = true;
+            } else if (hasNonZero && (currentDigitLength >= 4)) {
+                res += '零';
+            }
+
+            // 处理百位（三/四/五位数）
+            const startIdx = currentDigitLength === 3 ? 0 : 1; // 三位数从百位开始算第一个非零位
+            if (b !== '0') {
+                if (hasNonZero && res.endsWith('零') === false && (currentDigitLength >= 3)) {
+                    // 前面有非零且最后不是零，补零
+                    res += '零';
+                }
+                res += digits[b] + '百';
+                hasNonZero = true;
+            } else if (hasNonZero && (currentDigitLength >= 3) && !res.endsWith('零')) {
+                res += '零';
+            }
+
+            // 处理十位
+            if (s !== '0') {
+                if (hasNonZero && res.endsWith('零') === false) {
+                    res += '零';
+                }
+                // 十位为1且是开头时，省略“一”（如12读作十二，而非一十二）
+                if (s === '1' && !hasNonZero && g === '0') {
+                    res += '十';
+                } else if (s === '1' && !hasNonZero) {
+                    res += '十';
+                } else {
+                    res += digits[s] + '十';
+                }
+                hasNonZero = true;
+            } else if (hasNonZero && !res.endsWith('零')) {
+                res += '零';
+            }
+
+            // 处理个位
+            if (g !== '0') {
+                if (hasNonZero && res.endsWith('零') === false && (s === '0')) {
+                    res += '零';
+                }
+                res += digits[g];
+                hasNonZero = true;
+            } else if (res.endsWith('零')) {
+                // 个位为零且最后是零，去掉末尾的零
+                res = res.slice(0, -1);
+            }
+
+            // 特殊情况：全零
+            if (res === '') res = '零';
+            return res;
+        }
+
+        // 更新界面
+        function updateUI() {
+            document.getElementById("digitTable").style.display = isDigitTableVisible ? 'table' : 'none';
+            document.getElementById("readingDisplay").style.display = isReadingVisible ? 'block' : 'none';
+            document.getElementById("toggleDigitTable").classList.toggle("active", isDigitTableVisible);
+            document.getElementById("toggleColor").classList.toggle("active", isColorEnabled);
+            if (isReadingVisible) {
+                document.getElementById("readingDisplay").textContent = `读法：${numberToChinese(currentQuestion.num)}`;
+            }
+        }
+
+        // 事件绑定
+        document.getElementById("toggleDigitTable").addEventListener("click", () => {
+            isDigitTableVisible = !isDigitTableVisible;
+            updateUI();
+        });
+
+        document.getElementById("toggleColor").addEventListener("click", () => {
+            isColorEnabled = !isColorEnabled;
+            renderNumber();
+            renderDigitTable();
+            updateUI();
+        });
+
+        document.getElementById("showReading").addEventListener("click", () => {
+            isReadingVisible = !isReadingVisible;
+            updateUI();
+        });
+
+        document.getElementById("nextQuestion").addEventListener("click", () => {
+            let nextIdx;
+            do {
+                nextIdx = Math.floor(Math.random() * questionBanks[currentDigitLength].length);
+            } while (questionBanks[currentDigitLength][nextIdx].num === currentQuestion.num && questionBanks[currentDigitLength].length > 1);
+            currentQuestion = questionBanks[currentDigitLength][nextIdx];
+            isReadingVisible = false;
+            renderNumber();
+            renderDigitTable();
+            updateUI();
+        });
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>除法登山队 - 三年级下册 第2单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #8d6e63 0%, #4e342e 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #3e2723, #5d4037);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffd54f; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    .map-title { text-align: center; font-size: 26px; color: #3e2723; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .trail { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .peak {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #f5efe9;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #d7ccc8; transition: all .2s;
+    }
+    .peak:hover { border-color: #5d4037; transform: translateX(4px); }
+    .peak.locked { opacity: 0.45; cursor: not-allowed; }
+    .peak .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .peak .info { flex: 1; }
+    .peak .info .n { font-size: 17px; font-weight: bold; color: #3e2723; }
+    .peak .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .peak .stars { font-size: 18px; letter-spacing: 2px; }
+    .peak .lock { font-size: 20px; color: #bbb; }
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #3e2723; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #a1887f, #5d4037); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #faf7f4; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #e8ddd5; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 28px; font-weight: bold; color: #3e2723; text-align: center; line-height: 1.7; }
+    .q-text .hl { color: #c0392b; font-size: 40px; }
+    .num-input {
+        width: 150px; height: 60px; text-align: center; font-size: 38px; font-weight: bold;
+        border: 3px solid #3e2723; border-radius: 12px; outline: none; color: #3e2723;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #5d4037; box-shadow: 0 0 0 3px rgba(93,64,55,0.2); }
+    .num-input.small { width: 110px; }
+    .two-inputs { display: flex; align-items: center; gap: 12px; }
+    .two-inputs .label { font-size: 26px; font-weight: bold; color: #5d4037; }
+    .btn-main {
+        background: linear-gradient(135deg, #8d6e63, #4e342e); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(78,52,46,0.4); }
+    .rate-hint {
+        background: #efe7e0; border: 1px dashed #bcaaa4; color: #4e342e;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 660px; }
+    .opt {
+        padding: 13px 8px; border-radius: 14px; background: #fff; border: 2px solid #e8ddd5;
+        font-size: 20px; font-weight: bold; color: #3e2723; cursor: pointer; text-align: center;
+        font-family: inherit; transition: all .15s;
+    }
+    .opt:hover { border-color: #5d4037; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #3e2723; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #3e2723; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">⛰️ 除法登山队</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🧗 除法登山队</div>
+        <div class="map-sub">口算登山 → 竖式登峰 → 估算验算，三座山峰等你登顶！</div>
+        <div class="trail" id="trail"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#4e342e;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '除法登山队_错题';
+const PROG_KEY  = '除法登山队_进度';
+const STAGES = [
+    { icon:'⛰️', name:'口算登山', desc:'整十、整百、几百几十 ÷ 一位数 口算', kind:'oral' },
+    { icon:'🧗', name:'竖式登峰', desc:'除数是一位数的竖式除法（含商中间/末尾有0、有余数）', kind:'vertical' },
+    { icon:'🏔️', name:'估算与验算', desc:'估算商 · 验算 · 余数要比除数小', kind:'check' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+/* ================= 题目生成 ================= */
+// 关1：口算除法（整十/整百/几百几十 ÷ 一位数）
+function makeOral() {
+    const b = randInt(2, 9);
+    const kind = pick(['tens', 'hundreds', 'hybrid']);
+    let a, ans;
+    if (kind === 'tens') { // 整十：40 ÷ 5
+        const q = randInt(2, 9);
+        a = b * q * 10; ans = q * 10;
+    } else if (kind === 'hundreds') { // 整百：400 ÷ 5
+        const q = randInt(2, 9);
+        a = b * q * 100; ans = q * 100;
+    } else { // 几百几十：240 ÷ 6
+        const q = randInt(2, 9);
+        a = b * q * 10; ans = q * 10;
+        if (Math.random() < 0.5) a += b * randInt(1, 3) * 10; // 如 240+60=300？保持几百几十
+        a = Math.floor(a / 10) * 10;
+        ans = a / b;
+    }
+    if (a > 9990) return makeOral();
+    return { kind:'oral', text:`<span class="hl">${a}</span> ÷ ${b} = （ ）？`,
+             answer: ans, hint:`想乘法口诀：${b} × ？ = ${a}` };
+}
+
+// 关2：竖式除法
+function makeVertical() {
+    const b = randInt(2, 9);
+    const withRemainder = Math.random() < 0.4;
+    if (withRemainder) {
+        const q = randInt(11, 98);
+        const r = randInt(1, b - 1);
+        const a = b * q + r;
+        if (a > 9999) return makeVertical();
+        return { kind:'vertical', text:`<span class="hl">${a}</span> ÷ ${b} = （ ）……（ ）`,
+                 answer: [q, r], hasRemainder: true,
+                 hint:`商 ${q}，余数 ${r}。验算：${b} × ${q} + ${r} = ${a} ✓（余数必须比除数 ${b} 小）` };
+    }
+    // 无余数：普通 / 商中间有0 / 商末尾有0
+    const style = pick(['normal', 'middleZero', 'endZero']);
+    let q, a;
+    if (style === 'middleZero') { // 商中间有0，如 816 ÷ 4 = 204
+        const x = randInt(1, 8), y = randInt(1, 9);
+        q = x * 100 + y;
+        a = b * q;
+        if (a > 9999) return makeVertical();
+        return { kind:'vertical', text:`<span class="hl">${a}</span> ÷ ${b} = （ ）？`,
+                 answer: q, hasRemainder: false,
+                 hint:`商的中间有 0：${a} ÷ ${b} = ${q}（十位不够商 1 就商 0 占位）` };
+    }
+    if (style === 'endZero') { // 商末尾有0，如 480 ÷ 6 = 80
+        const x = randInt(1, 9);
+        q = x * 10;
+        a = b * q;
+        return { kind:'vertical', text:`<span class="hl">${a}</span> ÷ ${b} = （ ）？`,
+                 answer: q, hasRemainder: false,
+                 hint:`商的末尾有 0：${a} ÷ ${b} = ${q}` };
+    }
+    q = randInt(12, 98);
+    if (q % 10 === 0) q += 1;
+    a = b * q;
+    if (a > 9999) return makeVertical();
+    return { kind:'vertical', text:`<span class="hl">${a}</span> ÷ ${b} = （ ）？`,
+             answer: q, hasRemainder: false,
+             hint:`从高位除起：${b} × ${q} = ${a}` };
+}
+
+// 关3：估算 + 验算 + 余数规则
+const CHECK_BANK = [
+    { text:'一个数除以 8，余数最大是（ ）。', opts:['7','8','9','6'], ans:'7' },
+    { text:'被除数 = （ ）', opts:['商 × 除数 + 余数','商 + 除数 + 余数','商 × 余数 + 除数','除数 × 余数 + 商'], ans:'商 × 除数 + 余数' },
+    { text:'48 ÷ 6 = 8，验算正确吗？（ ）', opts:['正确：8 × 6 = 48','不正确','8 × 6 ≠ 48','不能验算'], ans:'正确：8 × 6 = 48' },
+    { text:'0 除以任何不是 0 的数，都得（ ）。', opts:['0','1','原数','无法确定'], ans:'0' },
+    { text:'72 ÷ 8 和 72 ÷ 9，商（ ）。', opts:['不一样大（9 和 8）','一样大','都等于 8','都等于 9'], ans:'不一样大（9 和 8）' },
+    { text:'除法竖式中，余数一定要比除数（ ）。', opts:['小','大','相等','无所谓'], ans:'小' },
+    { text:'65 ÷ 7 = 9……2，验算：7 × 9 + 2 =（ ）', opts:['65','63','66','67'], ans:'65' },
+    { text:'甲数 ÷ 乙数 = 6……3，乙数最小是（ ）。', opts:['4','3','2','6'], ans:'4' },
+    { text:'428 ÷ 7 的商大约是（ ）。', opts:['60','50','70','40'], ans:'60' },
+    { text:'210 ÷ 3 的商末尾有（ ）个 0。', opts:['1','2','0','3'], ans:'1' },
+];
+function makeCheck() {
+    const t = pick(CHECK_BANK);
+    const opts = [...t.opts];
+    shuffle(opts);
+    return { kind:'check', text:t.text, answer: t.ans, opts,
+             hint:'余数 < 除数；验算：商 × 除数 + 余数 = 被除数' };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'oral') return makeOral();
+    if (kind === 'vertical') return makeVertical();
+    return makeCheck();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const trail = $('trail');
+    trail.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'peak' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        trail.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.kind === 'check' ? qq.text : qq.text.replace(/<[^>]+>/g, '') + (qq.hasRemainder ? 'R' : '');
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'check') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b.dataset.v, b));
+    } else if (q.hasRemainder) {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="two-inputs">
+                <input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="商">
+                <span class="label">……</span>
+                <input class="num-input small" id="remInput" type="number" inputmode="numeric" placeholder="余数">
+            </div>
+            <div class="rate-hint">💡 先算商，再看余数（余数要比除数小）</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput'); inp.focus();
+        $('submitBtn').onclick = submitRem;
+        inp.onkeydown = e => { if (e.key === 'Enter') $('remInput').focus(); };
+        $('remInput').onkeydown = e => { if (e.key === 'Enter') submitRem(); };
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="convert-row"><input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?"></div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput'); inp.focus();
+        $('submitBtn').onclick = submit;
+        inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    }
+}
+
+function submit() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) return;
+    judge(v === q.answer, v);
+}
+
+function submitRem() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    const r = parseInt($('remInput').value, 10);
+    if (isNaN(v) || isNaN(r)) return;
+    judge(v === q.answer[0] && r === q.answer[1], `${v}……${r}`);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${Array.isArray(q.answer) ? q.answer.join('……') : q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: Array.isArray(q.answer) ? q.answer.join('……') : q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 登顶成功！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一座山峰已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部登顶！返回'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方向导航员 - 三年级下册 第1单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #4facfe 0%, #00c6fb 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #01579b, #0277bd);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #80d8ff; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    .map-title { text-align: center; font-size: 26px; color: #01579b; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .dock { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .leg {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #e6f7ff;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #b3e5fc; transition: all .2s;
+    }
+    .leg:hover { border-color: #0277bd; transform: translateX(4px); }
+    .leg.locked { opacity: 0.45; cursor: not-allowed; }
+    .leg .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .leg .info { flex: 1; }
+    .leg .info .n { font-size: 17px; font-weight: bold; color: #01579b; }
+    .leg .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .leg .stars { font-size: 18px; letter-spacing: 2px; }
+    .leg .lock { font-size: 20px; color: #bbb; }
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #01579b; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #29b6f6, #01579b); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #f0f9ff; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #b3e5fc; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 26px; font-weight: bold; color: #01579b; text-align: center; line-height: 1.7; }
+    .q-text .hl { color: #c0392b; font-size: 38px; }
+    /* 地图 */
+    .city-map { display: grid; grid-template-columns: repeat(3, 110px); gap: 6px; }
+    .cell {
+        width: 110px; height: 76px; background: #fff; border: 2px solid #b3e5fc; border-radius: 12px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 12px; color: #555; gap: 2px;
+    }
+    .cell .e { font-size: 30px; }
+    .cell.center { background: #fff8e1; border-color: #ffb300; font-weight: bold; color: #e65100; }
+    .compass { display: flex; gap: 6px; font-size: 13px; color: #01579b; font-weight: bold; margin-top: 4px; }
+    .num-input {
+        width: 190px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #01579b; border-radius: 12px; outline: none; color: #01579b;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #0277bd; box-shadow: 0 0 0 3px rgba(2,119,189,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #29b6f6, #01579b); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(1,87,155,0.4); }
+    .rate-hint {
+        background: #e1f5fe; border: 1px dashed #4fc3f7; color: #01579b;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 660px; }
+    .opt {
+        padding: 13px 8px; border-radius: 14px; background: #fff; border: 2px solid #b3e5fc;
+        font-size: 20px; font-weight: bold; color: #01579b; cursor: pointer; text-align: center;
+        font-family: inherit; transition: all .15s;
+    }
+    .opt:hover { border-color: #0277bd; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #01579b; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #01579b; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">🧭 方向导航员</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🧭 方向导航员</div>
+        <div class="map-sub">认方向 → 看地图 → 走路线，学会东南西北不迷路！</div>
+        <div class="dock" id="dock"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#0277bd;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '方向导航员_错题';
+const PROG_KEY  = '方向导航员_进度';
+const STAGES = [
+    { icon:'🧭', name:'认方向',   desc:'太阳从哪升起 · 面对北面左右后是哪里', kind:'know' },
+    { icon:'🗺️', name:'看地图',   desc:'在 3×3 街区图上找建筑（上北下南左西右东）', kind:'map' },
+    { icon:'🚶', name:'走路线',   desc:'按方向指令走格子，看看到了哪里', kind:'route' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+// 3×3 地图：位置索引（行,列），中心(1,1)为学校
+const DIRS = {
+    '北': [-1, 0], '南': [1, 0], '东': [0, 1], '西': [0, -1],
+    '东北': [-1, 1], '西北': [-1, -1], '东南': [1, 1], '西南': [1, -1],
+};
+const POS_NAMES = [
+    ['西北','北','东北'],
+    ['西','中','东'],
+    ['西南','南','东南'],
+];
+const BUILDINGS = [
+    ['🌳','公园','🏥','医院','🎬','电影院'],
+    ['🏪','商店','🏫','学校','📮','邮局'],
+    ['🥬','菜场','📚','图书馆','🚌','车站'],
+];
+// 9 个位置 → 名称（索引 行*3+列）
+function cellOf(r, c) { return BUILDINGS[r][c * 2]; }
+function nameOf(r, c) { return BUILDINGS[r][c * 2 + 1]; }
+function dirBetween(r1, c1, r2, c2) {
+    const dr = r2 - r1, dc = c2 - c1;
+    for (const d in DIRS) { if (DIRS[d][0] === dr && DIRS[d][1] === dc) return d; }
+    return '';
+}
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+function cityMapHTML() {
+    let html = '<div class="city-map">';
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const isC = r === 1 && c === 1;
+            html += `<div class="cell${isC ? ' center' : ''}"><span class="e">${cellOf(r, c)}</span>${nameOf(r, c)}</div>`;
+        }
+    }
+    html += '</div><div class="compass">▲ 北 &nbsp;（地图规则：上北下南，左西右东）</div>';
+    return html;
+}
+
+/* ================= 题目生成 ================= */
+// 关1：方向常识
+const KNOW_BANK = [
+    { text:'太阳从（ ）方升起。', opts:['东','西','南','北'], ans:'东' },
+    { text:'太阳从（ ）方落下。', opts:['西','东','南','北'], ans:'西' },
+    { text:'地图上，通常上面是（ ）。', opts:['北','南','东','西'], ans:'北' },
+    { text:'地图上，下面一般是（ ）。', opts:['南','北','东','西'], ans:'南' },
+    { text:'地图上，左面是（ ）。', opts:['西','东','北','南'], ans:'西' },
+    { text:'地图上，右面是（ ）。', opts:['东','西','北','南'], ans:'东' },
+    { text:'面向北面，你的后面是（ ）。', opts:['南','北','东','西'], ans:'南' },
+    { text:'面向北面，你的左面是（ ）。', opts:['西','东','南','北'], ans:'西' },
+    { text:'面向北面，你的右面是（ ）。', opts:['东','西','南','北'], ans:'东' },
+    { text:'面向南面，你的左面是（ ）。', opts:['东','西','北','南'], ans:'东' },
+    { text:'面向南面，你的右面是（ ）。', opts:['西','东','北','南'], ans:'西' },
+    { text:'和东相对的方向是（ ）。', opts:['西','东','北','南'], ans:'西' },
+    { text:'和北相对的方向是（ ）。', opts:['南','北','东','西'], ans:'南' },
+    { text:'东北方向的对面是（ ）。', opts:['西南','西北','东南','东北'], ans:'西南' },
+    { text:'面向东面，你的后面是（ ）。', opts:['西','东','南','北'], ans:'西' },
+    { text:'指南针的指针总是指向（ ）方。', opts:['北','南','东','西'], ans:'北' },
+    { text:'早晨上学，太阳在我们的（ ）面。', opts:['东','西','南','北'], ans:'东' },
+    { text:'傍晚放学，太阳在我们的（ ）面。', opts:['西','东','南','北'], ans:'西' },
+];
+function makeKnow() {
+    const t = pick(KNOW_BANK);
+    const opts = [...t.opts];
+    shuffle(opts);
+    return { kind:'know', text:t.text, answer: t.ans, opts,
+             hint:'上北下南，左西右东；面对北时：前北后南，左西右东' };
+}
+
+// 关2：看地图
+function makeMap() {
+    const mode = Math.random() < 0.5 ? 'dirOf' : 'at';
+    if (mode === 'dirOf') {
+        // 问：X 在学校的哪个方向？
+        const r = randInt(0, 2), c = randInt(0, 2);
+        if (r === 1 && c === 1) return makeMap();
+        const d = dirBetween(1, 1, r, c);
+        const opts = shuffle(['东','西','南','北','东北','西北','东南','西南'].filter(x => x !== d).slice(0, 3).concat(d));
+        return { kind:'map', map: cityMapHTML(),
+                 text:`学校在中心。${nameOf(r, c)}（${cellOf(r, c)}）在学校的（ ）方向？`,
+                 answer: d, opts, hint:'以学校为中心，先看上下，再看左右' };
+    }
+    // 问：学校的（ ）面是什么？
+    const d = pick(Object.keys(DIRS));
+    const dr = 1 + DIRS[d][0], dc = 1 + DIRS[d][1];
+    const otherNames = [];
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        if (r === 1 && c === 1) continue;
+        if (!(r === dr && c === dc)) otherNames.push(nameOf(r, c));
+    }
+    const opts = shuffle(otherNames.slice(0, 3).concat(nameOf(dr, dc)));
+    return { kind:'map', map: cityMapHTML(),
+             text:`学校在中心。学校的<span class="hl">${d}</span>面是（ ）？`,
+             answer: nameOf(dr, dc), opts, hint:'从学校出发，向' + d + '走一格就是答案' };
+}
+
+// 关3：走路线
+function makeRoute() {
+    // 从中心出发，走两步（每步 8 方向之一，落在 3×3 内）
+    const steps = [];
+    let r = 1, c = 1;
+    const dirs = Object.keys(DIRS);
+    for (let s = 0; s < 2; s++) {
+        const cands = [];
+        for (const d of dirs) {
+            const nr = r + DIRS[d][0], nc = c + DIRS[d][1];
+            if (nr >= 0 && nr <= 2 && nc >= 0 && nc <= 2 && !(nr === r && nc === c)) cands.push(d);
+        }
+        const d = pick(cands);
+        steps.push(d);
+        r += DIRS[d][0]; c += DIRS[d][1];
+    }
+    if (r === 1 && c === 1) return makeRoute(); // 回到中心，换一个
+    const otherNames = [];
+    for (let rr = 0; rr < 3; rr++) for (let cc = 0; cc < 3; cc++) {
+        if (rr === 1 && cc === 1) continue;
+        if (!(rr === r && cc === c)) otherNames.push(nameOf(rr, cc));
+    }
+    const opts = shuffle(otherNames.slice(0, 3).concat(nameOf(r, c)));
+    return { kind:'route', map: cityMapHTML(),
+             text:`从学校出发：先向 <span class="hl">${steps[0]}</span> 走 1 格，再向 <span class="hl">${steps[1]}</span> 走 1 格，到达（ ）。`,
+             answer: nameOf(r, c), opts,
+             hint:`在地图上走一走：先向${steps[0]}，再向${steps[1]}` };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'know') return makeKnow();
+    if (kind === 'map') return makeMap();
+    return makeRoute();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const dock = $('dock');
+    dock.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'leg' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        dock.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '');
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'know') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b.dataset.v, b));
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            ${q.map}
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(b.dataset.v, b));
+    }
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一站已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

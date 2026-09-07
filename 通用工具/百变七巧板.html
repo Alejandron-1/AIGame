@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>七巧板拼图游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        #header {
+            color: white;
+            text-align: center;
+            padding: 8px;
+            z-index: 10;
+        }
+        
+        h1 {
+            font-size: 1.6em;
+            margin-bottom: 3px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        #instructions {
+            font-size: 0.85em;
+            opacity: 0.95;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            margin-top: 4px;
+        }
+        
+        #controls {
+            display: flex;
+            gap: 8px;
+            margin: 6px 0;
+            z-index: 10;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 7px 16px;
+            font-size: 13px;
+            border: none;
+            border-radius: 25px;
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #game-container {
+            position: relative;
+            width: 98vw;
+            height: calc(100vh - 140px);
+            max-height: 640px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            border-radius: 8px;
+        }
+        
+        .piece {
+            cursor: grab;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
+            transition: filter 0.15s;
+        }
+        
+        .piece:hover {
+            filter: drop-shadow(4px 8px 12px rgba(0,0,0,0.35)) brightness(1.08);
+        }
+        
+        .piece.dragging {
+            cursor: grabbing;
+            filter: drop-shadow(6px 12px 16px rgba(0,0,0,0.4)) brightness(1.12);
+        }
+        
+        .piece.selected polygon {
+            stroke: rgba(255,255,255,0.95);
+            stroke-width: 5;
+        }
+        
+        .piece polygon {
+            stroke: rgba(0,0,0,0.5);
+            stroke-width: 2.5;
+            stroke-linejoin: round;
+            transition: stroke-width 0.15s;
+        }
+        
+        .piece text {
+            pointer-events: none;
+            user-select: none;
+            font-size: 32px;
+            font-weight: bold;
+            fill: white;
+            stroke: rgba(0,0,0,0.6);
+            stroke-width: 2px;
+            paint-order: stroke;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        /* 角点旋转手柄 */
+        .handle-circle {
+            cursor: grab;
+            pointer-events: all;
+            fill: rgba(255,255,255,0.9);
+            stroke: #667eea;
+            stroke-width: 2.5;
+        }
+        .handle-circle:hover {
+            fill: #667eea;
+            stroke: #fff;
+            filter: drop-shadow(0 0 6px rgba(102,126,234,0.9));
+        }
+        .handle-circle:active {
+            cursor: grabbing;
+            fill: #4a54c9;
+        }
+        
+        #angle-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        #angle-display.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🧩 七巧板拼图游戏</h1>
+        <div id="instructions">🖱️ 点击选中 | 🖱️ 拖拽移动 | 🔵 拖拽角点旋转 | 🖱️ 滚轮旋转 | 📱 支持触摸</div>
+    </div>
+    
+    <div id="controls">
+        <button onclick="resetGame()">🔄 重置</button>
+        <button onclick="rotateSelected(45)">↻ 旋转45°</button>
+        <button onclick="rotateSelected(-45)">↺ 旋转-45°</button>
+    </div>
+    
+    <div id="game-container">
+        <div id="angle-display">角度: 0°</div>
+        <svg id="tangram" viewBox="0 0 1280 520" preserveAspectRatio="xMidYMid meet">
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById('tangram');
+        const angleDisplay = document.getElementById('angle-display');
+        
+        // 面板常量
+        const LEFT_X = 20, LEFT_Y = 60, LEFT_W = 400, LEFT_H = 400;
+        const CENTER_X = 440, CENTER_Y = 10, CENTER_W = 500, CENTER_H = 500;
+        const RIGHT_X = 960, RIGHT_Y = 10, RIGHT_W = 300, RIGHT_H = 500;
+        
+        // 七巧板部件数据
+        const piecesData = [
+            { id: 1, cx: 200, cy: 200/3, color: '#E74C3C', points: '0,0 400,0 200,200', text: '1', x: 0, y: 0, rot: 0 },
+            { id: 2, cx: 200/3, cy: 200, color: '#3498DB', points: '0,0 0,400 200,200', text: '2', x: 0, y: 0, rot: 0 },
+            { id: 3, cx: 200, cy: 800/3, color: '#F1C40F', points: '200,200 100,300 300,300', text: '3', x: 0, y: 0, rot: 0 },
+            { id: 4, cx: 150, cy: 350, color: '#D4AC0D', points: '0,400 200,400 300,300 100,300', text: '4', x: 0, y: 0, rot: 0 },
+            { id: 5, cx: 300, cy: 200, color: '#E67E22', points: '200,200 300,100 400,200 300,300', text: '5', x: 0, y: 0, rot: 0 },
+            { id: 6, cx: 1100/3, cy: 100, color: '#27AE60', points: '400,0 400,200 300,100', text: '6', x: 0, y: 0, rot: 0 },
+            { id: 7, cx: 1000/3, cy: 1000/3, color: '#E91E63', points: '400,200 400,400 200,400', text: '7', x: 0, y: 0, rot: 0 }
+        ];
+        
+        // 示例数据（修正后的四块拼图示例——房子形状）
+        const examples = {
+            two: {
+                name: "两个大三角形拼成正方形",
+                target: { points: "490,260 690,60 890,260 690,460" },
+                hints: [
+                    { id: 1, points: "490,260 890,260 690,60", color: "#E74C3C", text: "1", cx: 690, cy: 193 },
+                    { id: 2, points: "490,260 890,260 690,460", color: "#3498DB", text: "2", cx: 690, cy: 327 }
+                ]
+            },
+            three: {
+                name: "中三角形+两个小三角形拼成正方形",
+                target: { points: "590,160 790,160 790,360 590,360" },
+                hints: [
+                    { id: 7, points: "590,160 790,360 590,360", color: "#E91E63", text: "7", cx: 657, cy: 293 },
+                    { id: 3, points: "590,160 790,160 690,260", color: "#F1C40F", text: "3", cx: 690, cy: 193 },
+                    { id: 6, points: "790,160 790,360 690,260", color: "#27AE60", text: "6", cx: 757, cy: 260 }
+                ]
+            },          
+            four: {
+                name: "中三角形+正方形+两个小三角形拼成房子",
+                target: { points: "604,60 887,60 887,201 887,343 604,343 604,201" },
+                hints: [
+                    { id: 7, points: "604,201 887,201 745.5,60", color: "#E91E63", text: "7", cx: 745.5, cy: 154 },
+                    { id: 3, points: "604,201 745.4,201 604,343", color: "#F1C40F", text: "3", cx: 651, cy: 248 },
+                    { id: 6, points: "745.4,343 604,343 745.4,201", color: "#27AE60", text: "6", cx: 698, cy: 248 },
+                    { id: 5, points: "745.4,201 887,201 887,343 745.4,343", color: "#E67E22", text: "5", cx: 816, cy: 272 }
+                ]
+            },
+            other: {
+                name: "全部七块拼成正方形",
+                target: { points: "490,60 890,60 890,460 490,460" },
+                hints: [
+                    { id: 1, points: "490,60 890,60 690,260", color: "#E74C3C", text: "1", cx: 690, cy: 127 },
+                    { id: 2, points: "490,60 490,460 690,260", color: "#3498DB", text: "2", cx: 557, cy: 260 },
+                    { id: 3, points: "690,260 590,360 790,360", color: "#F1C40F", text: "3", cx: 690, cy: 327 },
+                    { id: 4, points: "490,460 690,460 790,360 590,360", color: "#D4AC0D", text: "4", cx: 640, cy: 410 },
+                    { id: 5, points: "690,260 790,160 890,260 790,360", color: "#E67E22", text: "5", cx: 790, cy: 260 },
+                    { id: 6, points: "890,60 890,260 790,160", color: "#27AE60", text: "6", cx: 857, cy: 160 },
+                    { id: 7, points: "890,260 890,460 690,460", color: "#E91E63", text: "7", cx: 823, cy: 360 }
+                ]
+            }
+        };
+        
+        let selectedPiece = null;
+        let selectedElement = null;
+        let draggingPiece = null;
+        let dragMode = 'move';           // 'move' | 'rotate'
+        let startMouse = { x: 0, y: 0 };
+        let startPiece = { x: 0, y: 0, rot: 0 };
+        let rotateStartAngle = 0;        // 旋转开始时的鼠标角度
+        let angleTimer = null;
+        let currentHint = null;
+        
+        // 将屏幕坐标转换为SVG坐标
+        function getSVGPoint(evt) {
+            const pt = svg.createSVGPoint();
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            pt.x = clientX;
+            pt.y = clientY;
+            const ctm = svg.getScreenCTM();
+            if (!ctm) return { x: 0, y: 0 };
+            return pt.matrixTransform(ctm.inverse());
+        }
+
+        // 计算拼图顶点在SVG坐标系中的绝对位置
+        function getAbsoluteVertices(piece) {
+            const rad = piece.rot * Math.PI / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const tx = LEFT_X + piece.x;
+            const ty = LEFT_Y + piece.y;
+            const pts = piece.points.split(' ');
+            return pts.map(p => {
+                const [vx, vy] = p.split(',').map(Number);
+                const dx = vx - piece.cx;
+                const dy = vy - piece.cy;
+                return {
+                    x: tx + piece.cx + dx*cos - dy*sin,
+                    y: ty + piece.cy + dx*sin + dy*cos
+                };
+            });
+        }
+
+        // 计算拼图旋转中心在SVG坐标系中的绝对位置
+        function getAbsoluteCenter(piece) {
+            return {
+                x: LEFT_X + piece.x + piece.cx,
+                y: LEFT_Y + piece.y + piece.cy
+            };
+        }
+
+        // 检测点击是否命中某个角点手柄
+        function hitHandle(svgPt, piece, threshold) {
+            const t = threshold || 12;
+            const verts = getAbsoluteVertices(piece);
+            for (let i = 0; i < verts.length; i++) {
+                const dx = svgPt.x - verts[i].x;
+                const dy = svgPt.y - verts[i].y;
+                if (Math.sqrt(dx*dx + dy*dy) <= t) return i;
+            }
+            return -1;
+        }
+
+        // 给选中拼图添加角点手柄圆
+        function addHandles(g, piece) {
+            const pts = piece.points.split(' ');
+            pts.forEach((pt, i) => {
+                const [vx, vy] = pt.split(',').map(Number);
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', vx);
+                circle.setAttribute('cy', vy);
+                circle.setAttribute('r', '7');
+                circle.setAttribute('class', 'handle-circle');
+                circle.setAttribute('data-handle-idx', i);
+                // 手柄上的事件：阻止冒泡到piece的g，单独处理
+                circle.addEventListener('mousedown', onHandleDown);
+                circle.addEventListener('touchstart', onHandleDown, { passive: false });
+                g.appendChild(circle);
+            });
+        }
+
+        // 移除角点手柄
+        function removeHandles(g) {
+            const handles = g.querySelectorAll('.handle-circle');
+            handles.forEach(h => h.remove());
+        }
+
+        // 绘制背景面板
+        function drawPanels() {
+            // 左侧面板
+            const leftRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            leftRect.setAttribute('x', LEFT_X);
+            leftRect.setAttribute('y', LEFT_Y);
+            leftRect.setAttribute('width', LEFT_W);
+            leftRect.setAttribute('height', LEFT_H);
+            leftRect.setAttribute('fill', '#f8f9fa');
+            leftRect.setAttribute('stroke', '#dee2e6');
+            leftRect.setAttribute('stroke-width', '2');
+            leftRect.setAttribute('rx', '8');
+            leftRect.style.pointerEvents = 'none';
+            svg.appendChild(leftRect);
+            
+            const leftText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            leftText.setAttribute('x', LEFT_X + LEFT_W/2);
+            leftText.setAttribute('y', LEFT_Y - 15);
+            leftText.setAttribute('text-anchor', 'middle');
+            leftText.setAttribute('font-size', '18');
+            leftText.setAttribute('font-weight', 'bold');
+            leftText.setAttribute('fill', '#495057');
+            leftText.style.pointerEvents = 'none';
+            leftText.textContent = '📦 拼图部件区';
+            svg.appendChild(leftText);
+            
+            // 中间面板
+            const centerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            centerRect.setAttribute('x', CENTER_X);
+            centerRect.setAttribute('y', CENTER_Y);
+            centerRect.setAttribute('width', CENTER_W);
+            centerRect.setAttribute('height', CENTER_H);
+            centerRect.setAttribute('fill', '#ffffff');
+            centerRect.setAttribute('stroke', '#667eea');
+            centerRect.setAttribute('stroke-width', '3');
+            centerRect.setAttribute('rx', '8');
+            centerRect.style.pointerEvents = 'none';
+            svg.appendChild(centerRect);
+            
+            // 网格线
+            for (let i = 0; i <= CENTER_W; i += 50) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', CENTER_X + i);
+                line.setAttribute('y1', CENTER_Y);
+                line.setAttribute('x2', CENTER_X + i);
+                line.setAttribute('y2', CENTER_Y + CENTER_H);
+                line.setAttribute('stroke', i % 100 === 0 ? '#ced4da' : '#e9ecef');
+                line.setAttribute('stroke-width', '1');
+                line.style.pointerEvents = 'none';
+                svg.appendChild(line);
+            }
+            for (let i = 0; i <= CENTER_H; i += 50) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', CENTER_X);
+                line.setAttribute('y1', CENTER_Y + i);
+                line.setAttribute('x2', CENTER_X + CENTER_W);
+                line.setAttribute('y2', CENTER_Y + i);
+                line.setAttribute('stroke', i % 100 === 0 ? '#ced4da' : '#e9ecef');
+                line.setAttribute('stroke-width', '1');
+                line.style.pointerEvents = 'none';
+                svg.appendChild(line);
+            }
+            
+            const centerText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            centerText.setAttribute('x', CENTER_X + CENTER_W/2);
+            centerText.setAttribute('y', CENTER_Y - 15);
+            centerText.setAttribute('text-anchor', 'middle');
+            centerText.setAttribute('font-size', '18');
+            centerText.setAttribute('font-weight', 'bold');
+            centerText.setAttribute('fill', '#667eea');
+            centerText.style.pointerEvents = 'none';
+            centerText.textContent = '🎯 自由拼图区';
+            svg.appendChild(centerText);
+            
+            // 右侧面板
+            const rightRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rightRect.setAttribute('x', RIGHT_X);
+            rightRect.setAttribute('y', RIGHT_Y);
+            rightRect.setAttribute('width', RIGHT_W);
+            rightRect.setAttribute('height', RIGHT_H);
+            rightRect.setAttribute('fill', '#f8f9fa');
+            rightRect.setAttribute('stroke', '#dee2e6');
+            rightRect.setAttribute('stroke-width', '2');
+            rightRect.setAttribute('rx', '8');
+            rightRect.style.pointerEvents = 'none';
+            svg.appendChild(rightRect);
+            
+            const rightText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            rightText.setAttribute('x', RIGHT_X + RIGHT_W/2);
+            rightText.setAttribute('y', RIGHT_Y + 35);
+            rightText.setAttribute('text-anchor', 'middle');
+            rightText.setAttribute('font-size', '18');
+            rightText.setAttribute('font-weight', 'bold');
+            rightText.setAttribute('fill', '#495057');
+            rightText.style.pointerEvents = 'none';
+            rightText.textContent = '💡 图形示例';
+            svg.appendChild(rightText);
+            
+            // 示例按钮
+            const btnData = [
+                { key: 'two', y: 70, label: '▸ 2块拼图示例', color: '#E74C3C' },
+                { key: 'three', y: 140, label: '▸ 3块拼图示例', color: '#3498DB' },
+                { key: 'four', y: 210, label: '▸ 4块拼图示例', color: '#E67E22' },
+                { key: 'other', y: 280, label: '▸ 其他拼图示例', color: '#27AE60' }
+            ];
+            
+            btnData.forEach(btn => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'example-btn');
+                g.setAttribute('data-key', btn.key);
+                g.style.cursor = 'pointer';
+                
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', RIGHT_X + 20);
+                rect.setAttribute('y', RIGHT_Y + btn.y);
+                rect.setAttribute('width', 260);
+                rect.setAttribute('height', 50);
+                rect.setAttribute('rx', 10);
+                rect.setAttribute('fill', 'white');
+                rect.setAttribute('stroke', btn.color);
+                rect.setAttribute('stroke-width', '2');
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', RIGHT_X + 150);
+                text.setAttribute('y', RIGHT_Y + btn.y + 32);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '15');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('fill', btn.color);
+                text.textContent = btn.label;
+                
+                g.appendChild(rect);
+                g.appendChild(text);
+                svg.appendChild(g);
+                
+                g.addEventListener('click', () => showExample(btn.key));
+                g.addEventListener('mouseenter', () => rect.setAttribute('fill', '#f0f0f0'));
+                g.addEventListener('mouseleave', () => rect.setAttribute('fill', 'white'));
+            });
+            
+            // 清除提示按钮
+            const clearG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            clearG.style.cursor = 'pointer';
+            const clearRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            clearRect.setAttribute('x', RIGHT_X + 20);
+            clearRect.setAttribute('y', RIGHT_Y + 370);
+            clearRect.setAttribute('width', 260);
+            clearRect.setAttribute('height', 45);
+            clearRect.setAttribute('rx', 10);
+            clearRect.setAttribute('fill', '#e9ecef');
+            clearRect.setAttribute('stroke', '#6c757d');
+            clearRect.setAttribute('stroke-width', '2');
+            const clearText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            clearText.setAttribute('x', RIGHT_X + 150);
+            clearText.setAttribute('y', RIGHT_Y + 400);
+            clearText.setAttribute('text-anchor', 'middle');
+            clearText.setAttribute('font-size', '15');
+            clearText.setAttribute('font-weight', 'bold');
+            clearText.setAttribute('fill', '#495057');
+            clearText.textContent = '✕ 清除提示';
+            clearG.appendChild(clearRect);
+            clearG.appendChild(clearText);
+            svg.appendChild(clearG);
+            clearG.addEventListener('click', clearHint);
+            clearG.addEventListener('mouseenter', () => clearRect.setAttribute('fill', '#dee2e6'));
+            clearG.addEventListener('mouseleave', () => clearRect.setAttribute('fill', '#e9ecef'));
+        }
+        
+        // 显示示例提示
+        function showExample(key) {
+            clearHint();
+            const ex = examples[key];
+            if (!ex) return;
+            currentHint = key;
+            
+            const hintGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            hintGroup.setAttribute('id', 'hint-layer');
+            hintGroup.setAttribute('opacity', '0.35');
+            hintGroup.style.pointerEvents = 'none';
+            
+            // 标题背景
+            const titleBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            titleBg.setAttribute('x', CENTER_X + 10);
+            titleBg.setAttribute('y', CENTER_Y + 10);
+            titleBg.setAttribute('width', CENTER_W - 20);
+            titleBg.setAttribute('height', 36);
+            titleBg.setAttribute('rx', 8);
+            titleBg.setAttribute('fill', '#667eea');
+            titleBg.setAttribute('opacity', '0.15');
+            hintGroup.appendChild(titleBg);
+            
+            // 标题文字
+            const titleText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            titleText.setAttribute('x', CENTER_X + CENTER_W/2);
+            titleText.setAttribute('y', CENTER_Y + 34);
+            titleText.setAttribute('text-anchor', 'middle');
+            titleText.setAttribute('font-size', '16');
+            titleText.setAttribute('font-weight', 'bold');
+            titleText.setAttribute('fill', '#667eea');
+            titleText.textContent = '💡 示例目标：' + ex.name;
+            hintGroup.appendChild(titleText);
+            
+            // 目标轮廓
+            const targetPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            targetPoly.setAttribute('points', ex.target.points);
+            targetPoly.setAttribute('fill', 'none');
+            targetPoly.setAttribute('stroke', '#667eea');
+            targetPoly.setAttribute('stroke-width', '4');
+            targetPoly.setAttribute('stroke-dasharray', '10,6');
+            targetPoly.setAttribute('stroke-linejoin', 'round');
+            hintGroup.appendChild(targetPoly);
+            
+            // 各拼图提示
+            ex.hints.forEach(h => {
+                const pg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                poly.setAttribute('points', h.points);
+                poly.setAttribute('fill', h.color);
+                poly.setAttribute('stroke', 'rgba(0,0,0,0.3)');
+                poly.setAttribute('stroke-width', '2');
+                
+                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                txt.setAttribute('x', h.cx);
+                txt.setAttribute('y', h.cy);
+                txt.setAttribute('font-size', '28');
+                txt.setAttribute('font-weight', 'bold');
+                txt.setAttribute('fill', 'white');
+                txt.setAttribute('stroke', 'rgba(0,0,0,0.5)');
+                txt.setAttribute('stroke-width', '1.5');
+                txt.setAttribute('paint-order', 'stroke');
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('dominant-baseline', 'middle');
+                txt.textContent = h.text;
+                
+                pg.appendChild(poly);
+                pg.appendChild(txt);
+                hintGroup.appendChild(pg);
+            });
+            
+            // 插入到拼图区背景之后、真实拼图之前
+            const firstPiece = svg.querySelector('g.piece');
+            if (firstPiece) {
+                svg.insertBefore(hintGroup, firstPiece);
+            } else {
+                svg.appendChild(hintGroup);
+            }
+        }
+        
+        // 清除提示
+        function clearHint() {
+            const hint = svg.querySelector('#hint-layer');
+            if (hint) hint.remove();
+            currentHint = null;
+        }
+        
+        // 渲染所有拼图部件
+        function renderPieces() {
+            const groups = svg.querySelectorAll('g.piece');
+            groups.forEach(g => g.remove());
+            
+            piecesData.forEach(p => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'piece');
+                g.setAttribute('data-id', p.id);
+                updateTransform(g, p);
+                
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                polygon.setAttribute('points', p.points);
+                polygon.setAttribute('fill', p.color);
+                
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', p.cx);
+                text.setAttribute('y', p.cy);
+                text.textContent = p.text;
+                
+                g.appendChild(polygon);
+                g.appendChild(text);
+                svg.appendChild(g);
+                
+                g.addEventListener('mousedown', onPointerDown);
+                g.addEventListener('touchstart', onPointerDown, { passive: false });
+                g.addEventListener('wheel', rotateWheel, { passive: false });
+            });
+        }
+        
+        // 更新变换
+        function updateTransform(element, piece) {
+            const tx = LEFT_X + piece.x;
+            const ty = LEFT_Y + piece.y;
+            element.setAttribute('transform', 
+                `translate(${tx}, ${ty}) rotate(${piece.rot}, ${piece.cx}, ${piece.cy})`
+            );
+        }
+        
+        // 选中部件
+        function selectPiece(id) {
+            if (selectedElement) {
+                selectedElement.classList.remove('selected');
+                removeHandles(selectedElement);
+            }
+            selectedPiece = piecesData.find(p => p.id === id);
+            selectedElement = svg.querySelector(`g[data-id="${id}"]`);
+            if (selectedElement) {
+                selectedElement.classList.add('selected');
+                svg.appendChild(selectedElement);  // 提升到最前
+                addHandles(selectedElement, selectedPiece);
+            }
+            showAngle(selectedPiece.rot);
+        }
+
+        // 取消选中
+        function deselectPiece() {
+            if (selectedElement) {
+                selectedElement.classList.remove('selected');
+                removeHandles(selectedElement);
+                selectedElement = null;
+                selectedPiece = null;
+            }
+        }
+        
+        // 显示角度
+        function showAngle(rot) {
+            angleDisplay.textContent = `角度: ${Math.round(rot)}°`;
+            angleDisplay.classList.add('show');
+            clearTimeout(angleTimer);
+            angleTimer = setTimeout(() => {
+                angleDisplay.classList.remove('show');
+            }, 1500);
+        }
+        
+        // 角点手柄按下 —— 进入旋转模式
+        function onHandleDown(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();  // 阻止冒泡到 piece 的 mousedown
+            evt.stopImmediatePropagation();
+
+            const pieceDiv = evt.currentTarget.closest('g.piece');
+            const id = parseInt(pieceDiv.getAttribute('data-id'));
+
+            // 如果当前未选中或选中的是不同拼图，才重新选择
+            if (!selectedPiece || selectedPiece.id !== id) {
+                selectPiece(id);
+            }
+
+            draggingPiece = piecesData.find(p => p.id === id);
+            dragMode = 'rotate';
+            const g = svg.querySelector(`g[data-id="${id}"]`);
+            g.classList.add('dragging');
+
+            const pt = getSVGPoint(evt);
+            startMouse = pt;
+            startPiece = { x: draggingPiece.x, y: draggingPiece.y, rot: draggingPiece.rot };
+            const center = getAbsoluteCenter(draggingPiece);
+            rotateStartAngle = Math.atan2(pt.y - center.y, pt.x - center.x) * 180 / Math.PI;
+
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('mouseup', onPointerUp);
+            document.addEventListener('touchmove', onPointerMove, { passive: false });
+            document.addEventListener('touchend', onPointerUp);
+        }
+
+        // 指针按下（拼图本体 —— 移动模式）
+        function onPointerDown(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            const id = parseInt(evt.currentTarget.getAttribute('data-id'));
+            selectPiece(id);
+
+            // 检测是否点击在角点手柄附近（兜底判断）
+            const piece = piecesData.find(p => p.id === id);
+            const pt = getSVGPoint(evt);
+            if (hitHandle(pt, piece) >= 0) {
+                // 进入旋转模式
+                draggingPiece = piece;
+                dragMode = 'rotate';
+                const g = svg.querySelector(`g[data-id="${id}"]`);
+                g.classList.add('dragging');
+                startMouse = pt;
+                startPiece = { x: piece.x, y: piece.y, rot: piece.rot };
+                const center = getAbsoluteCenter(piece);
+                rotateStartAngle = Math.atan2(pt.y - center.y, pt.x - center.x) * 180 / Math.PI;
+            } else {
+                // 进入移动模式
+                draggingPiece = piece;
+                dragMode = 'move';
+                const g = svg.querySelector(`g[data-id="${id}"]`);
+                g.classList.add('dragging');
+                startMouse = pt;
+                startPiece = { x: piece.x, y: piece.y, rot: piece.rot };
+            }
+
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('mouseup', onPointerUp);
+            document.addEventListener('touchmove', onPointerMove, { passive: false });
+            document.addEventListener('touchend', onPointerUp);
+        }
+
+        // 指针移动
+        function onPointerMove(evt) {
+            if (!draggingPiece) return;
+            evt.preventDefault();
+
+            const pt = getSVGPoint(evt);
+
+            if (dragMode === 'move') {
+                const dx = pt.x - startMouse.x;
+                const dy = pt.y - startMouse.y;
+                draggingPiece.x = startPiece.x + dx;
+                draggingPiece.y = startPiece.y + dy;
+            } else if (dragMode === 'rotate') {
+                const center = getAbsoluteCenter(draggingPiece);
+                const curAngle = Math.atan2(pt.y - center.y, pt.x - center.x) * 180 / Math.PI;
+                const delta = curAngle - rotateStartAngle;
+                draggingPiece.rot = startPiece.rot + delta;
+                draggingPiece.rot = ((draggingPiece.rot % 360) + 360) % 360;
+                showAngle(draggingPiece.rot);
+                // 角点手柄在 piece 的 <g> 内部，随 transform 自动跟随旋转
+            }
+
+            const g = svg.querySelector(`g[data-id="${draggingPiece.id}"]`);
+            if (g) updateTransform(g, draggingPiece);
+        }
+
+        // 指针释放
+        function onPointerUp(evt) {
+            if (draggingPiece) {
+                const g = svg.querySelector(`g[data-id="${draggingPiece.id}"]`);
+                if (g) g.classList.remove('dragging');
+            }
+            draggingPiece = null;
+            dragMode = 'move';
+            document.removeEventListener('mousemove', onPointerMove);
+            document.removeEventListener('mouseup', onPointerUp);
+            document.removeEventListener('touchmove', onPointerMove);
+            document.removeEventListener('touchend', onPointerUp);
+        }
+        
+        // 滚轮旋转
+        function rotateWheel(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            const id = parseInt(evt.currentTarget.getAttribute('data-id'));
+            selectPiece(id);
+
+            const piece = piecesData.find(p => p.id === id);
+            const delta = evt.deltaY > 0 ? 15 : -15;
+            piece.rot = (piece.rot + delta) % 360;
+            if (piece.rot < 0) piece.rot += 360;
+
+            const g = svg.querySelector(`g[data-id="${piece.id}"]`);
+            if (g) {
+                updateTransform(g, piece);
+                removeHandles(g);
+                addHandles(g, piece);
+            }
+            showAngle(piece.rot);
+        }
+
+        // 按钮旋转选中的部件
+        function rotateSelected(deg) {
+            if (!selectedPiece) {
+                selectedPiece = piecesData[0];
+                selectPiece(selectedPiece.id);
+            }
+            selectedPiece.rot = (selectedPiece.rot + deg) % 360;
+            if (selectedPiece.rot < 0) selectedPiece.rot += 360;
+
+            const g = svg.querySelector(`g[data-id="${selectedPiece.id}"]`);
+            if (g) {
+                updateTransform(g, selectedPiece);
+                removeHandles(g);
+                addHandles(g, selectedPiece);
+            }
+            showAngle(selectedPiece.rot);
+        }
+        
+        // 重置游戏
+        function resetGame() {
+            piecesData.forEach(p => {
+                p.x = 0;
+                p.y = 0;
+                p.rot = 0;
+            });
+            deselectPiece();
+            clearHint();
+            renderPieces();
+            showAngle(0);
+        }
+        
+        // 点击空白处取消选中
+        svg.addEventListener('mousedown', (evt) => {
+            if (evt.target.tagName !== 'g' && evt.target.tagName !== 'polygon' && evt.target.tagName !== 'text') {
+                deselectPiece();
+            }
+        });
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', (evt) => {
+            if (!selectedPiece) return;
+            if (evt.key === 'r' || evt.key === 'R') rotateSelected(45);
+            else if (evt.key === 'e' || evt.key === 'E') rotateSelected(-45);
+        });
+        
+        // 初始化
+        drawPanels();
+        renderPieces();
+    </script>
+</body>
+</html>

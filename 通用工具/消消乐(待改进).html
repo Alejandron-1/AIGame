@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>口算消消乐 - 全能版</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+        }
+
+        body {
+            background-color: #FFF8E1;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 版本切换按钮组 */
+        .version-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .version-btn {
+            padding: 10px 25px;
+            font-size: 20px;
+            margin: 0 10px;
+            background-color: #FFE0B2;
+            border: 2px solid #E65100;
+            border-radius: 8px;
+            color: #5D4037;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .version-btn.active {
+            background-color: #E65100;
+            color: white;
+        }
+
+        .version-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* 游戏标题 */
+        .game-title {
+            font-size: 48px;
+            color: #E65100;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* 游戏状态（计时+匹配数） */
+        .game-status {
+            font-size: 32px;
+            color: #5D4037;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+        }
+
+        /* 题目卡片容器：固定尺寸保留空位 */
+        .question-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 卡片包裹容器：固定尺寸，保留空位核心 */
+        .card-wrapper {
+            height: 100px;
+            flex-shrink: 0; /* 防止收缩 */
+            position: relative; /* 卡片绝对定位基准 */
+        }
+
+        /* 适配两位数版本的卡片宽度 */
+        .card-wrapper.two-digit {
+            width: 180px;
+        }
+
+        /* 适配三位数/除法版本的卡片宽度 */
+        .card-wrapper.three-digit, .card-wrapper.division {
+            width: 200px;
+        }
+
+        /* 题目卡片样式 */
+        .question-card {
+            position: absolute; /* 绝对定位在容器内 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #FFCC80;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #5D4037;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+        .question-card:hover {
+            transform: scale(1.05);
+            background-color: #FFB74D;
+        }
+
+        /* 匹配成功后消失：仅卡片消失，容器保留 */
+        .question-card.matched {
+            opacity: 0;      
+            transform: scale(0); 
+            pointer-events: none; 
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+
+        /* 重置按钮 */
+        .reset-btn {
+            display: block;
+            margin: 40px auto 0;
+            padding: 15px 40px;
+            font-size: 28px;
+            background-color: #E65100;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .reset-btn:hover {
+            background-color: #BF360C;
+        }
+    </style>
+</head>
+<body>
+    <!-- 版本切换按钮 -->
+    <div class="version-switch">
+        <button class="version-btn active" data-version="two-digit">两位数加减法</button>
+        <button class="version-btn" data-version="three-digit">三位数加减法</button>
+        <button class="version-btn" data-version="division">除法版（乘法口诀）</button>
+    </div>
+
+    <!-- 游戏标题 -->
+    <h1 class="game-title">口算消消乐 - 两位数加减法</h1>
+
+    <!-- 游戏状态 -->
+    <div class="game-status">
+        <div>时间: <span id="time">0</span> 秒</div>
+        <div>已匹配: <span id="matched">0</span> / <span id="total">8</span> 对</div>
+    </div>
+
+    <!-- 卡片容器 -->
+    <div class="question-container" id="questionContainer"></div>
+
+    <!-- 重置按钮 -->
+    <button class="reset-btn" onclick="resetGame()">重新开始</button>
+
+    <!-- 音效资源 -->
+    <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" preload="auto"></audio>
+    <audio id="matchSound" src="https://assets.mixkit.co/sfx/preview/mixkit-positive-notification-911.mp3" preload="auto"></audio>
+    <audio id="noMatchSound" src="https://assets.mixkit.co/sfx/preview/mixkit-negative-beeps-2210.mp3" preload="auto"></audio>
+    <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
+
+    <script>
+        // 全局游戏状态
+        let firstCard = null;      
+        let secondCard = null;     
+        let lockBoard = false;     
+        let matchedPairs = 0;      
+        const totalPairs = 8;      
+        let startTime = null;      
+        let timerInterval = null;  
+        let currentVersion = "two-digit"; // 当前版本：two-digit/three-digit/division
+
+        // 音效播放函数
+        function playSound(soundId) {
+            const sound = document.getElementById(soundId);
+            sound.currentTime = 0;
+            sound.play().catch(err => {
+                console.log("音效播放需要先点击页面任意位置激活:", err);
+            });
+        }
+
+        // ========== 题库生成函数（分版本） ==========
+        // 1. 两位数加减法题库（200道，加法和支持三位数）
+        function generateTwoDigitBank() {
+            const bank = [];
+            let addCount = 0;
+            let subCount = 0;
+
+            // 100道两位数加法
+            while (addCount < 100) {
+                const a = Math.floor(Math.random() * 90) + 10; // 10-99
+                const b = Math.floor(Math.random() * 90) + 10; // 10-99
+                const sum = a + b;
+                const isDuplicate = bank.some(item => item.expr === `${a}+${b}`);
+                if (!isDuplicate) {
+                    bank.push({ expr: `${a}+${b}`, answer: sum });
+                    addCount++;
+                }
+            }
+
+            // 100道两位数减法
+            while (subCount < 100) {
+                const a = Math.floor(Math.random() * 90) + 10; // 10-99
+                const b = Math.floor(Math.random() * (a - 10)) + 10; // 10到a-1
+                const diff = a - b;
+                const isDuplicate = bank.some(item => item.expr === `${a}-${b}`);
+                if (!isDuplicate && diff >= 1) {
+                    bank.push({ expr: `${a}-${b}`, answer: diff });
+                    subCount++;
+                }
+            }
+
+            return bank;
+        }
+
+        // 2. 三位数加减法题库（200道，加法和≤1000）
+        function generateThreeDigitBank() {
+            const bank = [];
+            let addCount = 0;
+            let subCount = 0;
+
+            // 100道三位数加法
+            while (addCount < 100) {
+                const a = Math.floor(Math.random() * 900) + 100; // 100-999
+                const maxB = 1000 - a;
+                if (maxB < 100) continue;
+                const b = Math.floor(Math.random() * (maxB - 99)) + 100; // 100到maxB
+                const sum = a + b;
+                const isDuplicate = bank.some(item => item.expr === `${a}+${b}`);
+                if (!isDuplicate && sum <= 1000) {
+                    bank.push({ expr: `${a}+${b}`, answer: sum });
+                    addCount++;
+                }
+            }
+
+            // 100道三位数减法
+            while (subCount < 100) {
+                const a = Math.floor(Math.random() * 900) + 100; // 100-999
+                const b = Math.floor(Math.random() * (a - 100)) + 100; // 100到a-1
+                const diff = a - b;
+                const isDuplicate = bank.some(item => item.expr === `${a}-${b}`);
+                if (!isDuplicate && diff >= 1) {
+                    bank.push({ expr: `${a}-${b}`, answer: diff });
+                    subCount++;
+                }
+            }
+
+            return bank;
+        }
+
+        // 3. 除法题库（200道，基于乘法口诀表，超简单）
+        function generateDivisionBank() {
+            const bank = [];
+            let count = 0;
+
+            // 核心规则：除数2-9，商2-9，被除数=除数×商（乘法口诀逆运算）
+            while (count < 200) {
+                const divisor = Math.floor(Math.random() * 8) + 2;  // 除数：2-9
+                const quotient = Math.floor(Math.random() * 8) + 2; // 商：2-9
+                const dividend = divisor * quotient;                // 被除数（≤81，贴合乘法口诀）
+                
+                // 避免重复题目
+                const isDuplicate = bank.some(item => item.expr === `${dividend}÷${divisor}`);
+                if (!isDuplicate) {
+                    bank.push({ expr: `${dividend}÷${divisor}`, answer: quotient });
+                    count++;
+                }
+            }
+
+            return bank;
+        }
+
+        // Fisher-Yates洗牌算法
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // 根据当前版本生成游戏题目
+        function generateGameQuestions() {
+            let fullBank = [];
+            // 根据版本选择对应题库
+            switch (currentVersion) {
+                case "two-digit":
+                    fullBank = generateTwoDigitBank();
+                    break;
+                case "three-digit":
+                    fullBank = generateThreeDigitBank();
+                    break;
+                case "division":
+                    fullBank = generateDivisionBank();
+                    break;
+            }
+
+            // 洗牌后抽取8组
+            const shuffledBank = shuffleArray(fullBank);
+            const selectedItems = shuffledBank.slice(0, 8);
+
+            // 构建卡片数组
+            let allCards = [];
+            selectedItems.forEach(item => {
+                allCards.push({
+                    content: item.expr,
+                    answer: item.answer,
+                    type: "expr"
+                });
+                allCards.push({
+                    content: item.answer.toString(),
+                    answer: item.answer,
+                    type: "num"
+                });
+            });
+
+            // 打乱卡片顺序
+            const shuffledCards = shuffleArray(allCards);
+
+            // 渲染卡片
+            const container = document.getElementById("questionContainer");
+            container.innerHTML = "";
+
+            shuffledCards.forEach(cardData => {
+                // 创建卡片容器（根据版本设置宽度类）
+                const wrapper = document.createElement("div");
+                wrapper.className = `card-wrapper ${currentVersion}`;
+
+                // 创建卡片
+                const card = document.createElement("div");
+                card.className = "question-card";
+                card.textContent = cardData.content;
+                card.dataset.answer = cardData.answer;
+                card.dataset.type = cardData.type;
+                card.addEventListener("click", flipCard);
+
+                wrapper.appendChild(card);
+                container.appendChild(wrapper);
+            });
+        }
+
+        // 卡片点击逻辑
+        function flipCard() {
+            if (lockBoard || this.classList.contains("matched") || firstCard === this) return;
+            
+            playSound("clickSound");
+            
+            if (!startTime) {
+                startTime = new Date();
+                timerInterval = setInterval(updateTime, 1000);
+            }
+
+            if (!firstCard) {
+                firstCard = this;
+                firstCard.style.backgroundColor = "#FF8A65";
+                return;
+            }
+
+            secondCard = this;
+            secondCard.style.backgroundColor = "#FF8A65";
+            lockBoard = true;
+
+            checkForMatch();
+        }
+
+        // 检查匹配
+        function checkForMatch() {
+            const isDifferentType = firstCard.dataset.type !== secondCard.dataset.type;
+            const isAnswerMatch = firstCard.dataset.answer === secondCard.dataset.answer;
+            const isMatch = isDifferentType && isAnswerMatch;
+            
+            if (isMatch) {
+                playSound("matchSound");
+                
+                firstCard.classList.add("matched");
+                secondCard.classList.add("matched");
+                
+                setTimeout(() => {
+                    matchedPairs++;
+                    document.getElementById("matched").textContent = matchedPairs;
+                    
+                    if (matchedPairs === totalPairs) {
+                        clearInterval(timerInterval);
+                        playSound("winSound");
+                        setTimeout(() => {
+                            alert(`恭喜！全部匹配完成！用时：${document.getElementById("time").textContent} 秒`);
+                        }, 500);
+                    }
+                    
+                    resetBoard();
+                }, 300);
+                
+            } else {
+                playSound("noMatchSound");
+                
+                setTimeout(() => {
+                    firstCard.style.backgroundColor = "#FFCC80";
+                    secondCard.style.backgroundColor = "#FFCC80";
+                    resetBoard();
+                }, 800);
+            }
+        }
+
+        // 重置选中状态
+        function resetBoard() {
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+        }
+
+        // 更新时间
+        function updateTime() {
+            const currentTime = new Date();
+            const seconds = Math.floor((currentTime - startTime) / 1000);
+            document.getElementById("time").textContent = seconds;
+        }
+
+        // 重置游戏（重新开始按钮）
+        function resetGame() {
+            clearInterval(timerInterval);
+            resetBoard();
+            matchedPairs = 0;
+            startTime = null;
+            
+            document.getElementById("time").textContent = 0;
+            document.getElementById("matched").textContent = 0;
+            
+            generateGameQuestions();
+        }
+
+        // 切换版本
+        function switchVersion(version) {
+            // 更新当前版本
+            currentVersion = version;
+            
+            // 更新按钮激活状态
+            document.querySelectorAll(".version-btn").forEach(btn => {
+                btn.classList.remove("active");
+                if (btn.dataset.version === version) {
+                    btn.classList.add("active");
+                }
+            });
+
+            // 更新游戏标题
+            const titleText = {
+                "two-digit": "口算消消乐 - 两位数加减法",
+                "three-digit": "口算消消乐 - 三位数加减法",
+                "division": "口算消消乐 - 除法版（乘法口诀）"
+            };
+            document.querySelector(".game-title").textContent = titleText[version];
+
+            // 重置游戏状态并生成新题目
+            resetGame();
+        }
+
+        // 绑定版本切换按钮事件
+        document.querySelectorAll(".version-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                switchVersion(btn.dataset.version);
+            });
+        });
+
+        // 页面加载初始化
+        window.onload = () => {
+            document.getElementById("total").textContent = totalPairs;
+            generateGameQuestions();
+
+            // 解决音效自动播放限制
+            document.addEventListener('click', () => {
+                document.querySelectorAll('audio').forEach(audio => {
+                    audio.load();
+                });
+            }, { once: true });
+        };
+    </script>
+</body>
+</html>

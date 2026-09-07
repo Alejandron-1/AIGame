@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(explorer \"c:\\\\Users\\\\aa109\\\\Desktop\\\\小学AI教学游戏\\\\测试七巧板5.html\")",
+      "Bash(start \"\" \"c:\\\\Users\\\\aa109\\\\Desktop\\\\小学AI教学游戏\\\\测试七巧板5.html\")",
+      "Bash(start \"\" \"c:\\\\Users\\\\aa109\\\\Desktop\\\\小学AI教学游戏\\\\测试七巧板3.html\")"
+    ]
+  }
+}

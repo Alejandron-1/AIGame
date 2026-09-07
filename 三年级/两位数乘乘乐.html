@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>两位数乘乘乐 - 三年级下册 第4单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #ff7043 0%, #d84315 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #bf360c, #e64a19);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffe0b2; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    .map-title { text-align: center; font-size: 26px; color: #bf360c; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .zone { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .booth {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #fff3ee;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #ffccbc; transition: all .2s;
+    }
+    .booth:hover { border-color: #d84315; transform: translateX(4px); }
+    .booth.locked { opacity: 0.45; cursor: not-allowed; }
+    .booth .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .booth .info { flex: 1; }
+    .booth .info .n { font-size: 17px; font-weight: bold; color: #bf360c; }
+    .booth .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .booth .stars { font-size: 18px; letter-spacing: 2px; }
+    .booth .lock { font-size: 20px; color: #bbb; }
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #bf360c; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #ff8a65, #d84315); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #fff8f5; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #ffd9cc; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 26px; font-weight: bold; color: #bf360c; text-align: center; line-height: 1.7; }
+    .q-text .hl { color: #c0392b; font-size: 38px; }
+    /* 竖式 */
+    .vbox { display: flex; flex-direction: column; align-items: flex-end; font-family: 'Courier New', monospace; font-weight: bold; color: #2c3e50; }
+    .vbox .line { font-size: 38px; letter-spacing: 2px; height: 50px; display: flex; align-items: center; }
+    .vbox .line.small { font-size: 28px; height: 42px; }
+    .vbox .op-sign { margin-right: 4px; font-size: 28px; color: #d84315; }
+    .vbox .rule { width: 100%; height: 4px; background: #2c3e50; border-radius: 2px; margin: 2px 0 6px; }
+    .vbox .ans { width: 100%; display: flex; justify-content: flex-end; }
+    .vbox .ans input {
+        width: 200px; height: 54px; text-align: right; font-size: 36px; font-weight: bold;
+        border: 3px solid #d84315; border-radius: 10px; outline: none; color: #bf360c;
+        font-family: 'Courier New', monospace; padding-right: 8px;
+    }
+    .vbox .ans input:focus { box-shadow: 0 0 0 3px rgba(216,67,21,0.2); }
+    .num-input {
+        width: 190px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #bf360c; border-radius: 12px; outline: none; color: #bf360c;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #d84315; box-shadow: 0 0 0 3px rgba(216,67,21,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #ff7043, #d84315); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(216,67,21,0.4); }
+    .rate-hint {
+        background: #ffe9e0; border: 1px dashed #ff9d80; color: #bf360c;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 660px; }
+    .opt {
+        padding: 13px 8px; border-radius: 14px; background: #fff; border: 2px solid #ffd9cc;
+        font-size: 20px; font-weight: bold; color: #bf360c; cursor: pointer; text-align: center;
+        font-family: 'Courier New', monospace; transition: all .15s;
+    }
+    .opt:hover { border-color: #d84315; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #bf360c; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #bf360c; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">✖️ 两位数乘乘乐</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🎪 两位数乘乘乐</div>
+        <div class="map-sub">口算靶场 → 竖式工坊 → 估算与应用，三关全破成为乘法大师！</div>
+        <div class="zone" id="zone"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#d84315;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '两位数乘乘乐_错题';
+const PROG_KEY  = '两位数乘乘乐_进度';
+const STAGES = [
+    { icon:'🎯', name:'口算靶场', desc:'整十 × 整十 · 两位数 × 整十 快速口算', kind:'oral' },
+    { icon:'🏭', name:'竖式工坊', desc:'两位数 × 两位数 笔算乘法', kind:'vertical' },
+    { icon:'🎪', name:'估算与应用', desc:'估成整十再算 · 生活中的乘法问题', kind:'estimate' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+/* ================= 题目生成 ================= */
+// 关1：口算
+function makeOral() {
+    const kind = pick(['tt', 'nt']);
+    let a, b;
+    if (kind === 'tt') { // 整十×整十
+        a = randInt(2, 9) * 10; b = randInt(2, 9) * 10;
+    } else { // 两位数×整十
+        a = randInt(12, 99); b = randInt(2, 9) * 10;
+    }
+    return { kind:'oral', text:`<span class="hl">${a}</span> × ${b} = （ ）？`,
+             answer: a * b, hint:`先算 ${a / 10} × ${b / 10}，再在积的末尾添 2 个 0` };
+}
+
+// 关2：竖式
+function makeVertical() {
+    const a = randInt(12, 99), b = randInt(12, 99);
+    return { kind:'vertical', a, b, text:`${a} × ${b} = （ ）？`, answer: a * b,
+             hint:'先用第二个乘数个位去乘，积的末位和个位对齐；再用十位去乘，末位和十位对齐，最后加起来' };
+}
+
+// 关3：估算 + 应用题
+const WORD_BANK = [
+    { text:'每箱苹果 24 个，28 箱一共有多少个苹果？', a: 672, d: [48, 6720, 672] },
+    { text:'电影院每排有 32 个座位，一共有 26 排，电影院有多少个座位？', a: 832, d: [58, 8320, 832] },
+    { text:'学校买了 15 盒钢笔，每盒 12 支，一共买了多少支钢笔？', a: 180, d: [27, 1800, 150] },
+    { text:'一本故事书每页有 25 行，每行 20 个字，一页有多少个字？', a: 500, d: [45, 5000, 250] },
+    { text:'每袋大米重 40 千克，35 袋大米一共重多少千克？', a: 1400, d: [75, 140, 14000] },
+    { text:'一个足球 35 元，买 22 个足球需要多少元？', a: 770, d: [57, 7700, 350] },
+    { text:'每张电影票 18 元，买 30 张需要多少元？', a: 540, d: [48, 5400, 180] },
+    { text:'果园里每行种 26 棵桃树，种了 34 行，一共种了多少棵桃树？', a: 884, d: [60, 8840, 260] },
+    { text:'一辆大巴车可以坐 45 人，12 辆这样的大巴车可以坐多少人？', a: 540, d: [57, 5400, 90] },
+    { text:'每本笔记本 13 元，买 24 本需要多少元？', a: 312, d: [37, 3120, 130] },
+];
+function makeEstimate() {
+    const r = Math.random();
+    if (r < 0.45) {
+        // 估算：两位数×两位数估成整十
+        let a = randInt(12, 99), b = randInt(12, 99);
+        const ra = Math.round(a / 10) * 10, rb = Math.round(b / 10) * 10;
+        const est = ra * rb, exact = a * b;
+        if (est <= 0) return makeEstimate();
+        const opts = new Set([est, exact, est + 100, est - 100, est + 50, est - 50, exact + ra]);
+        let arr = [...opts].filter(v => v > 0);
+        while (arr.length < 4) { const x = est + randInt(1, 9) * 100; if (!arr.includes(x)) arr.push(x); }
+        arr = arr.slice(0, 4);
+        shuffle(arr);
+        return { kind:'estimate', text:`估一估：<span class="hl">${a}</span> × ${b} ≈ （ ）<br><span style="font-size:17px;color:#888">把每个数估成最接近的整十数，再相乘</span>`,
+                 answer: est, opts: arr, hint:`把 ${a} 估成 ${ra}，把 ${b} 估成 ${rb}：${ra} × ${rb}` };
+    }
+    // 应用题（选择）
+    const t = pick(WORD_BANK);
+    const opts = new Set([t.a, ...t.d]);
+    let arr = [...opts].slice(0, 4);
+    while (arr.length < 4) { const x = t.a + randInt(1, 9) * 10; if (!arr.includes(x)) arr.push(x); }
+    arr = arr.slice(0, 4);
+    shuffle(arr);
+    return { kind:'estimate', text:t.text, answer: t.a, opts: arr,
+             hint:'每份 × 份数 = 总数，用乘法' };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'oral') return makeOral();
+    if (kind === 'vertical') return makeVertical();
+    return makeEstimate();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const zone = $('zone');
+    zone.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'booth' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        zone.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.kind === 'estimate' ? (qq.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '')) : `${qq.a}x${qq.b}`;
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'vertical') {
+        const aStr = String(q.a), bStr = String(q.b);
+        card.innerHTML = `
+            <div class="q-text" style="font-size:19px;color:#666">用竖式算一算：</div>
+            <div class="vbox">
+                <div class="line"><span>${aStr}</span></div>
+                <div class="line small"><span class="op-sign">×</span><span>${bStr}</span></div>
+                <div class="rule"></div>
+                <div class="ans"><input id="ansInput" type="number" inputmode="numeric" placeholder="?"></div>
+            </div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput'); inp.focus();
+        $('submitBtn').onclick = submit;
+        inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    } else if (q.kind === 'oral') {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="convert-row"><input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?"></div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+        const inp = $('ansInput'); inp.focus();
+        $('submitBtn').onclick = submit;
+        inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+    }
+}
+
+function submit() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) return;
+    judge(v === q.answer, v);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一关已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

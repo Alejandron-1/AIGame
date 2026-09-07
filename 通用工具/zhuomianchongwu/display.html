@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>课堂展示 · ClassPet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Fredoka:wght@400;600;700&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/display.css" />
+</head>
+<body>
+
+  <!-- 全屏展示区域 -->
+  <div id="display-root">
+    <!-- 粒子/星星装饰层 -->
+    <div id="sparkle-layer" class="sparkle-layer"></div>
+
+    <!-- 顶部信息栏 -->
+    <header id="top-bar" class="top-bar">
+      <div class="top-bar-left">
+        <span id="class-name" class="class-name">三年二班</span>
+        <span class="brand-mini">CLASSPET</span>
+      </div>
+      <div class="top-bar-center">
+        <span id="student-name" class="student-name">等待选择学生…</span>
+      </div>
+      <div class="top-bar-right">
+        <span id="sync-status" class="sync-status">● 同步中</span>
+      </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main id="stage" class="stage">
+      <!-- 背景装饰 -->
+      <div class="stage-bg-decor">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="sun"></div>
+        <div class="ground"></div>
+      </div>
+
+      <!-- 宠物容器 -->
+      <div id="pet-container" class="pet-container">
+        <div id="pet-image-wrap" class="pet-image-wrap">
+          <!-- 宠物图片由 JS 注入 -->
+          <div id="pet-placeholder" class="pet-placeholder">
+            <div class="placeholder-icon">🐾</div>
+            <p>请在教师端选择要展示的学生</p>
+          </div>
+        </div>
+        <!-- 宠物名字牌 -->
+        <div id="nameplate" class="nameplate">
+          <span id="pet-level-label" class="pet-level-label">LV.1</span>
+          <span id="pet-name-text" class="pet-name-text">—</span>
+        </div>
+      </div>
+
+      <!-- 分数 & 进度条 -->
+      <div id="score-panel" class="score-panel">
+        <div class="score-left">
+          <span id="score-num" class="score-num">0</span>
+          <span class="score-unit">分</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <span id="progress-text" class="progress-text">距离下一级：0 / 5</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- 全校/全班宠物小预览（底部） -->
+    <footer id="bottom-bar" class="bottom-bar">
+      <div id="class-preview" class="class-preview">
+        <!-- 其他学生小宠物由 JS 注入 -->
+      </div>
+    </footer>
+  </div>
+
+  <!-- 升级全屏特效 -->
+  <div id="levelup-fx" class="levelup-fx is-hidden">
+    <div class="levelup-inner">
+      <div class="levelup-particles" id="levelup-particles"></div>
+      <div class="levelup-badge">LEVEL UP!</div>
+      <div id="levelup-pet-stage" class="levelup-pet-stage"></div>
+      <div id="levelup-new-level" class="levelup-new-level">LV.5</div>
+      <div id="levelup-pet-name" class="levelup-pet-name">火花进化了！</div>
+    </div>
+  </div>
+
+  <!-- 加分飘字动画容器 -->
+  <div id="float-score-layer" class="float-score-layer"></div>
+
+  <!-- 音频（升级音效） -->
+  <audio id="sfx-levelup" preload="auto">
+    <source src="/uploads/themes/sfx/levelup.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script src="js/common.js"></script>
+  <script src="js/display.js"></script>
+</body>
+</html>

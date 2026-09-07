@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小学数学游戏总目录 - 按年级分类</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 30px 20px 60px;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .wrap { max-width: 1060px; margin: 0 auto; }
+    .hero {
+        text-align: center; color: #fff; margin-bottom: 28px;
+    }
+    .hero h1 { font-size: 34px; letter-spacing: 2px; text-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+    .hero p { margin-top: 10px; font-size: 15px; opacity: 0.92; }
+    .hero .tips { margin-top: 8px; font-size: 13px; opacity: 0.75; }
+    section.grade {
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        padding: 20px 24px 24px;
+        margin-bottom: 24px;
+    }
+    .grade-head {
+        display: flex; align-items: center; gap: 12px;
+        border-bottom: 2px dashed #ddd; padding-bottom: 12px; margin-bottom: 16px;
+    }
+    .grade-badge {
+        width: 46px; height: 46px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; color: #fff; flex-shrink: 0;
+    }
+    .grade-head h2 { font-size: 21px; color: #333; }
+    .grade-head .tag { font-size: 13px; color: #888; font-weight: normal; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+    .card {
+        background: #f7f8ff; border-radius: 14px; padding: 14px 16px;
+        border: 2px solid transparent; text-decoration: none; color: inherit;
+        display: block; transition: all .2s;
+    }
+    .card:hover { border-color: #764ba2; transform: translateY(-3px); box-shadow: 0 6px 18px rgba(118,75,162,0.25); }
+    .card.dim { opacity: 0.55; pointer-events: none; }
+    .card .row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .card .name { font-size: 16px; font-weight: bold; color: #2c3e50; }
+    .card .unit { font-size: 12.5px; color: #7f8c8d; margin-top: 6px; line-height: 1.5; }
+    .card .path { font-size: 11.5px; color: #a0a9b8; margin-top: 4px; font-family: Consolas, monospace; }
+    .badge {
+        font-size: 11.5px; font-weight: bold; padding: 3px 10px; border-radius: 12px; white-space: nowrap;
+    }
+    .badge.ok { background: #d5f5e3; color: #1e8449; }
+    .badge.wip { background: #fdebd0; color: #b9770e; }
+    .badge.dev { background: #d6eaf8; color: #21618c; }
+    .badge.tool { background: #e8daef; color: #6c3483; }
+    .badge.doc { background: #fdebd0; color: #b9770e; }
+    footer { text-align: center; color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="hero">
+        <h1>🎮 小学数学游戏总目录</h1>
+        <p>按年级 / 学期 / 单元分类，点卡片直接打开游戏（游戏文件已归档到各年级文件夹）</p>
+        <p class="tips">教材版本：人教版（2022新课标）· 当前重点：小学一年级</p>
+    </div>
+
+    <!-- 一年级 -->
+    <section class="grade">
+        <div class="grade-head">
+            <div class="grade-badge" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">一</div>
+            <div><h2>小学一年级 <span class="tag">文件夹：小学一年级/ · 当前重点年级</span></h2></div>
+        </div>
+        <div class="grid">
+            <a class="card" href="小学一年级/数学拔河.html">
+                <div class="row1"><span class="name">🤼 数学拔河</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">课堂口算竞技 · 两队对战<br>难度可调：20以内/100以内/1000以内（含1-2年级档）</div>
+                <div class="path">小学一年级/数学拔河.html</div>
+            </a>
+            <a class="card" href="小学一年级/飞行棋.html">
+                <div class="row1"><span class="name">🎲 飞行棋</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">积分兑换掷骰子、逐格走棋、落格事件（奖品/特权/惩罚/终点）、库存管理、一键示例地图</div>
+                <div class="path">小学一年级/飞行棋.html</div>
+            </a>
+            <a class="card" href="小学一年级/地图编辑器.html">
+                <div class="row1"><span class="name">🗺️ 地图编辑器</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">自定义棋盘地图<br>预设直线/S形/Z形/环形/螺旋，8种格子形状，上传背景、拖动/缩放格子，保存后直接「进入飞行棋」</div>
+                <div class="path">小学一年级/地图编辑器.html</div>
+            </a>
+            <a class="card" href="小学一年级/数字转盘小游戏.html">
+                <div class="row1"><span class="name">🍭 数字转盘小游戏</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">一年级~二年级 · 数的认识与比大小<br>转盘组数、比大小对战</div>
+                <div class="path">小学一年级/数字转盘小游戏.html</div>
+            </a>
+            <a class="card" href="小学一年级/数字转盘小游戏 每轮转动一次.html">
+                <div class="row1"><span class="name">🍭 数字转盘·同数对决版</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">一年级~二年级 · 数的认识与比大小<br>每轮转动一次的对决玩法</div>
+                <div class="path">小学一年级/数字转盘小游戏 每轮转动一次.html</div>
+            </a>
+            <a class="card dim">
+                <div class="row1"><span class="name">📄 一年级需求文档</span><span class="badge doc">文档</span></div>
+                <div class="unit">数学拔河 ✅ 已开发 · 数学飞行棋 ✅ 已实现（自定义地图版）<br>见：小学一年级需求文档文件夹/</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- 二年级 -->
+    <section class="grade">
+        <div class="grade-head">
+            <div class="grade-badge" style="background:linear-gradient(135deg,#f39c12,#d68910)">二</div>
+            <div><h2>二年级 <span class="tag">文件夹：二年级/</span></h2></div>
+        </div>
+        <div class="grid">
+            <a class="card" href="二年级/认识时间.html">
+                <div class="row1"><span class="name">⏰ 认识时间教学工具</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">二年级 · 认识时间<br>钟面认读、整时半时（一年级下册可作启蒙）</div>
+                <div class="path">二年级/认识时间.html</div>
+            </a>
+            <a class="card" href="二年级/时间认读PK赛.html">
+                <div class="row1"><span class="name">⚔️ 时间认读PK赛</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">二年级 · 认识时间（进阶）<br>几时几分 PK 对战、排行榜导出</div>
+                <div class="path">二年级/时间认读PK赛.html</div>
+            </a>
+            <a class="card" href="二年级/水果分配 余数教学.html">
+                <div class="row1"><span class="name">🍎 水果分一分（余数）</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">二年级下册 · 有余数的除法<br>拖拽分水果认识余数</div>
+                <div class="path">二年级/水果分配 余数教学.html</div>
+            </a>
+            <a class="card" href="二年级/认识数字-多位数.html">
+                <div class="row1"><span class="name">🔎 数位探秘 · 摆一摆</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">二年级~三年级 · 万以内数的认识<br>可调位数的数位学习</div>
+                <div class="path">二年级/认识数字-多位数.html</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- 三年级 -->
+    <section class="grade">
+        <div class="grade-head">
+            <div class="grade-badge" style="background:linear-gradient(135deg,#27ae60,#1e8449)">三</div>
+            <div><h2>三年级 <span class="tag">文件夹：三年级/ · 上册7款 + 下册8款 = 15款全覆盖</span></h2></div>
+        </div>
+        <div class="grid">
+            <a class="card" href="三年级/测量大冒险.html">
+                <div class="row1"><span class="name">📏 测量大冒险</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第3单元 · 测量<br>毫米/分米/千米/吨 单位换算与选择</div>
+            </a>
+            <a class="card" href="三年级/加减法运算岛.html">
+                <div class="row1"><span class="name">🏝️ 加减法运算岛</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第2/4单元 · 万以内的加法和减法<br>口算岛 → 竖式岛 → 估算岛</div>
+            </a>
+            <a class="card" href="三年级/倍的认识小农场.html">
+                <div class="row1"><span class="name">🌻 倍的认识小农场</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第5单元 · 倍的认识<br>圈一圈感受倍 → 算一算 → 农场应用题</div>
+            </a>
+            <a class="card" href="三年级/乘法城堡闯关.html">
+                <div class="row1"><span class="name">🏰 乘法城堡闯关</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第6单元 · 多位数乘一位数<br>口算 → 竖式 → 估算三关闯关</div>
+            </a>
+            <a class="card" href="三年级/周长设计师.html">
+                <div class="row1"><span class="name">🌻 周长设计师</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第7单元 · 长方形和正方形<br>围栅栏数周长、公式计算、等周变形</div>
+            </a>
+            <a class="card" href="三年级/分数披萨屋.html">
+                <div class="row1"><span class="name">🍕 分数披萨屋</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三上 第8单元 · 分数的初步认识<br>切披萨、涂奶油、比大小</div>
+            </a>
+            <a class="card" href="三年级/大数读法闯关 - 多位数.html">
+                <div class="row1"><span class="name">🔢 大数读法闯关（多位数）</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">万以内数的认识（二年级下~三年级衔接）<br>三/四/五位数读法闯关</div>
+            </a>
+            <a class="card" href="三年级/方向导航员.html">
+                <div class="row1"><span class="name">🧭 方向导航员</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第1单元 · 位置与方向（一）<br>认方向 → 看地图 → 走路线</div>
+            </a>
+            <a class="card" href="三年级/除法登山队.html">
+                <div class="row1"><span class="name">⛰️ 除法登山队</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第2单元 · 除数是一位数的除法<br>口算 → 竖式（商中间/末尾有0）→ 估算验算</div>
+            </a>
+            <a class="card" href="三年级/班级统计站.html">
+                <div class="row1"><span class="name">📊 班级统计站</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第3单元 · 复式统计表<br>读表 → 填表 → 两班对比分析</div>
+            </a>
+            <a class="card" href="三年级/两位数乘乘乐.html">
+                <div class="row1"><span class="name">✖️ 两位数乘乘乐</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第4单元 · 两位数乘两位数<br>口算 → 竖式 → 估算与应用</div>
+            </a>
+            <a class="card" href="三年级/面积粉刷匠.html">
+                <div class="row1"><span class="name">🎨 面积粉刷匠</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第5单元 · 面积<br>数格子 → 算面积 → 周长面积对比（含易错题）</div>
+            </a>
+            <a class="card" href="三年级/日历大转盘.html">
+                <div class="row1"><span class="name">📅 日历大转盘</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第6单元 · 年、月、日<br>大月小月 → 平年闰年 → 日子计算</div>
+            </a>
+            <a class="card" href="三年级/小数超市.html">
+                <div class="row1"><span class="name">🛒 小数超市</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第7单元 · 小数的初步认识<br>认识小数 → 比价格 → 购物算账</div>
+            </a>
+            <a class="card" href="三年级/搭配魔法衣橱.html">
+                <div class="row1"><span class="name">👗 搭配魔法衣橱</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">三下 第8单元 · 数学广角——搭配（二）<br>穿衣搭配 → 数字排列 → 握手连线</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- 四年级 -->
+    <section class="grade">
+        <div class="grade-head">
+            <div class="grade-badge" style="background:linear-gradient(135deg,#3498db,#2471a3)">四</div>
+            <div><h2>四年级 <span class="tag">文件夹：四年级/</span></h2></div>
+        </div>
+        <div class="grid">
+            <a class="card" href="四年级/大数读法闯关.html">
+                <div class="row1"><span class="name">🌏 大数读法闯关</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">四年级上册 · 大数的认识<br>亿以内大数读法（含国家面积等真实数据）</div>
+                <div class="path">四年级/大数读法闯关.html</div>
+            </a>
+            <a class="card" href="四年级/探索星球-大数读法.html">
+                <div class="row1"><span class="name">🚀 探索星球 · 大数读法</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">四年级上册 · 大数的认识<br>星球探索式大数读法练习</div>
+                <div class="path">四年级/探索星球-大数读法.html</div>
+            </a>
+        </div>
+    </section>
+
+    <!-- 通用工具 -->
+    <section class="grade">
+        <div class="grade-head">
+            <div class="grade-badge" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">通用</div>
+            <div><h2>通用能力 &amp; 课堂工具 <span class="tag">文件夹：通用工具/ · 不限定年级</span></h2></div>
+        </div>
+        <div class="grid">
+            <a class="card" href="通用工具/消消乐(待改进).html">
+                <div class="row1"><span class="name">🟢 口算消消乐</span><span class="badge wip">⚠️ 待改进</span></div>
+                <div class="unit">二~三年级通用 · 口算练习<br>加法/减法/乘法/除法四版本，未完成打磨</div>
+                <div class="path">通用工具/消消乐(待改进).html</div>
+            </a>
+            <a class="card" href="通用工具/百变七巧板.html">
+                <div class="row1"><span class="name">🧩 百变七巧板</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">图形与几何 · 空间观念<br>自由拼摆、旋转拖拽（一年级认识图形可用）</div>
+                <div class="path">通用工具/百变七巧板.html</div>
+            </a>
+            <a class="card" href="通用工具/小天才空间积木盒 - 三视图挑战.html">
+                <div class="row1"><span class="name">🧱 三视图挑战</span><span class="badge ok">✅ 可玩</span></div>
+                <div class="unit">空间想象 · 三年级~四年级<br>根据三视图拼搭积木</div>
+                <div class="path">通用工具/小天才空间积木盒 - 三视图挑战.html</div>
+            </a>
+            <a class="card" href="通用工具/答题闯关游戏/classroom_quiz_game.html">
+                <div class="row1"><span class="name">❓ 课堂答题闯关</span><span class="badge tool">🛠 工具</span></div>
+                <div class="unit">课堂互动工具<br>通用题库答题闯关</div>
+                <div class="path">通用工具/答题闯关游戏/</div>
+            </a>
+            <a class="card" href="通用工具/答题闯关游戏/千问ai小游戏1.html">
+                <div class="row1"><span class="name">🎯 趣味数学闯关</span><span class="badge tool">🛠 工具</span></div>
+                <div class="unit">课堂互动工具<br>增强版答题闯关</div>
+                <div class="path">通用工具/答题闯关游戏/</div>
+            </a>
+            <a class="card" href="通用工具/zhuomianchongwu/index.html">
+                <div class="row1"><span class="name">🐹 课堂宠物 ClassPet</span><span class="badge tool">🛠 工具</span></div>
+                <div class="unit">课堂激励系统（非教学游戏）<br>加分升级、展示屏、管理后台（含服务端）</div>
+                <div class="path">通用工具/zhuomianchongwu/</div>
+            </a>
+        </div>
+    </section>
+
+    <footer>📌 文件已按年级归档：小学一年级/ · 二年级/ · 三年级/ · 四年级/ · 通用工具/ · 新增游戏请放入对应年级文件夹</footer>
+</div>
+</body>
+</html>

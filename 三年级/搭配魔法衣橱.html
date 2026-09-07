@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>搭配魔法衣橱 - 三年级下册 第8单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #ff9a9e 0%, #f953c6 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #880e4f, #ad1457);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #f8bbd0; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    .map-title { text-align: center; font-size: 26px; color: #880e4f; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .ward { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .rail {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #fdf0f6;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #f8bbd0; transition: all .2s;
+    }
+    .rail:hover { border-color: #ad1457; transform: translateX(4px); }
+    .rail.locked { opacity: 0.45; cursor: not-allowed; }
+    .rail .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .rail .info { flex: 1; }
+    .rail .info .n { font-size: 17px; font-weight: bold; color: #880e4f; }
+    .rail .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .rail .stars { font-size: 18px; letter-spacing: 2px; }
+    .rail .lock { font-size: 20px; color: #bbb; }
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #880e4f; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #f06292, #ad1457); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #fef7fb; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #f8bbd0; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .q-text { font-size: 26px; font-weight: bold; color: #880e4f; text-align: center; line-height: 1.8; }
+    .q-text .hl { color: #c0392b; font-size: 38px; }
+    .q-text .card-num {
+        display: inline-block; background: #fff; border: 2px solid #f06292; color: #ad1457;
+        border-radius: 10px; padding: 2px 12px; margin: 0 3px; font-size: 26px; font-family: 'Courier New', monospace;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 660px; }
+    .opt {
+        padding: 13px 8px; border-radius: 14px; background: #fff; border: 2px solid #f8bbd0;
+        font-size: 22px; font-weight: bold; color: #880e4f; cursor: pointer; text-align: center;
+        font-family: 'Courier New', monospace; transition: all .15s;
+    }
+    .opt:hover { border-color: #ad1457; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .num-input {
+        width: 160px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #880e4f; border-radius: 12px; outline: none; color: #880e4f;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #ad1457; box-shadow: 0 0 0 3px rgba(173,20,87,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #f06292, #880e4f); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s;
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(136,14,79,0.4); }
+    .rate-hint {
+        background: #fce4ec; border: 1px dashed #f48fb1; color: #880e4f;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold; text-align: center;
+    }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #880e4f; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #880e4f; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">👗 搭配魔法衣橱</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">✨ 搭配魔法衣橱</div>
+        <div class="map-sub">穿衣搭配 → 数字排列 → 握手连线，学会有顺序、不重复地数一数！</div>
+        <div class="ward" id="ward"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#ad1457;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '搭配魔法衣橱_错题';
+const PROG_KEY  = '搭配魔法衣橱_进度';
+const STAGES = [
+    { icon:'👕', name:'穿衣搭配', desc:'上衣 × 裤子 / 帽子 × 鞋：有几种搭配？', kind:'dress' },
+    { icon:'🔢', name:'数字排列', desc:'用数字卡片组成不同的两位数', kind:'perm' },
+    { icon:'🤝', name:'握手连线', desc:'每两人握一次手 / 每两队赛一场', kind:'combo' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+function opts4Num(correct) {
+    const dists = [correct + 1, correct - 1, correct + 2, correct * 2, Math.max(2, correct - 2), correct + correct];
+    let arr = [...new Set([correct, ...dists])].filter(v => v > 0 && Number.isInteger(v));
+    while (arr.length < 4) { const x = correct + randInt(1, 6); if (!arr.includes(x)) arr.push(x); }
+    return shuffle(arr.slice(0, 4));
+}
+
+/* ================= 题目生成 ================= */
+// 关1：穿衣搭配（乘法原理）
+function makeDress() {
+    const r = Math.random();
+    if (r < 0.6) {
+        const tops = randInt(2, 4), bottoms = randInt(2, 4);
+        const ans = tops * bottoms;
+        return { kind:'dress', text:`衣橱里有 <span class="hl">${tops}</span> 件上衣和 <span class="hl">${bottoms}</span> 条裤子，一件上衣配一条裤子，一共有（ ）种不同的穿法？`,
+                 answer: ans, opts: opts4Num(ans),
+                 hint:`上衣 × 裤子 = ${tops} × ${bottoms}。先固定一件上衣，有 ${bottoms} 种裤子配它` };
+    }
+    const hats = randInt(2, 3), shoes = randInt(2, 3);
+    const ans = hats * shoes;
+    return { kind:'dress', text:`有 <span class="hl">${hats}</span> 顶帽子和 <span class="hl">${shoes}</span> 双鞋，一顶帽子配一双鞋，一共有（ ）种不同的搭配？`,
+             answer: ans, opts: opts4Num(ans),
+             hint:`帽子 × 鞋 = ${hats} × ${shoes}` };
+}
+
+// 关2：数字排列（组成不同的两位数）
+function makePerm() {
+    const useZero = Math.random() < 0.4;
+    let digits;
+    if (useZero) {
+        const a = randInt(1, 9), b = randInt(1, 9);
+        if (a === b) return makePerm();
+        digits = [0, a, b];
+    } else {
+        digits = [];
+        while (digits.length < 3) {
+            const d = randInt(1, 9);
+            if (!digits.includes(d)) digits.push(d);
+        }
+    }
+    // 不重复使用，组成两位数
+    const n = digits.length;
+    let ans, hint;
+    if (useZero) {
+        ans = (n - 1) * (n - 1); // 首位不能是0
+        hint = `十位不能是 0，有 ${n - 1} 种选法；个位剩下 ${n - 1} 种选法：${n - 1} × ${n - 1}`;
+    } else {
+        ans = n * (n - 1);
+        hint = `十位有 ${n} 种选法，个位剩下 ${n - 1} 种选法：${n} × ${n - 1}`;
+    }
+    const cards = digits.map(d => `<span class="card-num">${d}</span>`).join('');
+    return { kind:'perm', text:`用数字卡片 ${cards}，每次选 2 张组成不同的两位数（不能重复使用），能组成（ ）个？`,
+             answer: ans, opts: opts4Num(ans), hint };
+}
+
+// 关3：握手连线（组合）
+function makeCombo() {
+    const r = Math.random();
+    if (r < 0.5) {
+        const n = randInt(3, 6);
+        const ans = n * (n - 1) / 2;
+        return { kind:'combo', text:`${n} 个小朋友，每两人握一次手，一共要握（ ）次手？`,
+                 answer: ans, opts: opts4Num(ans),
+                 hint:`第 1 人和另外 ${n - 1} 人各握 1 次……${n} 人一共 ${n} × ${n - 1} ÷ 2` };
+    }
+    const n = randInt(3, 6);
+    const ans = n * (n - 1) / 2;
+    return { kind:'combo', text:`${n} 支球队进行单循环比赛，每两队之间赛一场，一共要赛（ ）场？`,
+             answer: ans, opts: opts4Num(ans),
+             hint:`每两支球队算一场，${n} × ${n - 1} ÷ 2（甲和乙赛一场就是乙和甲赛一场）` };
+}
+
+function makeQuestion(kind) {
+    if (kind === 'dress') return makeDress();
+    if (kind === 'perm') return makePerm();
+    return makeCombo();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const ward = $('ward');
+    ward.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'rail' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        ward.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.text.replace(/<[^>]+>/g, '').replace(/\s+/g, '');
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="q-text">${q.text}</div>
+        <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+        <div class="rate-hint">💡 ${q.hint}</div>`;
+    card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 46);
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一关已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一关 →' : '🏆 全部通关！返回'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

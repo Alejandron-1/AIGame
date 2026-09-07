@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>飞行棋</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(180deg, #eef3f8 0%, #e2e9f1 100%);
+        height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+        user-select: none; -webkit-user-select: none;
+    }
+    /* 顶栏 */
+    .topbar {
+        display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+        background: linear-gradient(135deg, #2c3e50, #34495e); color: #fff; flex: 0 0 auto; flex-wrap: wrap;
+    }
+    .topbar .title { font-size: 19px; font-weight: bold; }
+    .topbar .mapname { font-size: 13px; color: #ffd200; background: rgba(255,255,255,0.12); padding: 3px 12px; border-radius: 20px; }
+    .topbar .spacer { flex: 1; }
+    .tbtn {
+        background: rgba(255,255,255,0.14); color: #fff; border: none; border-radius: 10px; padding: 7px 14px;
+        font-size: 13px; cursor: pointer; font-family: inherit; font-weight: bold;
+    }
+    .tbtn:hover { background: rgba(255,255,255,0.28); }
+    .tbtn.orange { background: #f39c12; }
+    .tbtn.red { background: #e74c3c; }
+    /* 主体 */
+    .main { flex: 1; display: flex; min-height: 0; }
+    /* 左侧：积分看板 */
+    .board-side {
+        width: 320px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; flex: 0 0 auto;
+    }
+    .board-side .head { padding: 12px 14px; border-bottom: 1px solid #eee; }
+    .board-side .head h3 { font-size: 16px; color: #2c3e50; margin-bottom: 8px; }
+    .addrow { display: flex; gap: 6px; }
+    .addrow input { flex: 1; padding: 8px 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; }
+    .addrow input:focus { border-color: #4A90E2; }
+    .addrow button { padding: 8px 12px; border: none; border-radius: 8px; background: #4A90E2; color: #fff; font-size: 14px; cursor: pointer; font-weight: bold; font-family: inherit; }
+    .scorelist { flex: 1; overflow: auto; padding: 8px; }
+    .score-row {
+        display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; margin-bottom: 6px;
+        background: #f5f8fb; border: 2px solid transparent; cursor: pointer;
+    }
+    .score-row.cur { border-color: #ffd200; background: #fff8e1; }
+    .score-row .rank { font-size: 13px; font-weight: bold; color: #888; width: 18px; }
+    .pawn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); flex: 0 0 auto; }
+    .score-row .info { flex: 1; min-width: 0; }
+    .score-row .name { font-size: 14px; font-weight: bold; color: #333; }
+    .score-row .pts { font-size: 17px; font-weight: bold; color: #f39c12; }
+    .score-row .acts { display: flex; gap: 3px; }
+    .sbtn {
+        border: none; border-radius: 7px; width: 30px; height: 26px; font-size: 14px; cursor: pointer;
+        background: #ecf0f1; color: #2c3e50; font-weight: bold;
+    }
+    .sbtn.g { background: #d5f5e3; color: #27ae60; }
+    .sbtn.r { background: #fdedec; color: #e74c3c; }
+    .sbtn.die { background: #ffd200; color: #5d3a00; width: auto; padding: 0 8px; font-size: 13px; }
+    .sbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* 中间：棋盘 */
+    .center { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 12px; }
+    .board {
+        position: relative; flex: 1; border-radius: 14px; overflow: hidden; background: #e8f5e9;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.12); background-size: cover; background-position: center;
+    }
+    .board .emptymap {
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 10px; color: #889; text-align: center;
+    }
+    .board .emptymap .big { font-size: 44px; }
+    .node {
+        position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;
+    }
+    .node .shape { position: absolute; inset: 0; z-index: 0; }
+    .node .shape.round { border-radius: 50%; }
+    .node .shape.square { border-radius: 8px; }
+    .node .shape.rounded { border-radius: 16px; }
+    .node .shape.diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+    .node .shape.triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .node .shape.hexagon { clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); }
+    .node .shape.star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+    .node .shape.heart { clip-path: polygon(50% 15%, 61% 4%, 76% 4%, 90% 18%, 90% 34%, 78% 55%, 50% 88%, 22% 55%, 10% 34%, 10% 18%, 24% 4%, 39% 4%); }
+    .node .num { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex;
+        align-items: center; justify-content: center; font-size: 11px; font-weight: bold; position: absolute; top: -8px; left: -8px; z-index: 2; }
+    .node .emoji { position: relative; z-index: 1; font-size: 24px; line-height: 1; }
+    .node .nlabel { position: absolute; bottom: -19px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+        font-size: 10px; color: #fff; background: rgba(0,0,0,0.6); padding: 1px 7px; border-radius: 8px; z-index: 2; }
+    .pawn-el {
+        position: absolute; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #fff;
+        border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.35); z-index: 6; transition: left 0.25s, top 0.25s;
+    }
+    /* 底部：当前玩家 + 骰子 + 日志 */
+    .bottom { flex: 0 0 auto; display: flex; gap: 12px; margin-top: 10px; align-items: stretch; min-height: 108px; }
+    .curcard {
+        width: 240px; background: #fff; border-radius: 14px; padding: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .curcard .who { font-size: 17px; font-weight: bold; color: #333; display: flex; align-items: center; gap: 8px; }
+    .curcard .pts { font-size: 13px; color: #888; }
+    .curcard .actions { display: flex; gap: 8px; }
+    .dicebox {
+        width: 130px; background: #fff; border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .dice {
+        width: 72px; height: 72px; background: #fff; border: 3px solid #2c3e50; border-radius: 14px;
+        display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+        padding: 9px; gap: 3px; box-shadow: inset 0 -4px 6px rgba(0,0,0,0.1);
+    }
+    .dice .pip { display: none; }
+    .dice .pip.on { display: block; border-radius: 50%; background: #2c3e50; }
+    .roll-btn {
+        position: absolute; bottom: 6px; right: 8px; border: none; border-radius: 8px; padding: 6px 12px;
+        background: #f39c12; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit;
+    }
+    .roll-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .log {
+        flex: 1; background: #fff; border-radius: 14px; padding: 10px 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        overflow: auto; font-size: 13px; color: #555; line-height: 1.8;
+    }
+    .log .l { border-bottom: 1px dashed #eee; padding: 2px 0; }
+    /* 弹窗 */
+    .modal-mask {
+        position: fixed; inset: 0; background: rgba(30,40,60,0.55); display: flex; align-items: center;
+        justify-content: center; z-index: 40;
+    }
+    .modal {
+        background: #fff; border-radius: 18px; padding: 26px 34px; text-align: center; max-width: 420px;
+        box-shadow: 0 12px 44px rgba(0,0,0,0.4); width: 90%;
+    }
+    .modal .m-emoji { font-size: 56px; }
+    .modal .m-title { font-size: 24px; font-weight: bold; color: #2c3e50; margin: 10px 0 6px; }
+    .modal .m-sub { font-size: 15px; color: #777; margin-bottom: 16px; }
+    .modal .m-stock { font-size: 13px; color: #f39c12; margin-bottom: 8px; }
+    .modal .m-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .mbtn { padding: 10px 26px; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; font-family: inherit; color: #fff; }
+    .mbtn.orange { background: #f39c12; } .mbtn.green { background: #2ecc71; } .mbtn.blue { background: #4A90E2; } .mbtn.gray { background: #95a5a6; }
+    .hidden { display: none !important; }
+    .confetti { position: fixed; width: 9px; height: 9px; border-radius: 2px; z-index: 50; pointer-events: none; animation: fall 1.2s ease-out forwards; }
+    @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0.2; } }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.82); color: #fff;
+        padding: 10px 22px; border-radius: 30px; font-size: 14px; z-index: 60; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+    .input-m { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; margin: 8px 0; text-align: center; outline: none; }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="title">🎲 飞行棋</div>
+        <div class="mapname" id="mapName">未加载地图</div>
+        <div class="spacer"></div>
+        <button class="tbtn" id="demoMapBtn">✨ 示例地图</button>
+        <button class="tbtn" id="editMapBtn">🖌️ 编辑地图</button>
+        <button class="tbtn" id="stockBtn">🏷️ 奖品库存</button>
+        <button class="tbtn" id="rulesBtn">⚙️ 规则</button>
+        <button class="tbtn red" id="clearBtn">🗑️ 清空数据</button>
+        <button class="tbtn" id="soundBtn">🔊</button>
+    </div>
+
+    <div class="main">
+        <!-- 积分看板 -->
+        <div class="board-side">
+            <div class="head">
+                <h3>👥 学生积分看板</h3>
+                <div class="addrow">
+                    <input id="newName" placeholder="输入学生姓名" maxlength="6">
+                    <button id="addBtn">➕</button>
+                </div>
+            </div>
+            <div class="scorelist" id="scorelist"></div>
+        </div>
+
+        <!-- 棋盘 + 底部 -->
+        <div class="center">
+            <div class="board" id="board"></div>
+            <div class="bottom">
+                <div class="curcard">
+                    <div class="who" id="curWho">🎲 当前玩家：-</div>
+                    <div class="pts" id="curPts"></div>
+                    <div class="actions">
+                        <button class="sbtn die" id="rollBtn" style="width:auto;padding:8px 18px;font-size:15px;">🎲 掷骰子(10分)</button>
+                    </div>
+                </div>
+                <div class="dicebox">
+                    <div class="dice" id="dice"></div>
+                    <button class="roll-btn" id="rollBtn2">🎲 掷</button>
+                </div>
+                <div class="log" id="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 事件弹窗 -->
+    <div class="modal-mask hidden" id="modal">
+        <div class="modal">
+            <div class="m-emoji" id="mEmoji">🎁</div>
+            <div class="m-title" id="mTitle"></div>
+            <div class="m-sub" id="mSub"></div>
+            <div class="m-stock" id="mStock"></div>
+            <div class="m-btns" id="mBtns"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const board = $('board');
+const SAVE_PLAYERS = 'rewardmap_players';
+const SAVE_SETTINGS = 'rewardmap_settings';
+const SAVE_STOCKS = 'rewardmap_stocks';
+const MAP_KEY = 'rewardmap_editor';
+let soundOn = true, audioCtx = null;
+function beep(f, d = 0.1, t = 'sine', v = 0.15) {
+    if (!soundOn) return;
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const sDice = () => { for (let i = 0; i < 5; i++) setTimeout(() => beep(300 + i * 60, 0.05, 'square', 0.1), i * 90); };
+const sGood = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.16), 90); };
+const sBad = () => beep(180, 0.25, 'sawtooth');
+const sFx = () => { [523, 659, 784].forEach((f, i) => setTimeout(() => beep(f, 0.15), i * 100)); };
+const PAWN_COLORS = ['#4A90E2', '#FF6B6B', '#2ECC71', '#F39C12', '#9B59B6', '#1ABC9C', '#E91E63', '#8E44AD', '#607D8B', '#16A085'];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ================= 状态 ================= */
+let state = {
+    map: null,
+    students: [],       // {id,name,color,pos,paused}
+    current: 0,
+    rolling: false,
+    threshold: 10,
+    stocks: {},         // nodeId -> 库存数量 (undefined=不限)
+};
+
+function loadPersist() {
+    try { state.students = JSON.parse(localStorage.getItem(SAVE_PLAYERS) || '[]'); } catch (e) { state.students = []; }
+    try { state.threshold = JSON.parse(localStorage.getItem(SAVE_SETTINGS) || '{"t":10}').t || 10; } catch (e) {}
+    try { state.stocks = JSON.parse(localStorage.getItem(SAVE_STOCKS) || '{}'); } catch (e) { state.stocks = {}; }
+    try { state.map = JSON.parse(localStorage.getItem(MAP_KEY)); } catch (e) { state.map = null; }
+}
+function savePlayers() { localStorage.setItem(SAVE_PLAYERS, JSON.stringify(state.students)); }
+function saveSettings() { localStorage.setItem(SAVE_SETTINGS, JSON.stringify({ t: state.threshold })); }
+function saveStocks() { localStorage.setItem(SAVE_STOCKS, JSON.stringify(state.stocks)); }
+
+/* 内置示例地图：20 格蛇形路径（5列×4行），与编辑器「示例地图」一致 */
+function makeDemoMap() {
+    const nodes = [], ROWS = 4, COLS = 5;
+    const texts = ['出发啦！', '向前冲！', '好运来！', '继续加油！', '真棒！', '保持住！', '冲呀！', '胜利在望！', '别停！', '快到了！'];
+    for (let i = 0; i < 20; i++) {
+        const row = Math.floor(i / COLS);
+        let col = i % COLS;
+        if (row % 2 === 1) col = COLS - 1 - col; // 蛇形回绕
+        const n = {
+            id: i + 1, seq: i + 1,
+            x: 12 + col * 19, y: 15 + row * 24,
+            w: 62, h: 62, shape: 'rounded', color: '#4A90E2', opacity: 85,
+            type: 'show', text: texts[i % texts.length], prize: '', prizeEmoji: '',
+            perk: '免作业卡', punishType: 'back', punishVal: 2,
+            fx: false, isStart: false, isEnd: false, showLabel: false,
+        };
+        if (i === 0) { n.isStart = true; n.text = '起点'; }
+        if (i === 5) { n.type = 'prize'; n.prize = '文具盲盒'; n.prizeEmoji = '🎁'; n.fx = true; }
+        if (i === 8) { n.type = 'punish'; n.punishType = 'back'; n.punishVal = 2; n.text = '遇到鲨鱼'; }
+        if (i === 10) { n.type = 'prize'; n.prize = '棒棒糖'; n.prizeEmoji = '🍭'; n.fx = true; }
+        if (i === 13) { n.type = 'perk'; n.perk = '免作业卡'; n.fx = true; }
+        if (i === 16) { n.type = 'punish'; n.punishType = 'pause'; n.punishVal = 0; n.text = '休息一轮'; }
+        if (i === 19) { n.isEnd = true; n.type = 'show'; n.text = '终点'; n.fx = true; }
+        nodes.push(n);
+    }
+    return { nodes, nextId: 21, bgColor: '#e8f5e9', bgImg: null };
+}
+$('demoMapBtn').onclick = () => {
+    if (state.map && state.map.nodes && state.map.nodes.length && !confirm('载入示例地图将覆盖当前地图，继续吗？')) return;
+    state.map = makeDemoMap();
+    localStorage.setItem(MAP_KEY, JSON.stringify(state.map));
+    render();
+    logLine('✨ 已载入示例地图（20 格），添加学生即可开玩！');
+};
+
+function mapNodes() {
+    if (!state.map || !Array.isArray(state.map.nodes)) return [];
+    return state.map.nodes.slice().sort((a, b) => a.seq - b.seq);
+}
+
+/* ================= 渲染 ================= */
+function render() {
+    renderMap();
+    renderScore();
+    renderCur();
+    updateRollBtn();
+}
+
+function hexToRgba(hex, a) {
+    const h = hex.replace('#', '');
+    return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`;
+}
+
+function renderMap() {
+    board.innerHTML = '';
+    board.style.backgroundImage = '';
+    const nodes = mapNodes();
+    if (!state.map || nodes.length === 0) {
+        board.style.background = '#e8f5e9';
+        $('mapName').textContent = '未加载地图';
+        const ov = document.createElement('div');
+        ov.className = 'emptymap';
+        ov.style.display = 'flex';
+        ov.innerHTML = `<div class="big">🗺️</div>
+            <div><b>还没有棋盘地图</b><br>点右上角「编辑地图」画一张，保存后回来刷新即可</div>
+            <button class="mbtn blue">🖌️ 去画地图</button>`;
+        ov.querySelector('.mbtn').onclick = () => window.open('地图编辑器.html', '_blank');
+        board.appendChild(ov);
+        return;
+    }
+    $('mapName').textContent = state.map.name || ('棋盘（' + nodes.length + ' 格）');
+    board.style.background = state.map.bgColor || '#e8f5e9';
+    if (state.map.bgImg) board.style.backgroundImage = `url(${state.map.bgImg})`;
+
+    // 格子
+    nodes.forEach(n => {
+        const d = document.createElement('div');
+        d.className = 'node';
+        d.style.left = n.x + '%'; d.style.top = n.y + '%';
+        d.style.width = n.w + 'px'; d.style.height = n.h + 'px';
+        // 形状主体（背景和形状，编号不被裁掉）
+        const shape = document.createElement('div');
+        shape.className = 'shape ' + (n.shape || 'rounded');
+        shape.style.background = hexToRgba(n.color || '#4A90E2', (n.opacity || 85) / 100);
+        d.appendChild(shape);
+        const emoji = n.isStart ? '🚩' : n.isEnd ? '🏁' : nodeEmoji(n);
+        if (emoji) { const e = document.createElement('span'); e.className = 'emoji'; e.textContent = emoji; d.appendChild(e); }
+        const num = document.createElement('div'); num.className = 'num'; num.textContent = n.seq; d.appendChild(num);
+        if (n.isStart || n.isEnd) { const lab = document.createElement('div'); lab.className = 'nlabel'; lab.textContent = n.isStart ? '起点' : '终点'; d.appendChild(lab); }
+        board.appendChild(d);
+    });
+
+    // 棋子
+    nodes.forEach((n, i) => {
+        const here = state.students.filter(s => s.pos === i);
+        here.forEach((s, k) => {
+            const off = (k - (here.length - 1) / 2) * 18;
+            const p = document.createElement('div');
+            p.className = 'pawn-el';
+            p.style.left = (n.x + off * 0.35) + '%';
+            p.style.top = (n.y + off * 0.35) + '%';
+            p.style.background = s.color;
+            p.textContent = s.name.slice(0, 1);
+            p.title = s.name;
+            board.appendChild(p);
+        });
+    });
+}
+
+function nodeEmoji(n) {
+    if (n.type === 'prize') return n.prizeEmoji || '🎁';
+    if (n.type === 'perk') return '⭐';
+    if (n.type === 'punish') return n.punishType === 'show' ? '🎤' : '😈';
+    return '';
+}
+
+function renderScore() {
+    const list = [...state.students].sort((a, b) => b.pts - a.pts);
+    const box = $('scorelist');
+    box.innerHTML = '';
+    if (!list.length) { box.innerHTML = '<div style="color:#aaa;text-align:center;margin-top:40px;font-size:14px">还没有学生<br>上面输入姓名点 ➕ 添加</div>'; return; }
+    list.forEach((s, rank) => {
+        const origIdx = state.students.indexOf(s);
+        const row = document.createElement('div');
+        row.className = 'score-row' + (origIdx === state.current ? ' cur' : '');
+        const rankMedal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : (rank + 1);
+        row.innerHTML = `
+            <div class="rank">${rankMedal}</div>
+            <div class="pawn" style="background:${s.color}"></div>
+            <div class="info"><div class="name">${s.name}${s.paused ? ' 😴' : ''}</div><div class="pts">${s.pts} 分</div></div>
+            <div class="acts">
+                <button class="sbtn g" data-a="add5">+5</button>
+                <button class="sbtn r" data-a="sub5">-5</button>
+                <button class="sbtn die" data-a="roll">🎲</button>
+            </div>`;
+        row.onclick = (e) => { if (e.target.closest('button')) return; state.current = origIdx; render(); };
+        const add5 = row.querySelector('[data-a="add5"]'), sub5 = row.querySelector('[data-a="sub5"]'), roll = row.querySelector('[data-a="roll"]');
+        add5.onclick = () => { s.pts += 5; savePlayers(); render(); logLine(`${s.name} +5 分`); };
+        sub5.onclick = () => { s.pts = Math.max(0, s.pts - 5); savePlayers(); render(); logLine(`${s.name} -5 分`); };
+        roll.onclick = () => { state.current = origIdx; render(); useDice(s); };
+        row.ondblclick = () => { editName(s); };
+        box.appendChild(row);
+    });
+}
+
+function renderCur() {
+    const s = state.students[state.current];
+    if (!s) { $('curWho').textContent = '当前玩家：-'; $('curPts').textContent = ''; return; }
+    $('curWho').innerHTML = `<span class="pawn" style="background:${s.color};display:inline-block"></span> ${s.name}${s.paused ? '（😴暂停一轮）' : ''}`;
+    $('curPts').textContent = `${s.pts} 分（掷一次骰子需 ${state.threshold} 分）`;
+}
+function updateRollBtn() {
+    const s = state.students[state.current];
+    const disabled = !s || state.rolling || s.pts < state.threshold || s.paused;
+    $('rollBtn').disabled = disabled;
+    $('rollBtn2').disabled = disabled;
+    $('rollBtn').textContent = `🎲 掷骰子(${state.threshold}分)`;
+}
+function drawDice(n) {
+    const d = $('dice');
+    d.innerHTML = '';
+    const pipPos = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+    for (let i = 0; i < 9; i++) {
+        const p = document.createElement('div');
+        p.className = 'pip' + (pipPos[n].includes(i) ? ' on' : '');
+        d.appendChild(p);
+    }
+}
+
+/* ================= 学生管理 ================= */
+function addStudent(name) {
+    name = (name || '').trim();
+    if (!name) { toast('请输入姓名'); return; }
+    if (state.students.some(s => s.name === name)) { toast('已有同名学生'); return; }
+    const color = PAWN_COLORS[state.students.length % PAWN_COLORS.length];
+    state.students.push({ id: Date.now() + Math.random(), name, color, pos: 0, pts: 0, paused: false });
+    savePlayers();
+    $('newName').value = '';
+    render();
+    logLine(`👤 学生「${name}」加入，棋子从起点出发`);
+}
+function editName(s) {
+    const nn = prompt('修改姓名：', s.name);
+    if (nn && nn.trim()) { s.name = nn.trim(); savePlayers(); render(); }
+}
+function removeStudent(s) {
+    if (!confirm(`确定删除「${s.name}」？`)) return;
+    state.students = state.students.filter(x => x !== s);
+    if (state.current >= state.students.length) state.current = 0;
+    savePlayers(); render();
+}
+
+/* ================= 掷骰子 & 移动 ================= */
+function useDice(s) {
+    if (state.rolling) return;
+    if (s.pts < state.threshold) { toast(`${s.name} 积分不足，攒够 ${state.threshold} 分再掷`); sBad(); return; }
+    s.pts -= state.threshold;
+    savePlayers();
+    render();
+    rollDice(s);
+}
+
+function rollDice(s) {
+    state.rolling = true;
+    updateRollBtn();
+    // 动画
+    let n = 0;
+    const iv = setInterval(() => { n = 1 + Math.floor(Math.random() * 6); drawDice(n); }, 90);
+    sDice();
+    setTimeout(async () => {
+        clearInterval(iv);
+        const final = 1 + Math.floor(Math.random() * 6);
+        drawDice(final);
+        logLine(`${s.name} 掷出 ${final} 点，出发！`);
+        await movePawn(s, final);
+        sGood();
+        await landEvent(s);
+        advanceCurrent();
+    }, 900);
+}
+
+async function movePawn(s, steps) {
+    const nodes = mapNodes();
+    for (let i = 0; i < steps; i++) {
+        s.pos = (s.pos + 1) % nodes.length;
+        renderMap();
+        await sleep(320);
+    }
+}
+
+async function landEvent(s) {
+    const nodes = mapNodes();
+    const n = nodes[s.pos];
+    if (!n) return;
+    const emoji = n.isStart ? '🚩' : n.isEnd ? '🏁' : nodeEmoji(n) || '👣';
+    let title = '', sub = '', stockTxt = '', btnOk = null, btnClose = '关闭';
+
+    if (n.isStart) { title = '回到起点'; sub = `${s.name} 重新出发，加油！`; btnClose = '好'; }
+    else if (n.isEnd) { title = '🏁 到达终点！'; sub = `${s.name} 恭喜完成一圈！+5 分奖励`; s.pts += 5; savePlayers(); btnClose = '太棒了'; }
+    else if (n.type === 'show') {
+        title = n.text || '普通格';
+        sub = `${s.name} 走到了「${n.text || '这一格'}」`;
+    }
+    else if (n.type === 'prize') {
+        title = `${n.prizeEmoji || '🎁'} ${n.prize || '神秘奖品'}`;
+        sub = `${s.name} 抽中了奖品！老师确认发放：`;
+        const stock = state.stocks[n.id];
+        stockTxt = (stock !== undefined) ? `📦 库存还剩 ${stock} 个` : '';
+        btnOk = { label: '✅ 确认发放', color: 'green', fn: () => {
+            if (stock !== undefined && stock <= 0) { toast('库存不足，请先补货'); return false; }
+            if (stock !== undefined) { state.stocks[n.id] = stock - 1; saveStocks(); }
+            logLine(`🎁 ${s.name} 获得奖品「${n.prize}」`); sFx(); confetti(); return true;
+        } };
+        btnClose = '暂不发放';
+    }
+    else if (n.type === 'perk') {
+        title = '⭐ ' + (n.perk || '虚拟特权');
+        sub = `${s.name} 获得特权卡！老师确认发放：`;
+        btnOk = { label: '✅ 确认发放', color: 'green', fn: () => { logLine(`⭐ ${s.name} 获得「${n.perk}」`); sFx(); confetti(); return true; } };
+        btnClose = '暂不发放';
+    }
+    else if (n.type === 'punish') {
+        if (n.punishType === 'back') {
+            title = '😈 后退 ' + n.punishVal + ' 步';
+            sub = `${s.name} 要退后 ${n.punishVal} 格`;
+            btnOk = { label: `↩️ 执行退后`, color: 'orange', fn: async () => {
+                for (let i = 0; i < n.punishVal; i++) { s.pos = (s.pos - 1 + mapNodes().length) % mapNodes().length; renderMap(); await sleep(260); }
+                logLine(`😈 ${s.name} 后退 ${n.punishVal} 步`); return true;
+            } };
+            btnClose = '取消';
+        } else if (n.punishType === 'score') {
+            title = '😈 扣 ' + n.punishVal + ' 分';
+            sub = `${s.name} 被扣除 ${n.punishVal} 分`;
+            btnOk = { label: '扣除', color: 'orange', fn: () => { s.pts = Math.max(0, s.pts - n.punishVal); savePlayers(); logLine(`😈 ${s.name} 扣 ${n.punishVal} 分`); return true; } };
+            btnClose = '豁免';
+        } else if (n.punishType === 'pause') {
+            title = '😴 暂停一轮';
+            sub = `${s.name} 下一轮休息`;
+            btnOk = { label: '好', color: 'orange', fn: () => { s.paused = true; logLine(`😴 ${s.name} 暂停一轮`); return true; } };
+        } else {
+            title = '🎤 表演节目';
+            sub = `${s.name} 请为大家表演一个节目！`;
+            btnOk = { label: '表演完毕', color: 'orange', fn: () => { logLine(`🎤 ${s.name} 表演节目`); return true; } };
+        }
+    }
+
+    return new Promise(resolve => {
+        $('mEmoji').textContent = emoji;
+        $('mTitle').textContent = title;
+        $('mSub').textContent = sub;
+        $('mStock').textContent = stockTxt;
+        $('mBtns').innerHTML = '';
+        const addBtn = (label, cls, fn) => {
+            const b = document.createElement('button');
+            b.className = 'mbtn ' + cls;
+            b.textContent = label;
+            b.onclick = async () => {
+                const go = fn ? await fn() : true;
+                if (go === false) return;
+                $('modal').classList.add('hidden');
+                resolve();
+                render();
+            };
+            $('mBtns').appendChild(b);
+        };
+        if (btnOk) addBtn(btnOk.label, btnOk.color, btnOk.fn);
+        addBtn(btnClose, 'gray', null);
+        if (n.fx) { sFx(); confetti(); }
+        $('modal').classList.remove('hidden');
+        render();
+    });
+}
+
+function advanceCurrent() {
+    if (!state.students.length) { state.rolling = false; render(); return; }
+    // 找下一个未暂停的玩家
+    let next = state.current;
+    for (let k = 0; k < state.students.length; k++) {
+        next = (next + 1) % state.students.length;
+        if (!state.students[next].paused) break;
+    }
+    // 若只有自己，解除暂停（防止卡死）
+    const activeCount = state.students.filter(x => !x.paused).length;
+    if (activeCount === 0) state.students.forEach(x => x.paused = false);
+    if (state.students[next].paused && activeCount === 1) state.students[next].paused = false;
+    state.current = next;
+    state.rolling = false;
+    render();
+    logLine(`→ 轮到 ${state.students[state.current].name}`);
+}
+
+/* ================= 日志 / 提示 / 庆祝 ================= */
+function logLine(msg) {
+    const box = $('log');
+    const d = document.createElement('div');
+    d.className = 'l';
+    d.textContent = msg;
+    box.insertBefore(d, box.firstChild);
+    if (box.children.length > 40) box.removeChild(box.lastChild);
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1700); }
+function confetti() {
+    const colors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#ff9800'];
+    for (let i = 0; i < 50; i++) {
+        const d = document.createElement('div');
+        d.className = 'confetti';
+        d.style.left = Math.random() * 100 + 'vw';
+        d.style.top = '-20px';
+        d.style.background = colors[i % colors.length];
+        d.style.animationDuration = (0.9 + Math.random()) + 's';
+        document.body.appendChild(d);
+        setTimeout(() => d.remove(), 2200);
+    }
+}
+
+/* ================= 事件绑定 ================= */
+$('addBtn').onclick = () => addStudent($('newName').value);
+$('newName').onkeydown = e => { if (e.key === 'Enter') addStudent($('newName').value); };
+$('rollBtn').onclick = () => { const s = state.students[state.current]; if (s) useDice(s); };
+$('rollBtn2').onclick = () => { const s = state.students[state.current]; if (s) useDice(s); };
+$('editMapBtn').onclick = () => { window.open('地图编辑器.html', '_blank'); toast('已在编辑器里打开，画完点「保存地图」后回来刷新'); };
+$('soundBtn').onclick = () => { soundOn = !soundOn; $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; };
+
+/* 规则设置 */
+$('rulesBtn').onclick = () => {
+    showModal('⚙️', '兑换规则', `掷一次骰子需要消耗多少积分？`,
+        `<input class="input-m" type="number" id="tInput" min="1" max="100" value="${state.threshold}">`,
+        [{ label: '保存', cls: 'green', fn: () => { const v = parseInt($('tInput').value, 10); if (v >= 1) { state.threshold = v; saveSettings(); logLine(`⚙️ 兑换阈值改为 ${v} 分/次`); return true; } toast('请输入有效数字'); return false; } },
+         { label: '取消', cls: 'gray', fn: null }]);
+};
+
+/* 库存设置 */
+$('stockBtn').onclick = () => {
+    const nodes = mapNodes().filter(n => n.type === 'prize');
+    if (!nodes.length) { toast('当前地图没有奖品格'); return; }
+    let html = '<div style="text-align:left;font-size:14px;color:#555">给每个奖品格设置库存（留空 = 不限量）</div>';
+    nodes.forEach(n => {
+        const cur = state.stocks[n.id];
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <span>${n.prizeEmoji || '🎁'} ${n.prize}：</span>
+            <input class="input-m" type="number" id="stock_${n.id}" min="0" value="${cur !== undefined ? cur : ''}" placeholder="不限" style="width:90px;margin:0"> 个</div>`;
+    });
+    showModal('🏷️', '奖品库存', '', html,
+        [{ label: '保存', cls: 'green', fn: () => {
+            nodes.forEach(n => { const v = $('stock_' + n.id).value; if (v === '') delete state.stocks[n.id]; else state.stocks[n.id] = Math.max(0, parseInt(v, 10) || 0); });
+            saveStocks(); logLine('🏷️ 库存已更新'); return true;
+        } }, { label: '关闭', cls: 'gray', fn: null }]);
+};
+
+/* 清空 */
+$('clearBtn').onclick = () => {
+    if (!confirm('确定清空所有学生、积分和库存吗？（地图保留）')) return;
+    state.students = []; state.current = 0; state.stocks = {};
+    savePlayers(); saveStocks(); render(); logLine('🗑️ 数据已清空');
+};
+
+function showModal(emoji, title, sub, body, buttons) {
+    $('mEmoji').textContent = emoji;
+    $('mTitle').textContent = title;
+    $('mSub').textContent = sub || '';
+    $('mStock').innerHTML = body || '';
+    $('mBtns').innerHTML = '';
+    buttons.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'mbtn ' + b.cls;
+        btn.textContent = b.label;
+        btn.onclick = async () => { const go = b.fn ? await b.fn() : true; if (go !== false) $('modal').classList.add('hidden'); };
+        $('mBtns').appendChild(btn);
+    });
+    $('modal').classList.remove('hidden');
+}
+window.showModal = showModal;
+
+/* ================= 初始化 ================= */
+loadPersist();
+drawDice(6);
+render();
+logLine('欢迎来到飞行棋！');
+</script>
+</body>
+</html>

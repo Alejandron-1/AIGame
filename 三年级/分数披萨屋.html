@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分数披萨屋 - 三年级上册 第8单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 960px;
+        min-height: 680px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+    }
+    /* ---------- 顶栏 ---------- */
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #f7971e, #ffd200);
+        color: #5d3a00;
+        font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; }
+    .iconbtn {
+        background: rgba(255,255,255,0.85);
+        border: none;
+        border-radius: 25px;
+        padding: 6px 14px;
+        font-size: 15px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: bold;
+        color: #5d3a00;
+    }
+    .iconbtn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    /* ---------- 模式标签 ---------- */
+    .modes {
+        display: flex;
+        gap: 8px;
+        padding: 12px 22px 0;
+        flex-wrap: wrap;
+    }
+    .mode-tab {
+        padding: 8px 18px;
+        border-radius: 25px;
+        border: 2px solid #f5a623;
+        background: #fff;
+        color: #b06c00;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .mode-tab.active { background: #f5a623; color: #fff; }
+    .mode-tab:hover { transform: translateY(-2px); }
+    .modes .note { margin-left: auto; align-self: center; font-size: 13px; color: #999; }
+    /* ---------- 主舞台 ---------- */
+    .stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 22px 22px;
+        gap: 10px;
+    }
+    .question {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #444;
+        padding: 6px 0;
+        min-height: 36px;
+    }
+    .question .q-food { color: #c0392b; }
+    .q-target { color: #c0392b; }
+    .svgwrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff8ec;
+        border-radius: 14px;
+        border: 2px dashed #f0c98a;
+        min-height: 300px;
+        position: relative;
+    }
+    svg { width: 100%; height: 100%; }
+    /* 已涂计数 */
+    .shade-count {
+        position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+        background: rgba(93,58,0,0.85); color: #fff; padding: 5px 16px;
+        border-radius: 20px; font-size: 15px; font-weight: bold;
+    }
+    /* ---------- 下方控制区 ---------- */
+    .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-height: 56px;
+    }
+    .btn {
+        padding: 10px 22px;
+        border-radius: 25px;
+        border: none;
+        background: linear-gradient(135deg, #f7971e, #ffd200);
+        color: #5d3a00;
+        font-size: 17px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.2); }
+    .btn.green { background: linear-gradient(135deg, #27ae60, #2ecc71); color: #fff; }
+    .btn.red   { background: linear-gradient(135deg, #c0392b, #e74c3c); color: #fff; }
+    .btn.blue  { background: linear-gradient(135deg, #2980b9, #3498db); color: #fff; }
+    .btn.gray  { background: #bdc3c7; color: #555; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .cut-option {
+        min-width: 66px; font-size: 17px;
+    }
+    /* 分数卡片（答案选项） */
+    .answers {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .frac-card {
+        padding: 10px 18px;
+        border: 3px solid #f5a623;
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: transform 0.15s;
+    }
+    .frac-card:hover { transform: scale(1.08); }
+    .frac-card.correct { border-color: #27ae60; background: #eafaf1; }
+    .frac-card.wrong   { border-color: #e74c3c; background: #fdedec; }
+    /* 分数排版 */
+    .frac {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        vertical-align: middle;
+        line-height: 1.1;
+        font-weight: bold;
+        color: #5d3a00;
+    }
+    .frac .num { font-size: 0.85em; }
+    .frac .bar { width: 100%; border-top: 2px solid #5d3a00; margin: 1px 0; }
+    .frac .den { font-size: 0.85em; }
+    .frac-card .frac { font-size: 30px; }
+    .question .frac { font-size: 30px; }
+    .compare-choice .frac { font-size: 26px; }
+    /* 反馈条 */
+    .feedback {
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 12px;
+        padding: 4px 14px;
+    }
+    .feedback.ok   { color: #27ae60; background: #eafaf1; }
+    .feedback.bad  { color: #c0392b; background: #fdedec; }
+    /* ---------- 弹窗 ---------- */
+    .overlay {
+        position: absolute; inset: 0;
+        background: rgba(93,58,0,0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 20;
+    }
+    .panel {
+        background: #fff;
+        border-radius: 20px;
+        padding: 30px 38px;
+        max-width: 720px;
+        max-height: 90%;
+        overflow: auto;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .panel h2 { color: #5d3a00; margin-bottom: 14px; font-size: 26px; }
+    .panel .sub { color: #777; margin-bottom: 16px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 18px 0; }
+    .menu-card {
+        border: 3px solid #f5a623; border-radius: 16px; padding: 18px 10px;
+        cursor: pointer; background: #fffdf6;
+    }
+    .menu-card.sel { background: #f5a623; color: #fff; }
+    .menu-card .t { font-size: 17px; font-weight: bold; }
+    .menu-card .d { font-size: 12px; color: #999; margin-top: 4px; }
+    .menu-card.sel .d { color: #fff; }
+    .stars { font-size: 44px; margin: 8px 0; }
+    .stars .dim { opacity: 0.25; }
+    .wronglist { text-align: left; margin: 12px auto; max-height: 160px; overflow: auto; }
+    .wronglist .row { font-size: 14px; padding: 4px 8px; color: #555; }
+    .wronglist .row:nth-child(odd) { background: #faf6ee; }
+    .wronglist .row .a { color: #27ae60; font-weight: bold; }
+    .wronglist .row .y { color: #c0392b; }
+    .row-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    /* 金币 / 连对动画 */
+    .coin-pop {
+        position: absolute;
+        pointer-events: none;
+        animation: pop 0.6s ease forwards;
+        z-index: 30;
+    }
+    @keyframes pop {
+        0% { transform: translateY(0) scale(1); opacity: 1; }
+        100% { transform: translateY(-60px) scale(1.3); opacity: 0; }
+    }
+    .confetti {
+        position: absolute; width: 8px; height: 8px; border-radius: 2px;
+        pointer-events: none; z-index: 30;
+        animation: fly 0.9s ease-out forwards;
+    }
+    @keyframes fly {
+        0% { transform: translateY(0) rotate(0); opacity: 1; }
+        100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+    }
+</style>
+</head>
+<body>
+<div class="game" id="game">
+    <!-- 顶栏 -->
+    <div class="topbar">
+        <div class="title">🍕 分数披萨屋</div>
+        <div class="stats">
+            <span>🏆 得分 <b id="score">0</b></span>
+            <span>🔥 连对 <b id="streak">0</b></span>
+            <span>🎯 难度 <b id="level">1</b></span>
+            <span>第 <b id="round">1</b>/<span id="maxRound">12</span> 题</span>
+        </div>
+        <div>
+            <button class="iconbtn" id="soundBtn">🔊</button>
+            <button class="iconbtn" id="menuBtn">☰ 菜单</button>
+        </div>
+    </div>
+
+    <!-- 模式标签 -->
+    <div class="modes" id="modes">
+        <button class="mode-tab active" data-m="mix">混合模式</button>
+        <button class="mode-tab" data-m="cut">① 切披萨·认识几分之一</button>
+        <button class="mode-tab" data-m="shade">② 涂色·认识几分之几</button>
+        <button class="mode-tab" data-m="compare">③ 比大小</button>
+        <span class="note">三年级上册 · 分数的初步认识</span>
+    </div>
+
+    <!-- 主舞台 -->
+    <div class="stage">
+        <div class="question" id="question"></div>
+        <div class="svgwrap" id="svgwrap">
+            <div class="shade-count" id="shadeCount" style="display:none;"></div>
+            <svg id="svg" viewBox="0 0 700 360" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <div class="controls" id="controls"></div>
+    </div>
+
+    <!-- 开始菜单 -->
+    <div class="overlay" id="menuOverlay">
+        <div class="panel">
+            <h2>🍕 分数披萨屋</h2>
+            <div class="sub">三年级上册 · 分数的初步认识<br>在切披萨、涂奶油、比大小的游戏中学会分数！</div>
+            <div class="menu-grid" id="menuGrid"></div>
+            <div class="row-btns" style="margin-top:8px;">
+                <button class="btn green" id="startBtn">🍽️ 开始学习</button>
+                <button class="btn gray" id="clearBtn">🗑️ 清空错题本</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结算弹窗 -->
+    <div class="overlay" id="resultOverlay" style="display:none;">
+        <div class="panel">
+            <h2 id="resultTitle">本轮结束！</h2>
+            <div class="stars" id="resultStars"></div>
+            <div class="sub" id="resultText"></div>
+            <div id="wrongBox" style="display:none;">
+                <div style="font-weight:bold;color:#c0392b;">错题本（自动记录）</div>
+                <div class="wronglist" id="wrongList"></div>
+            </div>
+            <div class="row-btns">
+                <button class="btn green" id="againBtn">🔁 再来一轮</button>
+                <button class="btn blue" id="homeBtn">🏠 回到菜单</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const svgNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs) {
+    const n = document.createElementNS(svgNS, tag);
+    if (attrs) for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+}
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+/* 分数排版 HTML */
+function fracHTML(n, d) {
+    return `<span class="frac"><span class="num">${n}</span><span class="bar"></span><span class="den">${d}</span></span>`;
+}
+
+/* 音效（WebAudio，无需外部文件） */
+let soundOn = true;
+let audioCtx = null;
+function beep(freq, dur = 0.12, type = 'sine') {
+    if (!soundOn) return;
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = type; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch (e) {}
+}
+const goodTone = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.15), 90); };
+const badTone  = () => beep(180, 0.25, 'sawtooth');
+
+/* 庆祝动画 */
+function confetti(x, y) {
+    const wrap = $('svgwrap');
+    const colors = ['#e74c3c','#f1c40f','#2ecc71','#3498db','#e91e63','#ff9800'];
+    for (let i = 0; i < 22; i++) {
+        const d = document.createElement('div');
+        d.className = 'confetti';
+        d.style.left = (x + randInt(-60, 60)) + 'px';
+        d.style.top = (y + randInt(-30, 10)) + 'px';
+        d.style.background = pick(colors);
+        d.style.transform = `rotate(${randInt(0,360)}deg)`;
+        d.style.animationDuration = (0.6 + Math.random() * 0.6) + 's';
+        wrap.appendChild(d);
+        setTimeout(() => d.remove(), 1200);
+    }
+}
+
+/* ================= 状态 ================= */
+const STORE_KEY = '分数披萨屋_错题';
+let state = {
+    mode: 'mix',        // mix | cut | shade | compare
+    round: 0,
+    maxRound: 12,
+    score: 0,
+    streak: 0,
+    level: 1,
+    wrong: [],
+    food: 'pizza',      // pizza | cake | choco
+    // 当前题
+    q: null,
+    answered: false,
+    foodSelected: null, // svg group
+};
+
+const FOODS = {
+    pizza: { name: '🍕 披萨',    pool: ['pizza','cake'] },
+    cake:  { name: '🍰 蛋糕',    pool: ['pizza','cake'] },
+    choco: { name: '🍫 巧克力',  pool: ['choco'] },
+};
+const LEVELS = [
+    { denoms: [2, 3, 4],       foods: ['pizza', 'cake'],                    maxShadeM: 2 },
+    { denoms: [2, 3, 4, 5, 6], foods: ['pizza', 'cake', 'choco'],           maxShadeM: 3 },
+    { denoms: [3, 4, 5, 6, 8, 10, 12], foods: ['pizza', 'cake', 'choco'],   maxShadeM: 6 },
+];
+
+function foodName(f) { return FOODS[f] ? FOODS[f].name : '食物'; }
+
+/* ================= 食物绘制 ================= */
+/* 圆形食物（披萨/蛋糕），n 等分，shaded 为已涂集合，unequal 为不平均切 */
+function drawCircleFood(svg, cx, cy, r, n, shaded, opts = {}) {
+    const g = el('g');
+    // 底（饼皮）
+    g.appendChild(el('circle', { cx, cy, r: r + 4, fill: opts.crust || '#d68910' }));
+    // 切份
+    const gaps = [];   // 各份角度（弧度）
+    if (opts.unequal) {
+        // 人为不均匀：每份 0.6~1.4 倍基准角
+        const base = Math.PI * 2 / n;
+        let tot = 0;
+        const tmp = [];
+        for (let i = 0; i < n; i++) {
+            const a = base * (0.55 + Math.random() * 0.9);
+            tmp.push(a); tot += a;
+        }
+        let s = (Math.PI * 2) / tot;
+        tmp.forEach(a => gaps.push(a * s));
+    } else {
+        for (let i = 0; i < n; i++) gaps.push(Math.PI * 2 / n);
+    }
+    let ang = -Math.PI / 2;
+    const slices = [];
+    for (let i = 0; i < n; i++) {
+        const a1 = ang + gaps[i];
+        const x0 = cx + r * Math.cos(ang), y0 = cy + r * Math.sin(ang);
+        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+        const large = (a1 - ang) > Math.PI ? 1 : 0;
+        const d = `M${cx},${cy} L${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1} Z`;
+        const sl = el('path', {
+            d, fill: (shaded && shaded.has(i)) ? (opts.shadeColor || '#e74c3c') : (opts.baseColor || '#f7c948'),
+            stroke: '#8d5a10', 'stroke-width': 2, 'stroke-linejoin': 'round'
+        });
+        g.appendChild(sl);
+        slices.push(sl);
+        // 切痕
+        const line = el('line', { x1: cx, y1: cy, x2: x1, y2: y1, stroke: '#8d5a10', 'stroke-width': 2, opacity: 0 });
+        g.appendChild(line);
+        slices[i]._cut = line;
+        ang = a1;
+    }
+    return { g, slices };
+}
+
+/* 条形食物（蛋糕切成竖直长条）n 等份 */
+function drawStrips(svg, cx, cy, w, h, n, shaded, opts = {}) {
+    const g = el('g');
+    const x0 = cx - w / 2, y0 = cy - h / 2;
+    g.appendChild(el('rect', { x: x0 - 3, y: y0 - 3, width: w + 6, height: h + 6, rx: 6, fill: opts.crust || '#c98a2d' }));
+    const sw = w / n;
+    for (let i = 0; i < n; i++) {
+        const rect = el('rect', {
+            x: x0 + i * sw, y: y0, width: sw - 1, height: h,
+            fill: (shaded && shaded.has(i)) ? (opts.shadeColor || '#e74c3c') : (opts.baseColor || '#f7c948'),
+            stroke: '#8d5a10', 'stroke-width': 2
+        });
+        g.appendChild(rect);
+        const line = el('line', { x1: x0 + i * sw, y1: y0, x2: x0 + i * sw, y2: y0 + h, stroke: '#8d5a10', 'stroke-width': 2, opacity: 0 });
+        g.appendChild(line);
+        rect._cut = line;
+    }
+    return { g, slices: g.querySelectorAll('rect:nth-child(n+2)') };
+}
+
+/* 网格食物（巧克力，rows 行 cols 列） */
+function drawChoco(svg, cx, cy, cols, rows, shaded, opts = {}) {
+    const g = el('g');
+    const cw = 60, ch = 48, gap = 2;
+    const w = cols * (cw + gap) - gap, h = rows * (ch + gap) - gap;
+    const x0 = cx - w / 2, y0 = cy - h / 2;
+    g.appendChild(el('rect', { x: x0 - 4, y: y0 - 4, width: w + 8, height: h + 8, rx: 8, fill: opts.crust || '#4a2f1d' }));
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            const rect = el('rect', {
+                x: x0 + c * (cw + gap), y: y0 + r * (ch + gap), width: cw, height: ch, rx: 5,
+                fill: (shaded && shaded.has(i)) ? (opts.shadeColor || '#ffd54f') : (opts.baseColor || '#6d4c41'),
+                stroke: '#3a2413', 'stroke-width': 2
+            });
+            g.appendChild(rect);
+        }
+    }
+    return { g, slices: g.querySelectorAll('rect:nth-child(n+2)') };
+}
+
+function drawFood(food, cx, cy, n, shaded, opts = {}) {
+    const svg = $('svg');
+    if (food === 'pizza') return drawCircleFood(svg, cx, cy, 130, n, shaded, { baseColor: '#f7c948', shadeColor: '#e74c3c', crust: '#d68910', ...opts });
+    if (food === 'cake')  return drawCircleFood(svg, cx, cy, 120, n, shaded, { baseColor: '#fce4b8', shadeColor: '#ff9800', crust: '#e8b06a', ...opts });
+    if (food === 'choco') {
+        // 网格份数
+        let cols, rows;
+        if (n === 4) { cols = 2; rows = 2; }
+        else if (n === 6) { cols = 3; rows = 2; }
+        else if (n === 8) { cols = 4; rows = 2; }
+        else if (n === 9) { cols = 3; rows = 3; }
+        else if (n === 10) { cols = 5; rows = 2; }
+        else if (n === 12) { cols = 4; rows = 3; }
+        else { cols = n; rows = 1; }
+        return drawChoco(svg, cx, cy, cols, rows, shaded, { baseColor: '#6d4c41', shadeColor: '#ffd54f', crust: '#4a2f1d', ...opts });
+    }
+}
+
+function clearSVG() {
+    const s = $('svg');
+    while (s.firstChild) s.removeChild(s.firstChild);
+}
+
+/* ================= 出题 ================= */
+function currentLv() { return LEVELS[Math.min(state.level - 1, LEVELS.length - 1)]; }
+
+function pickFood() {
+    const lv = currentLv();
+    const f = pick(lv.foods);
+    state.food = f;
+    return f;
+}
+
+/* 生成一道题 */
+function genQuestion(mode) {
+    if (mode === 'cut') return genCut();
+    if (mode === 'shade') return genShade();
+    return genCompare();
+}
+
+function genCut() {
+    const lv = currentLv();
+    // 每 4 题插入一次“平均检查”（只用圆形食物，才能表现不平均切）
+    if (state.round > 0 && Math.random() < 0.25) {
+        const food = pick(['pizza', 'cake']);
+        state.food = food;
+        const n = pick(lv.denoms);
+        const unequal = Math.random() < 0.6;   // 六成情况是不平均切
+        return { kind: 'cut', sub: 'avg', food, n, unequal, answer: unequal ? '不平均' : '平均',
+                 prompt: `这把刀把${foodName(food)}切成了 <b>${n}</b> 份，每一份的大小一样吗？` };
+    }
+    const food = pickFood();
+    const n = pick(lv.denoms);
+    return { kind: 'cut', sub: 'one', food, n, unequal: false,
+             prompt: `把${foodName(food)}平均切成 <b>${n}</b> 份，每份是它的几分之几？`,
+             answer: [1, n] };
+}
+
+function genShade() {
+    const lv = currentLv();
+    const food = pickFood();
+    const n = pick(lv.denoms);
+    const m = randInt(1, Math.min(lv.maxShadeM, n - 1));
+    return { kind: 'shade', food, n, m,
+             prompt: `在${foodName(food)}上涂出 <b>${m}</b> 份（每份大小一样），涂色部分用哪个分数表示？`,
+             answer: [m, n] };
+}
+
+function genCompare() {
+    const lv = currentLv();
+    const food = pickFood();
+    const kind = pick(['sameDen', 'sameNum', 'equal']);
+    let q = { kind: 'compare', food, sub: kind };
+    if (kind === 'sameDen') {
+        const n = pick(lv.denoms.filter(d => d >= 3));
+        let m1 = randInt(1, n - 2), m2 = randInt(m1 + 1, n - 1);
+        if (Math.random() < 0.5) [m1, m2] = [m2, m1];
+        q.n1 = n; q.m1 = m1; q.n2 = n; q.m2 = m2;
+        q.prompt = `两盘${foodName(food)}，涂色部分分别是 ${fracHTML(m1, n)} 和 ${fracHTML(m2, n)}，哪盘涂色部分更大？`;
+    } else if (kind === 'sameNum') {
+        const m = randInt(1, 2);
+        let d1 = pick(lv.denoms.filter(d => d > m));
+        let d2 = pick(lv.denoms.filter(d => d > m && d !== d1));
+        const [lo, hi] = [Math.min(d1, d2), Math.max(d1, d2)];
+        if (Math.random() < 0.5) { q.m1 = m; q.n1 = lo; q.m2 = m; q.n2 = hi; }
+        else                     { q.m1 = m; q.n1 = hi; q.m2 = m; q.n2 = lo; }
+        q.prompt = `两份${foodName(food)}分别涂了 ${fracHTML(m, lo)} 和 ${fracHTML(m, hi)}，哪份涂色部分更大？`;
+    } else {
+        // 相等：1/2 与 2/4，或 2/3 与 4/6
+        const eq = pick([[[1,2],[2,4]], [[2,3],[4,6]]]);
+        q.m1 = eq[0][0]; q.n1 = eq[0][1]; q.m2 = eq[1][0]; q.n2 = eq[1][1];
+        q.prompt = `两份${foodName(food)}，涂色部分分别是 ${fracHTML(q.m1, q.n1)} 和 ${fracHTML(q.m2, q.n2)}，你发现了什么？`;
+    }
+    // 计算标准答案：按数值大小判定
+    const v1 = q.m1 / q.n1, v2 = q.m2 / q.n2;
+    q.answer = v1 > v2 ? 'left' : (v1 < v2 ? 'right' : 'equal');
+    return q;
+}
+
+/* ================= 渲染 ================= */
+function renderQuestion() {
+    clearSVG();
+    $('question').innerHTML = state.q.prompt;
+    $('feedback').innerHTML = '';
+    const q = state.q;
+
+    if (q.kind === 'cut' && q.sub === 'avg') {
+        // 不平均切
+        const pos = drawFood(q.food, 350, 190, q.n, null, { unequal: true });
+        $('svg').appendChild(pos.g);
+        revealCuts(pos.slices);
+        renderButtons([
+            { label: '✅ 平均', cls: 'green', fn: () => submit('平均') },
+            { label: '❌ 不平均', cls: 'red', fn: () => submit('不平均') },
+        ]);
+        return;
+    }
+    if (q.kind === 'cut') {
+        const pos = drawFood(q.food, 350, 190, q.n, new Set());
+        $('svg').appendChild(pos.g);
+        revealCuts(pos.slices);
+        // 份数答案
+        renderButtons([
+            { label: '每份是它的', custom: true },
+            ...makeFracChoices(1, q.n),
+        ]);
+        return;
+    }
+    if (q.kind === 'shade') {
+        const fillMap = q.food === 'choco' ? { base: '#6d4c41', shade: '#ffd54f' }
+                        : q.food === 'cake' ? { base: '#fce4b8', shade: '#ff9800' }
+                        :                     { base: '#f7c948', shade: '#e74c3c' };
+        const pos = drawFood(q.food, 350, 190, q.n, new Set());
+        $('svg').appendChild(pos.g);
+        revealCuts(pos.slices);
+        state.foodSelected = {
+            n: q.n, m: 0, target: q.m,
+            slices: [...pos.slices],
+            shadedSet: new Set(),
+            fillMap: fillMap,
+        };
+        $('shadeCount').style.display = '';
+        $('shadeCount').textContent = `已涂 0 / ${q.m} 份，点击份数涂色`;
+        state.foodSelected.slices.forEach((s, i) => {
+            s.style.cursor = 'pointer';
+            s.addEventListener('click', () => toggleShade(i));
+        });
+        renderButtons([]);
+        return;
+    }
+    if (q.kind === 'compare') {
+        const cx1 = 210, cx2 = 490, cy = 180;
+        const left  = drawFood(q.food, cx1, cy, q.n1, new Set([...Array(q.m1).keys()]));
+        const right = drawFood(q.food, cx2, cy, q.n2, new Set([...Array(q.m2).keys()]));
+        $('svg').appendChild(left.g);
+        $('svg').appendChild(right.g);
+        revealCuts(left.slices);
+        revealCuts(right.slices);
+        // 分数标签
+        const label1 = el('text', { x: cx1, y: cy - 150, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 'bold', fill: '#5d3a00' });
+        label1.textContent = `${q.m1}/${q.n1}`;
+        const label2 = el('text', { x: cx2, y: cy - 150, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 'bold', fill: '#5d3a00' });
+        label2.textContent = `${q.m2}/${q.n2}`;
+        $('svg').appendChild(label1);
+        $('svg').appendChild(label2);
+        renderButtons([
+            { label: `⬅️ 左边大`, cls: 'blue', fn: () => submit('left') },
+            { label: `🟰 一样大`, cls: 'green', fn: () => submit('equal') },
+            { label: `右边大 ➡️`, cls: 'red', fn: () => submit('right') },
+        ]);
+        return;
+    }
+}
+
+function revealCuts(slices) {
+    (slices || []).forEach((s, i) => {
+        if (s._cut) {
+            setTimeout(() => { s._cut.setAttribute('opacity', 0.55); }, 200 + i * 90);
+        }
+    });
+}
+
+function toggleShade(i) {
+    const fs = state.foodSelected;
+    if (!fs || state.answered) return;
+    if (fs.shadedSet.has(i)) {
+        fs.shadedSet.delete(i);
+        fs.slices[i].setAttribute('fill', fs.fillMap.base);
+        fs.m--;
+    } else {
+        if (fs.m >= fs.target) { flashHint('已经涂够了，先点掉一些再涂新的'); return; }
+        fs.shadedSet.add(i);
+        fs.slices[i].setAttribute('fill', fs.fillMap.shade);
+        fs.m++;
+    }
+    $('shadeCount').textContent = fs.m >= fs.target
+        ? `已涂 ${fs.m} / ${fs.target} 份，点下面分数确认`
+        : `已涂 ${fs.m} / ${fs.target} 份，继续涂色`;
+    if (fs.m >= fs.target) {
+        renderButtons([
+            { label: '这个分数', custom: true },
+            ...makeFracChoices(state.q.m, state.q.n),
+        ]);
+    }
+}
+
+function flashHint(msg) {
+    const fb = $('feedback');
+    fb.className = 'feedback bad';
+    fb.innerHTML = `💡 ${msg}`;
+    setTimeout(() => { if (!state.answered) fb.innerHTML = ''; }, 1500);
+}
+
+/* 生成分数选项：正确 + 干扰项 */
+function makeFracChoices(m, n) {
+    const correct = [m, n];
+    const choices = [correct];
+    const tries = new Set([`${m}/${n}`]);
+    let guard = 0;
+    while (choices.length < 4 && guard++ < 100) {
+        let c;
+        const type = randInt(0, 3);
+        if (type === 0) c = [randInt(1, Math.max(2, n + 2)), n];               // 同分母分子变
+        else if (type === 1) c = [m, randInt(1, Math.max(2, n + 2))];           // 同分子分母变
+        else if (type === 2) c = [n, m];                                        // 倒过来
+        else c = [randInt(1, Math.max(2, n + 2)), randInt(1, Math.max(2, n + 2))];
+        const key = `${c[0]}/${c[1]}`;
+        if (!tries.has(key)) { tries.add(key); choices.push(c); }
+    }
+    shuffle(choices);
+    return choices.map(c => ({
+        label: fracHTML(c[0], c[1]),
+        cls: 'frac-card',
+        fn: () => submit(c),
+    }));
+}
+
+function renderButtons(btns) {
+    const c = $('controls');
+    c.innerHTML = '';
+    btns.forEach(b => {
+        const btn = document.createElement('button');
+        if (b.custom) {
+            btn.className = 'btn';
+            btn.style.background = 'transparent';
+            btn.style.boxShadow = 'none';
+            btn.style.color = '#5d3a00';
+            btn.style.cursor = 'default';
+            btn.innerHTML = b.label;
+            btn.style.pointerEvents = 'none';
+            c.appendChild(btn);
+            return;
+        }
+        btn.className = 'btn ' + (b.cls || '');
+        btn.innerHTML = b.label;
+        btn.addEventListener('click', b.fn);
+        c.appendChild(btn);
+    });
+}
+
+/* ================= 判定 ================= */
+function isCorrect(q, ans) {
+    if (q.sub === 'avg') return ans === q.answer;
+    if (Array.isArray(q.answer)) return JSON.stringify(ans) === JSON.stringify(q.answer);
+    return ans === q.answer;
+}
+function correctAnswerText(q) {
+    if (q.sub === 'avg') return q.answer === '平均' ? '每一份大小一样，是平均分' : '每一份大小不一样，是不平均的';
+    if (Array.isArray(q.answer)) return `${fracHTML(q.answer[0], q.answer[1])} 就是 1 份 ÷ 总份数`;
+    if (q.kind === 'compare') {
+        if (q.sub === 'sameDen') { const [a,b] = [q.m1/q.n1, q.m2/q.n2]; return a===b?'一样大':(a>b?'左边大':'右边大'); }
+        if (q.sub === 'sameNum') { const [a,b] = [q.m1/q.n1, q.m2/q.n2]; return a===b?'一样大':(a>b?'左边大':'右边大'); }
+        return '一样大：1/2 = 2/4，它们表示的量相同';
+    }
+    return '';
+}
+
+function submit(ans) {
+    if (state.answered) return;
+    state.answered = true;
+    const q = state.q;
+    const ok = isCorrect(q, ans);
+
+    if (ok) {
+        state.score += 10 + state.streak * 2;
+        state.streak++;
+        goodTone();
+        const fb = $('feedback');
+        fb.className = 'feedback ok';
+        fb.innerHTML = '✅ 太棒了！ +' + (10 + (state.streak - 1) * 2) + '分';
+        const wrap = $('svgwrap');
+        const r = wrap.getBoundingClientRect();
+        confetti(r.width / 2, r.height / 3);
+        // 难度自适应
+        if (state.streak >= 3 && state.level < 3) {
+            state.level++;
+            fb.innerHTML += '　🎯 难度升级！';
+        }
+    } else {
+        state.streak = 0;
+        state.score = Math.max(0, state.score - 5);
+        badTone();
+        const fb = $('feedback');
+        fb.className = 'feedback bad';
+        fb.innerHTML = `❌ 答错啦。正确答案是 <b>${correctAnswerText(q)}</b>`;
+        recordWrong(q, ans);
+        // 难度下调
+        if (state.streak === 0 && state.level > 1 && Math.random() < 0.5) state.level--;
+    }
+
+    setTimeout(nextRound, ok ? 1400 : 2400);
+}
+
+function recordWrong(q, ans) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    const text = q.kind === 'compare'
+        ? (q.sub === 'equal' ? `比较 ${q.m1}/${q.n1} 和 ${q.m2}/${q.n2}` : `比较 ${q.m1}/${q.n1} 和 ${q.m2}/${q.n2}`)
+        : (q.sub === 'avg' ? '判断是否平均分' : (q.kind === 'shade' ? `涂 ${q.m} 份表示` : `平均切成 ${q.n} 份`));
+    const ansText = Array.isArray(ans) ? `${ans[0]}/${ans[1]}` : (q.kind === 'compare' ? ans : ans);
+    list.unshift({ text, your: ansText, right: correctAnswerText(q) });
+    list = list.slice(0, 30);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) {}
+}
+
+function nextRound() {
+    state.round++;
+    updateTopbar();
+    if (state.round > state.maxRound) { showResult(); return; }
+    state.answered = false;
+    state.foodSelected = null;
+    $('shadeCount').style.display = 'none';
+    // 选模式
+    let mode = state.mode;
+    if (mode === 'mix') mode = pick(['cut', 'cut', 'shade', 'compare']);
+    state.q = genQuestion(mode);
+    renderQuestion();
+}
+
+function updateTopbar() {
+    $('score').textContent = state.score;
+    $('streak').textContent = state.streak;
+    $('level').textContent = state.level;
+    $('round').textContent = state.round;
+}
+
+/* ================= 结算 ================= */
+function showResult() {
+    const total = state.maxRound;
+    const rate = state.score / (total * 14);
+    let stars = rate >= 0.75 ? 3 : rate >= 0.5 ? 2 : rate >= 0.25 ? 1 : 0;
+    let txt = `本局 ${total} 题，得分 ${state.score} 分，最高难度达到 ${state.level} 级。`;
+    if (stars === 3) txt += ' 你是披萨大师！';
+    else if (stars === 2) txt += ' 很棒，再练练拿满分！';
+    else if (stars === 1) txt += ' 加油，多切几次就熟了！';
+    else txt += ' 别灰心，先看看错题吧。';
+    $('resultTitle').textContent = stars >= 2 ? '🎉 太厉害了！' : '🍕 学习结束';
+    let shtml = '';
+    for (let i = 0; i < 3; i++) shtml += `<span class="${i < stars ? '' : 'dim'}">⭐</span>`;
+    $('resultStars').innerHTML = shtml;
+    $('resultText').innerHTML = txt;
+    // 错题
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    if (list.length) {
+        $('wrongBox').style.display = '';
+        $('wrongList').innerHTML = list.map((w, i) =>
+            `<div class="row">${i + 1}. ${w.text} —— 你答：<span class="y">${w.your}</span>，正确：<span class="a">${w.right}</span></div>`
+        ).join('');
+    } else {
+        $('wrongBox').style.display = 'none';
+    }
+    $('resultOverlay').style.display = 'flex';
+    beep(stars >= 2 ? 784 : 392, 0.4);
+}
+
+/* ================= 菜单 ================= */
+function buildMenu() {
+    const grid = $('menuGrid');
+    grid.innerHTML = '';
+    const items = [
+        { m: 'mix', t: '混合模式', d: '三种玩法轮流练' },
+        { m: 'cut', t: '① 切披萨', d: '认识几分之一' },
+        { m: 'shade', t: '② 涂色', d: '认识几分之几' },
+        { m: 'compare', t: '③ 比大小', d: '分数比较' },
+    ];
+    items.forEach(it => {
+        const card = document.createElement('div');
+        card.className = 'menu-card' + (it.m === state.mode ? ' sel' : '');
+        card.innerHTML = `<div class="t">${it.t}</div><div class="d">${it.d}</div>`;
+        card.onclick = () => {
+            state.mode = it.m;
+            document.querySelectorAll('.menu-card').forEach(c => c.classList.remove('sel'));
+            card.classList.add('sel');
+        };
+        card.dataset.m = it.m;
+        grid.appendChild(card);
+    });
+}
+
+function startRound() {
+    state.round = 0;
+    state.score = 0;
+    state.streak = 0;
+    state.level = 1;
+    state.answered = false;
+    state.foodSelected = null;
+    $('menuOverlay').style.display = 'none';
+    $('resultOverlay').style.display = 'none';
+    nextRound();
+}
+
+/* ================= 事件绑定 ================= */
+$('soundBtn').onclick = () => {
+    soundOn = !soundOn;
+    $('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+};
+$('menuBtn').onclick = () => {
+    $('menuOverlay').style.display = 'flex';
+    buildMenu();
+};
+$('startBtn').onclick = startRound;
+$('againBtn').onclick = startRound;
+$('homeBtn').onclick = () => { $('resultOverlay').style.display = 'none'; $('menuOverlay').style.display = 'flex'; };
+$('clearBtn').onclick = () => {
+    localStorage.removeItem(STORE_KEY);
+    alert('错题本已清空！');
+};
+document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.onclick = () => {
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.mode = tab.dataset.m;
+        buildMenu();
+        document.querySelectorAll('.menu-card').forEach(c => c.classList.remove('sel'));
+        document.querySelector(`.menu-card[data-m="${state.mode}"]`)?.classList.add('sel');
+    };
+});
+
+/* 初始化 */
+buildMenu();
+</script>
+</body>
+</html>

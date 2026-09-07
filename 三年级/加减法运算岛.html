@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>加减法运算岛 - 三年级上册 第2/4单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 60%, #667eea 130%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #0f5f5a, #148f77);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffe066; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 18px 22px 20px; }
+    /* 地图 */
+    .map-title { text-align: center; font-size: 26px; color: #0f5f5a; margin: 6px 0 4px; }
+    .map-sub { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 22px; }
+    .sea { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 8px; }
+    .island {
+        width: 640px; padding: 16px 20px; border-radius: 16px; background: #eefaf3;
+        display: flex; align-items: center; gap: 16px; cursor: pointer;
+        border: 2px solid #d5f5e3; transition: all .2s;
+    }
+    .island:hover { border-color: #148f77; transform: translateX(4px); }
+    .island.locked { opacity: 0.45; cursor: not-allowed; }
+    .island .icon { font-size: 34px; width: 56px; height: 56px; border-radius: 14px; background: #fff;
+        display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+    .island .info { flex: 1; }
+    .island .info .n { font-size: 17px; font-weight: bold; color: #0f5f5a; }
+    .island .info .d { font-size: 13px; color: #7f8c8d; margin-top: 3px; }
+    .island .stars { font-size: 18px; letter-spacing: 2px; }
+    .island .lock { font-size: 20px; color: #bbb; }
+    /* 关卡 */
+    .stage-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .backbtn { background: #ecf0f1; color: #555; border: none; border-radius: 25px; padding: 8px 18px;
+        font-size: 14px; font-family: inherit; font-weight: bold; cursor: pointer; }
+    .backbtn:hover { background: #dfe6e9; }
+    .stage-title { font-size: 20px; font-weight: bold; color: #0f5f5a; flex: 1; }
+    .q-progress { font-size: 14px; color: #7f8c8d; font-weight: bold; }
+    .q-bar { height: 10px; background: #ecf0f1; border-radius: 6px; overflow: hidden; margin-bottom: 18px; }
+    .q-bar .fill { height: 100%; background: linear-gradient(90deg, #2ecc71, #27ae60); border-radius: 6px; transition: width .3s; }
+    .q-card {
+        background: #f2fbf5; border-radius: 16px; padding: 22px 26px;
+        border: 2px solid #d9f2e3; min-height: 300px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    }
+    .q-text { font-size: 30px; font-weight: bold; color: #0f5f5a; text-align: center; line-height: 1.6; }
+    .q-text .hl { color: #c0392b; font-size: 40px; }
+    /* 口算大数字 */
+    .oral { display: flex; align-items: center; gap: 16px; }
+    .oral .num { font-size: 54px; font-weight: bold; color: #2c3e50; font-family: 'Courier New', monospace; }
+    .oral .op { font-size: 44px; color: #148f77; font-weight: bold; }
+    /* 竖式 */
+    .vbox { display: flex; flex-direction: column; align-items: flex-end; font-family: 'Courier New', monospace; font-weight: bold; color: #2c3e50; }
+    .vbox .line { font-size: 40px; letter-spacing: 2px; height: 52px; display: flex; align-items: center; }
+    .vbox .line.small { font-size: 30px; height: 44px; }
+    .vbox .op-sign { margin-right: 4px; font-size: 30px; color: #148f77; }
+    .vbox .rule { width: 100%; height: 4px; background: #2c3e50; border-radius: 2px; margin: 2px 0 6px; }
+    .vbox .ans { width: 100%; display: flex; justify-content: flex-end; }
+    .vbox .ans input {
+        width: 190px; height: 54px; text-align: right; font-size: 38px; font-weight: bold;
+        border: 3px solid #148f77; border-radius: 10px; outline: none; color: #0f5f5a;
+        font-family: 'Courier New', monospace; padding-right: 8px;
+    }
+    .vbox .ans input:focus { box-shadow: 0 0 0 3px rgba(20,143,119,0.2); }
+    .num-input {
+        width: 190px; height: 60px; text-align: center; font-size: 40px; font-weight: bold;
+        border: 3px solid #0f5f5a; border-radius: 12px; outline: none; color: #0f5f5a;
+        font-family: 'Courier New', monospace;
+    }
+    .num-input:focus { border-color: #148f77; box-shadow: 0 0 0 3px rgba(20,143,119,0.2); }
+    .btn-main {
+        background: linear-gradient(135deg, #11998e, #38ef7d); color: #fff; border: none;
+        border-radius: 25px; padding: 12px 34px; font-size: 17px; font-weight: bold; cursor: pointer;
+        font-family: inherit; transition: all .2s; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(17,153,142,0.4); }
+    .rate-hint {
+        background: #eafaf1; border: 1px dashed #82e0aa; color: #145a32;
+        border-radius: 12px; padding: 8px 18px; font-size: 15px; font-weight: bold;
+    }
+    .opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 640px; }
+    .opt {
+        padding: 14px 8px; border-radius: 14px; background: #fff; border: 2px solid #d9f2e3;
+        font-size: 24px; font-weight: bold; color: #0f5f5a; cursor: pointer; text-align: center;
+        font-family: 'Courier New', monospace; transition: all .15s;
+    }
+    .opt:hover { border-color: #148f77; transform: translateY(-2px); }
+    .opt.correct { background: #d5f5e3; border-color: #27ae60; color: #1e8449; }
+    .opt.wrong { background: #fadbd8; border-color: #e74c3c; color: #c0392b; }
+    .opt.dim { opacity: 0.5; }
+    .fb {
+        font-size: 18px; font-weight: bold; padding: 10px 20px; border-radius: 14px;
+        min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .fb.ok { background: #d5f5e3; color: #1e8449; }
+    .fb.no { background: #fadbd8; color: #c0392b; }
+    .result-box { text-align: center; padding: 30px 0; }
+    .result-box .big { font-size: 30px; font-weight: bold; color: #0f5f5a; margin-bottom: 10px; }
+    .result-box .score { font-size: 20px; color: #555; margin-bottom: 16px; }
+    .stars-big { font-size: 52px; letter-spacing: 10px; margin-bottom: 20px; }
+    .star-lit { filter: none; } .star-dim { filter: grayscale(1); opacity: 0.3; }
+    .result-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .modal-mask {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 20;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+        width: 720px; max-height: 82%; background: #fff; border-radius: 18px; padding: 22px 26px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal h3 { color: #0f5f5a; margin-bottom: 12px; }
+    .mistake-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .mistake-item {
+        background: #fdf3f2; border-left: 4px solid #e74c3c; border-radius: 10px;
+        padding: 10px 14px; font-size: 15px; color: #555; line-height: 1.7;
+    }
+    .mistake-item b { color: #c0392b; }
+    .mistake-item .right { color: #1e8449; }
+    .modal .close-row { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .empty-tip { color: #888; text-align: center; padding: 30px 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="game">
+    <div class="topbar">
+        <div class="title">🏝️ 加减法运算岛</div>
+        <div class="stats">
+            <span>⭐ 星星 <b id="totalStars">0</b>/9</span>
+            <span>🏆 通关 <b id="cleared">0</b>/3</span>
+        </div>
+        <button class="iconbtn" id="mistakeBtn">📖 错题本 (<span id="mistakeCount">0</span>)</button>
+    </div>
+
+    <div class="content" id="mapView">
+        <div class="map-title">🗺️ 加减法运算岛地图</div>
+        <div class="map-sub">口算岛 → 竖式岛 → 估算岛，三座岛等你来征服！</div>
+        <div class="sea" id="sea"></div>
+    </div>
+
+    <div class="content" id="stageView" style="display:none">
+        <div class="stage-head">
+            <button class="backbtn" id="backBtn">← 返回地图</button>
+            <div class="stage-title" id="stageTitle"></div>
+            <div class="q-progress" id="qProgress">第 1 / 10 题</div>
+        </div>
+        <div class="q-bar"><div class="fill" id="qFill"></div></div>
+        <div class="q-card" id="qCard"></div>
+        <div style="height:10px"></div>
+        <div class="fb" id="fb"></div>
+    </div>
+
+    <div class="modal-mask" id="mistakeModal">
+        <div class="modal">
+            <h3>📖 错题本（做错的题会记录在这里）</h3>
+            <div class="mistake-list" id="mistakeList"></div>
+            <div class="close-row"><button class="iconbtn" style="background:#148f77;color:#fff" id="mistakeClose">关闭</button></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ================= 常量与状态 ================= */
+const STORE_KEY = '加减法运算岛_错题';
+const PROG_KEY  = '加减法运算岛_进度';
+const STAGES = [
+    { icon:'🏝️', name:'口算岛',   desc:'两位数加/减两位数 快速口算',            kind:'oral' },
+    { icon:'🏰', name:'竖式岛',   desc:'万以内加法减法 竖式计算（进位/退位）',   kind:'vertical' },
+    { icon:'🛩️', name:'估算岛',   desc:'估成整十/整百再计算，估计结果',          kind:'estimate' },
+];
+const QUESTIONS_PER_STAGE = 10;
+
+let progress = loadJSON(PROG_KEY, {});
+let mistakes = loadJSON(STORE_KEY, []);
+let curStage = 0, qIdx = 0, score = 0;
+let questions = [], q = null, answered = false, inputLocked = false;
+
+const $ = id => document.getElementById(id);
+function loadJSON(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e){ return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const randInt = (a, b) => a + rnd(b - a + 1);
+const digitsToNum = ds => Number(ds.join(''));
+
+/* ================= 题目生成 ================= */
+// 两位数口算
+function makeOral() {
+    const add = Math.random() < 0.5;
+    if (add) {
+        const a = randInt(21, 99), b = randInt(21, 99);
+        return { kind:'oral', text:`${a} + ${b} = ?`, a, b, op:'+', answer: a + b,
+                 hint:'从个位加起，满十进一' };
+    } else {
+        let a = randInt(31, 99), b = randInt(11, 98);
+        if (b >= a) b = randInt(11, a - 11);
+        return { kind:'oral', text:`${a} − ${b} = ?`, a, b, op:'−', answer: a - b,
+                 hint:'从个位减起，不够减向前一位借一' };
+    }
+}
+
+// 生成指定位数的数字（首尾不为0的中间可0）
+function genDigits(n) {
+    const ds = [];
+    ds.push(randInt(1, 9));
+    for (let i = 1; i < n; i++) ds.push(randInt(0, 9));
+    return ds;
+}
+
+// 竖式题：carry=true 需要进位/退位
+function makeVertical() {
+    const add = Math.random() < 0.5;
+    const digits = Math.random() < 0.35 ? 4 : 3;
+    let aDs, bDs, A, B;
+    if (add) {
+        if (Math.random() < 0.5) { // 无进位
+            do { aDs = genDigits(digits); bDs = genDigits(digits); }
+            while (aDs.some((d, i) => d + bDs[i] >= 10));
+        } else { // 至少一位进位
+            do { aDs = genDigits(digits); bDs = genDigits(digits); }
+            while (!aDs.some((d, i) => d + bDs[i] >= 10));
+        }
+        A = digitsToNum(aDs); B = digitsToNum(bDs);
+        return { kind:'vertical', op:'+', a: A, b: B, answer: A + B,
+                 hint:'相同数位对齐，从个位加起，哪一位满十就向前一位进 1' };
+    } else {
+        let needBorrow;
+        if (Math.random() < 0.5) { needBorrow = false; } else { needBorrow = true; }
+        do {
+            aDs = genDigits(digits); bDs = genDigits(digits);
+            A = digitsToNum(aDs); B = digitsToNum(bDs);
+            const anyBorrow = aDs.some((d, i) => d < bDs[i]);
+            if (needBorrow) {
+                if (!anyBorrow) continue;
+            } else {
+                if (anyBorrow) continue;
+            }
+            // 中间有0的退位（可选增强）
+            if (Math.random() < 0.3 && aDs.length >= 3) {
+                const zi = randInt(1, aDs.length - 2);
+                aDs[zi] = 0;
+                A = digitsToNum(aDs);
+                if (A <= B || !aDs.some((d, i) => d < bDs[i])) { needBorrow = true; continue; }
+            }
+        } while (A <= B || digitsToNum(aDs) === 0);
+        A = digitsToNum(aDs);
+        return { kind:'vertical', op:'−', a: A, b: B, answer: A - B,
+                 hint:'相同数位对齐，从个位减起，哪一位不够减就向前一位借 1 当 10' };
+    }
+}
+
+// 估算题：三位数±三位数估成整百；两位数±两位数估成整十
+function makeEstimate() {
+    const add = Math.random() < 0.6;
+    let a, b, rounding;
+    if (Math.random() < 0.5) {
+        // 三位数 → 整百
+        rounding = 100;
+        do { a = randInt(2, 9) * 100 + randInt(1, 99); b = randInt(2, 9) * 100 + randInt(1, 99); }
+        while (!add && a <= b);
+    } else {
+        // 两位数 → 整十
+        rounding = 10;
+        do { a = randInt(2, 9) * 10 + randInt(1, 9); b = randInt(2, 9) * 10 + randInt(1, 9); }
+        while (!add && a <= b);
+    }
+    const ra = Math.round(a / rounding) * rounding;
+    const rb = Math.round(b / rounding) * rounding;
+    const exact = add ? ra + rb : ra - rb;
+    const real = add ? a + b : a - b;
+    if (exact <= 0 || real <= 0) return makeEstimate();
+    // 选项：正确 + 精确值 + 干扰（附近值）
+    const opts = new Set([exact, real, exact + rounding, exact - rounding, exact + 50, exact - 50]);
+    let arr = [...opts].filter(v => v > 0);
+    while (arr.length < 4) { const extra = exact + randInt(1, 9) * 10; if (!arr.includes(extra)) arr.push(extra); }
+    arr = arr.slice(0, 4);
+    shuffle(arr);
+    const word = rounding === 100 ? '整百' : '整十';
+    return { kind:'estimate',
+             text:`估一估：${a} ${add ? '+' : '−'} ${b} ≈ （ ）<br><span style="font-size:17px;color:#888">先把每个数估成最接近的${word}数，再计算</span>`,
+             answer: exact, opts: arr, hint: `把 ${a} 估成 ${ra}，把 ${b} 估成 ${rb}` };
+}
+
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+function makeQuestion(kind) {
+    if (kind === 'oral') return makeOral();
+    if (kind === 'vertical') return makeVertical();
+    return makeEstimate();
+}
+
+/* ================= 渲染 ================= */
+function renderMap() {
+    const sea = $('sea');
+    sea.innerHTML = '';
+    STAGES.forEach((s, i) => {
+        const stars = progress[i] ?? -1;
+        const unlocked = i === 0 || (progress[i-1] ?? -1) >= 0;
+        const div = document.createElement('div');
+        div.className = 'island' + (unlocked ? '' : ' locked');
+        div.innerHTML = `
+            <div class="icon">${s.icon}</div>
+            <div class="info"><div class="n">${s.name}</div><div class="d">${s.desc}</div></div>
+            <div class="stars">${stars >= 0 ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+            <div class="lock">${unlocked ? '▶' : '🔒'}</div>`;
+        if (unlocked) div.onclick = () => startStage(i);
+        sea.appendChild(div);
+    });
+    updateTopbar();
+}
+
+function updateTopbar() {
+    let total = 0, cleared = 0;
+    STAGES.forEach((_, i) => {
+        const s = progress[i] ?? -1;
+        if (s >= 0) { total += s; cleared++; }
+    });
+    $('totalStars').textContent = total;
+    $('cleared').textContent = cleared;
+    $('mistakeCount').textContent = mistakes.length;
+}
+
+function startStage(idx) {
+    curStage = idx; qIdx = 0; score = 0; answered = false; inputLocked = false;
+    questions = [];
+    const used = new Set();
+    while (questions.length < QUESTIONS_PER_STAGE) {
+        const qq = makeQuestion(STAGES[idx].kind);
+        const key = qq.kind === 'estimate' ? qq.text : `${qq.a}${qq.op}${qq.b}`;
+        if (used.has(key)) continue;
+        used.add(key); questions.push(qq);
+    }
+    $('mapView').style.display = 'none';
+    $('stageView').style.display = 'flex';
+    $('stageTitle').textContent = `${STAGES[idx].icon} ${STAGES[idx].name}`;
+    renderQuestion();
+}
+
+function verticalHTML(qq) {
+    const aStr = String(qq.a), bStr = String(qq.b);
+    return `
+        <div class="vbox">
+            <div class="line"><span>${aStr}</span></div>
+            <div class="line small"><span class="op-sign">${qq.op}</span><span>${bStr}</span></div>
+            <div class="rule"></div>
+            <div class="ans"><input id="ansInput" type="number" inputmode="numeric" placeholder="?"></div>
+        </div>`;
+}
+
+function renderQuestion() {
+    q = questions[qIdx]; answered = false; inputLocked = false;
+    $('qProgress').textContent = `第 ${qIdx + 1} / ${QUESTIONS_PER_STAGE} 题`;
+    $('qFill').style.width = (qIdx / QUESTIONS_PER_STAGE * 100) + '%';
+    $('fb').className = 'fb';
+    $('fb').innerHTML = '';
+    const card = $('qCard');
+    if (q.kind === 'oral') {
+        card.innerHTML = `
+            <div class="oral">
+                <div class="num">${q.a}</div><div class="op">${q.op}</div><div class="num">${q.b}</div>
+                <div class="op">=</div>
+            </div>
+            <div class="convert-row">
+                <input class="num-input" id="ansInput" type="number" inputmode="numeric" placeholder="?">
+            </div>
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+    } else if (q.kind === 'vertical') {
+        card.innerHTML = `
+            <div class="q-text" style="font-size:19px;color:#666">用竖式算一算，结果是多少？</div>
+            ${verticalHTML(q)}
+            <div class="rate-hint">💡 ${q.hint}</div>
+            <button class="btn-main" id="submitBtn">确定</button>`;
+    } else {
+        card.innerHTML = `
+            <div class="q-text">${q.text}</div>
+            <div class="opts">${q.opts.map(o => `<button class="opt" data-v="${o}">${o}</button>`).join('')}</div>
+            <div class="rate-hint">💡 ${q.hint}</div>`;
+        card.querySelectorAll('.opt').forEach(b => b.onclick = () => choose(parseInt(b.dataset.v, 10), b));
+        return;
+    }
+    const inp = $('ansInput');
+    inp.focus();
+    $('submitBtn').onclick = submit;
+    inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+}
+
+function submit() {
+    if (answered || inputLocked) return;
+    const v = parseInt($('ansInput').value, 10);
+    if (isNaN(v)) return;
+    judge(v === q.answer, v);
+}
+
+function choose(val, btn) {
+    if (answered) return;
+    document.querySelectorAll('.opt').forEach(b => b.classList.add('dim'));
+    btn.classList.remove('dim');
+    if (val === q.answer) btn.classList.add('correct');
+    else btn.classList.add('wrong');
+    judge(val === q.answer, val);
+}
+
+function judge(correct, userAns) {
+    answered = true;
+    if (correct) {
+        score++;
+        $('fb').className = 'fb ok';
+        $('fb').innerHTML = '✅ 太棒了！回答正确';
+    } else {
+        $('fb').className = 'fb no';
+        $('fb').innerHTML = `❌ 答错啦！正确答案是：<b>${q.answer}</b>`;
+        const text = q.kind === 'estimate' ? q.text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').slice(0, 40) : `${q.a} ${q.op} ${q.b}`;
+        mistakes.push({ s: STAGES[curStage].name, q: text, u: userAns, r: q.answer });
+        saveJSON(STORE_KEY, mistakes);
+    }
+    inputLocked = true;
+    setTimeout(() => {
+        qIdx++;
+        if (qIdx >= QUESTIONS_PER_STAGE) finishStage();
+        else renderQuestion();
+    }, correct ? 900 : 1600);
+}
+
+function finishStage() {
+    const rate = score / QUESTIONS_PER_STAGE;
+    const stars = rate >= 0.9 ? 3 : rate >= 0.7 ? 2 : rate >= 0.5 ? 1 : 0;
+    progress[curStage] = Math.max(progress[curStage] ?? -1, stars);
+    saveJSON(PROG_KEY, progress);
+    updateTopbar();
+    const card = $('qCard');
+    card.innerHTML = `
+        <div class="result-box">
+            <div class="big">${STAGES[curStage].icon} ${STAGES[curStage].name} 完成！</div>
+            <div class="stars-big">${[0,1,2].map(i => `<span class="${i < stars ? 'star-lit' : 'star-dim'}">⭐</span>`).join('')}</div>
+            <div class="score">答对 ${score} / ${QUESTIONS_PER_STAGE} 题 · 获得 ${stars} 颗星</div>
+            ${stars === 0 ? '<div class="score" style="color:#c0392b">再练一练，争取拿到星星吧！</div>' : ''}
+            ${curStage < STAGES.length - 1 ? '<div class="score">下一座岛已解锁！</div>' : ''}
+            <div class="result-actions">
+                <button class="btn-main" id="againBtn">🔁 再来一次</button>
+                <button class="btn-main" id="nextBtn" style="background:linear-gradient(135deg,#27ae60,#1e8449)">${curStage < STAGES.length - 1 ? '下一座岛 →' : '🏆 全部通关！返回地图'}</button>
+            </div>
+        </div>`;
+    $('fb').innerHTML = '';
+    $('qFill').style.width = '100%';
+    $('againBtn').onclick = () => startStage(curStage);
+    $('nextBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+}
+
+/* ================= 错题本 ================= */
+function renderMistakes() {
+    const list = $('mistakeList');
+    if (mistakes.length === 0) { list.innerHTML = '<div class="empty-tip">🎉 暂无错题，继续保持！</div>'; return; }
+    list.innerHTML = mistakes.map(m => `
+        <div class="mistake-item">
+            <b>[${m.s}]</b> ${m.q}　<br>
+            你答：<b>${m.u}</b>　正确答案：<span class="right">${m.r}</span>
+        </div>`).join('');
+}
+$('mistakeBtn').onclick = () => { renderMistakes(); $('mistakeModal').style.display = 'flex'; };
+$('mistakeClose').onclick = () => $('mistakeModal').style.display = 'none';
+$('mistakeModal').onclick = e => { if (e.target === $('mistakeModal')) $('mistakeModal').style.display = 'none'; };
+$('backBtn').onclick = () => { $('stageView').style.display = 'none'; $('mapView').style.display = 'flex'; renderMap(); };
+
+/* ================= 启动 ================= */
+renderMap();
+</script>
+</body>
+</html>

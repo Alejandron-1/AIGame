@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>萌宠课堂 · 登录</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;font-family:'Noto Sans SC',sans-serif;overflow:hidden;}
+
+  :root{
+    --sky1:#c8e6f5;--sky2:#dceeff;--sky3:#e8f8e8;
+    --coral:#ff7b7b;--coral-d:#e63946;--coral-h:#ff5e62;
+    --gold:#f4a923;--mint:#52c97a;--lavender:#a78bfa;
+    --ink:#2d3748;--ink2:#718096;--ink3:#a0aec0;
+    --card-bg:rgba(255,255,255,0.88);
+    --pill:999px;--r:16px;--r-lg:24px;
+    --font-fun:'ZCOOL KuaiLe',cursive;
+    --shadow-warm:0 32px 80px rgba(230,57,70,0.14),0 8px 24px rgba(45,55,72,0.08);
+  }
+
+  body{
+    background:linear-gradient(160deg,#fce4ec 0%,#e8eaf6 35%,#e0f2f1 70%,#fff8e1 100%);
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+
+  /* ── 背景浮动泡泡 ── */
+  .bubbles{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+  .bbl{
+    position:absolute;border-radius:50%;opacity:0.18;
+    animation:bbl-rise linear infinite;
+  }
+  @keyframes bbl-rise{
+    from{transform:translateY(110vh) scale(0) rotate(0);}
+    to  {transform:translateY(-10vh)  scale(1) rotate(180deg);}
+  }
+
+  /* ── 装饰字符 ── */
+  .deco-char{
+    position:fixed;font-size:48px;opacity:0.1;
+    animation:deco-float ease-in-out infinite;
+    pointer-events:none;user-select:none;
+  }
+  @keyframes deco-float{
+    0%,100%{transform:translateY(0) rotate(-5deg);}
+    50%    {transform:translateY(-20px) rotate(5deg);}
+  }
+
+  /* ── 主卡片 ── */
+  .card{
+    position:relative;z-index:10;
+    width:460px;
+    background:var(--card-bg);
+    backdrop-filter:blur(24px);
+    border-radius:32px;
+    padding:52px 48px 44px;
+    box-shadow:var(--shadow-warm);
+    border:1.5px solid rgba(255,255,255,0.9);
+    animation:card-in 0.7s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes card-in{
+    from{transform:translateY(60px) scale(0.9);opacity:0;}
+    to  {transform:translateY(0)    scale(1);  opacity:1;}
+  }
+
+  /* 顶部宠物装饰 */
+  .top-mascot{
+    text-align:center;margin-bottom:20px;
+  }
+  .mascot-wrap{
+    display:inline-block;position:relative;
+    animation:mascot-bob 2.5s ease-in-out infinite;
+  }
+  @keyframes mascot-bob{
+    0%,100%{transform:translateY(0);}
+    50%    {transform:translateY(-10px);}
+  }
+  .mascot-emoji{font-size:72px;line-height:1;display:block;
+    filter:drop-shadow(0 8px 16px rgba(255,123,123,0.3));}
+  /* 光环 */
+  .mascot-halo{
+    position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+    width:70px;height:12px;
+    background:radial-gradient(ellipse,rgba(244,169,35,0.4) 0%,transparent 70%);
+    border-radius:50%;
+    animation:halo-glow 2.5s ease-in-out infinite;
+  }
+  @keyframes halo-glow{0%,100%{opacity:0.6;transform:translateX(-50%) scaleX(0.9);}
+                       50%    {opacity:1;  transform:translateX(-50%) scaleX(1.1);}}
+
+  /* 标题 */
+  .brand-title{
+    font-family:var(--font-fun);font-size:34px;color:var(--ink);
+    text-align:center;margin-bottom:4px;
+    background:linear-gradient(135deg,var(--coral-d),var(--lavender));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .brand-sub{
+    text-align:center;font-size:14px;color:var(--ink2);
+    margin-bottom:32px;letter-spacing:1px;
+  }
+
+  /* 分隔线 */
+  .divider{
+    display:flex;align-items:center;gap:12px;margin-bottom:28px;
+    color:var(--ink3);font-size:12px;
+  }
+  .divider::before,.divider::after{
+    content:'';flex:1;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(45,55,72,0.12),transparent);
+  }
+
+  /* 表单 */
+  .form-group{margin-bottom:20px;}
+  .form-label{
+    display:block;font-size:13px;font-weight:500;
+    color:var(--ink2);margin-bottom:8px;letter-spacing:0.5px;
+  }
+  .input-wrap{position:relative;}
+  .input-icon{
+    position:absolute;left:16px;top:50%;transform:translateY(-50%);
+    font-size:18px;pointer-events:none;
+  }
+  .form-input{
+    width:100%;padding:14px 18px 14px 48px;
+    border:2px solid rgba(200,200,220,0.5);
+    border-radius:var(--r);
+    font-size:15px;font-family:inherit;color:var(--ink);
+    background:rgba(255,255,255,0.7);
+    outline:none;transition:all 0.25s;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,0.04);
+  }
+  .form-input::placeholder{color:var(--ink3);}
+  .form-input:focus{
+    border-color:var(--coral);
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(255,123,123,0.15),inset 0 2px 4px rgba(0,0,0,0.02);
+  }
+
+  /* 角色切换 */
+  .role-switch{
+    display:flex;gap:8px;margin-bottom:24px;
+    background:rgba(240,240,250,0.6);
+    border-radius:var(--r);padding:4px;
+  }
+  .role-btn{
+    flex:1;padding:10px;border:none;background:transparent;
+    font-family:var(--font-fun);font-size:15px;color:var(--ink2);
+    border-radius:12px;cursor:pointer;
+    transition:all 0.2s;
+  }
+  .role-btn.active{
+    background:#fff;color:var(--coral-d);
+    box-shadow:0 4px 12px rgba(230,57,70,0.15);
+  }
+  .role-btn span{margin-right:6px;}
+
+  /* 登录按钮 */
+  .btn-login{
+    width:100%;padding:16px;
+    background:linear-gradient(135deg,var(--coral) 0%,var(--coral-h) 50%,#ff4081 100%);
+    color:#fff;border:none;border-radius:var(--r);
+    font-family:var(--font-fun);font-size:20px;
+    cursor:pointer;letter-spacing:4px;
+    box-shadow:0 8px 28px rgba(230,57,70,0.35);
+    transition:all 0.25s;
+    position:relative;overflow:hidden;
+  }
+  .btn-login::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.25) 50%,transparent 100%);
+    transform:translateX(-100%);transition:transform 0.5s;
+  }
+  .btn-login:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(230,57,70,0.45);}
+  .btn-login:hover::after{transform:translateX(100%);}
+  .btn-login:active{transform:translateY(1px);}
+
+  /* 提示 */
+  .hint-row{
+    margin-top:20px;text-align:center;
+    font-size:12px;color:var(--ink3);
+  }
+  .hint-row a{color:var(--coral-d);text-decoration:none;font-weight:500;}
+
+  /* 底部装饰 */
+  .footer-pets{
+    display:flex;justify-content:center;gap:16px;
+    margin-top:28px;
+  }
+  .fp-item{
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    opacity:0.7;cursor:pointer;transition:all 0.2s;
+  }
+  .fp-item:hover{opacity:1;transform:translateY(-4px);}
+  .fp-emoji{font-size:28px;}
+  .fp-lv{font-size:10px;color:var(--gold);font-weight:700;
+         background:rgba(244,169,35,0.15);padding:1px 8px;border-radius:var(--pill);}
+
+  /* ── 加载动画 ── */
+  .loading-overlay{
+    position:fixed;inset:0;z-index:200;
+    background:rgba(255,255,255,0.95);
+    backdrop-filter:blur(8px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:20px;
+    animation:loading-hide 0.4s 1.4s ease both;
+  }
+  @keyframes loading-hide{to{opacity:0;pointer-events:none;}}
+  .loading-pet{font-size:72px;animation:loading-bounce 0.5s ease-in-out infinite alternate;}
+  @keyframes loading-bounce{from{transform:translateY(0);}to{transform:translateY(-16px);}}
+  .loading-dots{display:flex;gap:8px;}
+  .ld{width:10px;height:10px;border-radius:50%;background:var(--coral);
+      animation:ld-pulse 0.8s ease-in-out infinite;}
+  .ld:nth-child(2){background:var(--gold);animation-delay:0.15s;}
+  .ld:nth-child(3){background:var(--mint);animation-delay:0.3s;}
+  @keyframes ld-pulse{0%,100%{transform:scale(0.6);opacity:0.4;}50%{transform:scale(1.2);opacity:1;}}
+  .loading-text{font-family:var(--font-fun);font-size:18px;color:var(--ink2);}
+</style>
+</head>
+<body>
+
+<!-- 加载动画 -->
+<div class="loading-overlay">
+  <div class="loading-pet">🐾</div>
+  <div class="loading-text">萌宠们正在赶来…</div>
+  <div class="loading-dots"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
+</div>
+
+<!-- 背景气泡 -->
+<div class="bubbles" id="bubbles"></div>
+
+<!-- 装饰角色 -->
+<div class="deco-char" style="left:5%;top:10%;animation-duration:4s">🌟</div>
+<div class="deco-char" style="right:8%;top:15%;animation-duration:5s;animation-delay:1s">✨</div>
+<div class="deco-char" style="left:10%;bottom:20%;animation-duration:6s;animation-delay:2s">🍀</div>
+<div class="deco-char" style="right:12%;bottom:25%;animation-duration:4.5s;animation-delay:0.5s">🌈</div>
+<div class="deco-char" style="left:50%;top:5%;animation-duration:5.5s;animation-delay:1.5s">💫</div>
+
+<!-- 登录卡片 -->
+<div class="card">
+  <!-- 吉祥物 -->
+  <div class="top-mascot">
+    <div class="mascot-wrap">
+      <span class="mascot-emoji">🔥</span>
+      <div class="mascot-halo"></div>
+    </div>
+  </div>
+
+  <h1 class="brand-title">萌宠课堂</h1>
+  <p class="brand-sub">让学习变成一场奇幻冒险</p>
+
+  <!-- 角色切换 -->
+  <div class="role-switch" id="role-switch">
+    <button class="role-btn active" onclick="switchRole('teacher', this)"><span>👩‍🏫</span>教师登录</button>
+    <button class="role-btn" onclick="switchRole('admin', this)"><span>⚙️</span>管理员</button>
+  </div>
+
+  <div class="divider">输入账号密码</div>
+
+  <!-- 表单 -->
+  <div class="form-group">
+    <label class="form-label">账号</label>
+    <div class="input-wrap">
+      <span class="input-icon">👤</span>
+      <input class="form-input" type="text" placeholder="请输入账号" id="inp-user" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">密码</label>
+    <div class="input-wrap">
+      <span class="input-icon">🔑</span>
+      <input class="form-input" type="password" placeholder="请输入密码" id="inp-pass" />
+    </div>
+  </div>
+
+  <button class="btn-login" id="btn-login" onclick="doLogin()">进入课堂</button>
+
+  <div class="hint-row">
+    首次使用？请联系管理员获取账号 &nbsp;·&nbsp;
+    <a href="#">忘记密码</a>
+  </div>
+
+  <!-- 宠物进化展示 -->
+  <div class="footer-pets">
+    <div class="fp-item"><div class="fp-emoji">🌱</div><div class="fp-lv">LV.1</div></div>
+    <div class="fp-item"><div class="fp-emoji">🐣</div><div class="fp-lv">LV.3</div></div>
+    <div class="fp-item"><div class="fp-emoji">🦊</div><div class="fp-lv">LV.5</div></div>
+    <div class="fp-item"><div class="fp-emoji">🐲</div><div class="fp-lv">LV.8</div></div>
+    <div class="fp-item"><div class="fp-emoji">🔥</div><div class="fp-lv">LV.10</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* 背景气泡 */
+  const bb = document.getElementById('bubbles');
+  const colors=['#ff8fab','#ffd166','#7fd8ae','#8ecae6','#c8b6ff','#ffb347','#ff7eb3'];
+  for(let i=0;i<18;i++){
+    const b=document.createElement('div'); b.className='bbl';
+    const sz=30+Math.random()*80;
+    b.style.cssText=`left:${Math.random()*100}%;
+      width:${sz}px;height:${sz}px;background:${colors[i%colors.length]};
+      animation-delay:${Math.random()*12}s;animation-duration:${10+Math.random()*12}s;`;
+    bb.appendChild(b);
+  }
+
+  /* 角色切换 */
+  window.switchRole = function(role, btn){
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const ue = document.getElementById('inp-user');
+    ue.placeholder = role==='teacher' ? '教师账号（如 teacher）' : '管理员账号（如 admin）';
+  };
+
+  /* 登录模拟 */
+  window.doLogin = function(){
+    const btn = document.getElementById('btn-login');
+    btn.textContent = '正在进入…';
+    btn.disabled = true;
+    setTimeout(()=>{
+      btn.textContent = '🎉 登录成功！';
+      btn.style.background = 'linear-gradient(135deg,#52c97a,#38a169)';
+      setTimeout(()=>{
+        btn.textContent = '进入课堂';
+        btn.disabled = false;
+        btn.style.background = '';
+      }, 2000);
+    }, 1200);
+  };
+
+  /* 回车登录 */
+  document.querySelectorAll('.form-input').forEach(el=>{
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter') window.doLogin(); });
+  });
+})();
+</script>
+</body>
+</html>

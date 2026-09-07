@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>课堂宠物 · 管理端</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Fredoka:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- ============ 登录遮罩 ============ -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">🐾</div>
+      <h1 class="login-title">管理端登录</h1>
+      <p class="login-sub">ClassPet Admin</p>
+      <form id="login-form" class="login-form">
+        <label class="field">
+          <span class="field-label">账号</span>
+          <input id="login-user" type="text" placeholder="管理员账号" autocomplete="username" />
+        </label>
+        <label class="field">
+          <span class="field-label">密码</span>
+          <input id="login-pass" type="password" placeholder="密码" autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">登录</button>
+      </form>
+      <p class="login-hint">默认管理员 <b>admin</b> / <b>admin123</b></p>
+      <a href="/" class="link-back">← 返回课堂</a>
+    </div>
+  </div>
+
+  <!-- ============ 主界面 ============ -->
+  <div id="app" class="app hidden">
+    <!-- 侧栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-paw">🐾</span>
+        <span class="sidebar-name">管理端</span>
+      </div>
+      <nav class="nav">
+        <a class="nav-item is-active" href="#" data-view="dashboard">📊 <span>仪表盘</span></a>
+        <a class="nav-item" href="#" data-view="classes">🏫 <span>班级管理</span></a>
+        <a class="nav-item" href="#" data-view="questions">📝 <span>题库管理</span></a>
+        <a class="nav-item" href="#" data-view="teachers">👤 <span>教师管理</span></a>
+        <a class="nav-item" href="#" data-view="themes">🎨 <span>主题管理</span></a>
+        <a class="nav-item" href="#" data-view="backup">💾 <span>数据备份</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="/" class="link-back">← 返回课堂</a>
+        <button id="logout-btn" class="btn btn-ghost btn-sm">退出登录</button>
+      </div>
+    </aside>
+
+    <!-- 内容区 -->
+    <main class="main">
+      <header class="topbar">
+        <h2 id="view-title">仪表盘</h2>
+        <div class="topbar-right">
+          <span id="user-badge" class="user-badge"></span>
+        </div>
+      </header>
+      <div id="content" class="content"></div>
+    </main>
+  </div>
+
+  <!-- 模态框容器 -->
+  <div id="modal-root"></div>
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

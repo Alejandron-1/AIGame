@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地图编辑器</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: #eceff1; height: 100vh; overflow: hidden;
+        display: flex; flex-direction: column;
+        user-select: none; -webkit-user-select: none;
+    }
+    /* ===== 顶栏 ===== */
+    .topbar {
+        display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+        background: linear-gradient(135deg, #2c3e50, #34495e); color: #fff; flex: 0 0 auto;
+    }
+    .topbar .title { font-size: 20px; font-weight: bold; letter-spacing: 1px; margin-right: 8px; }
+    .topbar .title small { font-size: 12px; color: #aab; font-weight: normal; margin-left: 8px; }
+    .topbar .spacer { flex: 1; }
+    .tbtn {
+        background: rgba(255,255,255,0.14); color: #fff; border: none; border-radius: 10px;
+        padding: 8px 16px; font-size: 14px; cursor: pointer; font-family: inherit; font-weight: bold;
+    }
+    .tbtn:hover { background: rgba(255,255,255,0.28); transform: translateY(-1px); }
+    .tbtn.green { background: #27ae60; }
+    .tbtn.disabled { opacity: 0.5; cursor: not-allowed; }
+    /* ===== 主体 ===== */
+    .main { flex: 1; display: flex; min-height: 0; }
+    /* 左侧工具栏 */
+    .toolbar {
+        width: 118px; background: #2b3440; color: #fff; padding: 12px 8px; display: flex;
+        flex-direction: column; gap: 6px; overflow: auto; flex: 0 0 auto;
+    }
+    .toolbar .grp { color: #8fa3bd; font-size: 11px; margin: 8px 4px 2px; letter-spacing: 1px; }
+    .tool {
+        display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px;
+        border-radius: 10px; cursor: pointer; font-size: 11px; color: #cdd8e4; text-align: center;
+    }
+    .tool .ic { font-size: 22px; }
+    .tool:hover { background: #3a4657; }
+    .tool.active { background: #4A90E2; color: #fff; }
+    .tool input[type=file] { display: none; }
+    .tool input[type=color] { width: 40px; height: 26px; border: none; background: none; cursor: pointer; }
+    .tool input[type=range] { width: 70px; }
+    .tool select { width: 90px; font-size: 11px; }
+    /* 画布区 */
+    .canvaswrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 14px; min-width: 0; }
+    .canvas {
+        position: relative; background: #e8f5e9; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.15); border: 2px dashed #a5c8e0;
+        width: 100%; height: 100%; max-width: calc(100vh * 1.77); background-size: cover; background-position: center;
+    }
+    .canvas.adding { cursor: crosshair; }
+    .canvas-bg-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .canvas .placeholder {
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #9aa8b8; pointer-events: none; text-align: center; gap: 8px;
+    }
+    .canvas .placeholder .big { font-size: 46px; }
+    .canvas .placeholder .t { font-size: 17px; font-weight: bold; }
+    .node {
+        position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center;
+        justify-content: center; cursor: grab; transition: box-shadow 0.15s;
+    }
+    .node .shape { position: absolute; inset: 0; z-index: 0; }
+    .node .shape.round { border-radius: 50%; }
+    .node .shape.square { border-radius: 8px; }
+    .node .shape.rounded { border-radius: 18px; }
+    .node .shape.diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+    .node .shape.triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+    .node .shape.hexagon { clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%); }
+    .node .shape.star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+    .node .shape.heart { clip-path: polygon(50% 15%, 61% 4%, 76% 4%, 90% 18%, 90% 34%, 78% 55%, 50% 88%, 22% 55%, 10% 34%, 10% 18%, 24% 4%, 39% 4%); }
+    .node.sel { box-shadow: 0 0 0 3px #ffd200, 0 0 14px rgba(255,210,0,0.6); z-index: 5; }
+    .node .num {
+        width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold;
+        position: absolute; top: -10px; left: -10px; z-index: 2;
+    }
+    .node .emoji { position: relative; z-index: 1; font-size: 26px; line-height: 1; }
+    .node .label { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+        white-space: nowrap; font-size: 11px; color: #fff; background: rgba(0,0,0,0.6); padding: 1px 8px;
+        border-radius: 8px; display: none; z-index: 2; }
+    .node.showlabel .label { display: block; }
+    .node .resize-handle {
+        position: absolute; right: -7px; bottom: -7px; width: 16px; height: 16px; border-radius: 50%;
+        background: #ffd200; border: 2px solid #fff; cursor: nwse-resize; display: none; z-index: 6;
+    }
+    .node.sel .resize-handle { display: block; }
+    /* 右侧属性面板 */
+    .prop {
+        width: 264px; background: #fff; border-left: 1px solid #ddd; padding: 14px; overflow: auto;
+        flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px;
+    }
+    .prop h3 { font-size: 16px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .prop .del { color: #e74c3c; cursor: pointer; font-size: 13px; font-weight: normal; }
+    .prop .empty { color: #aaa; text-align: center; margin-top: 60px; font-size: 14px; line-height: 1.8; }
+    .prop label { display: block; font-size: 12px; color: #666; margin: 8px 0 4px; }
+    .prop input[type=text], .prop select, .prop input[type=number] {
+        width: 100%; padding: 8px 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;
+        font-family: inherit; outline: none;
+    }
+    .prop input:focus, .prop select:focus { border-color: #4A90E2; }
+    .prop .row { display: flex; gap: 8px; align-items: center; }
+    .type-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .type-btn { padding: 8px 4px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; text-align: center;
+        font-size: 12px; color: #555; background: #fff; font-family: inherit; }
+    .type-btn.sel { border-color: #4A90E2; background: #eaf3ff; color: #2c74c7; font-weight: bold; }
+    .type-btn .ic { font-size: 20px; display: block; }
+    .toggle-row { display: flex; gap: 10px; }
+    .switch { position: relative; width: 42px; height: 24px; background: #ccc; border-radius: 12px; cursor: pointer; }
+    .switch.on { background: #4A90E2; }
+    .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: 0.15s; }
+    .switch.on::after { left: 20px; }
+    /* 节点列表 */
+    .nodelist { flex: 0 0 auto; border-top: 1px solid #eee; margin-top: 4px; padding-top: 8px; max-height: 130px; overflow: auto; }
+    .nodelist .lbl { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .nodelist .chip { display: inline-flex; align-items: center; gap: 4px; margin: 3px; padding: 3px 10px;
+        border-radius: 14px; background: #f0f4f8; font-size: 12px; cursor: pointer; border: 2px solid transparent; }
+    .nodelist .chip.sel { border-color: #4A90E2; background: #eaf3ff; }
+    /* 提示 */
+    .toast {
+        position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8);
+        color: #fff; padding: 10px 22px; border-radius: 30px; font-size: 14px; z-index: 50; opacity: 0;
+        pointer-events: none; transition: opacity 0.25s;
+    }
+    .toast.show { opacity: 1; }
+    .banner {
+        position: absolute; top: 10px; right: 14px; background: rgba(0,0,0,0.55); color: #ffd200;
+        padding: 6px 14px; border-radius: 20px; font-size: 12px; z-index: 8; pointer-events: none;
+    }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="title">🗺️ 地图编辑器 <small>自定义棋盘</small></div>
+        <div class="spacer"></div>
+        <button class="tbtn" id="newBtn">🆕 新建</button>
+        <button class="tbtn" id="loadBtn">📂 读取</button>
+        <button class="tbtn" id="saveBtn">💾 保存地图</button>
+        <button class="tbtn green" id="demoBtn" title="一键载入一张20格的示例地图">✨ 示例地图</button>
+        <button class="tbtn" id="playBtn" title="保存地图并进入游戏台（积分/骰子/走棋）">🎮 进入游戏</button>
+    </div>
+
+    <div class="main">
+        <!-- 工具栏 -->
+        <div class="toolbar" id="toolbar">
+            <div class="grp">预设地图</div>
+            <div class="tool">
+                <span class="ic">📐</span>一键生成
+                <select id="presetSel">
+                    <option value="">— 选择 —</option>
+                    <option value="line">直线</option>
+                    <option value="s">S 形</option>
+                    <option value="z">Z 形</option>
+                    <option value="ring">环形</option>
+                    <option value="spiral">螺旋</option>
+                </select>
+            </div>
+            <div class="grp">背景</div>
+            <div class="tool" id="toolUpload">
+                <span class="ic">🖼️</span>上传背景
+                <input type="file" id="bgFile" accept="image/*">
+            </div>
+            <div class="tool" id="toolBgColor">
+                <span class="ic">🎨</span>背景色
+                <input type="color" id="bgColor" value="#e8f5e9">
+            </div>
+            <div class="grp">格子工具</div>
+            <div class="tool" id="toolAdd">
+                <span class="ic">➕</span>添加格子
+            </div>
+            <div class="tool" id="toolMove">
+                <span class="ic">🖐️</span>选择/移动
+            </div>
+            <div class="tool" id="toolDelete">
+                <span class="ic">🗑️</span>删除
+            </div>
+            <div class="grp">新建格默认</div>
+            <div class="tool">
+                <span class="ic">⬜</span>形状
+                <select id="shapeSel">
+                    <option value="round">圆形</option>
+                    <option value="square">方形</option>
+                    <option value="rounded" selected>圆角方</option>
+                    <option value="diamond">菱形</option>
+                    <option value="triangle">三角形</option>
+                    <option value="hexagon">六边形</option>
+                    <option value="star">五角星</option>
+                    <option value="heart">心形</option>
+                </select>
+            </div>
+            <div class="tool">
+                <span class="ic">📏</span>大小 <span id="sizeVal">140</span>
+                <input type="range" id="sizeRange" min="36" max="140" value="140">
+            </div>
+            <div class="tool">
+                <span class="ic">🌈</span>颜色
+                <input type="color" id="nodeColor" value="#4A90E2">
+            </div>
+            <div class="tool">
+                <span class="ic">💧</span>透明度
+                <input type="range" id="opacityRange" min="30" max="100" value="85">
+            </div>
+        </div>
+
+        <!-- 画布 -->
+        <div class="canvaswrap">
+            <div class="canvas" id="canvas">
+                <div class="placeholder" id="placeholder">
+                    <div class="big">🖼️ 🗺️</div>
+                    <div class="t">在左侧点击「上传背景」，或直接点「添加格子」开始画棋盘</div>
+                    <div>画布比例 16:9 · 点击画布即可放置格子（自动编号）</div>
+                </div>
+                <div class="banner" id="banner">🖱️ 先在左侧选工具，再点画布</div>
+            </div>
+        </div>
+
+        <!-- 属性面板 -->
+        <div class="prop" id="prop">
+            <div class="empty" id="propEmpty">
+                🖱️ 点击画布上的<b>格子</b><br>在这里配置它的内容<br><br>
+                <span style="font-size:12px;color:#bbb">（选中格后：设置类型、名称、特效、起点终点）</span>
+            </div>
+            <div id="propForm" style="display:none;">
+                <h3>格子 <span id="propNum"></span> 属性 <span class="del" id="delBtn">🗑️ 删除</span></h3>
+                <label>格子类型</label>
+                <div class="type-group" id="typeGroup">
+                    <button class="type-btn sel" data-type="show"><span class="ic">👀</span>纯展示</button>
+                    <button class="type-btn" data-type="prize"><span class="ic">🎁</span>实物奖励</button>
+                    <button class="type-btn" data-type="perk"><span class="ic">⭐</span>虚拟特权</button>
+                    <button class="type-btn" data-type="punish"><span class="ic">😈</span>惩罚挑战</button>
+                </div>
+
+                <div id="f-show">
+                    <label>显示文字 / 图标</label>
+                    <input type="text" id="pText" placeholder="如：起点、加油站、通关大奖">
+                </div>
+
+                <div id="f-prize" style="display:none;">
+                    <label>奖品名称</label>
+                    <input type="text" id="pPrize" placeholder="如：文具盲盒、棒棒糖">
+                    <label>奖品图标（可填 emoji）</label>
+                    <input type="text" id="pPrizeEmoji" placeholder="如 🎁 🍭 ✏️" maxlength="4">
+                </div>
+
+                <div id="f-perk" style="display:none;">
+                    <label>虚拟特权（预设）</label>
+                    <select id="pPerk">
+                        <option>免作业卡</option>
+                        <option>当一天班长</option>
+                        <option>挑选同桌</option>
+                        <option>第一个吃饭</option>
+                        <option>当小组长</option>
+                        <option>和老师合影</option>
+                    </select>
+                </div>
+
+                <div id="f-punish" style="display:none;">
+                    <label>惩罚 / 挑战类型</label>
+                    <select id="pPunishType">
+                        <option value="back">后退 X 步</option>
+                        <option value="score">扣分</option>
+                        <option value="show">表演节目</option>
+                        <option value="pause">暂停一轮</option>
+                    </select>
+                    <div class="row" id="pPunishValRow">
+                        <label>数值：</label>
+                        <input type="number" id="pPunishVal" min="1" max="5" value="2" style="width:70px;">
+                    </div>
+                </div>
+
+                <label>特效（走到该格时）</label>
+                <div class="toggle-row">
+                    <div class="switch" id="pFx"></div>
+                    <span style="font-size:12px;color:#666" id="pFxLabel">关闭</span>
+                </div>
+
+                <div class="row" style="margin-top:6px;">
+                    <label style="margin:0">🚩 起点</label>
+                    <div class="switch" id="pStart"></div>
+                    <label style="margin:0;margin-left:12px">🏁 终点</label>
+                    <div class="switch" id="pEnd"></div>
+                </div>
+            </div>
+
+            <div class="nodelist">
+                <div class="lbl">📋 格子列表（按添加顺序编号）</div>
+                <div id="nodeList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('canvas');
+
+/* ================= 状态 ================= */
+let state = {
+    nodes: [],          // 格子数组
+    nextId: 1,
+    selectedId: null,
+    tool: 'move',       // move | add
+    defaultShape: 'rounded',
+    defaultSize: 140,
+    defaultColor: '#4A90E2',
+    defaultOpacity: 85,
+    bgColor: '#e8f5e9',
+    bgImg: null,
+    dragging: null,     // {node, mode:'move'|'resize', startX,startY, orig}
+};
+
+function nodeById(id) { return state.nodes.find(n => n.id === id); }
+
+/* ================= 渲染 ================= */
+function render() {
+    // 画布背景
+    canvas.style.background = state.bgColor;
+    // 移除旧背景图
+    const oldImg = canvas.querySelector('.canvas-bg-img');
+    if (oldImg) oldImg.remove();
+    if (state.bgImg) {
+        const img = document.createElement('img');
+        img.className = 'canvas-bg-img';
+        img.src = state.bgImg;
+        canvas.appendChild(img);
+    }
+    const hasContent = state.nodes.length > 0 || state.bgImg;
+    $('placeholder').style.display = hasContent ? 'none' : 'flex';
+    // 格子
+    canvas.querySelectorAll('.node').forEach(n => n.remove());
+    state.nodes.forEach(n => {
+        canvas.appendChild(makeNodeEl(n));
+    });
+    renderNodeList();
+    renderProp();
+    updateBanner();
+}
+
+function makeNodeEl(n) {
+    const d = document.createElement('div');
+    d.className = 'node' + (n.id === state.selectedId ? ' sel' : '') + (n.showLabel ? ' showlabel' : '');
+    d.dataset.id = n.id;
+    d.style.left = n.x + '%';
+    d.style.top = n.y + '%';
+    d.style.width = n.w + 'px';
+    d.style.height = n.h + 'px';
+    // 形状主体（背景和形状在这里，编号不会被裁掉）
+    const shape = document.createElement('div');
+    shape.className = 'shape ' + (n.shape || 'rounded');
+    shape.style.background = hexToRgba(n.color, n.opacity / 100);
+    d.appendChild(shape);
+    // 图标 / 文字
+    const emoji = typeEmoji(n);
+    if (emoji) {
+        const e = document.createElement('span');
+        e.className = 'emoji';
+        e.textContent = emoji;
+        d.appendChild(e);
+    }
+    // 编号
+    const num = document.createElement('div');
+    num.className = 'num';
+    num.textContent = n.seq;
+    d.appendChild(num);
+    // 文字标签（起点终点等）
+    if (n.isStart || n.isEnd) {
+        const lab = document.createElement('div');
+        lab.className = 'label';
+        lab.textContent = n.isStart ? '🚩起点' : '🏁终点';
+        d.appendChild(lab);
+        d.classList.add('showlabel');
+    }
+    // 调整大小手柄
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
+    d.appendChild(handle);
+
+    // 事件：鼠标一碰到格子就能直接拖动（无需先选“移动”）；删除模式下点格子=删除
+    const startDragMove = (pt) => { select(n.id); startDrag(pt, n, 'move'); };
+    d.addEventListener('mousedown', e => { if (state.tool === 'delete') { doDelete(n.id); return; } startDragMove(e); });
+    d.addEventListener('touchstart', e => { if (state.tool === 'delete') { doDelete(n.id); return; } e.preventDefault(); startDragMove(e.touches[0]); }, { passive: false });
+    handle.addEventListener('mousedown', e => { if (state.tool === 'delete') return; e.stopPropagation(); startDrag(e, n, 'resize'); });
+    handle.addEventListener('touchstart', e => { if (state.tool === 'delete') return; e.stopPropagation(); e.preventDefault(); startDrag(e.touches[0], n, 'resize'); }, { passive: false });
+    return d;
+}
+
+function typeEmoji(n) {
+    if (n.isStart) return '🚩';
+    if (n.isEnd) return '🏁';
+    if (n.type === 'prize') return n.prizeEmoji || '🎁';
+    if (n.type === 'perk') return '⭐';
+    if (n.type === 'punish') return n.punishType === 'show' ? '🎤' : '😈';
+    return ''; // 纯展示
+}
+
+function hexToRgba(hex, a) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${a})`;
+}
+
+function updateBanner() {
+    const b = $('banner');
+    if (state.tool === 'add') b.textContent = '✏️ 点击画布空白处放置格子 · 鼠标碰到格子即可拖动';
+    else if (state.nodes.length === 0) b.textContent = '🖱️ 点「添加格子」后点画布放格子；或选上方「一键生成」预设';
+    else b.textContent = '🖐️ 鼠标碰到格子即可拖动 · 右下角手柄缩放 · 点格子配置内容';
+    b.style.display = state.nodes.length > 0 || state.tool === 'add' ? '' : 'none';
+}
+
+/* ================= 拖拽 ================= */
+function startDrag(e, node, mode) {
+    state.dragging = { node, mode, startX: e.clientX, startY: e.clientY, origX: node.x, origY: node.y, origW: node.w };
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchmove', onDragTouch, { passive: false });
+    document.addEventListener('touchend', endDrag);
+}
+function onDrag(e) { dragMove(e.clientX, e.clientY); }
+function onDragTouch(e) { e.preventDefault(); dragMove(e.touches[0].clientX, e.touches[0].clientY); }
+function dragMove(cx, cy) {
+    const dr = state.dragging;
+    if (!dr) return;
+    const rect = canvas.getBoundingClientRect();
+    if (dr.mode === 'move') {
+        const dx = (cx - dr.startX) / rect.width * 100;
+        const dy = (cy - dr.startY) / rect.height * 100;
+        dr.node.x = Math.max(0, Math.min(100, dr.origX + dx));
+        dr.node.y = Math.max(0, Math.min(100, dr.origY + dy));
+    } else {
+        const dist = Math.hypot(cx - (rect.left + rect.width * dr.origX / 100), cy - (rect.top + rect.height * dr.origY / 100)) * 2;
+        dr.node.w = Math.max(30, Math.min(200, Math.round(dist)));
+        dr.node.h = dr.node.w;
+    }
+    render();
+}
+function endDrag() {
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', endDrag);
+    document.removeEventListener('touchmove', onDragTouch);
+    document.removeEventListener('touchend', endDrag);
+    state.dragging = null;
+}
+
+/* ================= 选择与属性 ================= */
+function select(id) {
+    state.selectedId = id;
+    render();
+}
+function renderProp() {
+    const n = state.selectedId !== null ? nodeById(state.selectedId) : null;
+    if (!n) {
+        $('propEmpty').style.display = '';
+        $('propForm').style.display = 'none';
+        return;
+    }
+    $('propEmpty').style.display = 'none';
+    $('propForm').style.display = '';
+    $('propNum').textContent = '#' + n.seq;
+    // 类型
+    document.querySelectorAll('#typeGroup .type-btn').forEach(b => b.classList.toggle('sel', b.dataset.type === n.type));
+    ['show', 'prize', 'perk', 'punish'].forEach(t => $('f-' + t).style.display = t === n.type ? '' : 'none');
+    $('pText').value = n.text || '';
+    $('pPrize').value = n.prize || '';
+    $('pPrizeEmoji').value = n.prizeEmoji || '';
+    $('pPerk').value = n.perk || '免作业卡';
+    $('pPunishType').value = n.punishType;
+    $('pPunishVal').value = n.punishVal;
+    $('pPunishValRow').style.display = (n.punishType === 'back' || n.punishType === 'score') ? 'flex' : 'none';
+    setSwitch($('pFx'), n.fx, $('pFxLabel'), '关闭', '🎆 烟花');
+    setSwitch($('pStart'), n.isStart, null, '', '');
+    setSwitch($('pEnd'), n.isEnd, null, '', '');
+}
+function setSwitch(el, on, label, offTxt, onTxt) {
+    el.classList.toggle('on', !!on);
+    el.dataset.on = on ? '1' : '0';
+    if (label) label.textContent = on ? onTxt : offTxt;
+}
+
+/* ================= 添加格子 ================= */
+function addNodeAt(cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.max(3, Math.min(97, (cx - rect.left) / rect.width * 100));
+    const y = Math.max(4, Math.min(96, (cy - rect.top) / rect.height * 100));
+    const node = {
+        id: state.nextId++, seq: state.nodes.length + 1,
+        x, y, w: state.defaultSize, h: state.defaultSize,
+        shape: state.defaultShape, color: state.defaultColor, opacity: state.defaultOpacity,
+        type: 'show', text: '', prize: '', prizeEmoji: '', perk: '免作业卡',
+        punishType: 'back', punishVal: 2, fx: false, isStart: false, isEnd: false,
+        showLabel: false,
+    };
+    if (state.nodes.length === 0) { node.isStart = true; node.text = '起点'; }
+    state.nodes.push(node);
+    select(node.id);
+    toast(`已添加第 ${node.seq} 格，点它配置内容`);
+}
+
+/* ================= 删除 ================= */
+function doDelete(id) {
+    state.nodes = state.nodes.filter(n => n.id !== id);
+    if (state.selectedId === id) state.selectedId = null;
+    // 重排序号
+    state.nodes.forEach((n, i) => n.seq = i + 1);
+    toast('格子已删除');
+    render();
+}
+
+/* ================= 节点列表 ================= */
+function renderNodeList() {
+    const box = $('nodeList');
+    box.innerHTML = '';
+    if (!state.nodes.length) { box.innerHTML = '<span style="color:#bbb;font-size:12px">还没有格子</span>'; return; }
+    state.nodes.forEach(n => {
+        const chip = document.createElement('span');
+        chip.className = 'chip' + (n.id === state.selectedId ? ' sel' : '');
+        const em = typeEmoji(n);
+        chip.textContent = `${n.seq}. ${em}${n.text || n.prize || n.perk || ''}`.trim();
+        chip.title = `第 ${n.seq} 格`;
+        chip.onclick = () => select(n.id);
+        box.appendChild(chip);
+    });
+}
+
+/* ================= 保存 / 读取 / 新建 ================= */
+const SAVE_KEY = 'rewardmap_editor';
+function save() {
+    const data = { nodes: state.nodes.map(n => ({ ...n })), nextId: state.nextId, bgColor: state.bgColor, bgImg: state.bgImg };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    toast('💾 地图已保存到本机');
+}
+function load() {
+    try {
+        const data = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (!data || !Array.isArray(data.nodes)) { toast('没有找到已保存的地图'); return; }
+        state.nodes = data.nodes;
+        state.nextId = data.nextId || state.nextId;
+        state.bgColor = data.bgColor || '#e8f5e9';
+        state.bgImg = data.bgImg || null;
+        state.selectedId = null;
+        render();
+        toast('📂 已读取上次保存的地图');
+    } catch (e) { toast('读取失败'); }
+}
+function newMap() {
+    if (state.nodes.length && !confirm('确定新建地图吗？当前内容将丢失。')) return;
+    state.nodes = []; state.nextId = 1; state.selectedId = null; state.bgImg = null;
+    render();
+    toast('已新建空白地图');
+}
+
+/* ================= 工具栏绑定 ================= */
+function setTool(t) {
+    state.tool = t;
+    ['toolAdd', 'toolMove', 'toolDelete'].forEach(id => $(id).classList.toggle('active', id === ('tool' + (t === 'add' ? 'Add' : t === 'move' ? 'Move' : 'Delete'))));
+    canvas.classList.toggle('adding', t === 'add');
+    updateBanner();
+}
+$('toolAdd').onclick = () => { setTool('add'); if (state.nodes.length) toast('✏️ 点击画布空白处放置格子'); };
+$('toolMove').onclick = () => setTool('move');
+$('toolDelete').onclick = () => { setTool('delete'); toast('🗑️ 点击要删除的格子'); };
+$('toolUpload').onclick = () => $('bgFile').click();
+$('bgFile').onchange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { state.bgImg = reader.result; render(); toast('🖼️ 背景图已加载'); };
+    reader.readAsDataURL(f);
+};
+$('bgColor').oninput = e => { state.bgColor = e.target.value; render(); };
+$('shapeSel').onchange = e => { state.defaultShape = e.target.value; if (state.selectedId) { const n = nodeById(state.selectedId); n.shape = e.target.value; render(); } };
+$('sizeRange').oninput = e => { state.defaultSize = +e.target.value; $('sizeVal').textContent = e.target.value; if (state.selectedId) { const n = nodeById(state.selectedId); n.w = n.h = +e.target.value; render(); } };
+$('nodeColor').oninput = e => { state.defaultColor = e.target.value; if (state.selectedId) { nodeById(state.selectedId).color = e.target.value; render(); } };
+$('opacityRange').oninput = e => { state.defaultOpacity = +e.target.value; if (state.selectedId) { nodeById(state.selectedId).opacity = +e.target.value; render(); } };
+
+/* 画布点击：添加模式放置格子 */
+canvas.addEventListener('click', e => {
+    if (state.tool === 'add') {
+        if (e.target.closest('.node')) return;   // 不覆盖已有格子
+        addNodeAt(e.clientX, e.clientY);
+    } else {
+        // 点空白取消选中
+        if (!e.target.closest('.node')) { state.selectedId = null; render(); }
+    }
+});
+
+/* 属性面板绑定 */
+document.querySelectorAll('#typeGroup .type-btn').forEach(b => {
+    b.onclick = () => {
+        const n = state.selectedId !== null ? nodeById(state.selectedId) : null;
+        if (!n) return;
+        n.type = b.dataset.type;
+        render();
+    };
+});
+const bindProp = (id, fn) => $(id).addEventListener('input', fn);
+bindProp('pText', e => { const n = nodeById(state.selectedId); if (n) { n.text = e.target.value; render(); } });
+bindProp('pPrize', e => { const n = nodeById(state.selectedId); if (n) { n.prize = e.target.value; render(); } });
+bindProp('pPrizeEmoji', e => { const n = nodeById(state.selectedId); if (n) { n.prizeEmoji = e.target.value; render(); } });
+bindProp('pPerk', e => { const n = nodeById(state.selectedId); if (n) { n.perk = e.target.value; render(); } });
+bindProp('pPunishType', e => { const n = nodeById(state.selectedId); if (n) { n.punishType = e.target.value; render(); } });
+bindProp('pPunishVal', e => { const n = nodeById(state.selectedId); if (n) { n.punishVal = +e.target.value || 2; render(); } });
+$('pFx').onclick = () => { const n = nodeById(state.selectedId); if (n) { n.fx = !n.fx; render(); } };
+$('pStart').onclick = () => { const n = nodeById(state.selectedId); if (n) { n.isStart = !n.isStart; if (n.isStart) n.isEnd = false; render(); } };
+$('pEnd').onclick = () => { const n = nodeById(state.selectedId); if (n) { n.isEnd = !n.isEnd; if (n.isEnd) n.isStart = false; render(); } };
+$('delBtn').onclick = () => { if (state.selectedId !== null) doDelete(state.selectedId); };
+
+$('saveBtn').onclick = save;
+$('loadBtn').onclick = load;
+$('newBtn').onclick = newMap;
+
+/* ================= 预设地图库（直线/S形/Z形/环形/螺旋） ================= */
+function mkNode(id, seq, x, y, w, color) {
+    return { id, seq, x, y, w, h: w, shape: 'rounded', color: color || '#4A90E2', opacity: 85,
+        type: 'show', text: '', prize: '', prizeEmoji: '', perk: '免作业卡',
+        punishType: 'back', punishVal: 2, fx: false, isStart: false, isEnd: false, showLabel: false };
+}
+function finishPreset(nodes) {
+    nodes[0].isStart = true; nodes[0].text = '起点';
+    const last = nodes[nodes.length - 1];
+    last.isEnd = true; last.type = 'show'; last.text = '终点'; last.fx = true;
+    return nodes;
+}
+
+const PRESET_NAMES = { line: '直线', s: 'S 形', z: 'Z 形', ring: '环形', spiral: '螺旋' };
+const PRESETS = {
+    line() {
+        const nodes = [];
+        for (let i = 0; i < 12; i++) nodes.push(mkNode(i + 1, i + 1, 6 + i * 8, 55, 64, '#3498DB'));
+        nodes[5].type = 'prize'; nodes[5].prize = '文具盲盒'; nodes[5].prizeEmoji = '🎁'; nodes[5].fx = true;
+        nodes[8].type = 'punish'; nodes[8].punishType = 'back'; nodes[8].punishVal = 2; nodes[8].text = '后退2步';
+        return finishPreset(nodes);
+    },
+    s() {
+        const nodes = [], ROWS = 4, COLS = 5;
+        const texts = ['出发啦！', '向前冲！', '好运来！', '继续加油！', '真棒！', '保持住！', '冲呀！', '胜利在望！', '别停！', '快到了！'];
+        for (let i = 0; i < 20; i++) {
+            const row = Math.floor(i / COLS);
+            let col = i % COLS;
+            if (row % 2 === 1) col = COLS - 1 - col; // 蛇形回绕
+            const n = mkNode(i + 1, i + 1, 12 + col * 19, 15 + row * 24, 62, '#4A90E2');
+            n.text = texts[i % texts.length];
+            if (i === 5) { n.type = 'prize'; n.prize = '文具盲盒'; n.prizeEmoji = '🎁'; n.fx = true; }
+            if (i === 8) { n.type = 'punish'; n.punishType = 'back'; n.punishVal = 2; n.text = '遇到鲨鱼'; }
+            if (i === 10) { n.type = 'prize'; n.prize = '棒棒糖'; n.prizeEmoji = '🍭'; n.fx = true; }
+            if (i === 13) { n.type = 'perk'; n.perk = '免作业卡'; n.fx = true; }
+            if (i === 16) { n.type = 'punish'; n.punishType = 'pause'; n.punishVal = 0; n.text = '休息一轮'; }
+            nodes.push(n);
+        }
+        return finishPreset(nodes);
+    },
+    z() {
+        const nodes = [];
+        for (let i = 0; i < 6; i++) nodes.push(mkNode(i + 1, i + 1, 10 + i * 14, 15, 60, '#9B59B6'));      // 顶部横线
+        for (let i = 0; i < 6; i++) nodes.push(mkNode(7 + i, 7 + i, 80 - i * 12, 27 + i * 9, 60, '#9B59B6')); // 斜线
+        for (let i = 0; i < 6; i++) nodes.push(mkNode(13 + i, 13 + i, 22 + i * 14, 82, 60, '#9B59B6'));       // 底部横线
+        nodes[8].type = 'prize'; nodes[8].prize = '棒棒糖'; nodes[8].prizeEmoji = '🍭'; nodes[8].fx = true;
+        nodes[11].type = 'punish'; nodes[11].punishType = 'back'; nodes[11].punishVal = 2;
+        nodes[14].type = 'perk'; nodes[14].perk = '当一天班长'; nodes[14].fx = true;
+        return finishPreset(nodes);
+    },
+    ring() {
+        const nodes = [];
+        const cx = 50, cy = 48, rx = 36, ry = 29;
+        for (let i = 0; i < 16; i++) {
+            const a = Math.PI * 2 * i / 16 - Math.PI / 2;
+            nodes.push(mkNode(i + 1, i + 1, cx + rx * Math.cos(a), cy + ry * Math.sin(a), 58, '#1ABC9C'));
+        }
+        nodes[4].type = 'prize'; nodes[4].prize = '文具盲盒'; nodes[4].prizeEmoji = '🎁'; nodes[4].fx = true;
+        nodes[8].type = 'punish'; nodes[8].punishType = 'pause'; nodes[8].punishVal = 0; nodes[8].text = '休息一轮';
+        nodes[12].type = 'prize'; nodes[12].prize = '棒棒糖'; nodes[12].prizeEmoji = '🍭'; nodes[12].fx = true;
+        return finishPreset(nodes);
+    },
+    spiral() {
+        const nodes = [];
+        const cx = 50, cy = 50, turns = 3, count = 26;
+        for (let i = 0; i < count; i++) {
+            const t = i / (count - 1);
+            const r = 6 + t * 42;
+            const a = t * Math.PI * 2 * turns + Math.PI;
+            const x = Math.max(4, Math.min(96, cx + r * 1.15 * Math.cos(a)));
+            const y = Math.max(6, Math.min(94, cy + r * 0.9 * Math.sin(a)));
+            nodes.push(mkNode(i + 1, i + 1, x, y, 52, '#E67E22'));
+        }
+        nodes[7].type = 'prize'; nodes[7].prize = '文具盲盒'; nodes[7].prizeEmoji = '🎁'; nodes[7].fx = true;
+        nodes[13].type = 'punish'; nodes[13].punishType = 'back'; nodes[13].punishVal = 3; nodes[13].text = '退3步';
+        nodes[19].type = 'perk'; nodes[19].perk = '挑选同桌'; nodes[19].fx = true;
+        return finishPreset(nodes);
+    },
+};
+
+function loadPreset(key) {
+    if (!PRESETS[key]) return;
+    if (state.nodes.length && !confirm(`载入「${PRESET_NAMES[key]}」预设将覆盖当前内容，继续吗？`)) return;
+    const nodes = PRESETS[key]();
+    state.nodes = nodes; state.nextId = nodes.length + 1; state.selectedId = null;
+    render();
+    save();
+    toast(`📐 「${PRESET_NAMES[key]}」地图已生成并保存`);
+}
+$('presetSel').onchange = (e) => { if (e.target.value) { loadPreset(e.target.value); e.target.value = ''; } };
+/* 示例地图按钮 = 载入 S 形预设 */
+$('demoBtn').onclick = () => loadPreset('s');
+
+/* 进入游戏：保存地图 → 跳转到游戏台 */
+$('playBtn').onclick = () => {
+    if (!state.nodes.length) { toast('请先添加格子，或点「示例地图」一键生成'); return; }
+    save();
+    toast('💾 已保存，正在进入飞行棋…');
+    setTimeout(() => window.location.href = '飞行棋.html', 500);
+};
+
+/* ================= 提示 ================= */
+function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* 初始化 */
+setTool('move');
+render();
+</script>
+</body>
+</html>

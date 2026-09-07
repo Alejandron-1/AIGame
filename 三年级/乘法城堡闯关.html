@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乘法城堡闯关 - 三年级上册 第6单元</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .game {
+        width: 980px;
+        min-height: 700px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    /* 顶栏 */
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: #fff; font-weight: bold;
+    }
+    .topbar .title { font-size: 22px; letter-spacing: 1px; }
+    .topbar .stats { display: flex; gap: 18px; font-size: 15px; }
+    .topbar .stats b { font-size: 18px; color: #ffd200; }
+    .iconbtn {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        border-radius: 25px; padding: 6px 14px; font-size: 15px; cursor: pointer;
+        font-family: inherit; font-weight: bold;
+    }
+    .iconbtn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.3); }
+    /* 阶段进度 */
+    .progress {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 14px 22px 0;
+    }
+    .stage-chip {
+        padding: 8px 20px; border-radius: 25px; font-size: 15px; font-weight: bold;
+        background: #ecf0f1; color: #7f8c8d; border: 2px solid transparent;
+    }
+    .stage-chip.active { background: #ffd200; color: #2c3e50; border-color: #f39c12; }
+    .stage-chip.done { background: #2ecc71; color: #fff; }
+    .arrow { color: #7f8c8d; font-size: 20px; }
+    .castle-badge { margin-left: auto; font-size: 15px; color: #555; font-weight: bold; }
+    /* 内容区 */
+    .content {
+        flex: 1; display: flex; flex-direction: column; padding: 8px 22px 20px; gap: 8px;
+    }
+    .castle-svg { height: 150px; margin: 0 auto; }
+    .castle-svg svg { height: 100%; width: 100%; }
+    .question {
+        text-align: center; font-size: 24px; font-weight: bold; color: #444;
+        min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .question .big-num { font-size: 42px; color: #c0392b; }
+    .qtag {
+        background: #ffd200; color: #2c3e50; padding: 3px 12px; border-radius: 12px;
+        font-size: 13px; vertical-align: middle;
+    }
+    /* 口算区 */
+    .oral-area { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 6px; }
+    .num-input {
+        width: 150px; height: 60px; text-align: center; font-size: 38px; font-weight: bold;
+        border: 3px solid #2c3e50; border-radius: 12px; outline: none; color: #2c3e50;
+        font-family: inherit;
+    }
+    .num-input:focus { border-color: #f39c12; box-shadow: 0 0 0 4px rgba(243,156,18,0.25); }
+    .gates { display: flex; gap: 6px; margin-top: 4px; }
+    .gate { width: 30px; height: 10px; border-radius: 5px; background: #ddd; }
+    .gate.hit { background: #2ecc71; }
+    .gate.miss { background: #e74c3c; }
+    .timer-bar { width: 300px; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+    .timer-fill { height: 100%; background: linear-gradient(90deg,#f39c12,#ffd200); width: 100%; transition: width 0.1s linear; }
+    /* 估算选项 */
+    .choices { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+    .choice {
+        min-width: 130px; padding: 14px 22px; font-size: 26px; font-weight: bold;
+        border: 3px solid #3498db; border-radius: 14px; background: #fff; cursor: pointer;
+        color: #2c3e50; font-family: inherit;
+    }
+    .choice:hover { transform: scale(1.06); border-color: #f39c12; }
+    .choice.correct { border-color: #27ae60; background: #eafaf1; }
+    .choice.wrong { border-color: #e74c3c; background: #fdedec; }
+    /* 竖式板 */
+    .col-area { display: flex; justify-content: center; gap: 30px; align-items: flex-start; margin-top: 4px; }
+    .coltable { border-collapse: collapse; }
+    .coltable td {
+        width: 46px; height: 34px; text-align: center; font-size: 26px; font-weight: bold;
+        color: #2c3e50; padding: 2px;
+    }
+    .coltable .carry-td { height: 30px; }
+    .coltable .res-td { height: 40px; }
+    .coltable td.line-cell { border-top: 3px solid #2c3e50; height: 0; padding: 0; }
+    .coltable .op-cell { font-size: 24px; }
+    .col-input {
+        width: 44px; height: 34px; text-align: center; font-size: 24px; font-weight: bold;
+        border: 2px solid #bbb; border-radius: 8px; color: #2c3e50; outline: none;
+        font-family: inherit;
+    }
+    .col-input:disabled { background: #eef2f7; color: #95a5a6; }
+    .col-input.cur { border-color: #f39c12; box-shadow: 0 0 0 3px rgba(243,156,18,0.3); }
+    .col-input.ok { border-color: #27ae60; background: #eafaf1; color: #27ae60; }
+    .carry-in {
+        width: 30px; height: 24px; font-size: 18px; border: 2px dashed #e74c3c; border-radius: 6px;
+        color: #e74c3c; text-align: center; font-weight: bold; outline: none; font-family: inherit;
+    }
+    .carry-in:disabled { background: #fdeaea; }
+    .carry-in.ok { border-style: solid; background: #fdeaea; }
+    .stepbox {
+        width: 300px; background: #f8f9fa; border-radius: 12px; padding: 14px 16px;
+        font-size: 16px; color: #555; line-height: 1.7;
+    }
+    .stepbox b { color: #c0392b; }
+    .stepbox .msg { margin-bottom: 6px; }
+    .stepno { font-weight: bold; color: #f39c12; font-size: 14px; }
+    /* 按钮 */
+    .controls { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; min-height: 56px; align-items: center; }
+    .btn {
+        padding: 10px 26px; border-radius: 25px; border: none; font-size: 17px; font-weight: bold;
+        cursor: pointer; font-family: inherit; color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #f7971e, #ffd200); color: #5d3a00;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.2); }
+    .btn.green { background: linear-gradient(135deg, #27ae60, #2ecc71); color: #fff; }
+    .btn.blue { background: linear-gradient(135deg, #2980b9, #3498db); color: #fff; }
+    .btn.red { background: linear-gradient(135deg, #c0392b, #e74c3c); color: #fff; }
+    .btn.gray { background: #bdc3c7; color: #555; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn.small { padding: 7px 16px; font-size: 15px; }
+    /* 反馈 */
+    .feedback {
+        min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-size: 18px; font-weight: bold; border-radius: 12px; padding: 4px 14px;
+    }
+    .feedback.ok { color: #27ae60; background: #eafaf1; }
+    .feedback.bad { color: #c0392b; background: #fdedec; }
+    /* PK */
+    .pkbar { display: flex; justify-content: center; gap: 40px; padding: 12px; }
+    .pkplayer {
+        padding: 10px 26px; border-radius: 14px; background: #ecf0f1; font-size: 17px; font-weight: bold;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .pkplayer.turn { background: #ffd200; box-shadow: 0 0 0 3px #f39c12; }
+    .pkplayer .dots { display: flex; gap: 4px; }
+    .pkplayer .dot { width: 14px; height: 14px; border-radius: 50%; background: #ddd; }
+    .pkplayer .dot.filled { background: #2ecc71; }
+    /* 弹窗 */
+    .overlay {
+        position: absolute; inset: 0; background: rgba(20,30,50,0.6);
+        display: flex; align-items: center; justify-content: center; z-index: 20;
+    }
+    .panel {
+        background: #fff; border-radius: 20px; padding: 30px 38px; max-width: 680px;
+        max-height: 90%; overflow: auto; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .panel h2 { color: #2c3e50; margin-bottom: 14px; font-size: 26px; }
+    .panel .sub { color: #777; margin-bottom: 16px; line-height: 1.7; }
+    .menu-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .menu-btn {
+        padding: 14px 26px; border-radius: 14px; border: 3px solid #3498db; background: #fff;
+        font-size: 17px; font-weight: bold; cursor: pointer; font-family: inherit; color: #2c3e50;
+    }
+    .menu-btn.sel { background: #3498db; color: #fff; }
+    .menu-btn:hover { transform: translateY(-2px); }
+    .stars { font-size: 44px; margin: 8px 0; }
+    .stars .dim { opacity: 0.25; }
+    .wronglist { text-align: left; margin: 12px auto; max-height: 170px; overflow: auto; }
+    .wronglist .row { font-size: 14px; padding: 4px 8px; color: #555; }
+    .wronglist .row:nth-child(odd) { background: #f4f6f8; }
+    .wronglist .row .a { color: #27ae60; font-weight: bold; }
+    .wronglist .row .y { color: #c0392b; }
+    .row-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .confetti {
+        position: absolute; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; z-index: 30;
+        animation: fly 0.9s ease-out forwards;
+    }
+    @keyframes fly { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(120px) rotate(360deg); opacity: 0; } }
+    .shake { animation: shake 0.3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="game" id="game">
+    <div class="topbar">
+        <div class="title">🏰 乘法城堡闯关</div>
+        <div class="stats">
+            <span>🏆 得分 <b id="score">0</b></span>
+            <span>🔥 连对 <b id="streak">0</b></span>
+            <span>🏯 城堡 <b id="castleNum">1</b>/3</span>
+        </div>
+        <div>
+            <button class="iconbtn" id="soundBtn">🔊</button>
+            <button class="iconbtn" id="menuBtn">☰ 菜单</button>
+        </div>
+    </div>
+
+    <div class="progress">
+        <span class="stage-chip" id="chipOral">🏰 城门·口算</span>
+        <span class="arrow">➜</span>
+        <span class="stage-chip" id="chipCol">🧱 城墙·竖式</span>
+        <span class="arrow">➜</span>
+        <span class="stage-chip" id="chipEst">🗼 塔楼·估算</span>
+        <span class="castle-badge" id="pkInfo"></span>
+    </div>
+
+    <div class="content">
+        <div class="pkbar hidden" id="pkbar"></div>
+        <div class="castle-svg"><svg id="castleSvg" viewBox="0 0 640 170"></svg></div>
+        <div class="question" id="question"></div>
+
+        <!-- 口算 -->
+        <div class="oral-area hidden" id="oralArea">
+            <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+            <input class="num-input" id="oralInput" inputmode="numeric" type="text" maxlength="4" placeholder="?">
+            <div class="gates" id="gates"></div>
+        </div>
+
+        <!-- 估算 -->
+        <div class="oral-area hidden" id="estArea">
+            <div class="choices" id="estChoices"></div>
+            <div class="gates" id="estGates"></div>
+        </div>
+
+        <!-- 竖式 -->
+        <div class="col-area hidden" id="colArea">
+            <div id="colBoard"></div>
+            <div class="stepbox">
+                <div class="stepno" id="stepNo"></div>
+                <div class="msg" id="stepMsg">准备开始…</div>
+                <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn blue small" id="hintBtn">💡 本步提示</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+        <div class="controls" id="controls"></div>
+    </div>
+
+    <!-- 菜单 -->
+    <div class="overlay" id="menuOverlay">
+        <div class="panel">
+            <h2>🏰 乘法城堡闯关</h2>
+            <div class="sub">三年级上册 · 多位数乘一位数<br>破城门口算 → 攻城墙竖式 → 打塔楼估算，三关全破夺城堡！</div>
+            <div style="font-weight:bold;color:#2c3e50;margin-top:6px;">选择模式</div>
+            <div class="menu-row" id="modeRow">
+                <button class="menu-btn sel" data-mode="solo">🛡️ 单人闯关</button>
+                <button class="menu-btn" data-mode="pk">⚔️ 双人PK</button>
+            </div>
+            <div style="font-weight:bold;color:#2c3e50;margin-top:6px;">起始城堡（难度）</div>
+            <div class="menu-row" id="lvRow">
+                <button class="menu-btn sel" data-lv="1">🏯 城堡1 · 简单</button>
+                <button class="menu-btn" data-lv="2">🏯 城堡2 · 标准</button>
+                <button class="menu-btn" data-lv="3">🏯 城堡3 · 挑战</button>
+            </div>
+            <div class="row-btns" style="margin-top:10px;">
+                <button class="btn green" id="startBtn">⚔️ 开始攻堡</button>
+                <button class="btn gray" id="clearBtn">🗑️ 清空错题本</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结算 -->
+    <div class="overlay" id="resultOverlay" style="display:none;">
+        <div class="panel">
+            <h2 id="resultTitle"></h2>
+            <div class="stars" id="resultStars"></div>
+            <div class="sub" id="resultText"></div>
+            <div id="wrongBox" style="display:none;">
+                <div style="font-weight:bold;color:#c0392b;">错题本（自动记录）</div>
+                <div class="wronglist" id="wrongList"></div>
+            </div>
+            <div class="row-btns">
+                <button class="btn green" id="againBtn">🔁 再来一局</button>
+                <button class="btn blue" id="homeBtn">🏠 回到菜单</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const STORE_KEY = '乘法城堡闯关_错题';
+let soundOn = true, audioCtx = null;
+function beep(f, d = 0.12, t = 'sine') {
+    if (!soundOn) return;
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+    } catch (e) {}
+}
+const goodTone = () => { beep(660, 0.1); setTimeout(() => beep(880, 0.15), 90); };
+const badTone = () => beep(180, 0.25, 'sawtooth');
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function confetti(x, y) {
+    const wrap = document.querySelector('.content');
+    const colors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#e91e63', '#ff9800'];
+    for (let i = 0; i < 22; i++) {
+        const d = document.createElement('div');
+        d.className = 'confetti';
+        d.style.left = (x + randInt(-70, 70)) + 'px';
+        d.style.top = (y + randInt(-40, 10)) + 'px';
+        d.style.background = pick(colors);
+        d.style.animationDuration = (0.6 + Math.random() * 0.6) + 's';
+        wrap.appendChild(d);
+        setTimeout(() => d.remove(), 1200);
+    }
+}
+
+/* ============ 状态 ============ */
+let state = {
+    mode: 'solo',        // solo | pk
+    startLv: 1,
+    castle: 1,
+    stage: 'oral',
+    idx: 0,
+    q: null,
+    answered: false,
+    mistakeThisQ: 0,
+    mistakes: 0,          // 当前城堡错误数
+    score: 0,
+    streak: 0,
+    wrongs: [],
+    // 计时
+    timer: null,
+    oralGates: [],        // 每个 gate 结果
+    oralTotal: 6,
+    // 竖式
+    colStep: 0,
+    // pk
+    pkTurn: 1,
+    pkScore: [0, 0],
+    pkTotal: 5,
+};
+
+const STAGE_COUNTS = { oral: 6, col: 3, est: 3 };
+const STAGE_ORDER = ['oral', 'col', 'est'];
+
+/* ============ 城堡 SVG ============ */
+function drawCastle(active) {
+    const svg = $('castleSvg');
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = (t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+    // 背景
+    svg.appendChild(el('rect', { x: 0, y: 0, width: 640, height: 170, fill: '#f4f9ff' }));
+    svg.appendChild(el('circle', { cx: 560, cy: 30, r: 22, fill: '#ffd200' }));
+    svg.appendChild(el('circle', { cx: 30, cy: 30, r: 14, fill: '#cfe3ff' }));
+    svg.appendChild(el('circle', { cx: 70, cy: 40, r: 10, fill: '#cfe3ff' }));
+    // 主城墙
+    svg.appendChild(el('rect', { x: 90, y: 70, width: 460, height: 80, fill: '#8d9db6', stroke: '#5d6b82', 'stroke-width': 3 }));
+    // 城门
+    svg.appendChild(el('path', { d: 'M280 150 L280 105 A40 40 0 0 1 360 105 L360 150 Z', fill: '#3a4a63', stroke: '#2c3e50', 'stroke-width': 3 }));
+    // 三个塔
+    const towers = [
+        { x: 120, h: 46, name: 'oral' },
+        { x: 290, h: 46, name: 'col' },
+        { x: 460, h: 46, name: 'est' },
+    ];
+    towers.forEach(t => {
+        const activeT = active === t.name;
+        svg.appendChild(el('rect', { x: t.x, y: 70 - t.h, width: 60, height: t.h + 8, fill: activeT ? '#f39c12' : '#a5b4c9', stroke: '#5d6b82', 'stroke-width': 3 }));
+        // 垛口
+        for (let i = 0; i < 3; i++) {
+            svg.appendChild(el('rect', { x: t.x + 4 + i * 18, y: 70 - t.h - 12, width: 12, height: 12, fill: activeT ? '#e67e22' : '#8d9db6', stroke: '#5d6b82', 'stroke-width': 2 }));
+        }
+        if (activeT) {
+            svg.appendChild(el('rect', { x: t.x - 6, y: 70 - t.h - 14, width: 72, height: t.h + 26, fill: 'none', stroke: '#f39c12', 'stroke-width': 2, 'stroke-dasharray': '6 4', rx: 4 }));
+        }
+    });
+}
+
+/* ============ 出题 ============ */
+function lv() { return Math.min(state.castle, 3); }
+
+function genOral() {
+    const L = lv();
+    const r = Math.random();
+    if (r < 0.12) { // 0 的乘法
+        const k = randInt(1, 9);
+        return { a: 0, b: k, tip: '0 乘任何数都得 0' };
+    }
+    const pools = [
+        { a: () => randInt(2, 9), b: () => randInt(2, 9) },                       // 表内
+        { a: () => pick([20, 30, 40, 60, 80]), b: () => randInt(2, 9) },          // 整十
+    ];
+    if (L >= 2) pools.push({ a: () => randInt(12, 19), b: () => randInt(2, 4) }); // 十几
+    if (L >= 3) pools.push({ a: () => pick([200, 300, 400, 600]), b: () => randInt(2, 4) }); // 整百
+    const p = pick(pools);
+    return { a: p.a(), b: p.b() };
+}
+
+function genEst() {
+    const L = lv();
+    let R, b;
+    if (L <= 1) { R = randInt(2, 9) * 10; b = randInt(2, 9); }
+    else if (L === 2) {
+        if (Math.random() < 0.5) { R = randInt(2, 9) * 10; b = randInt(2, 9); }
+        else { R = randInt(1, 9) * 100; b = randInt(2, 6); }
+    } else { R = randInt(1, 9) * 100; b = randInt(2, 6); }
+    const delta = R >= 100 ? randInt(1, 40) : randInt(1, 4);
+    let a = R + delta * (Math.random() < 0.5 ? -1 : 1);
+    if (a < 10) a = R + delta;
+    const correct = R * b;
+    const cands = [];
+    cands.push(correct, correct + b, correct - b, correct + R, correct - R, correct + 1);
+    const uniq = [];
+    const seen = new Set();
+    shuffle(cands).forEach(c => { if (c >= 0 && !seen.has(c)) { seen.add(c); uniq.push(c); } });
+    const choices = uniq.slice(0, 4);
+    if (!choices.includes(correct)) choices[0] = correct;
+    shuffle(choices);
+    return { a, b, R, correct, choices };
+}
+
+/* 竖式：多位数 × 一位数，分步进位 */
+function computeCol(mArr, mult) {
+    const D = mArr.length;
+    const placeDigits = [], carryOut = [];
+    let c = 0;
+    for (let k = 0; k < D; k++) {
+        const val = mArr[D - 1 - k] * mult + c;
+        placeDigits[k] = val % 10;
+        carryOut[k] = Math.floor(val / 10);
+        c = carryOut[k];
+    }
+    const extra = c;
+    const P = D + (extra ? 1 : 0);
+    const steps = [];
+    for (let k = 0; k < D; k++) {
+        steps.push({ kind: 'digit', place: k, expect: placeDigits[k] });
+        if (carryOut[k] > 0 && k + 1 <= D) steps.push({ kind: 'carry', place: k + 1, expect: carryOut[k] });
+    }
+    if (extra > 0) steps.push({ kind: 'digit', place: D, expect: extra });
+    const resDigits = [];
+    for (let k = 0; k < P; k++) resDigits[k] = k < D ? placeDigits[k] : extra;
+    return { mArr, mult, D, P, extra, steps, resDigits };
+}
+
+function genCol() {
+    const L = lv();
+    let mArr, mult;
+    if (L >= 3) {
+        mult = randInt(2, 9);
+        let m;
+        const r = Math.random();
+        if (r < 0.4) { const a = randInt(1, 9), b = randInt(1, 9); m = Math.random() < 0.5 ? a * 100 + b : a * 100 + b * 10; }
+        else m = randInt(102, 498);
+        mArr = String(m).split('').map(Number);
+    } else {
+        mult = randInt(L >= 2 ? 4 : 2, 9);
+        let m;
+        if (Math.random() < 0.35) m = randInt(2, 8) * 10;
+        else m = randInt(12, 99);
+        mArr = String(m).split('').map(Number);
+    }
+    return computeCol(mArr, mult);
+}
+
+/* 列计算的文字说明（用于提示/错题） */
+function colExplain(col, step) {
+    // step 是当前 step 对象
+    const d = col.mArr[col.D - 1 - step.place]; // 当前列的数字
+    const mul = col.mult;
+    if (step.kind === 'digit') {
+        const carryIn = step.place > 0 ? (col.steps.find(s => s.kind === 'carry' && s.place === step.place)?.expect || 0) : 0;
+        const val = step.place < col.D ? d * mul + carryIn : col.extra;
+        return `第 ${step.place + 1} 位（从右往左第 ${step.place + 1} 位）：${step.place < col.D ? `${d}×${mul}` + (carryIn ? ` + 进位${carryIn}` : '') : `把最后的进位 ${col.extra} 写下来`} = ${val}，写 <b>${step.expect}</b>`;
+    } else {
+        return `上一步得到进位 <b>${step.expect}</b>，要写到左边一位的头上`;
+    }
+}
+
+/* ============ 渲染 ============ */
+function setStageChips() {
+    const map = { oral: 'chipOral', col: 'chipCol', est: 'chipEst' };
+    const cur = STAGE_ORDER.indexOf(state.stage);
+    STAGE_ORDER.forEach((s, i) => {
+        const chip = $(map[s]);
+        chip.classList.remove('active', 'done');
+        if (i < cur) chip.classList.add('done');
+        else if (i === cur) chip.classList.add('active');
+    });
+}
+
+function startQuestion() {
+    state.answered = false;
+    state.mistakeThisQ = 0;
+    clearTimer();
+    setStageChips();
+    $('feedback').innerHTML = '';
+    $('controls').innerHTML = '';
+    const stage = state.stage;
+
+    if (state.mode === 'pk') { pkRender(); return; }
+
+    drawCastle(stage);
+    if (stage === 'oral') return startOral();
+    if (stage === 'est') return startEst();
+    if (stage === 'col') return startCol();
+}
+
+function startOral() {
+    state.q = genOral();
+    const a = state.q.a, b = state.q.b;
+    $('oralArea').classList.remove('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.add('hidden');
+    $('question').innerHTML = `<span class="big-num">${a}</span> × <span class="big-num">${b}</span> = <span class="qtag">口算</span>`;
+    $('oralInput').value = '';
+    $('oralInput').disabled = false;
+    state.gateTotal = 6;
+    renderGates('gates');
+    const inp = $('oralInput');
+    inp.focus();
+    inp.oninput = () => { inp.value = inp.value.replace(/[^0-9]/g, ''); };
+    inp.onkeydown = e => { if (e.key === 'Enter') submitOral(); };
+    startTimer(12);
+    $('controls').innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'btn green'; btn.textContent = '✓ 提交';
+    btn.onclick = submitOral;
+    $('controls').appendChild(btn);
+}
+
+function submitOral() {
+    if (state.answered) return;
+    const val = parseInt($('oralInput').value, 10);
+    if (isNaN(val)) { flash('请输入一个数字再提交'); return; }
+    state.answered = true;
+    clearTimer();
+    checkAnswer(val === state.q.a * state.q.b, String(val), String(state.q.a * state.q.b) + (state.q.tip ? '（' + state.q.tip + '）' : ''));
+}
+
+function startEst() {
+    state.q = genEst();
+    $('oralArea').classList.add('hidden');
+    $('estArea').classList.remove('hidden');
+    $('colArea').classList.add('hidden');
+    const q = state.q;
+    $('question').innerHTML = `估一估：<span class="big-num">${q.a}</span> × <span class="big-num">${q.b}</span> ≈ <span class="qtag">估算</span>`;
+    state.gateTotal = 3;
+    renderGates('estGates');
+    const box = $('estChoices');
+    box.innerHTML = '';
+    q.choices.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'choice'; b.textContent = c;
+        b.onclick = () => {
+            if (state.answered) return;
+            state.answered = true;
+            // 标出正确答案
+            box.querySelectorAll('.choice').forEach(x => {
+                if (String(x.textContent) === String(q.correct)) x.classList.add('correct');
+            });
+            if (c !== q.correct) b.classList.add('wrong');
+            checkAnswer(c === q.correct, String(c), String(q.correct) + `（把 ${q.a} 看成 ${q.R}，${q.R}×${q.b}）`);
+        };
+        box.appendChild(b);
+    });
+    $('controls').innerHTML = '';
+}
+
+function renderGates(id) {
+    const g = $(id);
+    g.innerHTML = '';
+    const arr = state.oralGates;
+    const total = state.gateTotal;
+    for (let i = 0; i < total; i++) {
+        const d = document.createElement('div');
+        d.className = 'gate' + (arr[i] === true ? ' hit' : arr[i] === false ? ' miss' : '');
+        g.appendChild(d);
+    }
+}
+
+function startCol() {
+    state.col = genCol();
+    state.colStep = 0;
+    state.colWrong = 0;
+    $('oralArea').classList.add('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.remove('hidden');
+    const col = state.col;
+    $('question').innerHTML = `用竖式计算：<span class="big-num">${col.mArr.join('')}</span> × <span class="big-num">${col.mult}</span> <span class="qtag">竖式·一步一步来</span>`;
+    renderColBoard(col);
+    colHighlight();
+    $('controls').innerHTML = '';
+    $('hintBtn').onclick = () => {
+        if (state.answered) return;
+        const step = col.steps[state.colStep];
+        $('stepMsg').innerHTML = '💡 ' + colExplain(col, step) + ' <span style="color:#e74c3c">（本次算错一次）</span>';
+        state.mistakeThisQ++;
+    };
+}
+
+function renderColBoard(col) {
+    const box = $('colBoard');
+    box.innerHTML = '';
+    const table = document.createElement('table');
+    table.className = 'coltable';
+    const P = col.P;
+    // 进位行
+    const cRow = document.createElement('tr');
+    const carryPlaces = new Set(col.steps.filter(s => s.kind === 'carry').map(s => s.place));
+    for (let p = 0; p < P; p++) {
+        const td = document.createElement('td');
+        td.className = 'carry-td';
+        if (carryPlaces.has(p)) {
+            const inp = document.createElement('input');
+            inp.className = 'carry-in';
+            inp.maxLength = 1; inp.inputMode = 'numeric';
+            inp.dataset.place = p;
+            inp.disabled = true;
+            inp.oninput = () => checkColInput(inp);
+            inp.onkeydown = e => { if (e.key === 'Enter') checkColInput(inp); };
+            td.appendChild(inp);
+        }
+        cRow.appendChild(td);
+    }
+    table.appendChild(cRow);
+    // 被乘数行（右对齐）
+    const nRow = document.createElement('tr');
+    for (let p = 0; p < P; p++) {
+        const td = document.createElement('td');
+        td.textContent = p < col.D ? col.mArr[col.D - 1 - p] : '';
+        nRow.appendChild(td);
+    }
+    table.appendChild(nRow);
+    // 运算符行
+    const oRow = document.createElement('tr');
+    for (let p = 0; p < P; p++) {
+        const td = document.createElement('td');
+        td.className = 'op-cell';
+        if (p === P - 1) td.textContent = col.mult;
+        else if (p === P - 2) td.textContent = '×';
+        oRow.appendChild(td);
+    }
+    table.appendChild(oRow);
+    // 横线
+    const lRow = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = P; td.className = 'line-cell';
+    lRow.appendChild(td);
+    table.appendChild(lRow);
+    // 结果行
+    const rRow = document.createElement('tr');
+    for (let p = 0; p < P; p++) {
+        const td = document.createElement('td');
+        td.className = 'res-td';
+        const inp = document.createElement('input');
+        inp.className = 'col-input';
+        inp.maxLength = 1; inp.inputMode = 'numeric';
+        inp.dataset.place = p;
+        inp.disabled = true;
+        inp.oninput = () => checkColInput(inp);
+        inp.onkeydown = e => { if (e.key === 'Enter') checkColInput(inp); };
+        td.appendChild(inp);
+        rRow.appendChild(td);
+    }
+    table.appendChild(rRow);
+    box.appendChild(table);
+    $('colBoard')._inputs = {
+        res: box.querySelectorAll('.col-input'),
+        carry: box.querySelectorAll('.carry-in'),
+    };
+}
+
+function colHighlight() {
+    const col = state.col;
+    const step = col.steps[state.colStep];
+    $('stepNo').textContent = `步骤 ${state.colStep + 1} / ${col.steps.length}`;
+    const inputs = $('colBoard')._inputs;
+    const resArr = [...inputs.res], carryArr = [...inputs.carry];
+    resArr.forEach(i => { i.classList.remove('cur'); i.disabled = true; });
+    carryArr.forEach(i => { i.classList.remove('cur'); i.disabled = true; });
+    let curInp = null;
+    if (step.kind === 'digit') {
+        curInp = resArr.find(i => i.dataset.place === String(step.place));
+    } else {
+        curInp = carryArr.find(i => i.dataset.place === String(step.place));
+    }
+    if (curInp) {
+        curInp.disabled = false;
+        curInp.classList.add('cur');
+        curInp.focus();
+    }
+    // 说明
+    $('stepMsg').innerHTML = step.kind === 'digit'
+        ? colExplain(col, step)
+        : `个位算完啦，把进位 <b>${step.expect}</b> 写到左边一位的头上`;
+}
+
+function checkColInput(inp) {
+    const col = state.col;
+    if (state.answered) return;
+    const val = inp.value.replace(/[^0-9]/g, '');
+    inp.value = val;
+    if (val === '') return;
+    const step = col.steps[state.colStep];
+    // 这个输入框必须是当前步的目标
+    if (inp.dataset.place !== String(step.place)) return;
+    if (parseInt(val, 10) === step.expect) {
+        inp.classList.remove('cur');
+        inp.classList.add('ok');
+        inp.disabled = true;
+        goodTone();
+        state.colStep++;
+        if (state.colStep >= col.steps.length) {
+            // 完成
+            state.answered = true;
+            const allOk = state.colWrong === 0;
+            $('stepNo').textContent = '✔ 完成！';
+            $('stepMsg').innerHTML = allOk ? '全部正确，漂亮！' : '完成啦（中间有算错的步骤，多练几次）';
+            showResultInputs();
+            const ans = col.resDigits.slice().reverse().join('');
+            checkAnswer(allOk, ans, ans + '（' + col.mArr.join('') + '×' + col.mult + '）');
+            return;
+        }
+        colHighlight();
+    } else {
+        state.colWrong++;
+        state.mistakeThisQ++;
+        badTone();
+        inp.classList.add('shake');
+        setTimeout(() => inp.classList.remove('shake'), 300);
+        inp.value = '';
+        $('stepMsg').innerHTML = `✗ 不对哦，再想想。${colExplain(col, step)}`;
+    }
+}
+
+function showResultInputs() {
+    const col = state.col;
+    const inputs = $('colBoard')._inputs;
+    const resArr = [...inputs.res];
+    resArr.forEach(i => { if (!i.value) i.value = col.resDigits[col.P - 1 - Number(i.dataset.place)]; i.classList.add('ok'); i.disabled = true; });
+    inputs.carry.forEach(i => { i.classList.add('ok'); i.disabled = true; });
+}
+
+/* 计时 */
+function startTimer(sec) {
+    clearTimer();
+    const fill = $('timerFill');
+    fill.style.width = '100%';
+    const t0 = performance.now(), dur = sec * 1000;
+    state.timer = setInterval(() => {
+        const left = Math.max(0, dur - (performance.now() - t0));
+        fill.style.width = (left / dur * 100) + '%';
+        if (left <= 0) {
+            clearTimer();
+            if (!state.answered && state.stage === 'oral' && state.mode !== 'pk') {
+                state.answered = true;
+                checkAnswer(false, '超时', String(state.q.a * state.q.b));
+            }
+        }
+    }, 80);
+}
+function clearTimer() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
+
+/* 通用判定 */
+function checkAnswer(ok, yourText, rightText) {
+    state.answered = true;
+    clearTimer();
+    const qText = state.stage === 'col'
+        ? `${state.col.mArr.join('')}×${state.col.mult}`
+        : (state.q ? `${state.q.a}×${state.q.b}` : '');
+    const fb = $('feedback');
+    if (ok) {
+        state.streak++;
+        const gain = 10 + Math.min(state.streak, 5) * 2;
+        state.score += gain;
+        goodTone();
+        fb.className = 'feedback ok';
+        fb.innerHTML = `✅ 正确！ +${gain}分`;
+        confetti(400, 60);
+    } else {
+        state.streak = 0;
+        state.score = Math.max(0, state.score - 5);
+        state.mistakes++;
+        badTone();
+        fb.className = 'feedback bad';
+        fb.innerHTML = `❌ 正确答案是 <b>${rightText}</b>`;
+        recordWrong(qText, yourText, rightText);
+    }
+    if (state.mode === 'pk') {
+        afterPkAnswer(ok, yourText, rightText);
+        return;
+    }
+    if (state.stage === 'oral') state.oralGates.push(ok);
+    setTimeout(advance, ok ? 1100 : 2100);
+}
+
+function advance() {
+    if (state.mode === 'pk') return;
+    state.idx++;
+    if (state.idx >= STAGE_COUNTS[state.stage]) {
+        // 阶段完成
+        state.idx = 0;
+        const si = STAGE_ORDER.indexOf(state.stage);
+        if (si < STAGE_ORDER.length - 1) {
+            state.stage = STAGE_ORDER[si + 1];
+            state.oralGates = [];
+            startQuestion();
+            return;
+        }
+        // 城堡完成
+        castleDone();
+        return;
+    }
+    startQuestion();
+}
+
+function castleDone() {
+    const wrong = state.mistakes;
+    $('question').innerHTML = '';
+    $('oralArea').classList.add('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.add('hidden');
+    if (state.castle >= 3) { showFinalResult(); return; }
+    // 中间城堡：提示信息，点击继续
+    $('feedback').className = 'feedback ok';
+    $('feedback').innerHTML = `🏰 城堡${state.castle}攻破！错 ${wrong} 题`;
+    $('controls').innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'btn blue';
+    btn.textContent = `🏯 进攻城堡${state.castle + 1}`;
+    btn.onclick = () => {
+        state.castle++;
+        state.mistakes = 0;
+        state.stage = 'oral';
+        state.idx = 0;
+        state.oralGates = [];
+        $('castleNum').textContent = state.castle;
+        startQuestion();
+    };
+    $('controls').appendChild(btn);
+}
+
+/* ============ 双人PK ============ */
+function pkRender() {
+    const bar = $('pkbar');
+    bar.classList.remove('hidden');
+    bar.innerHTML = '';
+    const mk = (name, id) => {
+        const d = document.createElement('div');
+        d.className = 'pkplayer' + (id === state.pkTurn ? ' turn' : '');
+        let dots = '';
+        for (let i = 0; i < state.pkTotal; i++) dots += `<span class="dot${i < state.pkScore[id - 1] ? ' filled' : ''}"></span>`;
+        d.innerHTML = `<span>${name}</span><span class="dots">${dots}</span>`;
+        return d;
+    };
+    bar.appendChild(mk('🦁 玩家1', 1));
+    bar.appendChild(mk('🐯 玩家2', 2));
+    // 出题（口算）
+    state.q = genOral();
+    $('oralArea').classList.remove('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.add('hidden');
+    $('question').innerHTML = `<span style="color:#f39c12">🎮 轮到 ${state.pkTurn === 1 ? '玩家1🦁' : '玩家2🐯'}</span>　<span class="big-num">${state.q.a}</span> × <span class="big-num">${state.q.b}</span> = <span class="qtag">口算PK</span>`;
+    renderGates('gates');
+    const inp = $('oralInput');
+    inp.value = ''; inp.disabled = false; inp.focus();
+    inp.oninput = () => { inp.value = inp.value.replace(/[^0-9]/g, ''); };
+    inp.onkeydown = e => { if (e.key === 'Enter') submitPk(); };
+    $('controls').innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'btn green'; btn.textContent = '✓ 提交';
+    btn.onclick = submitPk;
+    $('controls').appendChild(btn);
+    $('timerFill').style.width = '100%';
+}
+
+function submitPk() {
+    if (state.answered) return;
+    const val = parseInt($('oralInput').value, 10);
+    if (isNaN(val)) { flash('请输入数字'); return; }
+    state.answered = true;
+    checkAnswer(val === state.q.a * state.q.b, String(val), String(state.q.a * state.q.b));
+}
+
+function afterPkAnswer(ok, yourText, rightText) {
+    const fb = $('feedback');
+    if (ok) {
+        state.pkScore[state.pkTurn - 1]++;
+        state.score += 10;
+        fb.className = 'feedback ok';
+        fb.innerHTML = `✅ ${state.pkTurn === 1 ? '玩家1🦁' : '玩家2🐯'} 答对！`;
+        if (state.pkScore[state.pkTurn - 1] >= state.pkTotal) {
+            showPkWin(state.pkTurn);
+            return;
+        }
+    } else {
+        fb.className = 'feedback bad';
+        fb.innerHTML = `❌ 答错了，正确答案 <b>${rightText}</b>，换对方`;
+        recordWrong(`${state.q.a}×${state.q.b}`, yourText, rightText);
+    }
+    state.pkTurn = state.pkTurn === 1 ? 2 : 1;
+    setTimeout(() => { state.answered = false; pkRender(); }, ok ? 900 : 1800);
+}
+
+function showPkWin(winner) {
+    state.answered = true;
+    clearTimer();
+    $('pkbar').classList.add('hidden');
+    $('oralArea').classList.add('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.add('hidden');
+    $('question').innerHTML = '';
+    $('feedback').className = 'feedback ok';
+    $('feedback').innerHTML = `🏆 ${winner === 1 ? '玩家1🦁' : '玩家2🐯'} 率先拿到 ${state.pkTotal} 分，PK 获胜！`;
+    $('controls').innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'btn green'; btn.textContent = '🔄 再战一局';
+    btn.onclick = startPk;
+    $('controls').appendChild(btn);
+    confetti(400, 60);
+    beep(784, 0.4);
+}
+
+function startPk() {
+    state.mode = 'pk';
+    state.pkTurn = 1;
+    state.pkScore = [0, 0];
+    state.score = 0;
+    state.streak = 0;
+    state.answered = false;
+    $('castleNum').textContent = 'PK';
+    hideOverlays();
+    pkRender();
+}
+
+/* ============ 结算 ============ */
+function showFinalResult() {
+    clearTimer();
+    $('pkbar').classList.add('hidden');
+    $('oralArea').classList.add('hidden');
+    $('estArea').classList.add('hidden');
+    $('colArea').classList.add('hidden');
+    $('question').innerHTML = '';
+    $('feedback').innerHTML = '';
+    $('controls').innerHTML = '';
+    const totalQ = 3 * (STAGE_COUNTS.oral + STAGE_COUNTS.col + STAGE_COUNTS.est);
+    const rightRate = Math.max(0, 1 - state.mistakes / totalQ);
+    let stars = rightRate >= 0.85 ? 3 : rightRate >= 0.6 ? 2 : rightRate >= 0.35 ? 1 : 0;
+    let txt = `攻下 3 座城堡，共 ${totalQ} 题，得分 ${state.score}，做错 ${state.mistakes} 题。`;
+    if (stars === 3) txt += ' 乘法大王就是你了！';
+    else if (stars === 2) txt += ' 很棒！再练练进位就更稳了。';
+    else if (stars === 1) txt += ' 城堡在等你，先看错题再战！';
+    else txt += ' 别灰心，把错题本里的题弄懂就好。';
+    $('resultTitle').textContent = stars >= 2 ? '🎉 城堡尽数攻破！' : '🏰 攻城结束';
+    let shtml = '';
+    for (let i = 0; i < 3; i++) shtml += `<span class="${i < stars ? '' : 'dim'}">⭐</span>`;
+    $('resultStars').innerHTML = shtml;
+    $('resultText').innerHTML = txt;
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    if (list.length) {
+        $('wrongBox').style.display = '';
+        $('wrongList').innerHTML = list.slice(0, 12).map((w, i) =>
+            `<div class="row">${i + 1}. ${w.q} —— 你答：<span class="y">${w.your}</span>，正确：<span class="a">${w.right}</span></div>`
+        ).join('');
+    } else $('wrongBox').style.display = 'none';
+    $('resultOverlay').style.display = 'flex';
+    beep(stars >= 2 ? 784 : 392, 0.4);
+}
+
+function recordWrong(q, your, right) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch (e) {}
+    list.unshift({ q, your, right });
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {}
+}
+
+function flash(msg) {
+    const fb = $('feedback');
+    fb.className = 'feedback bad';
+    fb.innerHTML = '💡 ' + msg;
+    setTimeout(() => { if (!state.answered) fb.innerHTML = ''; }, 1500);
+}
+
+/* ============ 开始 ============ */
+function hideOverlays() { $('menuOverlay').style.display = 'none'; $('resultOverlay').style.display = 'none'; }
+
+function startSolo() {
+    state.mode = 'solo';
+    state.startLv = state.startLv || 1;
+    state.castle = state.startLv;
+    state.stage = 'oral';
+    state.idx = 0;
+    state.mistakes = 0;
+    state.score = 0;
+    state.streak = 0;
+    state.oralGates = [];
+    state.wrongs = [];
+    state.answered = false;
+    $('castleNum').textContent = state.castle;
+    hideOverlays();
+    startQuestion();
+}
+
+/* 菜单 */
+function buildMenu() {
+    document.querySelectorAll('#modeRow .menu-btn').forEach(b => {
+        b.onclick = () => {
+            document.querySelectorAll('#modeRow .menu-btn').forEach(x => x.classList.remove('sel'));
+            b.classList.add('sel');
+            state.mode = b.dataset.mode;
+            if (state.mode === 'pk') { document.querySelectorAll('#lvRow .menu-btn').forEach(x => x.classList.add('hidden')); }
+            else { document.querySelectorAll('#lvRow .menu-btn').forEach(x => x.classList.remove('hidden')); }
+        };
+        if (b.dataset.mode === state.mode) b.classList.add('sel');
+    });
+    document.querySelectorAll('#lvRow .menu-btn').forEach(b => {
+        b.onclick = () => {
+            document.querySelectorAll('#lvRow .menu-btn').forEach(x => x.classList.remove('sel'));
+            b.classList.add('sel');
+            state.startLv = Number(b.dataset.lv);
+        };
+        if (Number(b.dataset.lv) === state.startLv) b.classList.add('sel');
+    });
+}
+
+$('startBtn').onclick = () => { if (state.mode === 'pk') startPk(); else startSolo(); };
+$('againBtn').onclick = () => { if (state.mode === 'pk') startPk(); else startSolo(); };
+$('homeBtn').onclick = () => { $('resultOverlay').style.display = 'none'; $('menuOverlay').style.display = 'flex'; buildMenu(); };
+$('menuBtn').onclick = () => { clearTimer(); $('menuOverlay').style.display = 'flex'; buildMenu(); };
+$('soundBtn').onclick = () => { soundOn = !soundOn; $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; };
+$('clearBtn').onclick = () => { localStorage.removeItem(STORE_KEY); alert('错题本已清空！'); };
+
+/* 初始化 */
+buildMenu();
+drawCastle('oral');
+</script>
+</body>
+</html>

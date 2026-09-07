@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>课堂宠物 · ClassPet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============ 进入课堂遮罩（首次音频解锁）============ -->
+  <div id="entry-overlay" class="overlay is-visible">
+    <div class="overlay-card">
+      <div class="overlay-pixel-art" aria-hidden="true"></div>
+      <h1 class="brand">CLASS<span class="brand-accent">PET</span></h1>
+      <p class="overlay-sub">课堂宠物养成系统</p>
+      <p class="overlay-hint">点击下方按钮进入课堂（默认账号 teacher / classpet123）</p>
+      <button id="enter-btn" class="btn btn-primary btn-xl">进入课堂 ▶</button>
+      <p class="overlay-foot">v0.2 · 糖果卡通 · 后端已接入</p>
+    </div>
+  </div>
+
+  <!-- ============ 升级全屏特效层 ============ -->
+  <div id="levelup-overlay" class="overlay">
+    <div class="levelup-content">
+      <span class="lu-sparkle">★</span>
+      <span class="lu-sparkle">♥</span>
+      <span class="lu-sparkle">✦</span>
+      <span class="lu-sparkle">★</span>
+      <span class="lu-sparkle">♥</span>
+      <div class="levelup-tag">LEVEL UP</div>
+      <div id="levelup-target" class="levelup-name">—</div>
+      <div id="levelup-level" class="levelup-num">LV.1</div>
+      <div id="levelup-stage" class="levelup-stage"></div>
+    </div>
+  </div>
+
+  <!-- ============ 顶部导航 ============ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark" aria-hidden="true">🐾</div>
+      <div class="logo-text">CLASS<span class="logo-accent">PET</span></div>
+      <span class="logo-tag">课堂宠物</span>
+    </div>
+    <div class="topbar-center">
+      <div class="stat-chip">
+        <span class="stat-label">班级</span>
+        <span id="stat-class" class="stat-value">三年二班</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-label">学生</span>
+        <span id="stat-count" class="stat-value">0</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-label">模式</span>
+        <span id="stat-mode" class="stat-value">待机</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="btn-display" class="btn btn-ghost" title="在新窗口打开展示屏（投屏用）">🖥 展示屏</button>
+      <button id="btn-reset" class="btn btn-ghost" title="重置示例数据">↺ 重置</button>
+    </div>
+  </header>
+
+  <!-- ============ 主体三栏 ============ -->
+  <main class="layout">
+
+    <!-- 左：学生列表 -->
+    <aside class="students" aria-label="学生列表">
+      <div class="students-head">
+        <h2 class="section-title">学生</h2>
+        <div class="students-toolbar">
+          <input id="search-input" class="search-input" type="search" placeholder="搜索姓名 / 学号" />
+        </div>
+      </div>
+      <div id="student-list" class="student-list" role="list">
+        <!-- 学生卡片由 JS 注入 -->
+      </div>
+      <div id="student-empty" class="empty-state is-hidden">
+        <div class="empty-pixel" aria-hidden="true"></div>
+        <p>没有匹配的学生</p>
+      </div>
+    </aside>
+
+    <!-- 中：宠物舞台 -->
+    <section class="stage" aria-label="宠物舞台">
+
+      <div class="stage-top">
+        <div class="stage-meta">
+          <span class="meta-label">当前展示</span>
+          <span id="stage-name" class="meta-name">—</span>
+        </div>
+        <div class="stage-score">
+          <span class="score-label">分数</span>
+          <span id="stage-score" class="score-num">0</span>
+        </div>
+        <div class="stage-level">
+          <span class="level-label">等级</span>
+          <span id="stage-level" class="level-num">LV.1</span>
+        </div>
+        <div class="stage-progress">
+          <span class="progress-label">距下一级</span>
+          <div class="progress-bar"><div id="stage-progress-fill" class="progress-fill"></div></div>
+          <span id="stage-progress-text" class="progress-text">0 / 5</span>
+        </div>
+      </div>
+
+      <div class="stage-canvas">
+        <div class="stage-bg" aria-hidden="true">
+          <div class="stage-grid"></div>
+          <div class="stage-floor"></div>
+          <div class="stage-sun"></div>
+        </div>
+        <div id="pet-host" class="pet-host">
+          <!-- 当前宠物 SVG 注入 -->
+        </div>
+        <div id="pet-nameplate" class="pet-nameplate">未选择学生</div>
+      </div>
+
+    </section>
+
+    <!-- 右：课堂控制 -->
+    <aside class="control" aria-label="课堂控制">
+
+      <div class="control-block">
+        <h2 class="section-title">课堂模式</h2>
+        <div class="mode-grid">
+          <button id="mode-standby" class="mode-card is-active" data-mode="standby">
+            <span class="mode-icon">🌙</span>
+            <span class="mode-name">待机</span>
+          </button>
+          <button id="mode-normal" class="mode-card" data-mode="normal">
+            <span class="mode-icon">📚</span>
+            <span class="mode-name">普通答题</span>
+          </button>
+          <button id="mode-quiz" class="mode-card" data-mode="quiz">
+            <span class="mode-icon">⚡</span>
+            <span class="mode-name">抢答</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <h2 class="section-title">题目</h2>
+        <div id="question-card" class="question-card">
+          <div class="question-empty">
+            <div class="empty-pixel sm" aria-hidden="true"></div>
+            <p>切换到「普通答题」或「抢答」后<br/>将随机抽取题目</p>
+          </div>
+        </div>
+        <div class="question-actions">
+          <button id="btn-next-question" class="btn btn-ghost btn-block" disabled>换一题</button>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <h2 class="section-title">倒计时</h2>
+        <div class="countdown-wrap">
+          <div id="countdown-ring" class="countdown-ring">
+            <svg viewBox="0 0 120 120" class="countdown-svg">
+              <circle class="cd-track" cx="60" cy="60" r="54" />
+              <circle id="cd-progress" class="cd-progress" cx="60" cy="60" r="54" />
+            </svg>
+            <div id="countdown-num" class="countdown-num">15</div>
+          </div>
+          <div class="countdown-actions">
+            <button id="btn-quiz-start" class="btn btn-primary btn-block" disabled>开始抢答 (15s)</button>
+            <button id="btn-quiz-stop" class="btn btn-ghost btn-block" disabled>停止</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <h2 class="section-title">快速加分</h2>
+        <p class="block-hint">先在左侧选中学生，再点加分</p>
+        <div class="quick-score">
+          <button id="btn-add-1" class="btn btn-score btn-score-1" disabled>+1</button>
+          <button id="btn-add-3" class="btn btn-score btn-score-3" disabled>+3</button>
+          <button id="btn-add-5" class="btn btn-score btn-score-5" disabled>+5</button>
+          <button id="btn-undo" class="btn btn-warn btn-block" disabled>↶ 撤销上次加分</button>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- ============ Toast 提示 ============ -->
+  <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+  <!-- ============ 脚本 ============ -->
+  <script src="js/common.js"></script>
+  <script src="js/pets.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
