@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🫧 凑十对对碰 - 一年级凑十法练习</title>
+<style>
+/* ===== 全局：糖果海洋风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(180deg, #a8edea 0%, #fed6e3 50%, #ffecd2 100%);
+    min-height: 100vh; color: #2c3e50;
+    user-select: none; -webkit-user-select: none; overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶部 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; letter-spacing: 2px;
+    color: #e84393; text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(232,67,147,.15); }
+.statbar { display: flex; gap: 10px; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+.pill b { color: #e84393; font-size: 1.25em; }
+.pill.time b { color: #0984e3; }
+.pill.combo b { color: #e17055; }
+
+/* ===== 主区 ===== */
+.main { position: relative; height: calc(100vh - 130px); margin: 0 22px; }
+
+/* ===== 泡泡模式 ===== */
+#bubbleField { position: absolute; inset: 0; overflow: hidden; border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.15)); }
+.bubble { position: absolute; width: var(--sz); height: var(--sz); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: calc(var(--sz) * .38); font-weight: 900; color: #fff;
+    text-shadow: 1px 2px 3px rgba(0,0,0,.25);
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 8%, transparent 26%), var(--bg);
+    box-shadow: inset -6px -10px 18px rgba(0,0,0,.12), 0 8px 20px rgba(0,0,0,.12);
+    cursor: pointer; animation: bob 3.2s ease-in-out infinite; transition: transform .15s;
+}
+.bubble:hover { transform: scale(1.08); }
+.bubble.sel { animation: none; transform: scale(1.15); outline: 5px dashed #fff; outline-offset: -8px;
+    filter: brightness(1.15) saturate(1.3); }
+.bubble.pop { animation: popOut .45s forwards; pointer-events: none; }
+.bubble.wrong { animation: wob .4s; }
+@keyframes bob { 50% { translate: 0 -16px; } }
+@keyframes popOut { 40% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+@keyframes wob { 25% { translate: -8px 0; } 50% { translate: 8px 0; } 75% { translate: -5px 0; } }
+
+/* ===== 翻牌模式 ===== */
+#memGrid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr); gap: clamp(8px, 1.2vw, 16px); padding: 12px; }
+.card3d { perspective: 700px; cursor: pointer; }
+.cardinner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+    transition: transform .45s cubic-bezier(.2,.8,.3,1.1); }
+.card3d.flip .cardinner { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center; font-weight: 900; }
+.face.front { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: rgba(255,255,255,.85);
+    font-size: clamp(28px,3vw,44px); box-shadow: 0 5px 0 #f8a5c2; }
+.face.front span { text-shadow: 2px 2px 0 rgba(255,255,255,.4); }
+.face.back { transform: rotateY(180deg); background: #fff; color: var(--c,#e84393);
+    font-size: clamp(34px,4vw,58px); box-shadow: 0 5px 0 rgba(0,0,0,.1); }
+.card3d.match .face.back { background: var(--c); color: #fff; animation: matchJ .5s; }
+@keyframes matchJ { 40% { transform: rotateY(180deg) scale(1.14); } }
+
+/* ===== 连击模式 ===== */
+#comboZone { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: clamp(14px, 3vh, 30px); }
+.comboCards { display: flex; gap: clamp(14px, 2.5vw, 34px); }
+.ccard { width: clamp(110px, 13vw, 170px); height: clamp(140px, 16vw, 210px); border-radius: 22px;
+    background: var(--bg); display: flex; align-items: center; justify-content: center;
+    font-size: clamp(48px, 6vw, 84px); font-weight: 900; color: #fff; text-shadow: 2px 3px 5px rgba(0,0,0,.25);
+    box-shadow: 0 8px 0 rgba(0,0,0,.16), inset 0 -12px 22px rgba(0,0,0,.1);
+    cursor: pointer; transition: transform .12s; animation: cardIn .4s backwards; }
+.ccard:nth-child(2) { animation-delay: .06s; } .ccard:nth-child(3) { animation-delay: .12s; } .ccard:nth-child(4) { animation-delay: .18s; }
+@keyframes cardIn { from { transform: translateY(40px) scale(.6); opacity: 0; } }
+.ccard:hover { transform: translateY(-6px) rotate(-1deg); }
+.ccard.sel { transform: scale(1.1); outline: 6px solid #fff; }
+.ccard.bye { animation: byeBye .5s forwards; pointer-events: none; }
+.ccard.wrong { animation: wob2 .4s; }
+@keyframes byeBye { 40% { transform: scale(1.25) rotate(6deg); } 100% { transform: scale(0) rotate(30deg); opacity: 0; } }
+@keyframes wob2 { 25% { translate: -10px 0; } 50% { translate: 10px 0; } 75% { translate: -6px 0; } }
+.comboTip { font-size: clamp(17px, 1.9vw, 24px); font-weight: 800; color: #6c5ce7;
+    background: rgba(255,255,255,.8); padding: 10px 26px; border-radius: 30px; }
+
+/* ===== 反馈大字 ===== */
+#bigMsg { position: fixed; left: 50%; top: 38%; transform: translate(-50%,-50%) scale(0);
+    font-size: clamp(40px, 6vw, 80px); font-weight: 900; z-index: 40; pointer-events: none;
+    text-shadow: 3px 3px 0 #fff; transition: transform .25s cubic-bezier(.2,1.6,.4,1); }
+#bigMsg.show { transform: translate(-50%,-50%) scale(1); }
+#bigMsg.good { color: #00b894; } #bigMsg.bad { color: #e17055; }
+
+/* ===== 首页模式选择 ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px; background: linear-gradient(180deg,#a8edea,#fed6e3); }
+#homeScreen h1 { font-size: clamp(34px, 5vw, 62px); font-weight: 900; color: #e84393;
+    text-shadow: 3px 3px 0 #fff; letter-spacing: 4px; }
+#homeScreen p.sub { font-size: clamp(16px,2vw,24px); color: #6c5ce7; font-weight: 800; letter-spacing: 2px; }
+.modes { display: flex; gap: 20px; }
+.modecard { width: clamp(180px, 21vw, 280px); padding: 26px 18px; border-radius: 26px; background: #fff;
+    box-shadow: 0 8px 0 rgba(0,0,0,.1); text-align: center; cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-8px) rotate(-1deg); }
+.modecard .ic { font-size: 54px; }
+.modecard h3 { font-size: clamp(19px,2vw,25px); margin: 12px 0 6px; color: var(--c); }
+.modecard p { font-size: 14px; color: #95a5a6; line-height: 1.5; }
+.mrow2 { display: flex; align-items: center; gap: 12px; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #6c5ce7; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+
+/* ===== 结算弹窗 / 撒花 / Toast ===== */
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.5); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 34px 44px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.25); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 64px; }
+.panel h2 { font-size: 30px; color: #2c3e50; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 17px; margin-bottom: 20px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.bigbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; transition: all .15s; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.pink { background: #e84393; } .bigbtn.gray { background: #b2bec3; }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+#toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(44,62,80,.92);
+    color: #fff; padding: 11px 24px; border-radius: 24px; font-size: 15px; z-index: 80; opacity: 0; transition: all .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- 模式选择首页 -->
+<div id="homeScreen">
+    <h1>🫧 凑十对对碰</h1>
+    <p class="sub">两个好朋友，合起来是 10 ！</p>
+    <div class="modes">
+        <div class="modecard" data-mode="bubble" style="--c:#0984e3">
+            <div class="ic">🫧</div><h3>泡泡碰碰</h3><p>点两个泡泡<br>让它们凑成 10</p>
+        </div>
+        <div class="modecard" data-mode="memory" style="--c:#00b894">
+            <div class="ic">🃏</div><h3>翻牌配对</h3><p>翻开卡片<br>找出所有凑十朋友</p>
+        </div>
+        <div class="modecard" data-mode="combo" style="--c:#e17055">
+            <div class="ic">⚡</div><h3>闪电连击</h3><p>四张牌里找一对<br>连击拿高分</p>
+        </div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top">
+        <h1 id="title"></h1>
+        <div class="statbar">
+            <div class="pill combo">连击 <b id="comboN">0</b></div>
+            <div class="pill">得分 <b id="scoreN">0</b></div>
+            <div class="pill time hidden" id="timePill">⏱ <b id="timeN">60</b>秒</div>
+        </div>
+    </div>
+    <div class="main">
+        <div id="bubbleField" class="hidden"></div>
+        <div id="memGrid" class="hidden"></div>
+        <div id="comboZone" class="hidden">
+            <div class="comboCards" id="comboCards"></div>
+            <div class="comboTip" id="comboTip">点两张和为 10 的牌，凑满 10 对获胜！</div>
+        </div>
+    </div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选玩法</button>
+<div id="bigMsg"></div>
+<div id="toast"></div>
+
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel">
+        <div class="big" id="rEmoji">🎉</div>
+        <h2 id="rTitle"></h2>
+        <p id="rSub"></p>
+        <div class="pbtns">
+            <button class="bigbtn pink" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换个玩法</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sPop = () => { beep(500, .07, 'triangle'); setTimeout(() => beep(900, .1, 'triangle'), 60); };
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(600, .05);
+
+/* ============ 通用反馈 ============ */
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
+let bigT = 0;
+function bigMsg(txt, good) { const b = $('bigMsg'); b.textContent = txt;
+    b.className = good ? 'good' : 'bad'; b.classList.add('show');
+    clearTimeout(bigT); bigT = setTimeout(() => b.classList.remove('show'), 750); }
+function confetti(n = 60) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's';
+        c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 全局状态 ============ */
+let mode = null, score = 0, combo = 0, bestCombo = 0, pairsMade = 0;
+const BUB_COLORS = ['#ff6b81', '#feca57', '#48dbfb', '#1dd1a1', '#a55eea', '#ff9f43', '#54a0ff', '#ff6348'];
+
+function setScore(d) { score += d; $('scoreN').textContent = score; }
+function setCombo(d) { combo = Math.max(0, combo + d); bestCombo = Math.max(bestCombo, combo); $('comboN').textContent = combo; }
+function showResult(emoji, title, sub) { $('rEmoji').textContent = emoji; $('rTitle').textContent = title;
+    $('rSub').textContent = sub; $('resultOverlay').classList.remove('hidden'); confetti(70); sWin(); }
+
+/* ============ 模式一：泡泡碰碰 ============ */
+let bubbles = [], selBubble = null, timeLeft = 0, timerId = 0;
+function startBubble() {
+    mode = 'bubble'; resetStats();
+    $('title').textContent = '🫧 泡泡碰碰'; $('timePill').classList.remove('hidden');
+    bubbles = []; selBubble = null; $('bubbleField').innerHTML = '';
+    for (let i = 0; i < 8; i++) addBubble();
+    timeLeft = 60; $('timeN').textContent = timeLeft;
+    clearInterval(timerId);
+    timerId = setInterval(() => { timeLeft--; $('timeN').textContent = timeLeft;
+        if (timeLeft <= 0) { clearInterval(timerId); endBubble(); } }, 1000);
+}
+function addBubble(num) {
+    // 保证场上始终至少一对能凑十：每补两个时插入一对
+    const f = $('bubbleField');
+    const n = num !== undefined ? num : randInt(0, 10);
+    const sz = randInt(78, 118);
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    el.style.setProperty('--sz', sz + 'px');
+    el.style.setProperty('--bg', `radial-gradient(circle at 35% 30%, ${pick(BUB_COLORS)}, ${pick(BUB_COLORS)} 120%)`);
+    el.style.left = randInt(2, 82) + '%';
+    el.style.top = randInt(8, 78) + '%';
+    el.style.animationDuration = (2.4 + Math.random() * 2) + 's';
+    el.style.animationDelay = (Math.random() * 2) + 's';
+    el.textContent = n;
+    el.onclick = () => tapBubble(el, n);
+    f.appendChild(el);
+    bubbles.push({ el, n });
+}
+function ensurePair() { // 场上凑不成十时补一对（不同的两个泡泡能凑十才算有解）
+    const has = bubbles.some((x, i) => bubbles.some((y, j) => i !== j && x.n + y.n === 10));
+    if (!has) { const a = randInt(1, 9); const b = 10 - a; addBubble(a); addBubble(b); }
+}
+function tapBubble(el, n) {
+    if (mode !== 'bubble' || el.classList.contains('pop')) return;
+    if (!selBubble) { selBubble = { el, n }; el.classList.add('sel'); sClick(); return; }
+    if (selBubble.el === el) { el.classList.remove('sel'); selBubble = null; sClick(); return; }
+    const a = selBubble;
+    if (a.n + n === 10) {   // 碰对啦
+        el.classList.remove('sel'); a.el.classList.remove('sel');
+        el.classList.add('pop'); a.el.classList.add('pop');
+        bubbles = bubbles.filter(b => b.el !== el && b.el !== a.el);
+        setScore(10); setCombo(1); pairsMade++; sPop(); bigMsg(pick(['凑十成功！', '太棒了！', '10 来啦！']), true);
+        setTimeout(() => { el.remove(); a.el.remove();
+            addBubble(); setTimeout(() => { addBubble(); ensurePair(); }, 350); }, 420);
+        selBubble = null;
+    } else {                // 碰错了
+        el.classList.add('wrong'); a.el.classList.add('wrong');
+        sBad(); setCombo(-combo); bigMsg(`${a.n}+${n}=${a.n + n}，不是 10 哦`, false);
+        setTimeout(() => { el.classList.remove('wrong', 'sel'); a.el.classList.remove('wrong', 'sel'); }, 420);
+        selBubble = null;
+    }
+}
+function endBubble() {
+    showResult('🌟', `时间到！凑出 ${pairsMade} 对`, `最高连击 ${bestCombo} 次 · 得分 ${score} 分`);
+}
+
+/* ============ 模式二：翻牌配对 ============ */
+let memLock = false, memFirst = null, memFlips = 0, memMatched = 0;
+function startMemory() {
+    mode = 'memory'; resetStats();
+    $('title').textContent = '🃏 翻牌配对'; $('timePill').classList.add('hidden');
+    memLock = false; memFirst = null; memFlips = 0; memMatched = 0;
+    const deck = shuffle([1, 9, 2, 8, 3, 7, 4, 6, 5, 5, 6, 4, 7, 3, 8, 2]);
+    const g = $('memGrid'); g.innerHTML = '';
+    deck.forEach((n, i) => {
+        const c = document.createElement('div');
+        c.className = 'card3d';
+        c.innerHTML = `<div class="cardinner">
+            <div class="face front"><span>❓</span></div>
+            <div class="face back" style="--c:${BUB_COLORS[i % 8]}">${n}</div></div>`;
+        c.onclick = () => flipCard(c, n);
+        g.appendChild(c);
+    });
+}
+function flipCard(c, n) {
+    if (mode !== 'memory' || memLock || c.classList.contains('flip')) return;
+    c.classList.add('flip'); sClick();
+    if (!memFirst) { memFirst = { c, n }; return; }
+    memFlips++;
+    const a = memFirst; memFirst = null;
+    if (a.n + n === 10) {
+        memLock = true;
+        setTimeout(() => { c.classList.add('match'); a.c.classList.add('match');
+            sGood(); setCombo(1); setScore(10); pairsMade++; memMatched++;
+            bigMsg(`${a.n} + ${n} = 10 ✓`, true);
+            memLock = false;
+            if (memMatched === 8) showResult('🏆', '全部配对成功！', `共翻牌 ${memFlips} 次${memFlips <= 12 ? ' · 记忆力超强！' : ''}`);
+        }, 380);
+    } else {
+        memLock = true; setCombo(-combo);
+        setTimeout(() => { c.classList.remove('flip'); a.c.classList.remove('flip'); sBad(); memLock = false; }, 750);
+    }
+}
+
+/* ============ 模式三：闪电连击 ============ */
+let czFirst = null, czPairCount = 0;
+function czGen() {  // 生成4张牌：恰好一对凑十 + 2张互不凑十的干扰牌
+    const a = randInt(1, 9), b = 10 - a;
+    const pool = [];
+    for (let x = 0; x <= 10; x++) if (x !== a && x !== b) pool.push(x);
+    const sh = shuffle(pool);
+    const d1 = sh[0];
+    const d2 = sh.find(x => x !== d1 && x + d1 !== 10);
+    return shuffle([a, b, d1, d2]);
+}
+function czRender() {
+    const cards = shuffle(czGen());
+    const box = $('comboCards'); box.innerHTML = '';
+    cards.forEach((n, i) => {
+        const c = document.createElement('div');
+        c.className = 'ccard';
+        c.style.setProperty('--bg', `linear-gradient(160deg, ${pick(BUB_COLORS)}, ${pick(BUB_COLORS)})`);
+        c.textContent = n;
+        c.onclick = () => tapCZ(c, n);
+        box.appendChild(c);
+    });
+    czFirst = null;
+}
+function tapCZ(c, n) {
+    if (mode !== 'combo' || c.classList.contains('bye')) return;
+    if (!czFirst) { czFirst = { c, n }; c.classList.add('sel'); sClick(); return; }
+    if (czFirst.c === c) { c.classList.remove('sel'); czFirst = null; sClick(); return; }
+    const a = czFirst; czFirst = null;
+    if (a.n + n === 10) {
+        c.classList.remove('sel'); a.c.classList.remove('sel');
+        c.classList.add('bye'); a.c.classList.add('bye');
+        sPop(); setScore(10 + combo * 2); setCombo(1); pairsMade++; czPairCount++;
+        bigMsg(combo >= 3 ? `${combo} 连击！🔥` : '凑十！', true);
+        if (czPairCount % 3 === 0) confetti(24);
+        if (czPairCount >= 10) { setTimeout(() => showResult('⚡', '闪电大师！10 对达成', `最高连击 ${bestCombo} · 得分 ${score}`), 500); return; }
+        setTimeout(() => { c.remove(); a.c.remove(); czRender(); }, 460);
+    } else {
+        c.classList.add('wrong'); a.c.classList.add('wrong'); a.c.classList.remove('sel');
+        sBad(); setCombo(-combo); bigMsg(`${a.n}+${n}=${a.n + n}，再找找`, false);
+        setTimeout(() => { c.classList.remove('wrong'); a.c.classList.remove('wrong'); }, 420);
+    }
+}
+function startCombo() {
+    mode = 'combo'; resetStats(); czPairCount = 0;
+    $('title').textContent = '⚡ 闪电连击'; $('timePill').classList.add('hidden');
+    czRender();
+}
+
+/* ============ 流程控制 ============ */
+function resetStats() { score = 0; combo = 0; bestCombo = 0; pairsMade = 0;
+    $('scoreN').textContent = 0; $('comboN').textContent = 0; }
+function enterMode(m) {
+    sClick();
+    ['bubbleField', 'memGrid', 'comboZone'].forEach(id => $(id).classList.add('hidden'));
+    $('homeScreen').classList.add('hidden');
+    $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden');
+    clearInterval(timerId);
+    if (m === 'bubble') { $('bubbleField').classList.remove('hidden'); startBubble(); }
+    if (m === 'memory') { $('memGrid').classList.remove('hidden'); startMemory(); }
+    if (m === 'combo') { $('comboZone').classList.remove('hidden'); startCombo(); }
+}
+function goHome() {
+    mode = null; clearInterval(timerId);
+    ['bubbleField', 'memGrid', 'comboZone'].forEach(id => $(id).classList.add('hidden'));
+    $('homeScreen').classList.remove('hidden');
+    $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden');
+    $('timePill').classList.add('hidden');
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); enterMode(mode); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>

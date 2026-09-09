@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚖️ 数字天平 - 一年级比大小</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(180deg, #ffefba 0%, #ffffff 55%, #d4fc79 100%);
+    min-height: 100vh; color: #2c3e50; user-select: none; -webkit-user-select: none; overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; color: #e67e22; text-shadow: 2px 2px 0 #fff; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.pill b { color: #e84393; font-size: 1.25em; }
+
+.qbar { margin: 0 22px; background: #fff; border-radius: 22px; border: 4px solid #ffeaa7;
+    padding: 12px 26px; text-align: center; font-size: clamp(19px, 2.2vw, 30px); font-weight: 800;
+    box-shadow: 0 6px 0 rgba(0,0,0,.06); }
+.qbar .hl { color: #0984e3; }
+
+/* ===== 天平 ===== */
+.scalewrap { position: relative; height: clamp(280px, 40vh, 380px); margin: 10px auto 0; width: min(92%, 900px); }
+.base { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 46px solid transparent; border-right: 46px solid transparent;
+    border-bottom: 58px solid #e17055; filter: drop-shadow(0 4px 0 #d63031); }
+.base::after { content: ''; position: absolute; left: -78px; bottom: -18px; width: 156px; height: 20px;
+    background: #d63031; border-radius: 10px; }
+.pivot { position: absolute; left: 50%; bottom: 54px; transform: translateX(-50%); width: 18px; height: 18px;
+    background: #2d3436; border-radius: 50%; z-index: 3; }
+.beam { position: absolute; left: 6%; right: 6%; bottom: 66px; height: 14px; background: #2d3436;
+    border-radius: 8px; transform: rotate(var(--tilt, 0deg)); transition: transform .9s cubic-bezier(.34,1.4,.5,1); z-index: 2; }
+.stringL, .stringR { position: absolute; bottom: 0; width: 3px; height: var(--sl, 46px);
+    background: #636e72; transition: height .9s cubic-bezier(.34,1.4,.5,1); }
+.plate { position: absolute; bottom: 0; width: 34%; transform: translateY(var(--dy, 0px));
+    transition: transform .9s cubic-bezier(.34,1.4,.5,1); }
+.plate .dish { width: 100%; height: 26px; background: linear-gradient(180deg, #74b9ff, #0984e3);
+    border-radius: 0 0 60px 60px / 0 0 34px 34px; box-shadow: 0 5px 0 rgba(0,0,0,.15); }
+.plate .load { display: flex; justify-content: center; gap: 4px; padding: 0 8px 4px; }
+.plate .items { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.plate .items .row { display: flex; gap: 4px; font-size: clamp(24px, 3.4vh, 34px); line-height: 1.1; }
+.plate .numcard { background: #fff; border-radius: 18px; border: 4px solid var(--c, #0984e3);
+    padding: 10px 26px; font-size: clamp(40px, 6.4vh, 62px); font-weight: 900; color: #2d3436;
+    box-shadow: 0 6px 0 rgba(0,0,0,.12); margin-bottom: 6px; }
+
+/* ===== 数位揭秘 ===== */
+#reveal { display: flex; justify-content: center; gap: clamp(20px, 5vw, 80px); margin-top: 6px; }
+.rvSide { text-align: center; }
+.rvSide .rvTitle { font-size: clamp(22px, 3vh, 30px); font-weight: 900; margin-bottom: 6px; }
+.rvBundles { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 300px; }
+.bundle { width: 34px; height: 44px; background: repeating-linear-gradient(90deg, #e17055 0 4px, #d63031 4px 8px);
+    border: 2px solid #b2bec3; border-radius: 5px; position: relative; }
+.bundle::after { content: '10'; position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: #fff; font-size: 13px; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.dot { width: 16px; height: 16px; border-radius: 50%; background: #00b894; }
+.rvNote { margin-top: 6px; font-size: clamp(15px, 2vh, 19px); font-weight: 800; color: #636e72; }
+.rvNote b { color: #d63031; }
+
+/* ===== 符号按钮 ===== */
+.symRow { display: flex; justify-content: center; gap: clamp(18px, 4vw, 56px); margin-top: clamp(8px, 2vh, 18px); }
+.symb { width: clamp(92px, 11vw, 130px); height: clamp(74px, 9vh, 100px); border-radius: 22px;
+    font-size: clamp(44px, 5.6vw, 64px); font-weight: 900; color: #fff; background: linear-gradient(180deg, #a29bfe, #6c5ce7);
+    box-shadow: 0 6px 0 #4834b3; transition: all .12s; }
+.symb:hover { transform: translateY(-4px); }
+.symb:active { transform: scale(.93); }
+.symb.right { background: linear-gradient(180deg, #55efc4, #00b894); box-shadow: 0 6px 0 #008263; animation: opop .4s; }
+.symb.wrong { background: linear-gradient(180deg, #ff9d9d, #ff7675); box-shadow: 0 6px 0 #c0392b; animation: owob .4s; }
+@keyframes opop { 40% { transform: scale(1.15); } }
+@keyframes owob { 25% { translate: -9px 0; } 50% { translate: 9px 0; } }
+
+/* ===== 首页/反馈/弹窗 ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px; background: linear-gradient(180deg,#ffefba,#d4fc79); }
+#homeScreen h1 { font-size: clamp(34px, 5vw, 60px); font-weight: 900; color: #e67e22; text-shadow: 3px 3px 0 #fff; }
+#homeScreen .sub { font-size: clamp(15px, 2vw, 22px); color: #27ae60; font-weight: 800; }
+.modes { display: flex; gap: 20px; }
+.modecard { background: #fff; border-radius: 24px; padding: 26px 20px; text-align: center; width: clamp(190px, 22vw, 270px);
+    box-shadow: 0 7px 0 rgba(0,0,0,.12); cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-8px); }
+.modecard .ic { font-size: 52px; } .modecard h3 { font-size: clamp(18px,2vw,24px); margin: 10px 0 6px; color: var(--c); }
+.modecard p { font-size: 14px; color: #95a5a6; line-height: 1.5; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #e67e22; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.feedback { text-align: center; margin-top: 10px; min-height: 40px; font-size: 25px; font-weight: 900; }
+.feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.5); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 42px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.25); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin-bottom: 18px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.bigbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.orange { background: #e67e22; } .bigbtn.gray { background: #b2bec3; }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="homeScreen">
+    <h1>⚖️ 数字天平</h1>
+    <div class="sub">谁重谁轻？一比就知道！</div>
+    <div class="modes">
+        <div class="modecard" data-mode="block" style="--c:#00b894"><div class="ic">🍎</div><h3>物块天平</h3><p>数一数 比多少<br>先看实物再选符号</p></div>
+        <div class="modecard" data-mode="num" style="--c:#0984e3"><div class="ic">🔢</div><h3>数字天平</h3><p>两位数比大小<br>看天平哪边沉</p></div>
+        <div class="modecard" data-mode="place" style="--c:#e17055"><div class="ic">🔍</div><h3>数位揭秘</h3><p>57 和 75 谁大？<br>拆开十位看一看</p></div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top"><h1 id="title"></h1><div class="pill">得分 <b id="scoreN">0</b></div></div>
+    <div class="qbar hidden" id="qbar"></div>
+    <div class="scalewrap" id="scalewrap">
+        <div class="beam" id="beam"></div>
+        <div class="plate" id="plateL" style="left:3%"><div class="load" id="loadL"></div><div class="dish"></div></div>
+        <div class="plate" id="plateR" style="right:3%"><div class="load" id="loadR"></div><div class="dish"></div></div>
+        <div class="pivot"></div><div class="base"></div>
+    </div>
+    <div id="reveal" class="hidden"></div>
+    <div class="symRow" id="symRow">
+        <button class="symb" data-s=">">&gt;</button>
+        <button class="symb" data-s="=">=</button>
+        <button class="symb" data-s="<">&lt;</button>
+    </div>
+    <div class="feedback" id="fb"></div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选玩法</button>
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="bigbtn orange" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换个玩法</button></div></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(600, .05);
+const sTilt = () => { beep(220, .3, 'triangle', .12); setTimeout(() => beep(160, .4, 'triangle', .1), 200); };
+function fb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback ' + (good ? 'good' : 'bad'); }
+function confetti(n = 50) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 状态 ============ */
+let mode = null, score = 0, round = 0, ROUND_MAX = 8;
+let curL = 0, curR = 0, curSym = '=', locked = false;
+const ITEM_POOL = ['🍓', '🍎', '🍭', '⭐', '🌻', '🍩'];
+
+function setTilt(sym) {   // 让重的那边沉下去：左大 → 左沉（负角度）
+    const deg = sym === '>' ? -7 : sym === '<' ? 7 : 0;
+    const dy = sym === '>' ? -18 : sym === '<' ? 18 : 0;   // 左沉=左盘抬高? 不：左沉=左盘下移
+    $('beam').style.setProperty('--tilt', deg + 'deg');
+    $('plateL').style.setProperty('--dy', (sym === '>' ? 20 : sym === '<' ? -8 : 0) + 'px');
+    $('plateR').style.setProperty('--dy', (sym === '<' ? 20 : sym === '>' ? -8 : 0) + 'px');
+    if (sym !== '=') sTilt();
+}
+
+function renderLoad() {
+    const LL = $('loadL'), LR = $('loadR');
+    LL.innerHTML = ''; LR.innerHTML = '';
+    if (mode === 'block') {
+        const it = curItem;
+        const mk = (n) => { const box = document.createElement('div'); box.className = 'items';
+            const per = 5;
+            for (let r = 0; r < Math.ceil(n / per); r++) {
+                const row = document.createElement('div'); row.className = 'row';
+                for (let i = 0; i < Math.min(per, n - r * per); i++) row.textContent += it;
+                box.appendChild(row);
+            } return box; };
+        LL.appendChild(mk(curL)); LR.appendChild(mk(curR));
+    } else {
+        LL.innerHTML = `<div class="numcard">${curL}</div>`;
+        LR.innerHTML = `<div class="numcard" style="--c:#e84393">${curR}</div>`;
+    }
+}
+let curItem = '🍓';
+
+/* ============ 出题 ============ */
+function newQ() {
+    locked = false; fb('', '');
+    $('reveal').classList.add('hidden');
+    setTilt('=');
+    if (mode === 'block') {
+        curItem = pick(ITEM_POOL);
+        do { curL = randInt(0, 9); curR = randInt(0, 9); } while (curL === curR && Math.random() < 0.85);
+        curSym = curL > curR ? '>' : curL < curR ? '<' : '=';
+        $('qbar').classList.remove('hidden');
+        $('qbar').innerHTML = `左边和右边，谁多谁少？选出正确的符号！`;
+    } else if (mode === 'num') {
+        if (Math.random() < 0.15) { curL = randInt(10, 99); curR = curL; }
+        else { do { curL = randInt(10, 99); curR = randInt(10, 99); } while (curL === curR); }
+        curSym = curL > curR ? '>' : curL < curR ? '<' : '=';
+        $('qbar').classList.remove('hidden');
+        $('qbar').innerHTML = `哪个数大？<span class="hl">大口朝大数</span>，选出符号！`;
+    } else {   // place 数位揭秘
+        const tricky = [[57,75],[42,24],[36,63],[48,84],[19,91],[29,92],[38,83],[46,64],[58,85],[67,76],[39,93],[89,98],[99,100],[100,99],[45,54],[26,62]];
+        [curL, curR] = pick(tricky);
+        curSym = curL > curR ? '>' : curL < curR ? '<' : '=';
+        $('qbar').classList.remove('hidden');
+        $('qbar').innerHTML = `这两个数很容易看错！选完符号，<span class="hl">拆开数位</span>看一看～`;
+    }
+    renderLoad();
+}
+function showReveal() {   // 数位揭秘：十位捆 + 个位点
+    const rv = $('reveal');
+    const side = (n, color) => {
+        const tens = Math.floor(n / 10), ones = n % 10;
+        let bundles = '';
+        for (let i = 0; i < tens; i++) bundles += '<div class="bundle"></div>';
+        let dots = '';
+        for (let i = 0; i < ones; i++) dots += '<div class="dot"></div>';
+        return `<div class="rvSide"><div class="rvTitle" style="color:${color}">${n}</div>
+            <div class="rvBundles">${bundles}</div><div class="rvBundles">${dots}</div>
+            <div class="rvNote">${tens} 个十 和 ${ones} 个一</div></div>`;
+    };
+    const tl = Math.floor(curL / 10), tr = Math.floor(curR / 10);
+    const note = tl === tr ? `十位一样多，再看个位！` : `<b>${Math.max(tl, tr)} 个十</b> 比 ${Math.min(tl, tr)} 个十 多，十位大的数就大！`;
+    rv.innerHTML = side(curL, '#0984e3') + `<div style="align-self:center;font-size:30px;font-weight:900;color:#636e72">VS</div>` + side(curR, '#e84393') +
+        `<div style="align-self:center;max-width:280px" class="rvNote">${note}</div>`;
+    rv.classList.remove('hidden');
+}
+
+/* ============ 答题 ============ */
+document.querySelectorAll('.symb').forEach(b => {
+    b.onclick = () => {
+        if (locked || mode === null) return;
+        if (b.dataset.s === curSym) {   // 答对
+            locked = true;
+            b.classList.add('right');
+            setTilt(curSym);
+            sGood(); score += 10; $('scoreN').textContent = score;
+            if (mode === 'place') showReveal();
+            fb(curL + ' ' + curSym + ' ' + curR + (mode === 'place' ? '，看懂了吗？' : '，答对啦！'), true);
+            confetti(14);
+            round++;
+            if (round >= ROUND_MAX) { setTimeout(() => showResult(), 1200); }
+            else setTimeout(newQ, mode === 'place' ? 3600 : 1700);
+        } else {                        // 答错：天平演示真相，允许再选
+            b.classList.add('wrong');
+            sBad();
+            setTilt(curSym);
+            if (mode === 'place') showReveal();
+            fb('看看天平！重的那边沉下去了，再选一次～', false);
+            setTimeout(() => b.classList.remove('wrong'), 600);
+        }
+    };
+});
+function showResult() {
+    $('rEmoji').textContent = '⚖️'; $('rTitle').textContent = '比较小能手！';
+    $('rSub').textContent = `得分 ${score} 分`;
+    $('resultOverlay').classList.remove('hidden'); confetti(70); sWin(); round = 0;
+}
+
+/* ============ 流程 ============ */
+const TITLES = { block: '🍎 物块天平', num: '🔢 数字天平', place: '🔍 数位揭秘' };
+function enterMode(m) {
+    sClick(); mode = m; score = 0; round = 0; $('scoreN').textContent = 0;
+    $('homeScreen').classList.add('hidden'); $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden');
+    $('title').textContent = TITLES[m];
+    newQ();
+}
+function goHome() {
+    mode = null;
+    $('homeScreen').classList.remove('hidden'); $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden'); $('qbar').classList.add('hidden');
+    $('reveal').classList.add('hidden');
+    setTilt('=');
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); enterMode(mode); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 欢乐购物街 - 一年级认识人民币</title>
+<style>
+/* ===== 全局：糖果商店街风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(180deg, #fff1eb 0%, #ace0f9 100%);
+    min-height: 100vh; color: #2c3e50; user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶部 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; color: #e67e22;
+    text-shadow: 2px 2px 0 #fff; letter-spacing: 2px; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.08); }
+.pill b { color: #e84393; font-size: 1.25em; }
+
+/* ===== 题干条 ===== */
+.qbar { margin: 0 22px; background: #fff; border-radius: 22px; border: 4px solid #ffeaa7;
+    padding: 16px 26px; text-align: center; font-size: clamp(19px, 2.2vw, 30px); font-weight: 800;
+    color: #2d3436; box-shadow: 0 5px 0 rgba(0,0,0,.06); }
+.qbar .hl { color: #e84393; font-size: 1.15em; }
+
+/* ===== 通用面板 ===== */
+.stage { margin: 16px 22px 0; background: rgba(255,255,255,.55); border-radius: 26px;
+    min-height: calc(100vh - 250px); padding: 18px; }
+
+/* ===== 认钱模式 ===== */
+#recMoneyBox { display: flex; justify-content: center; margin: 12px 0 22px; }
+#recMoneyBox .m { transform: scale(1.6); transform-origin: center; margin: 30px 0; }
+.opts4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+.optbtn { min-height: 76px; border-radius: 20px; background: #fff; font-size: clamp(22px, 2.4vw, 34px);
+    font-weight: 900; color: #2d3436; box-shadow: 0 5px 0 rgba(0,0,0,.12); transition: all .12s; }
+.optbtn:hover { transform: translateY(-4px); }
+.optbtn:active { transform: scale(.94); }
+.optbtn.right { background: #00b894; color: #fff; animation: op .35s; }
+.optbtn.wrong { background: #ff7675; color: #fff; animation: shk .4s; }
+@keyframes op { 40% { transform: scale(1.12); } }
+@keyframes shk { 25% { translate: -8px 0; } 50% { translate: 8px 0; } 75% { translate: -5px 0; } }
+
+/* ===== 钱币 SVG 容器 ===== */
+.money { display: inline-block; transition: transform .18s; cursor: pointer; }
+.money:active { transform: scale(.9); }
+.money.picked { filter: drop-shadow(0 0 8px #00b894); transform: translateY(-6px); }
+
+/* ===== 换钱模式 ===== */
+.exWrap { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 3vw, 50px); margin-top: 8px; }
+.exBox { background: #fff; border-radius: 20px; border: 3px dashed #b2bec3; padding: 18px;
+    min-height: 150px; min-width: 200px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px; }
+.exBox .cap { font-size: 15px; color: #636e72; font-weight: 800; }
+.exArrow { font-size: 56px; color: #e67e22; animation: arrw 1s ease-in-out infinite; }
+@keyframes arrw { 50% { translate: 12px 0; } }
+.trayRow { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 300px; }
+.moneyBank { display: flex; justify-content: center; margin-top: 18px; }
+.bankItem { background: #fff; border-radius: 18px; padding: 10px; display: flex; flex-direction: column;
+    align-items: center; gap: 6px; box-shadow: 0 4px 0 rgba(0,0,0,.1); cursor: pointer; transition: all .12s; }
+.bankItem:hover { transform: translateY(-4px); }
+.bankItem .t { font-size: 14px; font-weight: 800; color: #636e72; }
+.actbar { display: flex; justify-content: center; gap: 14px; margin-top: 18px; }
+.bigbtn { padding: 13px 36px; border-radius: 18px; font-size: 19px; font-weight: 800; color: #fff; transition: all .12s; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.orange { background: #e67e22; } .bigbtn.green { background: #00b894; }
+.bigbtn.gray { background: #b2bec3; } .bigbtn.blue { background: #0984e3; }
+
+/* ===== 购物模式 ===== */
+.shopWrap { display: flex; gap: 18px; align-items: stretch; }
+.shelf { flex: 1.1; background: #fff; border-radius: 20px; padding: 14px; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.shelf .cap, .payBox .cap { font-size: 15px; font-weight: 800; color: #636e72; margin-bottom: 10px; }
+.goods { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0 6px; }
+.goods .gi { font-size: 88px; animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 50% { translate: 0 -10px; } }
+.goods .price { font-size: 30px; font-weight: 900; color: #d63031;
+    background: #ffeaa7; border-radius: 30px; padding: 8px 30px; }
+.walletGrid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 8px; }
+.payBox { flex: 1; background: #fff; border-radius: 20px; padding: 14px; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.payTray { min-height: 120px; border: 3px dashed #74b9ff; border-radius: 16px; display: flex;
+    flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; padding: 10px; }
+.paySum { text-align: center; font-size: 22px; font-weight: 900; color: #0984e3; margin-top: 10px; }
+
+/* ===== 收银员模式 ===== */
+.cashWrap { display: flex; justify-content: center; align-items: center; gap: clamp(14px,3vw,40px); margin: 6px 0 18px; }
+.cashCol { background: #fff; border-radius: 20px; padding: 14px 22px; text-align: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.cashCol .cap { font-size: 15px; font-weight: 800; color: #636e72; }
+.cashCol .val { font-size: clamp(24px,2.6vw,36px); font-weight: 900; color: #2d3436; }
+.cashCol.pay .val { color: #0984e3; }
+
+/* ===== 首页 / 弹窗 / 撒花 / toast ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px; background: linear-gradient(180deg,#fff1eb,#ace0f9); }
+#homeScreen h1 { font-size: clamp(34px, 5vw, 62px); font-weight: 900; color: #e67e22;
+    text-shadow: 3px 3px 0 #fff; letter-spacing: 4px; }
+#homeScreen .sub { font-size: clamp(16px,2vw,24px); color: #0984e3; font-weight: 800; letter-spacing: 2px; }
+.modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 30px; }
+.modecard { background: #fff; border-radius: 24px; padding: 24px 14px; text-align: center;
+    box-shadow: 0 7px 0 rgba(0,0,0,.1); cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-7px) rotate(1deg); }
+.modecard .ic { font-size: 50px; }
+.modecard h3 { font-size: clamp(17px,1.9vw,23px); margin: 10px 0 5px; color: var(--c); }
+.modecard p { font-size: 13px; color: #95a5a6; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #e67e22; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.5); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 42px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.25); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; }
+.panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin-bottom: 18px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+#toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(44,62,80,.92);
+    color: #fff; padding: 11px 24px; border-radius: 24px; font-size: 15px; z-index: 80; opacity: 0; transition: all .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+.feedback { text-align: center; margin-top: 14px; min-height: 44px; font-size: 25px; font-weight: 900; }
+.feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="homeScreen">
+    <h1>🛒 欢乐购物街</h1>
+    <div class="sub">认识人民币 · 会换钱 · 会付钱 · 会找零</div>
+    <div class="modes">
+        <div class="modecard" data-mode="rec" style="--c:#e84393">
+            <div class="ic">💵</div><h3>认一认</h3><p>这是多少钱？</p>
+        </div>
+        <div class="modecard" data-mode="ex" style="--c:#0984e3">
+            <div class="ic">🔁</div><h3>换零钱</h3><p>一张大的换几张小的</p>
+        </div>
+        <div class="modecard" data-mode="shop" style="--c:#00b894">
+            <div class="ic">🛍️</div><h3>去购物</h3><p>点钱付账 买宝贝</p>
+        </div>
+        <div class="modecard" data-mode="cash" style="--c:#e67e22">
+            <div class="ic">🧮</div><h3>小收银员</h3><p>顾客付多了 找几元？</p>
+        </div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top">
+        <h1 id="title"></h1>
+        <div class="pill">得分 <b id="scoreN">0</b></div>
+    </div>
+    <div class="qbar hidden" id="qbar"></div>
+    <div class="stage">
+        <!-- 认钱 -->
+        <div id="recPanel" class="hidden">
+            <div id="recMoneyBox"></div>
+            <div class="opts4" id="recOpts"></div>
+        </div>
+        <!-- 换钱 -->
+        <div id="exPanel" class="hidden">
+            <div class="exWrap">
+                <div class="exBox"><div class="cap">我有这张钱</div><div id="exFrom"></div></div>
+                <div class="exArrow">➡️</div>
+                <div class="exBox" style="flex:1;max-width:420px"><div class="cap">换成下面的钱，要放几张？（点下面的钱放进盘子）</div>
+                    <div class="trayRow" id="exTray"></div>
+                    <div class="paySum" id="exCount"></div></div>
+            </div>
+            <div class="moneyBank" id="exBank"></div>
+            <div class="actbar">
+                <button class="bigbtn gray" id="exUndo">↩️ 拿出一张</button>
+                <button class="bigbtn orange" id="exOk">✅ 就这么多</button>
+            </div>
+        </div>
+        <!-- 购物 -->
+        <div id="shopPanel" class="hidden">
+            <div class="shopWrap">
+                <div class="shelf"><div class="cap">🧺 我的钱包（点钱放进付款盘）</div><div class="walletGrid" id="walletGrid"></div></div>
+                <div class="shelf goodsBox" style="flex:.6"><div class="cap">🛒 买这个</div>
+                    <div class="goods"><div class="gi" id="goodsIcon"></div><div class="price" id="goodsPrice"></div></div></div>
+                <div class="payBox"><div class="cap">💰 付款盘（点钱放回钱包）</div>
+                    <div class="payTray" id="payTray"></div><div class="paySum" id="paySum">已付：0角</div>
+                    <div class="actbar"><button class="bigbtn gray" id="payReset">🔄 重付</button>
+                        <button class="bigbtn green" id="payOk">💰 付款！</button></div></div>
+            </div>
+        </div>
+        <!-- 收银员 -->
+        <div id="cashPanel" class="hidden">
+            <div class="cashWrap">
+                <div class="cashCol"><div class="cap">🛍️ 商品价格</div><div class="val" id="cashPrice"></div></div>
+                <div class="cashCol pay"><div class="cap">💵 顾客付了</div><div class="val" id="cashPay"></div></div>
+                <div class="cashCol"><div class="cap">🤔 应找零</div><div class="val" id="cashQ">？</div></div>
+            </div>
+            <div class="opts4" id="cashOpts"></div>
+        </div>
+        <div class="feedback" id="fb"></div>
+    </div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选玩法</button>
+<div id="toast"></div>
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="bigbtn orange" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换个玩法</button></div></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(600, .05);
+const sCash = () => { beep(1200, .06, 'square', .08); setTimeout(() => beep(1600, .08, 'square', .08), 70); };
+
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000); }
+function confetti(n = 60) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+function fb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback ' + (good ? 'good' : 'bad'); }
+
+/* ============ 人民币体系（单位统一用"角"，1元=10角） ============
+   面值：1角 5角 1元 5元 10元 20元 50元 100元（分的认识低年级淡化，不出现） */
+const MONEY = {
+    j1:   { j: 1,   name: '1角',  coin: true,  c1: '#b2bec3', c2: '#7f8c8d' },
+    j5:   { j: 5,   name: '5角',  coin: true,  c1: '#ffe08a', c2: '#d4a017' },
+    y1:   { j: 10,  name: '1元',  coin: false, c1: '#a8d8a8', c2: '#5f9f6f' },
+    y5:   { j: 50,  name: '5元',  coin: false, c1: '#c8a8d8', c2: '#8b5fbf' },
+    y10:  { j: 100, name: '10元', coin: false, c1: '#a8c8e8', c2: '#4a7fbf' },
+    y20:  { j: 200, name: '20元', coin: false, c1: '#e8c8a8', c2: '#bf8f5f' },
+    y50:  { j: 500, name: '50元', coin: false, c1: '#9fd8c8', c2: '#4f9f8f' },
+    y100: { j: 1000,name: '100元',coin: false, c1: '#e8a8a8', c2: '#bf4f4f' },
+};
+/* 角 → 文本："3元5角" */
+function fmt(j) {
+    if (j % 10 === 0) return (j / 10) + '元';
+    if (j < 10) return j + '角';
+    return Math.floor(j / 10) + '元' + (j % 10) + '角';
+}
+/* 钱币卡通 SVG（教学示意） */
+function moneySVG(key, w) {
+    const m = MONEY[key];
+    if (m.coin) {
+        const r = (w || 76) / 2;
+        return `<svg width="${w || 76}" height="${w || 76}" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="40" r="36" fill="${m.c1}" stroke="${m.c2}" stroke-width="5"/>
+            <circle cx="40" cy="40" r="27" fill="none" stroke="${m.c2}" stroke-width="2" stroke-dasharray="4 3"/>
+            <text x="40" y="47" text-anchor="middle" font-size="22" font-weight="900" fill="${m.c2}" font-family="Microsoft YaHei">${m.name.slice(0, -1)}</text>
+            <text x="40" y="66" text-anchor="middle" font-size="12" font-weight="bold" fill="${m.c2}" font-family="Microsoft YaHei">角</text>
+            <ellipse cx="30" cy="26" rx="9" ry="5" fill="#fff" opacity=".55"/>
+        </svg>`;
+    }
+    const W = w || 150, H = W * 0.62;
+    return `<svg width="${W}" height="${H}" viewBox="0 0 150 93" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="144" height="87" rx="10" fill="${m.c1}" stroke="${m.c2}" stroke-width="4"/>
+        <rect x="12" y="12" width="126" height="69" rx="6" fill="none" stroke="${m.c2}" stroke-width="2" stroke-dasharray="5 4"/>
+        <circle cx="75" cy="46" r="26" fill="#fff" opacity=".65"/>
+        <text x="75" y="56" text-anchor="middle" font-size="30" font-weight="900" fill="${m.c2}" font-family="Microsoft YaHei">${m.name.slice(0, -1)}</text>
+        <text x="16" y="28" font-size="13" font-weight="bold" fill="${m.c2}" font-family="Microsoft YaHei">教学示意</text>
+    </svg>`;
+}
+
+/* ============ 全局 ============ */
+let mode = null, score = 0, round = 0, ROUND_MAX = 8;
+function addScore(d) { score += d; $('scoreN').textContent = score; }
+function nextRoundOrEnd(modeName, goodFn) {
+    round++;
+    if (round >= ROUND_MAX) { $('rEmoji').textContent = '🏆'; $('rTitle').textContent = `${modeName}全部完成！`;
+        $('rSub').textContent = `得分 ${score} 分`; $('resultOverlay').classList.remove('hidden');
+        confetti(70); sWin(); round = 0; return; }
+    setTimeout(goodFn, 900);
+}
+
+/* ============ 模式1：认一认 ============ */
+const REC_KEYS = Object.keys(MONEY);
+const RATE_Q = [
+    { q: '1元 = 几角？', a: '10角', opts: ['5角', '10角', '20角', '100角'] },
+    { q: '10角 = 几元？', a: '1元', opts: ['1元', '5元', '10元', '2元'] },
+    { q: '1张5元 = 几张1元？', a: '5张', opts: ['2张', '5张', '10张', '4张'] },
+    { q: '1张10元 = 几张5元？', a: '2张', opts: ['2张', '5张', '10张', '1张'] },
+];
+function recNew() {
+    fb('', '');
+    $('qbar').classList.remove('hidden');
+    if (Math.random() < 0.25) {   // 进率小问答
+        const q = pick(RATE_Q);
+        $('qbar').innerHTML = q.q;
+        $('recMoneyBox').innerHTML = '';
+        const opts = shuffle(q.opts);
+        $('recOpts').innerHTML = '';
+        opts.forEach(o => mkOpt($('recOpts'), o, o === q.a, recNew, '认一认'));
+    } else {
+        const key = pick(REC_KEYS);
+        $('qbar').innerHTML = '这是多少钱？';
+        $('recMoneyBox').innerHTML = `<div class="m">${moneySVG(key, 190)}</div>`;
+        const right = MONEY[key].name;
+        const others = shuffle(REC_KEYS.filter(k => k !== key)).slice(0, 3).map(k => MONEY[k].name);
+        $('recOpts').innerHTML = '';
+        shuffle([right, ...others]).forEach(o => mkOpt($('recOpts'), o, o === right, recNew, '认一认'));
+    }
+}
+function mkOpt(box, text, isRight, nextFn, modeName) {
+    const b = document.createElement('button');
+    b.className = 'optbtn'; b.textContent = text;
+    b.onclick = () => {
+        if (b.disabled) return;
+        [...box.children].forEach(x => x.disabled = true);
+        if (isRight) { b.classList.add('right'); sGood(); addScore(10); confetti(16);
+            fb(pick(['答对啦！真棒！', '完全正确！', '你认识它！']), true);
+            nextRoundOrEnd(modeName, nextFn); }
+        else { b.classList.add('wrong'); sBad();
+            box.children.forEach(x => { if (x.textContent === text) {} });
+            fb('再认一认～', false);
+            setTimeout(() => { [...box.children].forEach(x => { if (x.classList.contains('right')) return; x.disabled = false; x.classList.remove('wrong'); }); fb('', ''); }, 900);
+            // 找到正确项亮一下
+            const rightBtn = [...box.children].find(x => x._isRight);
+            if (rightBtn) { rightBtn.classList.add('right'); setTimeout(() => rightBtn.classList.remove('right'), 900); }
+        }
+    };
+    b._isRight = isRight;
+    box.appendChild(b);
+}
+
+/* ============ 模式2：换零钱 ============ */
+const EXCHANGES = [
+    { from: 'y5', to: 'y1', n: 5 }, { from: 'y10', to: 'y5', n: 2 }, { from: 'y10', to: 'y1', n: 10 },
+    { from: 'y20', to: 'y10', n: 2 }, { from: 'y20', to: 'y5', n: 4 }, { from: 'y50', to: 'y10', n: 5 },
+    { from: 'y100', to: 'y50', n: 2 }, { from: 'y100', to: 'y20', n: 5 }, { from: 'y1', to: 'j1', n: 10 },
+    { from: 'y1', to: 'j5', n: 2 }, { from: 'j5', to: 'j1', n: 5 },
+];
+let exCur = null, exTrayCount = 0;
+function exNew() {
+    fb('', ''); exTrayCount = 0;
+    exCur = pick(EXCHANGES);
+    const from = MONEY[exCur.from], to = MONEY[exCur.to];
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `一张<span class="hl">${from.name}</span>，能换几张<span class="hl">${to.name}</span>？`;
+    $('exFrom').innerHTML = moneySVG(exCur.from, 150);
+    $('exTray').innerHTML = '<span style="color:#b2bec3;font-size:14px">盘子空空的，点下面的钱放进来</span>';
+    $('exCount').textContent = '已放 0 张';
+    $('exBank').innerHTML = `<div class="bankItem" id="bankBtn">${moneySVG(exCur.to, 110)}<div class="t">点我放进盘子</div></div>`;
+    $('bankBtn').onclick = () => {
+        if ($('exTray').querySelector('.placeholder')) $('exTray').innerHTML = '';
+        if (exTrayCount >= 20) return;
+        exTrayCount++; sClick(); sCash();
+        const d = document.createElement('div');
+        d.innerHTML = moneySVG(exCur.to, 70);
+        $('exTray').appendChild(d.firstChild);
+        $('exCount').textContent = `已放 ${exTrayCount} 张`;
+    };
+}
+$('exUndo').onclick = () => { if (mode !== 'ex') return;
+    if (exTrayCount > 0) { exTrayCount--; sClick();
+        const cards = $('exTray').querySelectorAll('div');
+        if (cards.length) cards[cards.length - 1].remove();
+        $('exCount').textContent = `已放 ${exTrayCount} 张`; } };
+$('exOk').onclick = () => { if (mode !== 'ex') return;
+    if (exTrayCount === exCur.n) { sGood(); addScore(10); confetti(20);
+        fb(`太对了！${MONEY[exCur.from].name} = ${exCur.n}张${MONEY[exCur.to].name}`, true);
+        nextRoundOrEnd('换零钱', exNew); }
+    else { sBad(); fb(exTrayCount > exCur.n ? '放多了，拿出一些试试' : '还不够哦，再放几张', false); } };
+
+/* ============ 模式3：去购物 ============ */
+const GOODS = [
+    { i: '🎈', n: '气球' }, { i: '🍭', n: '棒棒糖' }, { i: '🎨', n: '彩笔' }, { i: '🧸', n: '小熊' },
+    { i: '📖', n: '故事书' }, { i: '🚗', n: '小汽车' }, { i: '⚽', n: '足球' }, { i: '✏️', n: '铅笔盒' },
+    { i: '🪁', n: '风筝' }, { i: '🧩', n: '拼图' },
+];
+let shopPrice = 0, wallet = [], tray = [];
+function shopNew() {
+    fb('', ''); tray = [];
+    const g = pick(GOODS);
+    shopPrice = randInt(1, 9) * 10 + pick([0, 5]);   // X元 或 X元5角
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `买一个<span class="hl">${g.n}</span>，要 <span class="hl">${fmt(shopPrice)}</span>，从钱包里点钱付款吧！`;
+    $('goodsIcon').textContent = g.i;
+    $('goodsPrice').textContent = '¥ ' + fmt(shopPrice);
+    // 生成钱包：保证总额足够（贪心可解：含1元若干）
+    wallet = [];
+    const add = (k, n) => { for (let i = 0; i < n; i++) wallet.push(k); };
+    add('j1', randInt(0, 4)); add('j5', randInt(0, 2));
+    add('y1', randInt(2, 5)); add('y5', randInt(0, 2)); add('y10', randInt(0, 1));
+    while (wallet.reduce((s, k) => s + MONEY[k].j, 0) < shopPrice) wallet.push('y5');
+    wallet = shuffle(wallet).slice(0, 9);
+    while (wallet.reduce((s, k) => s + MONEY[k].j, 0) < shopPrice) wallet.push('y1');   // 截断后再保底
+    renderWallet(); renderTray();
+}
+function renderWallet() {
+    const box = $('walletGrid'); box.innerHTML = '';
+    wallet.forEach((k, i) => {
+        if (k === null) return;
+        const d = document.createElement('div');
+        d.className = 'money'; d.innerHTML = moneySVG(k, MONEY[k].coin ? 62 : 118);
+        d.onclick = () => { tray.push(k); wallet[i] = null; sCash(); renderWallet(); renderTray(); };
+        box.appendChild(d);
+    });
+}
+function renderTray() {
+    const box = $('payTray'); box.innerHTML = '';
+    if (!tray.length) box.innerHTML = '<span style="color:#b2bec3;font-size:14px">点左边钱包里的钱放进来</span>';
+    tray.forEach((k, i) => {
+        const d = document.createElement('div');
+        d.className = 'money'; d.innerHTML = moneySVG(k, MONEY[k].coin ? 62 : 118);
+        d.onclick = () => { wallet[wallet.indexOf(null)] = k; tray.splice(i, 1); sClick(); renderWallet(); renderTray(); };
+        box.appendChild(d);
+    });
+    $('paySum').textContent = '已付：' + fmt(tray.reduce((s, k) => s + MONEY[k].j, 0));
+}
+$('payReset').onclick = () => { if (mode !== 'shop') return; sClick(); shopNew(); };
+$('payOk').onclick = () => { if (mode !== 'shop') return;
+    const paid = tray.reduce((s, k) => s + MONEY[k].j, 0);
+    if (paid < shopPrice) { sBad(); fb(`还差 ${fmt(shopPrice - paid)}，继续放钱～`, false); return; }
+    if (paid === shopPrice) { sGood(); addScore(10); confetti(24); fb('刚刚好！买到了！🎉', true);
+        nextRoundOrEnd('去购物', shopNew); }
+    else { sCash(); addScore(10); confetti(24);
+        fb(`买到了！收银员找你 ${fmt(paid - shopPrice)} 🪙`, true);
+        nextRoundOrEnd('去购物', shopNew); }
+};
+
+/* ============ 模式4：小收银员 ============ */
+function cashNew() {
+    fb('', '');
+    const price = randInt(1, 8) * 10 + pick([0, 5]);
+    // 顾客付款：凑整到元，再随机多付一点（保证比价格多，产生找零）
+    let payFinal = Math.ceil(price / 10) * 10 + pick([0, 5, 10, 50]);
+    if (payFinal <= price) payFinal = price + 10;
+    const change = payFinal - price;
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `顾客买了东西，付了<span class="hl">${fmt(payFinal)}</span>，应该找零多少钱？`;
+    $('cashPrice').textContent = fmt(price);
+    $('cashPay').textContent = fmt(payFinal);
+    $('cashQ').textContent = '？';
+    const right = fmt(change);
+    const others = new Set();
+    while (others.size < 3) {
+        const d = pick([5, 10, 15, -5, -10, 50]);
+        const v = change + d;
+        if (v > 0 && fmt(v) !== right) others.add(fmt(v));
+    }
+    $('cashOpts').innerHTML = '';
+    shuffle([right, ...others]).forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'optbtn'; b.textContent = o; b._isRight = o === right;
+        b.onclick = () => {
+            if (b.disabled) return;
+            [...$('cashOpts').children].forEach(x => x.disabled = true);
+            if (o === right) { b.classList.add('right'); sGood(); addScore(10); confetti(16);
+                $('cashQ').textContent = right;
+                fb(`找零 ${right}，收银小能手！`, true);
+                nextRoundOrEnd('小收银员', cashNew); }
+            else { b.classList.add('wrong'); sBad(); fb('再算一算～', false);
+                const rb = [...$('cashOpts').children].find(x => x._isRight);
+                if (rb) { rb.classList.add('right'); setTimeout(() => rb.classList.remove('right'), 900); }
+                setTimeout(() => { [...$('cashOpts').children].forEach(x => { x.disabled = false; x.classList.remove('wrong'); }); fb('', ''); }, 1100); }
+        };
+        $('cashOpts').appendChild(b);
+    });
+}
+
+/* ============ 流程 ============ */
+const PANELS = { rec: 'recPanel', ex: 'exPanel', shop: 'shopPanel', cash: 'cashPanel' };
+const TITLES = { rec: '💵 认一认', ex: '🔁 换零钱', shop: '🛍️ 去购物', cash: '🧮 小收银员' };
+const STARTS = { rec: recNew, ex: exNew, shop: shopNew, cash: cashNew };
+function enterMode(m) {
+    sClick(); mode = m; round = 0; score = 0; $('scoreN').textContent = 0;
+    Object.values(PANELS).forEach(id => $(id).classList.add('hidden'));
+    $('qbar').classList.add('hidden');
+    $('homeScreen').classList.add('hidden'); $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden');
+    $(PANELS[m]).classList.remove('hidden');
+    $('title').textContent = TITLES[m];
+    STARTS[m]();
+}
+function goHome() {
+    mode = null;
+    Object.values(PANELS).forEach(id => $(id).classList.add('hidden'));
+    $('qbar').classList.add('hidden');
+    $('homeScreen').classList.remove('hidden'); $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden');
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); score = 0; $('scoreN').textContent = 0; round = 0; STARTS[mode](); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>

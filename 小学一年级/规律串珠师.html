@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📿 规律串珠师 - 一年级找规律</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 50%, #84fab0 100%);
+    min-height: 100vh; color: #2c3e50; user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; color: #e84393; text-shadow: 2px 2px 0 #fff; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.pill b { color: #e84393; font-size: 1.25em; }
+
+.qbar { margin: 0 22px; background: #fff; border-radius: 22px; border: 4px solid #ffeaa7;
+    padding: 12px 26px; text-align: center; font-size: clamp(18px, 2.1vw, 28px); font-weight: 800;
+    box-shadow: 0 6px 0 rgba(0,0,0,.06); }
+.qbar .hl { color: #e84393; }
+
+/* ===== 串珠区 ===== */
+.stringWrap { margin: 22px auto 0; width: min(94%, 1000px); background: rgba(255,255,255,.65);
+    border-radius: 26px; padding: 26px 18px 18px; position: relative; min-height: 190px; }
+.stringLine { position: absolute; left: 4%; right: 4%; top: 50%; height: 6px; background: #b2bec3;
+    border-radius: 4px; }
+.beadRow { position: relative; display: flex; justify-content: center; gap: clamp(8px, 1.6vw, 20px); flex-wrap: wrap; }
+.bead { width: clamp(52px, 7vw, 76px); height: clamp(52px, 7vw, 76px); border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 12%, transparent 30%), var(--c);
+    box-shadow: inset -5px -8px 14px rgba(0,0,0,.18), 0 5px 12px rgba(0,0,0,.18);
+    animation: beadIn .35s backwards cubic-bezier(.2,1.4,.4,1); }
+@keyframes beadIn { from { transform: scale(0) translateY(-26px); } }
+.bead.q { background: radial-gradient(circle at 32% 28%, #fff 0 12%, transparent 30%), #dfe6e9;
+    display: flex; align-items: center; justify-content: center; font-size: clamp(26px, 3.6vw, 40px);
+    font-weight: 900; color: #636e72; animation: qPulse 1.2s ease-in-out infinite; }
+@keyframes qPulse { 50% { transform: scale(1.1); } }
+.bead.popin { animation: popIn .45s cubic-bezier(.2,1.5,.4,1); }
+@keyframes popIn { 50% { transform: scale(1.35); } }
+
+/* ===== 候选/调色盘 ===== */
+.palWrap { margin: 20px auto 0; width: min(94%, 900px); text-align: center; }
+.palCap { font-size: clamp(15px, 1.7vw, 20px); font-weight: 800; color: #636e72; margin-bottom: 12px; }
+.palette { display: flex; justify-content: center; gap: clamp(10px, 2vw, 22px); flex-wrap: wrap; }
+.pbtn { width: clamp(58px, 7.6vw, 82px); height: clamp(58px, 7.6vw, 82px); border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 12%, transparent 30%), var(--c);
+    box-shadow: inset -5px -8px 14px rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.15); transition: all .12s; }
+.pbtn:hover { transform: translateY(-6px); }
+.pbtn:active { transform: scale(.9); }
+.pbtn.right { animation: opop .5s; }
+@keyframes opop { 40% { transform: scale(1.2); } }
+.pbtn.wrong { animation: owob .4s; }
+@keyframes owob { 25% { translate: -9px 0; } 50% { translate: 9px 0; } }
+.actbar { display: flex; justify-content: center; gap: 14px; margin-top: 20px; }
+.bigbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.pink { background: #e84393; } .bigbtn.green { background: #00b894; }
+.bigbtn.gray { background: #b2bec3; } .bigbtn.blue { background: #0984e3; }
+
+.feedback { text-align: center; margin-top: 14px; min-height: 40px; font-size: 24px; font-weight: 900; }
+.feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+
+/* ===== 首页/弹窗 ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px; background: linear-gradient(135deg,#fbc2eb,#84fab0); }
+#homeScreen h1 { font-size: clamp(34px, 5vw, 60px); font-weight: 900; color: #e84393; text-shadow: 3px 3px 0 #fff; }
+#homeScreen .sub { font-size: clamp(15px, 2vw, 22px); color: #0984e3; font-weight: 800; }
+.modes { display: flex; gap: 22px; }
+.modecard { background: #fff; border-radius: 24px; padding: 28px 24px; text-align: center; width: clamp(200px, 24vw, 280px);
+    box-shadow: 0 7px 0 rgba(0,0,0,.12); cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-8px) rotate(1deg); }
+.modecard .ic { font-size: 54px; } .modecard h3 { font-size: clamp(19px,2.1vw,25px); margin: 12px 0 6px; color: var(--c); }
+.modecard p { font-size: 14px; color: #95a5a6; line-height: 1.6; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #e84393; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.5); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 42px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.25); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin-bottom: 18px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="homeScreen">
+    <h1>📿 规律串珠师</h1>
+    <div class="sub">发现规律 · 串出漂亮手链！</div>
+    <div class="modes">
+        <div class="modecard" data-mode="solo" style="--c:#e84393"><div class="ic">🧩</div><h3>接龙猜珠</h3><p>看规律 选出下一颗珠子<br>8 关等你挑战</p></div>
+        <div class="modecard" data-mode="duo" style="--c:#0984e3"><div class="ic">👯</div><h3>考考同桌</h3><p>自己串一串规律<br>藏一颗让同桌猜！</p></div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top"><h1 id="title"></h1><div class="pill">得分 <b id="scoreN">0</b></div></div>
+    <div class="qbar hidden" id="qbar"></div>
+    <div class="stringWrap"><div class="stringLine"></div><div class="beadRow" id="beadRow"></div></div>
+    <div class="palWrap">
+        <div class="palCap" id="palCap"></div>
+        <div class="palette" id="palette"></div>
+    </div>
+    <div class="actbar hidden" id="duoBar">
+        <button class="bigbtn gray" id="duoClear">🔄 清空重来</button>
+        <button class="bigbtn blue" id="duoAsk">📤 藏一颗！考同桌</button>
+    </div>
+    <div class="feedback" id="fb"></div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选玩法</button>
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="bigbtn pink" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换个玩法</button></div></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(700, .06, 'triangle');
+function fb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback ' + (good ? 'good' : 'bad'); }
+function confetti(n = 40) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 珠子颜色 ============ */
+const BEAD_COLORS = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50', '#f97f51'];
+
+/* ============ 状态 ============ */
+let mode = null, score = 0, round = 0, ROUND_MAX = 8;
+let seq = [], answerColor = null, askPhase = false;
+
+function mkBead(color, extra) {
+    const b = document.createElement('div');
+    b.className = 'bead' + (extra ? ' ' + extra : '');
+    if (extra === 'q') b.textContent = '?';
+    else b.style.setProperty('--c', color);
+    return b;
+}
+
+/* ============ 模式1：接龙猜珠 ============ */
+const PATTERNS = ['AB', 'ABC', 'AAB', 'ABB', 'AABB'];
+function soloNew() {
+    askPhase = false; $('duoBar').classList.add('hidden');
+    const pat = pick(PATTERNS);
+    const cs = shuffle(BEAD_COLORS).slice(0, new Set(pat).size);   // A/B/C 分配颜色
+    const map = {}; [...new Set(pat)].forEach((k, i) => map[k] = cs[i]);
+    const reps = pat.length * (randInt(2, 2) + 1) + 1;   // 重复若干轮
+    seq = [];
+    for (let i = 0; i < reps; i++) seq.push(map[pat[i % pat.length]]);
+    answerColor = map[pat[reps % pat.length]];   // 下一颗
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `发现规律了吗？<span class="hl">下一颗</span>是什么颜色？`;
+    renderSeq(true);
+    renderPalette();
+}
+function renderSeq(withQ) {
+    const row = $('beadRow'); row.innerHTML = '';
+    seq.forEach((c, i) => row.appendChild(mkBead(c)));
+    if (withQ) row.appendChild(mkBead(null, 'q'));
+}
+function renderPalette() {
+    const pal = $('palette'); pal.innerHTML = '';
+    $('palCap').textContent = mode === 'duo' && askPhase ? '同桌来猜：下一颗是什么颜色？'
+        : mode === 'duo' ? '你来串珠：点颜色，一颗一颗串上去（至少 5 颗）'
+        : '点出下一颗珠子！';
+    const colors = mode === 'solo' || askPhase
+        ? shuffle([answerColor, ...shuffle(BEAD_COLORS.filter(c => c !== answerColor)).slice(0, 2)])
+        : BEAD_COLORS;
+    colors.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'pbtn'; b.style.setProperty('--c', c);
+        b.onclick = () => {
+            if (mode === 'solo') soloAnswer(c, b);
+            else if (!askPhase) duoAppend(c);
+            else duoAnswer(c, b);
+        };
+        pal.appendChild(b);
+    });
+}
+
+function soloAnswer(c, btn) {
+    if (btn.disabled) return;
+    if (c === answerColor) {
+        btn.classList.add('right'); sGood(); score += 10; $('scoreN').textContent = score;
+        // 替换 ? 为真珠子并弹一下
+        const q = $('beadRow').querySelector('.bead.q');
+        if (q) { q.classList.remove('q'); q.textContent = ''; q.style.setProperty('--c', c); q.classList.add('popin'); }
+        fb(pick(['规律找到了！', '就是它！', '好眼力！']), true); confetti(12);
+        round++;
+        if (round >= ROUND_MAX) { setTimeout(() => showResult(), 1100); }
+        else setTimeout(soloNew, 1500);
+    } else { btn.classList.add('wrong'); sBad(); fb('再看看前面的规律～', false);
+        setTimeout(() => btn.classList.remove('wrong'), 500); }
+}
+function showResult() { $('rEmoji').textContent = '📿'; $('rTitle').textContent = '串珠大师！';
+    $('rSub').textContent = `得分 ${score} 分`; $('resultOverlay').classList.remove('hidden'); confetti(70); sWin(); round = 0; }
+
+/* ============ 模式2：考考同桌 ============ */
+let duoSeq = [], duoHidden = null, duoLock = false;
+function duoNew() {
+    duoSeq = []; duoHidden = null; duoLock = false; askPhase = false;
+    $('duoBar').classList.remove('hidden');
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `你是<b style="color:#0984e3">出题人</b>！串一串有规律的珠子，然后藏起一颗考同桌 😎`;
+    renderDuo(); renderPalette();
+}
+function renderDuo() {
+    const row = $('beadRow'); row.innerHTML = '';
+    duoSeq.forEach((c, i) => {
+        if (askPhase && i === duoSeq.length - 1) row.appendChild(mkBead(null, 'q'));
+        else row.appendChild(mkBead(c));
+    });
+    if (!duoSeq.length) row.innerHTML = '<span style="color:#95a5a6;font-size:18px;align-self:center">点下面的颜色珠子，开始串吧！</span>';
+}
+function duoAppend(c) {
+    if (duoLock) return;
+    duoSeq.push(c); sClick(); renderDuo();
+}
+$('duoClear').onclick = () => { if (mode !== 'duo') return; sClick(); duoNew(); };
+$('duoAsk').onclick = () => {
+    if (mode !== 'duo') return;
+    if (duoSeq.length < 5) { sBad(); fb('至少串 5 颗，规律才看得出来哦', false); return; }
+    if (new Set(duoSeq).size === 1) { sBad(); fb('全是一种颜色可没有规律哦，换换颜色吧', false); return; }
+    sClick();
+    duoHidden = duoSeq[duoSeq.length - 1];
+    askPhase = true; duoLock = true;
+    $('qbar').innerHTML = `现在换<b style="color:#e84393">同桌</b>来！最后一颗是什么颜色？`;
+    renderDuo(); renderPalette(); fb('', '');
+};
+function duoAnswer(c, btn) {
+    if (c === duoHidden) {
+        btn.classList.add('right'); sGood();
+        const q = $('beadRow').querySelector('.bead.q');
+        if (q) { q.classList.remove('q'); q.textContent = ''; q.style.setProperty('--c', c); q.classList.add('popin'); }
+        fb('同桌猜对啦！你们真默契 🎉', true); confetti(24);
+        setTimeout(() => { askPhase = false; duoLock = false; duoNew(); }, 2200);
+    } else { btn.classList.add('wrong'); sBad(); fb('再仔细看看规律～', false);
+        setTimeout(() => btn.classList.remove('wrong'), 500); }
+}
+
+/* ============ 流程 ============ */
+const TITLES = { solo: '🧩 接龙猜珠', duo: '👯 考考同桌' };
+function enterMode(m) {
+    sClick(); mode = m; score = 0; round = 0; $('scoreN').textContent = 0;
+    $('homeScreen').classList.add('hidden'); $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden'); $('duoBar').classList.add('hidden');
+    $('title').textContent = TITLES[m];
+    if (m === 'solo') soloNew(); else duoNew();
+}
+function goHome() {
+    mode = null;
+    $('homeScreen').classList.remove('hidden'); $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden'); $('qbar').classList.add('hidden');
+    $('duoBar').classList.add('hidden'); $('beadRow').innerHTML = '';
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); enterMode(mode); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>

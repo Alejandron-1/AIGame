@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕵️ 图形特工队 - 一年级认识图形</title>
+<style>
+/* ===== 全局：特工糖果风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    min-height: 100vh; color: #2c3e50; user-select: none; -webkit-user-select: none; overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶部 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; color: #fff; text-shadow: 2px 3px 6px rgba(0,0,0,.25); }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+.pill b { color: #e84393; font-size: 1.25em; }
+
+/* ===== 目标提示条 ===== */
+.qbar { margin: 0 22px; background: #fff; border-radius: 22px; border: 4px solid #ffd32a;
+    padding: 12px 26px; text-align: center; font-size: clamp(19px, 2.2vw, 30px); font-weight: 800;
+    box-shadow: 0 6px 0 rgba(0,0,0,.12); }
+.qbar .hl { color: #e84393; }
+
+/* ===== 主区 ===== */
+.stage { margin: 14px 22px 0; background: rgba(255,255,255,.92); border-radius: 26px;
+    height: calc(100vh - 215px); padding: 16px; overflow: hidden; }
+
+/* ===== 打地鼠 ===== */
+#moleGrid { height: 100%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; }
+.hole { position: relative; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.hole .pit { width: 74%; height: 26%; background: radial-gradient(ellipse at center, #836c4a 30%, #6b5435 100%);
+    border-radius: 50%; position: absolute; bottom: 6%; box-shadow: inset 0 6px 10px rgba(0,0,0,.4); }
+.mole { position: absolute; bottom: 6%; width: 74%; height: 74%; display: flex; align-items: center;
+    justify-content: center; transform: translateY(105%); transition: transform .28s cubic-bezier(.3,1.3,.5,1); }
+.mole.up { transform: translateY(6%); }
+.mole .body { width: 86%; height: 86%; background: linear-gradient(180deg, #dfe6e9, #b2bec3);
+    border-radius: 46% 46% 40% 40%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 -4px 0 #7f8c8d inset; cursor: pointer; transition: transform .1s; }
+.mole .body:hover { transform: scale(1.05); }
+.mole .body svg, .mole .body .obj { max-width: 74%; max-height: 74%; font-size: 64px; }
+.mole .body.hit { animation: bonk .4s forwards; }
+.mole .body.miss { animation: missWob .4s; }
+@keyframes bonk { 30% { transform: scale(1.2) rotate(8deg); } 100% { transform: scale(0) translateY(50%); } }
+@keyframes missWob { 25% { translate: -10px 0; } 50% { translate: 10px 0; } 75% { translate: -6px 0; } }
+.hammer { position: fixed; z-index: 90; font-size: 52px; pointer-events: none; transform: rotate(-40deg);
+    transition: transform .08s; }
+.hammer.smash { transform: rotate(35deg) scale(1.25); }
+
+/* ===== 分拣快递 ===== */
+#sortZone { height: 100%; display: flex; flex-direction: column; gap: 12px; }
+.belt { flex: 1; position: relative; border-radius: 20px; overflow: hidden;
+    background: repeating-linear-gradient(90deg, #dfe6e9 0 40px, #ced6e0 40px 80px);
+    background-size: 80px 100%; animation: beltMove 1.2s linear infinite; display: flex; align-items: center;
+    justify-content: center; border: 3px solid #b2bec3; }
+@keyframes beltMove { to { background-position: 80px 0; } }
+.parcel { width: clamp(120px, 13vw, 170px); height: clamp(120px, 13vw, 170px); background: #ffe08a;
+    border: 4px solid #e1a90f; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+    animation: parcelIn .4s backwards; z-index: 2; }
+.parcel svg, .parcel .obj { max-width: 70%; max-height: 70%; font-size: 64px; }
+@keyframes parcelIn { from { transform: translateX(120%) scale(.7); } }
+.bins { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.bin { border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; cursor: pointer; border: 4px dashed #b2bec3; background: rgba(255,255,255,.6); transition: all .15s; }
+.bin:hover { transform: translateY(-6px); border-color: #e84393; }
+.bin svg { width: 46%; height: 46%; }
+.bin .bn { font-size: clamp(15px, 1.7vw, 21px); font-weight: 900; color: #2d3436; }
+.bin .cnt { font-size: 15px; font-weight: 800; color: #fff; background: #00b894; border-radius: 14px; padding: 2px 13px; }
+.bin.glow { animation: binGlow .5s; }
+@keyframes binGlow { 40% { transform: scale(1.12); border-color: #00b894; background: #d9fbee; } }
+.bin.reject { animation: binRej .4s; }
+@keyframes binRej { 30% { translate: -8px 0; } 60% { translate: 8px 0; } border-color: #ff7675; }
+
+/* ===== 猜猜是谁 ===== */
+#guessZone { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+.flashBox { position: relative; width: clamp(240px, 30vh, 340px); height: clamp(240px, 30vh, 340px);
+    border-radius: 26px; background: #2d3436; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.flashBox .full { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.flashBox .full svg { width: 82%; height: 82%; }
+.flashBox .dark { position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--cx) var(--cy), transparent 0 21%, rgba(45,52,54,.97) 24%, #2d3436 40%);
+    border: 4px dashed #ffd32a; border-radius: 26px; }
+.nameOpts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: min(92%, 860px); }
+.nopt { min-height: 72px; border-radius: 18px; background: #fff; font-size: clamp(20px, 2.2vw, 30px);
+    font-weight: 900; box-shadow: 0 5px 0 rgba(0,0,0,.14); transition: all .12s; }
+.nopt:hover { transform: translateY(-4px); }
+.nopt:active { transform: scale(.94); }
+.nopt.right { background: #00b894; color: #fff; animation: opop .35s; }
+.nopt.wrong { background: #ff7675; color: #fff; animation: owob .4s; }
+@keyframes opop { 40% { transform: scale(1.12); } }
+@keyframes owob { 25% { translate: -8px 0; } 50% { translate: 8px 0; } }
+
+/* ===== 方位寻宝 ===== */
+#dirZone { height: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dirScene { flex: 1; width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr); gap: 8px; background: linear-gradient(180deg, #d9f2d9, #b8e6c8);
+    border-radius: 20px; padding: 10px; }
+.dcell { display: flex; align-items: center; justify-content: center; font-size: clamp(40px, 5.4vh, 66px);
+    cursor: pointer; border-radius: 14px; transition: all .12s; }
+.dcell:hover { background: rgba(255,255,255,.55); transform: scale(1.08); }
+.dcell.right { background: #00b894; animation: opop .4s; }
+.dcell.wrong { background: #ff7675; animation: owob .4s; }
+
+/* ===== 首页 / 反馈 / 弹窗 ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px; }
+#homeScreen h1 { font-size: clamp(34px, 5vw, 60px); font-weight: 900; color: #fff;
+    text-shadow: 3px 4px 8px rgba(0,0,0,.3); letter-spacing: 4px; }
+#homeScreen .sub { font-size: clamp(15px, 2vw, 22px); color: #ffeaa7; font-weight: 800; letter-spacing: 2px;
+    text-shadow: 1px 2px 4px rgba(0,0,0,.3); }
+.modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 30px; }
+.modecard { background: #fff; border-radius: 24px; padding: 22px 14px; text-align: center;
+    box-shadow: 0 7px 0 rgba(0,0,0,.2); cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-7px) rotate(-1deg); }
+.modecard .ic { font-size: 48px; }
+.modecard h3 { font-size: clamp(17px,1.9vw,23px); margin: 10px 0 5px; color: var(--c); }
+.modecard p { font-size: 13px; color: #95a5a6; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #764ba2; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+.feedback { position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 50;
+    min-height: 52px; display: flex; align-items: center; padding: 10px 34px; border-radius: 30px;
+    font-size: 26px; font-weight: 900; color: #fff; opacity: 0; transition: all .2s; pointer-events: none; }
+.feedback.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+.feedback.good { background: #00b894; } .feedback.bad { background: #e17055; }
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.55); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 42px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.3); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin-bottom: 18px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.bigbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.purple { background: #764ba2; } .bigbtn.gray { background: #b2bec3; }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="homeScreen">
+    <h1>🕵️ 图形特工队</h1>
+    <div class="sub">认图形 · 分快递 · 猜一猜 · 找方位</div>
+    <div class="modes">
+        <div class="modecard" data-mode="mole" style="--c:#e84393"><div class="ic">🔨</div><h3>打地鼠</h3><p>打中指定的图形</p></div>
+        <div class="modecard" data-mode="sort" style="--c:#0984e3"><div class="ic">📦</div><h3>分拣快递</h3><p>把图形送回正确的箱子</p></div>
+        <div class="modecard" data-mode="guess" style="--c:#6c5ce7"><div class="ic">🔦</div><h3>猜猜是谁</h3><p>只看一角 猜出图形</p></div>
+        <div class="modecard" data-mode="dir" style="--c:#00b894"><div class="ic">🧭</div><h3>方位寻宝</h3><p>谁在上面 谁在左边</p></div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top">
+        <h1 id="title"></h1>
+        <div class="pill">得分 <b id="scoreN">0</b></div>
+    </div>
+    <div class="qbar hidden" id="qbar"></div>
+    <div class="stage">
+        <div id="moleGrid" class="hidden"></div>
+        <div id="sortZone" class="hidden">
+            <div class="belt" id="belt"></div>
+            <div class="bins" id="bins"></div>
+        </div>
+        <div id="guessZone" class="hidden">
+            <div class="flashBox" id="flashBox"></div>
+            <div class="nameOpts" id="nameOpts"></div>
+        </div>
+        <div id="dirZone" class="hidden">
+            <div class="dirScene" id="dirScene"></div>
+        </div>
+    </div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选玩法</button>
+<div class="feedback" id="fb"></div>
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="bigbtn purple" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换个玩法</button></div></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sBonk = () => { beep(300, .08, 'square', .18); setTimeout(() => beep(150, .12, 'square', .14), 60); };
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(600, .05);
+let fbT = 0;
+function fb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback show ' + (good ? 'good' : 'bad');
+    clearTimeout(fbT); fbT = setTimeout(() => f.classList.remove('show'), 1100); }
+function confetti(n = 50) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 图形库 ============
+   立体：cuboid长方体 / cube正方体 / cyl圆柱 / ball球
+   平面：rect长方形 / sq正方形 / tri三角形 / circle圆 / para平行四边形
+   实物（立体）：📦长方体 🎲正方体 🥫圆柱 ⚽球 🏀球 📚长方体 */
+function svgCuboid(c1, c2) {
+    return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="18,22 62,22 82,8 38,8" fill="${c2}"/>
+        <polygon points="18,22 18,64 62,64 62,22" fill="${c1}"/>
+        <polygon points="62,22 82,8 82,50 62,64" fill="${c2}" opacity=".75"/>
+        <polygon points="18,22 62,22 82,8 38,8" fill="none" stroke="${c1}" stroke-width="2"/>
+    </svg>`;
+}
+function svgCube(c1, c2) {
+    return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="22,24 62,24 78,10 38,10" fill="${c2}"/>
+        <polygon points="22,24 22,62 62,62 62,24" fill="${c1}"/>
+        <polygon points="62,24 78,10 78,48 62,62" fill="${c2}" opacity=".75"/>
+        <polygon points="22,24 62,24 78,10 38,10" fill="none" stroke="${c1}" stroke-width="2"/>
+    </svg>`;
+}
+function svgCyl(c1, c2) {
+    return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="24,16 24,62 76,62 76,16" fill="${c1}"/>
+        <ellipse cx="50" cy="62" rx="26" ry="9" fill="${c2}"/>
+        <ellipse cx="50" cy="16" rx="26" ry="9" fill="${c2}"/>
+        <ellipse cx="50" cy="16" rx="26" ry="9" fill="#fff" opacity=".25"/>
+        <path d="M24 16 L24 62 M76 16 L76 62" stroke="${c2}" stroke-width="2"/>
+    </svg>`;
+}
+function svgBall(c1, c2) {
+    return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="40" r="34" fill="${c1}"/>
+        <ellipse cx="42" cy="28" rx="12" ry="8" fill="#fff" opacity=".5"/>
+        <circle cx="50" cy="40" r="34" fill="none" stroke="${c2}" stroke-width="2"/>
+        <path d="M16 40 Q50 54 84 40" stroke="${c2}" stroke-width="2" fill="none" opacity=".4"/>
+    </svg>`;
+}
+function svgRect(c) { return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="20" width="76" height="40" rx="3" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="2"/></svg>`; }
+function svgSq(c) { return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="10" width="60" height="60" rx="3" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="2"/></svg>`; }
+function svgTri(c) { return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><polygon points="50,10 90,70 10,70" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="2" stroke-linejoin="round"/></svg>`; }
+function svgCircle(c) { return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="40" r="32" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="2"/></svg>`; }
+function svgPara(c) { return `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><polygon points="30,18 90,18 70,62 10,62" fill="${c}" stroke="rgba(0,0,0,.15)" stroke-width="2" stroke-linejoin="round"/></svg>`; }
+
+const C3D = {
+    cuboid: { name: '长方体', draw: () => svgCuboid('#74b9ff', '#0984e3'), objs: ['📦', '📚'] },
+    cube:   { name: '正方体', draw: () => svgCube('#55efc4', '#00b894'), objs: ['🎲', '🧊'] },
+    cyl:    { name: '圆柱',   draw: () => svgCyl('#ffbe76', '#e67e22'), objs: ['🥫', '🍶'] },
+    ball:   { name: '球',     draw: () => svgBall('#ff9dd3', '#e84393'), objs: ['⚽', '🏀'] },
+};
+const C2D = {
+    rect:   { name: '长方形',   draw: () => svgRect('#74b9ff') },
+    sq:     { name: '正方形',   draw: () => svgSq('#55efc4') },
+    tri:    { name: '三角形',   draw: () => svgTri('#ffbe76') },
+    circle: { name: '圆',       draw: () => svgCircle('#ff9dd3') },
+    para:   { name: '平行四边形', draw: () => svgPara('#a29bfe') },
+};
+const COLORS = ['#e84393', '#0984e3', '#00b894', '#e67e22', '#6c5ce7', '#fdcb6e'];
+
+/* ============ 全局 ============ */
+let mode = null, score = 0;
+function addScore(d) { score += d; $('scoreN').textContent = score; }
+function showResult(emoji, title, sub) { $('rEmoji').textContent = emoji; $('rTitle').textContent = title;
+    $('rSub').textContent = sub; $('resultOverlay').classList.remove('hidden'); confetti(70); sWin(); }
+
+/* ============ 模式1：打地鼠 ============ */
+let moleTarget = null, moleHits = 0, moleSpawned = 0, MOLE_GOAL = 14, moleBusy = false;
+function moleStart() {
+    $('title').textContent = '🔨 打地鼠';
+    const keys3 = Object.keys(C3D);
+    const pool = Math.random() < 0.6 ? keys3 : keys3.concat(Object.keys(C2D));
+    moleTarget = pick(pool);
+    const info = C3D[moleTarget] || C2D[moleTarget];
+    const is3D = !!C3D[moleTarget];
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `只打 <span class="hl">${info.name}</span>！看清了再敲 💥`;
+    moleHits = 0; moleSpawned = 0;
+    const grid = $('moleGrid'); grid.classList.remove('hidden');
+    grid.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+        const h = document.createElement('div');
+        h.className = 'hole';
+        h.innerHTML = `<div class="pit"></div><div class="mole"><div class="body"></div></div>`;
+        grid.appendChild(h);
+    }
+    moleNext();
+}
+function moleNext() {
+    if (mode !== 'mole') return;
+    if (moleSpawned >= MOLE_GOAL + 6 || moleHits >= MOLE_GOAL) {
+        showResult('🔨', `敲中 ${moleHits} 个！`, moleHits >= MOLE_GOAL ? '特工好眼力！' : '再快一点就更棒了');
+        return;
+    }
+    const holes = [...document.querySelectorAll('.hole')];
+    const free = holes.filter(h => !h.querySelector('.mole.up'));
+    if (!free.length) { setTimeout(moleNext, 400); return; }
+    const hole = pick(free);
+    const mole = hole.querySelector('.mole');
+    const body = mole.querySelector('.body');
+    // 决定冒出来的内容：目标/非目标；立体目标有 40% 概率出实物
+    let kind, isTarget;
+    if (Math.random() < 0.42) { kind = moleTarget; isTarget = true; }
+    else {
+        const keys3 = Object.keys(C3D), keys2 = Object.keys(C2D);
+        const others = (Math.random() < 0.6 ? keys3 : keys2).filter(k => k !== moleTarget);
+        kind = pick(others); isTarget = false;
+    }
+    const info = C3D[kind] || C2D[kind];
+    if (C3D[kind] && Math.random() < 0.4) body.innerHTML = `<span class="obj">${pick(info.objs)}</span>`;
+    else body.innerHTML = info.draw();
+    body.className = 'body';
+    body.onclick = (e) => {
+        e.stopPropagation();
+        if (body._done) return; body._done = true;
+        hammerAt(e.clientX, e.clientY);
+        if (isTarget) { body.classList.add('hit'); sBonk(); moleHits++; addScore(10);
+            fb(pick(['敲对了！', '眼真尖！', '就是它！']), true); }
+        else { body.classList.add('miss'); sBad(); fb(`这是${info.name}，不是${(C3D[moleTarget] || C2D[moleTarget]).name}`, false); }
+        setTimeout(() => { mole.classList.remove('up'); body._done = false; }, isTarget ? 300 : 600);
+    };
+    mole.classList.add('up');
+    moleSpawned++;
+    setTimeout(() => { if (!body._done) { mole.classList.remove('up'); body._done = false; } }, 1700);
+    setTimeout(moleNext, randInt(650, 1200));
+}
+function hammerAt(x, y) {
+    const h = document.createElement('div');
+    h.className = 'hammer'; h.textContent = '🔨';
+    h.style.left = (x - 8) + 'px'; h.style.top = (y - 46) + 'px';
+    document.body.appendChild(h);
+    requestAnimationFrame(() => h.classList.add('smash'));
+    setTimeout(() => h.remove(), 380);
+}
+
+/* ============ 模式2：分拣快递 ============ */
+let sortBins = [], sortCur = null, sortDone = 0, SORT_GOAL = 12, binCounts = {};
+function sortStart() {
+    $('title').textContent = '📦 分拣快递';
+    const keys3 = Object.keys(C3D);
+    // 本局4个箱子：立体3个+平面1个 或 随机混合
+    const binKeys = shuffle(keys3).slice(0, 3).concat(pick(Object.keys(C2D)));
+    sortBins = shuffle(binKeys);
+    binCounts = {};
+    const bins = $('bins'); bins.innerHTML = '';
+    sortBins.forEach(k => {
+        binCounts[k] = 0;
+        const info = C3D[k] || C2D[k];
+        const b = document.createElement('div');
+        b.className = 'bin';
+        b.innerHTML = `${info.draw()}<div class="bn">${info.name}</div><div class="cnt" id="cnt_${k}">0</div>`;
+        b.onclick = () => sortToBin(k, b);
+        bins.appendChild(b);
+    });
+    sortDone = 0;
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `快递来了！点下面的<span class="hl">正确箱子</span>送它回家`;
+    sortNext();
+}
+function sortNext() {
+    if (mode !== 'sort') return;
+    if (sortDone >= SORT_GOAL) { showResult('📦', '快递分拣完成！', `得分 ${score} 分`); return; }
+    sortCur = pick(sortBins);
+    const info = C3D[sortCur] || C2D[sortCur];
+    const belt = $('belt');
+    belt.innerHTML = '';
+    const p = document.createElement('div');
+    p.className = 'parcel';
+    if (C3D[sortCur] && Math.random() < 0.5) p.innerHTML = `<span class="obj">${pick(info.objs)}</span>`;
+    else p.innerHTML = info.draw();
+    belt.appendChild(p);
+}
+function sortToBin(k, binEl) {
+    if (mode !== 'sort' || !sortCur) return;
+    if (k === sortCur) { sGood(); addScore(10); binCounts[k]++;
+        $('cnt_' + k).textContent = binCounts[k];
+        binEl.classList.remove('glow'); void binEl.offsetWidth; binEl.classList.add('glow');
+        fb(pick(['送对啦！', '分拣正确！', '准确无误！']), true);
+        if (binCounts[k] === 3) confetti(20);
+        sortCur = null; sortDone++;
+        setTimeout(sortNext, 500);
+    } else { sBad(); binEl.classList.remove('reject'); void binEl.offsetWidth; binEl.classList.add('reject');
+        fb(`不对哦，它是${(C3D[sortCur] || C2D[sortCur]).name}`, false);
+        // 高亮正确箱
+        const rightIdx = sortBins.indexOf(sortCur);
+        const rb = $('bins').children[rightIdx];
+        rb.classList.add('glow'); setTimeout(() => rb.classList.remove('glow'), 800);
+    }
+}
+
+/* ============ 模式3：猜猜是谁 ============ */
+let guessDone = 0, GUESS_GOAL = 8;
+function guessStart() {
+    $('title').textContent = '🔦 猜猜是谁';
+    $('qbar').classList.remove('hidden');
+    $('qbar').innerHTML = `手电筒只照到一角，猜猜它是<span class="hl">什么图形</span>？`;
+    guessDone = 0;
+    guessNext();
+}
+function guessNext() {
+    if (mode !== 'guess') return;
+    if (guessDone >= GUESS_GOAL) { showResult('🔦', '神探就是你了！', `得分 ${score} 分`); return; }
+    const keys = Object.keys(C3D).concat(Object.keys(C2D));
+    const kind = pick(keys);
+    const info = C3D[kind] || C2D[kind];
+    // 手电筒圆窗位置（百分比，偏一点才只露局部）
+    const cx = pick([28, 50, 72]) + '%', cy = pick([30, 50, 70]) + '%';
+    $('flashBox').innerHTML = `<div class="full">${info.draw()}</div><div class="dark" style="--cx:${cx};--cy:${cy}"></div>`;
+    const right = info.name;
+    const others = shuffle(keys.filter(k => k !== kind)).slice(0, 3).map(k => (C3D[k] || C2D[k]).name);
+    const opts = $('nameOpts'); opts.innerHTML = '';
+    shuffle([right, ...others]).forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'nopt'; b.textContent = o; b._ok = o === right;
+        b.onclick = () => {
+            if (b.disabled) return;
+            [...opts.children].forEach(x => x.disabled = true);
+            if (b._ok) { b.classList.add('right'); sGood(); addScore(10); confetti(14);
+                fb(pick(['猜对了！', '好眼力！']), true);
+                guessDone++; setTimeout(guessNext, 800); }
+            else { b.classList.add('wrong'); sBad(); fb(`它是${right}哦`, false);
+                const rb = [...opts.children].find(x => x._ok);
+                rb.classList.add('right');
+                setTimeout(() => { [...opts.children].forEach(x => { x.disabled = false; x.classList.remove('wrong', 'right'); }); fb('', ''); }, 1000); }
+        };
+        opts.appendChild(b);
+    });
+}
+
+/* ============ 模式4：方位寻宝 ============ */
+const DIR_POOL = ['🌳', '🏠', '🐱', '🐶', '🚗', '⚽', '🎈', '🍰', '🦋', '🍄', '🚲', '🌸'];
+let dirDone = 0, DIR_GOAL = 8, dirCells = [];
+function dirStart() {
+    $('title').textContent = '🧭 方位寻宝';
+    $('qbar').classList.remove('hidden');
+    dirCells = [];
+    const scene = $('dirScene'); scene.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+        const c = document.createElement('div');
+        c.className = 'dcell'; c.dataset.i = i;
+        scene.appendChild(c);
+        dirCells.push(c);
+    }
+    dirDone = 0;
+    dirNext();
+}
+function dirNext() {
+    if (mode !== 'dir') return;
+    if (dirDone >= DIR_GOAL) { showResult('🧭', '方位小达人！', `得分 ${score} 分`); return; }
+    // 清场并随机放 5 个物品（保证能出题：选一个锚点+一个方向邻居）
+    const cells = dirCells;
+    cells.forEach(c => { c.textContent = ''; c.onclick = null; c.className = 'dcell'; });
+    let anchors = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    const placed = shuffle(anchors.slice(0, 5)).map((pos, k) => ({ pos, icon: DIR_POOL[k] }));
+    placed.forEach(p => { cells[p.pos].textContent = p.icon; });
+    // 从已放物品中找一个"方向邻居也在场"的组合
+    const DIRS = [{ d: '上面', off: -4 }, { d: '下面', off: 4 }, { d: '左边', off: -1, row: true }, { d: '右边', off: 1, row: true }];
+    const cands = [];
+    placed.forEach(a => placed.forEach(b => {
+        if (a === b) return;
+        const ra = Math.floor(a.pos / 4), rb = Math.floor(b.pos / 4);
+        const ca = a.pos % 4, cb = b.pos % 4;
+        if (b.pos === a.pos - 4) cands.push({ a, b, d: '上面' });
+        if (b.pos === a.pos + 4) cands.push({ a, b, d: '下面' });
+        if (ra === rb && cb === ca - 1) cands.push({ a, b, d: '左边' });
+        if (ra === rb && cb === ca + 1) cands.push({ a, b, d: '右边' });
+    }));
+    if (!cands.length) { dirNext(); return; }
+    const { a, b, d } = pick(cands);
+    $('qbar').innerHTML = `谁在 <span class="hl">${a.icon}</span> 的<span class="hl">${d}</span>？点它！`;
+    cells.forEach(c => c.onclick = () => {
+        if (c._done) return; c._done = true;
+        if (+c.dataset.i === b.pos) { c.classList.add('right'); sGood(); addScore(10); confetti(12);
+            fb(pick(['找对了！', '方位感真好！']), true); dirDone++;
+            setTimeout(() => { c._done = false; dirNext(); }, 800); }
+        else { c.classList.add('wrong'); sBad(); fb(`再看看${d}是谁`, false);
+            setTimeout(() => { c._done = false; c.classList.remove('wrong'); }, 700); }
+    });
+}
+
+/* ============ 流程 ============ */
+const PANELS = { mole: 'moleGrid', sort: 'sortZone', guess: 'guessZone', dir: 'dirZone' };
+function enterMode(m) {
+    sClick(); mode = m; score = 0; $('scoreN').textContent = 0;
+    Object.values(PANELS).forEach(id => $(id).classList.add('hidden'));
+    $('qbar').classList.add('hidden');
+    $('homeScreen').classList.add('hidden'); $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden');
+    $('gameArea').classList.remove('hidden');
+    if (m === 'mole') { $(PANELS.mole).classList.remove('hidden'); moleStart(); }
+    if (m === 'sort') { $(PANELS.sort).classList.remove('hidden'); sortStart(); }
+    if (m === 'guess') { $(PANELS.guess).classList.remove('hidden'); guessStart(); }
+    if (m === 'dir') { $(PANELS.dir).classList.remove('hidden'); dirStart(); }
+}
+function goHome() {
+    mode = null;
+    Object.values(PANELS).forEach(id => $(id).classList.add('hidden'));
+    $('qbar').classList.add('hidden');
+    $('homeScreen').classList.remove('hidden'); $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden');
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); enterMode(mode); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>
