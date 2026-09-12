@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚂 数字列车 6~10 - 一年级数概念课堂游戏</title>
+<style>
+/* ===================== 全局 ===================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    /* 明亮卡通风：蓝天 → 草地 */
+    background: linear-gradient(180deg, #CDEBFF 0%, #E9F8FF 52%, #E4F7D2 100%);
+    color: #2c3e50;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+/* ===================== 顶部导航 ===================== */
+.hdr {
+    display: flex; align-items: center; gap: clamp(10px, 1.2vw, 22px);
+    padding: clamp(8px, 1vh, 14px) clamp(14px, 1.6vw, 30px);
+    background: rgba(255,255,255,.86);
+    box-shadow: 0 3px 14px rgba(80,120,160,.18);
+    position: relative; z-index: 20;
+}
+.back {
+    font-size: clamp(14px, 1.15vw, 19px); font-weight: bold; color: #3b6b8f;
+    background: #fff; border: 2px solid #CFE3F2; border-radius: 999px;
+    padding: clamp(7px, .9vh, 11px) clamp(12px, 1.1vw, 20px);
+    text-decoration: none; white-space: nowrap; transition: all .15s;
+}
+.back:hover { border-color: #7FB6DC; transform: translateY(-2px); }
+.hdr h1 { font-size: clamp(19px, 1.85vw, 30px); letter-spacing: 2px; white-space: nowrap; }
+.hdr h1 .rng { color: #E67E22; }
+.tabs { flex: 1; display: flex; justify-content: center; gap: clamp(8px, .9vw, 16px); }
+.tab {
+    font-size: clamp(14px, 1.25vw, 21px); font-weight: bold; color: #4a6b85;
+    background: #fff; border: 2px solid #CFE3F2; border-radius: 999px;
+    padding: clamp(8px, 1vh, 13px) clamp(14px, 1.4vw, 26px);
+    white-space: nowrap; transition: all .15s;
+}
+.tab:hover { border-color: #7FB6DC; }
+.tab.active { background: #3BA9F5; border-color: #2A8DD1; color: #fff; box-shadow: 0 4px 0 #2277B0; }
+.tools { display: flex; gap: clamp(6px, .7vw, 12px); }
+.tbtn {
+    font-size: clamp(13px, 1.05vw, 18px); font-weight: bold; color: #3b6b8f;
+    background: #fff; border: 2px solid #CFE3F2; border-radius: 999px;
+    padding: clamp(7px, .9vh, 11px) clamp(11px, 1vw, 18px);
+    white-space: nowrap; transition: all .15s;
+}
+.tbtn:hover { border-color: #7FB6DC; transform: translateY(-2px); }
+.tbtn.off { opacity: .5; text-decoration: line-through; }
+
+/* ===================== 主舞台 ===================== */
+#stage {
+    flex: 1; position: relative; overflow: hidden; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: clamp(6px, 1.2vh, 18px) clamp(12px, 1.6vw, 30px);
+}
+.lv { display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: clamp(8px, 1.6vh, 22px); width: 100%; height: 100%; min-height: 0; }
+.lv.active { display: flex; }
+
+/* -------- 关卡一：物体 + 点子 -------- */
+#objbox {
+    flex: 1; min-height: 0; width: min(96%, 1180px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(6px, 1.4vh, 20px);
+}
+.orow { display: flex; justify-content: center; gap: clamp(10px, 1.4vw, 26px); }
+.obj { width: clamp(52px, 5.6vw, 104px); flex-shrink: 0; }
+.obj svg { display: block; width: 100%; height: auto; }
+
+.dotsarea { display: flex; align-items: center; gap: clamp(10px, 1.2vw, 20px); }
+.dots { display: flex; flex-direction: column; gap: clamp(6px, .9vh, 12px); }
+.drow { display: flex; gap: clamp(8px, 1vw, 16px); }
+.dot {
+    width: clamp(46px, 4.4vw, 76px); height: clamp(46px, 4.4vw, 76px);
+    border-radius: 50%; border: 4px dashed #8FB8D6; background: rgba(255,255,255,.72);
+    font-size: clamp(20px, 1.9vw, 32px); font-weight: 800; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s, transform .1s;
+}
+.dot:hover { transform: scale(1.06); }
+.dot.on { border-style: solid; border-color: #2F9BE0; background: #3BA9F5; box-shadow: 0 4px 0 #2277B0; }
+.dots.ok .dot.on { border-color: #2FA84F; background: #7BE495; box-shadow: 0 4px 0 #249040; }
+
+/* -------- 关卡二：尺子 -------- */
+.rulerwrap { width: min(96%, 1400px); }
+.rulerwrap svg { display: block; width: 100%; height: auto; }
+
+/* -------- 关卡三：火车 -------- */
+.diffchip {
+    font-size: clamp(13px, 1vw, 17px); font-weight: bold; color: #8a6100;
+    background: #FFE9B0; border: 2px solid #E0B35C; border-radius: 999px; padding: 5px 16px;
+}
+.diffchip.hard { color: #fff; background: #E8734A; border-color: #C4522B; }
+.dirbar { width: min(96%, 1560px); }
+.dirbar svg { display: block; width: 100%; height: auto; }
+.train { display: flex; align-items: flex-end; justify-content: center; width: min(96%, 1560px); }
+
+/* 火车头 */
+.loco { position: relative; width: clamp(96px, 9.6vw, 168px); aspect-ratio: 1.12;
+        flex: 0 0 auto; margin-right: clamp(6px, .7vw, 12px); }
+.loco .boiler { position: absolute; left: 0; bottom: 15%; width: 70%; height: 42%;
+                background: #E8524A; border-radius: 14px 6px 6px 14px; }
+.loco .cab { position: absolute; right: 0; bottom: 15%; width: 40%; height: 76%;
+             background: #D9483F; border-radius: 12px 12px 6px 6px; }
+.loco .lwin { position: absolute; right: 8%; bottom: 48%; width: 24%; height: 22%;
+              background: #BFE9FF; border: 3px solid #fff; border-radius: 6px; }
+.loco .chimney { position: absolute; left: 8%; bottom: 54%; width: 16%; height: 24%;
+                 background: #37474F; border-radius: 6px 6px 2px 2px; }
+.loco .lwheels { position: absolute; left: 1%; right: 1%; bottom: 0; display: flex; justify-content: space-around; }
+.loco .lwheels i { width: 20%; aspect-ratio: 1; border-radius: 50%; background: #4A5568; border: 3px solid #2D3748; }
+.loco .smoke { position: absolute; left: 6%; bottom: 78%; width: 20%; height: 12%;
+               background: #fff; border-radius: 50%; opacity: .75; }
+@media (prefers-reduced-motion: no-preference) {
+    .loco .smoke { animation: puff 2.2s ease-in-out infinite; }
+    @keyframes puff { 0%,100% { transform: translateY(0) scale(1); opacity: .7; }
+                      50% { transform: translateY(-40%) scale(1.35); opacity: .25; } }
+}
+
+/* 车厢 */
+.wagons { display: flex; align-items: flex-end; flex: 1; min-width: 0; }
+.wagon { position: relative; flex: 1 1 0; min-width: 0; margin-right: clamp(6px, .7vw, 12px); cursor: pointer; }
+.wagon .conn { position: absolute; left: calc(-1 * clamp(6px, .7vw, 12px) - 2px); bottom: 24%;
+               width: calc(clamp(6px, .7vw, 12px) + 4px); height: 10%; background: #8FA6B6; border-radius: 3px; }
+.wagon:first-child .conn { display: none; }
+.wbody { position: relative; width: 100%; aspect-ratio: .84; background: #fff;
+         border: 3px solid #9FC4DE; border-radius: 12px; overflow: hidden;
+         display: flex; align-items: center; justify-content: center; transition: all .18s; }
+.wroof { position: absolute; top: 0; left: 0; right: 0; height: 20%; background: #8CCBF0; }
+.wnum { position: relative; font-size: clamp(20px, 2.3vw, 40px); font-weight: 800; color: #2c3e50; margin-top: 12%; }
+.wagon.nonum .wnum { visibility: hidden; }
+.wheels { position: absolute; left: 0; right: 0; bottom: -6%; display: flex; justify-content: space-around; pointer-events: none; }
+.wheels i { width: 17%; aspect-ratio: 1; border-radius: 50%; background: #4A5568; border: 3px solid #2D3748; }
+.wagon .step { display: none; position: absolute; top: 5%; left: 50%; transform: translateX(-50%); z-index: 2;
+               min-width: 34px; padding: 2px 8px; border-radius: 999px; background: #E67E22; color: #fff;
+               font-size: clamp(14px, 1.1vw, 19px); font-weight: 800; }
+.wagon.walk .step { display: block; }
+.wagon.walk .wbody { border-color: #E67E22; box-shadow: 0 0 0 5px rgba(230,126,34,.35); }
+.wagon.ok .wbody { background: #7BE495; border-color: #2FA84F; }
+.wagon.ok .wroof { background: #4FCB78; }
+.wagon.ok .wnum { color: #fff; visibility: visible; }
+.wagon.ans .wbody { box-shadow: 0 0 0 7px rgba(255,143,61,.8); }
+.wagon.pop { animation: pop .45s; }
+.wagon.shake { animation: shake .42s; }
+.track { width: min(96%, 1560px); height: clamp(8px, 1vh, 14px); border-radius: 999px;
+         background: #B08A5E; box-shadow: 0 5px 0 #8E6C46; }
+
+/* -------- 数字选项按钮 -------- */
+.numrow { display: flex; gap: clamp(10px, 1.5vw, 24px); justify-content: center; flex-wrap: wrap; }
+.num {
+    width: clamp(82px, 8vw, 132px); height: clamp(66px, 6.4vw, 106px);
+    border-radius: 18px; font-size: clamp(30px, 2.9vw, 50px); font-weight: 800; color: #2c3e50;
+    background: #fff; border: 3px solid #FFC978; box-shadow: 0 5px 0 #E8A93F;
+    transition: all .12s;
+}
+.num:hover:not(.dis) { transform: translateY(-3px); background: #FFF8EA; }
+.num:active:not(.dis) { transform: translateY(2px); box-shadow: none; }
+.num.dis { opacity: .45; filter: saturate(.35); box-shadow: none; cursor: not-allowed; border-color: #D8DFE4; }
+.num.ok { background: #7BE495; border-color: #2FA84F; color: #fff; box-shadow: 0 5px 0 #249040; }
+.num.ans { animation: pop .5s infinite; border-color: #E8734A; }
+.num.pop { animation: pop .45s; }
+.num.shake { animation: shake .42s; }
+@keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.15)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)}
+                   40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+
+/* -------- 底部提示 + 进度 -------- */
+.ftr {
+    display: flex; align-items: center; gap: clamp(12px, 1.4vw, 26px);
+    padding: clamp(7px, 1vh, 13px) clamp(14px, 1.6vw, 30px);
+    background: rgba(255,255,255,.88); box-shadow: 0 -3px 14px rgba(80,120,160,.15);
+    position: relative; z-index: 20;
+}
+.tip { display: flex; align-items: center; gap: clamp(10px, 1vw, 18px); flex: 1; min-width: 0; }
+#tipText { font-size: clamp(17px, 1.6vw, 27px); font-weight: 800; color: #2b5b7d; }
+.mini {
+    font-size: clamp(13px, 1vw, 17px); font-weight: bold; color: #3b6b8f; white-space: nowrap;
+    background: #fff; border: 2px solid #CFE3F2; border-radius: 999px; padding: 6px 14px; transition: all .15s;
+}
+.mini:hover { border-color: #7FB6DC; }
+.prog { display: flex; align-items: center; gap: clamp(6px, .6vw, 10px);
+        font-size: clamp(15px, 1.25vw, 21px); font-weight: 800; color: #3b6b8f; }
+.slots { display: flex; gap: 5px; }
+.slot { width: clamp(24px, 2.1vw, 34px); height: clamp(17px, 1.5vw, 24px);
+        border-radius: 5px; border: 2px dashed #9DC0D8; background: rgba(255,255,255,.6); }
+.slot.full { background: #FFB54D; border: 2px solid #E08A1E; border-style: solid; }
+
+/* -------- 浮动元素 -------- */
+#toast {
+    position: fixed; left: 50%; bottom: clamp(96px, 12vh, 150px); transform: translateX(-50%) translateY(10px);
+    background: rgba(38,70,100,.93); color: #fff; font-weight: bold;
+    font-size: clamp(15px, 1.25vw, 21px); padding: 12px 26px; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: all .25s; z-index: 80; max-width: 88vw; text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.flybox {
+    position: fixed; width: clamp(64px, 5.6vw, 92px); height: clamp(64px, 5.6vw, 92px);
+    border-radius: 18px; background: #fff; border: 4px solid #FFC978;
+    display: flex; align-items: center; justify-content: center; z-index: 70; pointer-events: none;
+    font-size: clamp(30px, 2.6vw, 46px); font-weight: 800; color: #2c3e50;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    transition: transform .5s cubic-bezier(.3,.9,.4,1);
+}
+
+/* -------- 通关庆祝 -------- */
+.overlay { position: fixed; inset: 0; background: rgba(24,52,78,.45);
+           display: flex; align-items: center; justify-content: center; z-index: 90; }
+.overlay.hidden { display: none; }
+.card { background: #fff; border-radius: 30px; text-align: center;
+        padding: clamp(24px, 3.4vh, 44px) clamp(30px, 4vw, 70px);
+        box-shadow: 0 24px 70px rgba(0,0,0,.3); max-width: min(92vw, 860px); }
+.ovtitle { font-size: clamp(26px, 2.6vw, 42px); font-weight: 800; color: #E67E22; letter-spacing: 2px; }
+.ovsub { margin-top: 10px; font-size: clamp(15px, 1.3vw, 21px); color: #6b8299; font-weight: bold; }
+.celebTrain { display: flex; align-items: flex-end; justify-content: center; gap: 6px;
+              margin: clamp(14px, 2.4vh, 30px) 0; font-size: clamp(34px, 3.4vw, 54px); }
+.celebTrain .cwag { width: clamp(30px, 2.8vw, 46px); height: clamp(26px, 2.4vw, 38px);
+                    border-radius: 8px; background: #FFB54D; border: 3px solid #E08A1E; }
+@media (prefers-reduced-motion: no-preference) {
+    .celebTrain { animation: run 2.6s ease-in-out infinite; }
+    @keyframes run { 0%,100% { transform: translateX(-14%); } 50% { transform: translateX(14%); } }
+}
+.ovbtns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.bigbtn { font-size: clamp(16px, 1.5vw, 24px); font-weight: 800; color: #3b6b8f;
+          background: #fff; border: 3px solid #CFE3F2; border-radius: 999px;
+          padding: clamp(10px, 1.4vh, 16px) clamp(20px, 2.2vw, 38px); transition: all .15s; }
+.bigbtn:hover { transform: translateY(-3px); border-color: #7FB6DC; }
+.bigbtn.primary { background: #3BA9F5; border-color: #2A8DD1; color: #fff; box-shadow: 0 5px 0 #2277B0; }
+</style>
+</head>
+<body>
+
+<!-- ===================== 顶部导航 ===================== -->
+<header class="hdr">
+    <a class="back" href="../index.html">← 返回目录</a>
+    <h1>🚂 数字列车 <span class="rng">6~10</span></h1>
+    <nav class="tabs">
+        <button class="tab active" data-lv="1">① 数量与数字</button>
+        <button class="tab" data-lv="2">② 尺子上的数</button>
+        <button class="tab" data-lv="3">③ 第几节车厢</button>
+    </nav>
+    <div class="tools">
+        <button class="tbtn" id="btnSound">🔊 声音</button>
+        <button class="tbtn" id="btnNext">⏭ 下一题</button>
+        <button class="tbtn" id="btnReset">🔄 重来</button>
+    </div>
+</header>
+
+<!-- ===================== 主舞台 ===================== -->
+<main id="stage">
+    <!-- 关卡一：数量与数字 -->
+    <section id="lv1" class="lv active">
+        <div id="objbox"></div>
+        <div class="dotsarea">
+            <div id="dots" class="dots"></div>
+            <button class="mini" id="btnClear">清空</button>
+        </div>
+        <div class="numrow" id="numrow"></div>
+    </section>
+
+    <!-- 关卡二：尺子上的数 -->
+    <section id="lv2" class="lv">
+        <div class="rulerwrap" id="rulerwrap"></div>
+        <div class="numrow" id="numrow2"></div>
+    </section>
+
+    <!-- 关卡三：第几节车厢 -->
+    <section id="lv3" class="lv">
+        <div class="diffchip" id="diffchip"></div>
+        <div class="dirbar" id="dirbar"></div>
+        <div class="train" id="train"></div>
+        <div class="track"></div>
+    </section>
+</main>
+
+<!-- ===================== 底部提示 + 进度 ===================== -->
+<footer class="ftr">
+    <div class="tip">
+        <span id="tipText">准备好了吗？</span>
+        <button class="mini" id="btnReplay">🔊 重听</button>
+    </div>
+    <div class="prog">
+        <span>🚂</span>
+        <span class="slots" id="pSlots"></span>
+        <span id="pCnt">0/5</span>
+    </div>
+</footer>
+
+<div id="toast"></div>
+
+<!-- ===================== 通关庆祝 ===================== -->
+<div class="overlay hidden" id="overlay">
+    <div class="card">
+        <div class="ovtitle" id="ovTitle">太棒了！这一关完成啦！</div>
+        <div class="ovsub" id="ovSub"></div>
+        <div class="celebTrain">
+            <span>🚂</span><span class="cwag"></span><span class="cwag"></span><span class="cwag"></span>
+        </div>
+        <div class="ovbtns">
+            <button class="bigbtn" id="ovAgain">🔄 再来一轮</button>
+            <button class="bigbtn primary" id="ovNext">进入下一关 →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* =========================================================================
+   《数字列车 6~10》 一年级数概念课堂游戏
+   三大关卡：① 数量与数字  ② 尺子上的数  ③ 第几节车厢
+   单文件 · 零依赖 · 音效与语音全部程序合成（离线可用）
+   需求依据：小学一年级需求文档文件夹/09数学列车.md（v2.0 优化定稿）
+   ========================================================================= */
+
+/* ================= 参数区（改这里即可调整难度/节奏） ================= */
+const CONFIG = {
+    PER_LEVEL:      5,    // 每关 5 题一轮
+    OBJ_MIN:        6,    // 关卡一：物体数量下限
+    OBJ_MAX:       10,    // 关卡一：物体数量上限
+    DOTS:          10,    // 关卡一：点子总数（5+5 两排）
+    RULER_MAX:     10,    // 关卡二：尺子最大刻度
+    RULER_HIDE_MIN: 1,    // 关卡二：被隐藏数字范围（避开 0 和 10 端点）
+    RULER_HIDE_MAX: 9,
+    TRAIN_WAGONS:  10,    // 关卡三：车厢总数
+    MAX_ORDINAL:    8,    // 关卡三：节次范围 1~8（避开贴边）
+    HARD_STREAK:    3,    // 关卡三：连对 3 题升 ★★
+    BACK_STREAK:    2,    // 关卡三：连错 2 题退回 ★
+    HINT_AFTER:     3,    // 同一题错 3 次后给支架提示
+    AUTO_NEXT:   1200,    // 答对后自动进入下一题（毫秒）
+    DEBOUNCE:     300     // 同一元素防误触间隔（毫秒）
+};
+const OBJECT_KINDS = ['sunflower', 'apple', 'fish', 'star', 'balloon'];  // 关卡一物体池
+const PRAISE = ['太棒了！', '真准！', '数得真好！', '厉害，答对啦！', '你真棒！'];
+const LVNAME = { 1: '数量与数字', 2: '尺子上的数', 3: '第几节车厢' };
+
+/* ================= 全局状态 ================= */
+const S = {
+    level: 1,        // 当前关卡
+    sound: true,     // 声音开关（音效 + 语音）
+    kvShown: false,  // 快捷键提示是否已展示
+    lv: {}           // 各关卡独立状态（切 Tab 保留进度）
+};
+function newLevelState(lv) {
+    return { lv, qi: 0, correct: 0, q: null, wrong: 0, hinted: false, opts: null,
+             hist: [], tip: null, ready: false, busy: false,
+             hard: false, streak: 0, failStreak: 0,   // 仅关卡三使用
+             revealed: false, flyEl: null };          // 仅关卡二使用
+}
+
+/* ================= 基础工具 ================= */
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+}
+/* 同一元素 300ms 内重复点击忽略（防误触；不同元素不受影响，大屏可多人同时操作） */
+function guard(node) {
+    const t = performance.now();
+    if (node._gt && t - node._gt < CONFIG.DEBOUNCE) return false;
+    node._gt = t; return true;
+}
+/* 重新触发 CSS 动画 */
+function anim(node, cls) { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); }
+
+/* ================= 音效（Web Audio 程序合成，无需音频文件） ================= */
+let AC = null;
+function ac() {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+}
+function beep(freq, dur = 0.12, type = 'sine', vol = 0.16, delay = 0) {
+    if (!S.sound) return;
+    try {
+        const c = ac(), t0 = c.currentTime + delay;
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, t0);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+    } catch (e) { /* 音频不可用时静默跳过 */ }
+}
+const sTap   = () => beep(700, 0.05, 'triangle', 0.10);
+const sCount = i => { beep(520 + i * 55, 0.10, 'sine', 0.15); beep(1040 + i * 110, 0.07, 'sine', 0.05, 0.02); };
+const sGood  = () => [784, 988, 1319].forEach((f, i) => beep(f, 0.16, 'sine', 0.16, i * 0.09));
+const sBad   = () => { beep(220, 0.16, 'square', 0.10, 0); beep(165, 0.24, 'square', 0.10, 0.16); };
+const sWin   = () => [523, 659, 784, 1047, 1319].forEach((f, i) => beep(f, 0.24, 'triangle', 0.16, i * 0.14));
+
+/* ================= 语音（Web Speech API，不可用时静默降级） ================= */
+const NARR = {
+    speak(text) {
+        if (!S.sound || !text) return;
+        try {
+            if (!('speechSynthesis' in window)) return;
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(String(text));
+            u.lang = 'zh-CN'; u.rate = 0.85; u.pitch = 1.05;
+            const zh = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().indexOf('zh') === 0);
+            if (zh) u.voice = zh;
+            speechSynthesis.speak(u);
+        } catch (e) { /* 语音不可用时静默跳过 */ }
+    },
+    praise() { this.speak(pick(PRAISE)); }
+};
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => {};
+
+/* ================= 提示条 / Toast ================= */
+function setTip(t) { $('tipText').textContent = t; }
+let toastTimer = 0;
+function toast(t) {
+    const el = $('toast'); el.textContent = t; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 1900);
+}
+function kvHint() {
+    if (S.kvShown) return;
+    S.kvShown = true;
+    toast('老师快捷键：空格=下一题 · R=重来 · A=答案 · Esc=返回');
+}
+
+/* ================= 进度条（每答对 1 题挂 1 节车厢） ================= */
+function renderProgress() {
+    const st = S.lv[S.level];
+    let h = '';
+    for (let i = 0; i < CONFIG.PER_LEVEL; i++) h += '<span class="slot' + (i < st.correct ? ' full' : '') + '"></span>';
+    $('pSlots').innerHTML = h;
+    $('pCnt').textContent = st.correct + '/' + CONFIG.PER_LEVEL;
+}
+
+/* ================= 图形素材（全部为内联 SVG 程序绘制） ================= */
+const ART = {
+    /* 向日葵 */
+    sunflower() {
+        let p = '';
+        for (let i = 0; i < 10; i++) p += '<ellipse cx="50" cy="26" rx="9.5" ry="16" fill="#FFC93C" transform="rotate(' + (i * 36) + ' 50 48)"/>';
+        return '<svg viewBox="0 0 100 100">' + p +
+            '<rect x="46" y="58" width="8" height="36" rx="4" fill="#4CAF50"/>' +
+            '<ellipse cx="30" cy="80" rx="14" ry="8" fill="#66BB6A" transform="rotate(-18 30 80)"/>' +
+            '<ellipse cx="70" cy="86" rx="14" ry="8" fill="#66BB6A" transform="rotate(18 70 86)"/>' +
+            '<circle cx="50" cy="48" r="17" fill="#8B5E3C"/>' +
+            '<circle cx="44" cy="43" r="2.6" fill="#5D3A22"/><circle cx="56" cy="43" r="2.6" fill="#5D3A22"/>' +
+            '<circle cx="50" cy="53" r="2.6" fill="#5D3A22"/></svg>';
+    },
+    /* 苹果 */
+    apple() {
+        const d = 'M50 26 C34 14 14 24 14 48 C14 72 32 92 50 92 C68 92 86 72 86 48 C86 24 66 14 50 26Z';
+        return '<svg viewBox="0 0 100 100">' +
+            '<path d="' + d + '" fill="#E8524A"/>' +
+            '<path d="' + d + '" fill="none" stroke="#C43A32" stroke-width="3"/>' +
+            '<ellipse cx="34" cy="46" rx="8" ry="12" fill="#fff" opacity="0.33" transform="rotate(-20 34 46)"/>' +
+            '<rect x="47" y="12" width="6" height="16" rx="3" fill="#7B5230"/>' +
+            '<path d="M54 20 C66 8 80 12 80 21 C80 28 64 30 54 20Z" fill="#4CAF50"/></svg>';
+    },
+    /* 小鱼 */
+    fish() {
+        return '<svg viewBox="0 0 100 100">' +
+            '<path d="M22 50 C22 32 42 24 56 24 C74 24 86 38 86 50 C86 62 74 76 56 76 C42 76 22 68 22 50Z" fill="#4FC3F7"/>' +
+            '<path d="M22 50 L6 30 L6 70 Z" fill="#29B6F6"/>' +
+            '<path d="M46 34 C52 46 52 54 46 66" stroke="#29B6F6" stroke-width="3" fill="none"/>' +
+            '<path d="M58 34 C64 46 64 54 58 66" stroke="#29B6F6" stroke-width="3" fill="none"/>' +
+            '<circle cx="66" cy="44" r="7.5" fill="#fff"/><circle cx="68" cy="44" r="3.8" fill="#2c3e50"/></svg>';
+    },
+    /* 星星 */
+    star() {
+        return '<svg viewBox="0 0 100 100">' +
+            '<path d="M50 8 L62 40 L96 42 L69 62 L79 94 L50 74 L21 94 L31 62 L4 42 L38 40 Z" ' +
+            'fill="#FFD54F" stroke="#F0A800" stroke-width="3" stroke-linejoin="round"/></svg>';
+    },
+    /* 气球 */
+    balloon() {
+        return '<svg viewBox="0 0 100 100">' +
+            '<path d="M50 82 C56 88 44 92 50 98" stroke="#9E9E9E" stroke-width="2.5" fill="none"/>' +
+            '<ellipse cx="50" cy="42" rx="26" ry="32" fill="#F06292"/>' +
+            '<ellipse cx="40" cy="30" rx="7" ry="10" fill="#fff" opacity="0.35" transform="rotate(-18 40 30)"/>' +
+            '<path d="M50 74 L44 83 L56 83 Z" fill="#D94F7C"/></svg>';
+    }
+};
+
+/* ================= 出题工具 ================= */
+/* 关卡一：4 个数字选项 = 正确答案 + 3 个干扰项（±1/±2，限定 1~10，去重） */
+function fourOptions(n) {
+    const set = new Set([n]);
+    const cand = shuffle([n - 2, n - 1, n + 1, n + 2].filter(v => v >= 1 && v <= CONFIG.RULER_MAX));
+    for (const v of cand) { if (set.size >= 4) break; set.add(v); }
+    for (let v = 1; v <= CONFIG.RULER_MAX && set.size < 4; v++) set.add(v);
+    return shuffle(Array.from(set));
+}
+/* 关卡二：5 个候选 = 正确数 ±2 滑动窗口（端点向内补邻，必含正确答案） */
+function fiveOptions(h) {
+    const set = new Set([h]);
+    if (h <= 2) { for (let v = h + 1; v <= CONFIG.RULER_MAX && set.size < 5; v++) set.add(v); }
+    else if (h >= 8) { for (let v = h - 1; v >= 0 && set.size < 5; v--) set.add(v); }
+    else { [-2, -1, 1, 2].forEach(d => set.add(h + d)); }
+    for (let v = 0; v <= CONFIG.RULER_MAX && set.size < 5; v++) set.add(v);
+    return shuffle(Array.from(set));
+}
+
+/* =========================================================================
+   关卡一：数量与数字
+   ========================================================================= */
+const LV1 = {
+    new() {
+        const st = S.lv[1];
+        /* 出题：6~10，同一轮不重复 */
+        let n, g = 0;
+        do { n = CONFIG.OBJ_MIN + rnd(CONFIG.OBJ_MAX - CONFIG.OBJ_MIN + 1); g++; }
+        while (st.hist.indexOf(n) >= 0 && g < 40);
+        st.hist.push(n); if (st.hist.length > 3) st.hist.shift();
+        st.q = { n: n, kind: pick(OBJECT_KINDS) };
+        st.opts = fourOptions(n);
+        st.dots = new Array(CONFIG.DOTS).fill(false);
+        st.wrong = 0; st.hinted = false; st.over = false; st.done = false; st.busy = false;
+        st.touched = false;   /* 本题是否已开始操作（false 时显示完整引导语） */
+        this.render();
+        this.tip();
+        NARR.speak('数一数上面有几个，点亮同样多的点子，再选出数字');
+        kvHint();
+    },
+    render() {
+        const st = S.lv[1], q = st.q;
+        /* 物体：每行 5 个 */
+        let rows = '', left = q.n;
+        while (left > 0) {
+            const c = Math.min(5, left); left -= c;
+            let items = '';
+            for (let i = 0; i < c; i++) items += '<div class="obj">' + ART[q.kind]() + '</div>';
+            rows += '<div class="orow">' + items + '</div>';
+        }
+        $('objbox').innerHTML = rows;
+        /* 点子：5+5 两排，点亮后显示序号 */
+        let dh = '', order = 0;
+        for (let r = 0; r < 2; r++) {
+            let row = '';
+            for (let c = 0; c < 5; c++) {
+                const i = r * 5 + c, on = st.dots[i];
+                if (on) order++;
+                row += '<button class="dot' + (on ? ' on' : '') + '" data-i="' + i + '">' + (on ? order : '') + '</button>';
+            }
+            dh += '<div class="drow">' + row + '</div>';
+        }
+        const box = $('dots');
+        box.innerHTML = dh;
+        /* 答对后整排点子变绿（配合数字按钮一起高亮） */
+        box.classList.toggle('ok', !!st.done);
+        box.querySelectorAll('.dot').forEach(b => {
+            b.addEventListener('click', () => { if (guard(b)) LV1.tapDot(+b.dataset.i); });
+        });
+        this.renderNums();
+    },
+    renderNums() {
+        const st = S.lv[1];
+        let h = '';
+        st.opts.forEach(v => { h += '<button class="num" data-v="' + v + '">' + v + '</button>'; });
+        const box = $('numrow');
+        box.innerHTML = h;
+        box.querySelectorAll('.num').forEach(b => {
+            b.addEventListener('click', () => { if (guard(b)) LV1.tapNum(+b.dataset.v, b); });
+        });
+    },
+    count() { return S.lv[1].dots.filter(Boolean).length; },
+    tip() {
+        const st = S.lv[1], c = this.count();
+        if (st.done) {
+            st.tip = '数对啦！一共 ' + st.q.n + ' 个 🎉';
+        } else if (!st.touched) {
+            /* 完整引导语每题只出现一次，避免每次点击都重复刷屏 */
+            st.tip = '上面有几个？点亮同样多的点子，再选出数字';
+        } else {
+            st.tip = '已点亮 ' + c + ' 个';
+        }
+        setTip(st.tip);
+    },
+    /* 点子可自由增减：不作对错判定，避免"一直点直到提示答对"的暴力试探 */
+    tapDot(i) {
+        const st = S.lv[1];
+        if (st.done || st.busy) return;
+        st.touched = true;    /* 一旦开始点，提示条改为只显示进度 */
+        st.dots[i] = !st.dots[i];
+        const c = this.count();
+        if (st.dots[i]) sCount(c); else sTap();
+        if (c > st.q.n && !st.over) { st.over = true; st.wrong++; this.maybeHint(); }
+        if (c <= st.q.n) st.over = false;
+        this.render(); this.tip();
+    },
+    clear() {
+        const st = S.lv[1];
+        if (st.done || st.busy || !st.dots.some(Boolean)) return;
+        st.dots = new Array(CONFIG.DOTS).fill(false);
+        st.over = false; st.wrong++; st.touched = true;
+        sTap(); this.render(); this.tip(); this.maybeHint();
+    },
+    /* 支架提示：同一题失败 3 次后才揭示目标数量（此前绝不泄题） */
+    maybeHint() {
+        const st = S.lv[1];
+        if (st.wrong >= CONFIG.HINT_AFTER && !st.hinted) {
+            st.hinted = true;
+            const t = '悄悄提示：一共要点 ' + st.q.n + ' 个点子';
+            toast(t); NARR.speak(t);
+        }
+    },
+    /* 通关判定：点亮数 = 物体数 且 所选数字 = 物体数（两个条件同时满足） */
+    tapNum(v, btn) {
+        const st = S.lv[1];
+        if (st.busy || st.done) return;
+        const c = this.count(), n = st.q.n;
+        if (v === n && c === n) {
+            st.done = true; st.correct++; st.busy = true;
+            btn.classList.add('ok'); anim(btn, 'pop');
+            this.render(); this.tip();
+            sGood(); NARR.praise();
+            renderProgress();
+            if (st.correct >= CONFIG.PER_LEVEL) { setTimeout(() => celebrate(1), CONFIG.AUTO_NEXT); return; }
+            setTimeout(() => { st.qi++; st.busy = false; LV1.new(); }, CONFIG.AUTO_NEXT);
+            return;
+        }
+        /* 未达标：温和提示，不揭示答案 */
+        st.wrong++; sBad(); anim(btn, 'shake');
+        if (v === n) {
+            toast('数字选对啦！再数一数，点亮同样多的点子');
+            NARR.speak('数字选对啦！再数一数，点亮同样多的点子');
+        } else if (c === n) {
+            toast('点子点对啦！再想想，是数字几呢？');
+            NARR.speak('点子点对啦！再想想，是数字几呢');
+        } else {
+            toast('再数一数，到底是几呢？');
+            NARR.speak('再数一数，到底是几呢');
+        }
+        this.maybeHint();
+    }
+};
+
+/* =========================================================================
+   关卡二：尺子上的数
+   ========================================================================= */
+const RX0 = 70, RX1 = 930, RW = 1000, RH = 210, RNUMY = 156;   // 尺子绘制坐标
+function rulerSVG(hidden) {
+    const step = (RX1 - RX0) / CONFIG.RULER_MAX;
+    let ticks = '', nums = '';
+    for (let i = 0; i <= CONFIG.RULER_MAX; i++) {
+        const x = RX0 + i * step;
+        ticks += '<line x1="' + x + '" y1="72" x2="' + x + '" y2="' + (i % 5 === 0 ? 110 : 100) + '" ' +
+                 'stroke="#B98B3E" stroke-width="' + (i % 5 === 0 ? 5 : 3) + '" stroke-linecap="round"/>';
+        if (i !== hidden) nums += '<text id="rn' + i + '" x="' + x + '" y="' + RNUMY + '" text-anchor="middle" ' +
+                                  'font-size="42" font-weight="700" fill="#5B4020">' + i + '</text>';
+    }
+    let cover = '';
+    if (hidden !== null && hidden !== undefined) {
+        const cx = RX0 + hidden * step;
+        cover = '<g id="coverG">' +
+            '<rect x="' + (cx - 34) + '" y="118" width="68" height="62" rx="10" fill="#FFD429" stroke="#E0A800" stroke-width="3"/>' +
+            '<text x="' + cx + '" y="152" text-anchor="middle" font-size="38" font-weight="800" fill="#8A6100">?</text></g>';
+    }
+    return '<svg viewBox="0 0 ' + RW + ' ' + RH + '" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="30" y="30" width="' + (RW - 60) + '" height="150" rx="18" fill="#FFE9B0" stroke="#E0B35C" stroke-width="4"/>' +
+        ticks + nums + cover + '</svg>';
+}
+
+const LV2 = {
+    new() {
+        const st = S.lv[2];
+        let h, g = 0;
+        do { h = CONFIG.RULER_HIDE_MIN + rnd(CONFIG.RULER_HIDE_MAX - CONFIG.RULER_HIDE_MIN + 1); g++; }
+        while (st.hist.indexOf(h) >= 0 && g < 40);
+        st.hist.push(h); if (st.hist.length > 3) st.hist.shift();
+        st.q = { h: h };
+        st.opts = fiveOptions(h);
+        st.wrong = 0; st.hinted = false; st.revealed = false; st.busy = false; st.flyEl = null;
+        $('rulerwrap').innerHTML = rulerSVG(h);
+        let hh = '';
+        st.opts.forEach(v => { hh += '<button class="num" data-v="' + v + '">' + v + '</button>'; });
+        const box = $('numrow2');
+        box.innerHTML = hh;
+        box.querySelectorAll('.num').forEach(b => {
+            b.addEventListener('click', () => { if (guard(b)) LV2.tapNum(+b.dataset.v, b); });
+        });
+        st.tip = '尺子上缺少哪个数？';
+        setTip(st.tip); NARR.speak(st.tip);
+        kvHint();
+    },
+    tapNum(v, btn) {
+        const st = S.lv[2], h = st.q.h;
+        if (st.busy || st.revealed) return;
+        if (v === h) {
+            st.revealed = true; st.busy = true;
+            btn.classList.add('ok'); anim(btn, 'pop');
+            sGood(); NARR.speak('尺子的数排好啦，' + h + ' 回来了');
+            this.fly(btn, h);
+            setTimeout(() => this.reveal(), 560);
+            st.correct++; renderProgress();
+            if (st.correct >= CONFIG.PER_LEVEL) { setTimeout(() => celebrate(2), 1400); return; }
+            setTimeout(() => { st.qi++; st.busy = false; LV2.new(); }, 1400);
+        } else {
+            st.wrong++; sBad(); anim(btn, 'shake');
+            NARR.speak('再想一想，它的前面是 ' + (h - 1) + '，后面是 ' + (h + 1));
+            if (st.wrong >= CONFIG.HINT_AFTER && !st.hinted) {
+                st.hinted = true;
+                toast('看它的左右邻居：前面是 ' + (h - 1) + ' · 后面是 ' + (h + 1));
+                ['rn' + (h - 1), 'rn' + (h + 1)].forEach(id => {
+                    const t = $(id);
+                    if (t) { t.setAttribute('fill', '#E8734A'); t.setAttribute('font-size', '52'); }
+                });
+            }
+        }
+    },
+    /* 数字从按钮飞入尺子缺口 */
+    fly(btn, h) {
+        const svg = $('rulerwrap').querySelector('svg');
+        const pr = svg.getBoundingClientRect();
+        const step = (RX1 - RX0) / CONFIG.RULER_MAX, cx = RX0 + h * step;
+        const tx = pr.left + cx * (pr.width / RW);
+        const ty = pr.top + (RNUMY - 6) * (pr.height / RH);
+        const b = btn.getBoundingClientRect();
+        const fx = b.left + b.width / 2, fy = b.top + b.height / 2;
+        const fly = document.createElement('div');
+        fly.className = 'flybox'; fly.textContent = h;
+        fly.style.left = fx + 'px'; fly.style.top = fy + 'px';
+        fly.style.transform = 'translate(-50%, -50%)';
+        document.body.appendChild(fly);
+        requestAnimationFrame(() => {
+            fly.style.transform = 'translate(calc(-50% + ' + (tx - fx) + 'px), calc(-50% + ' + (ty - fy) + 'px)) scale(.92)';
+        });
+        S.lv[2].flyEl = fly;
+    },
+    reveal() {
+        const st = S.lv[2], h = st.q.h;
+        const svg = $('rulerwrap').querySelector('svg');
+        const g = svg.querySelector('#coverG'); if (g) g.remove();
+        if (st.flyEl) { st.flyEl.remove(); st.flyEl = null; }
+        if ($('rv' + h)) return;                     // 避免重复插入
+        const step = (RX1 - RX0) / CONFIG.RULER_MAX, cx = RX0 + h * step;
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('id', 'rv' + h);
+        t.setAttribute('x', cx); t.setAttribute('y', RNUMY); t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-size', '42'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#1E8E3E');
+        t.textContent = h;
+        svg.appendChild(t);
+    }
+};
+
+/* =========================================================================
+   关卡三：第几节车厢
+   ========================================================================= */
+function dirSVG(dir) {
+    if (dir === 'left') {
+        return '<svg viewBox="0 0 1000 56" xmlns="http://www.w3.org/2000/svg">' +
+            '<line x1="150" y1="28" x2="926" y2="28" stroke="#E67E22" stroke-width="6" stroke-dasharray="20 14" stroke-linecap="round" stroke-opacity=".75"/>' +
+            '<polygon points="926,12 972,28 926,44" fill="#E67E22"/>' +
+            '<text x="8" y="42" font-size="36" font-weight="800" fill="#D35400">从左边数</text></svg>';
+    }
+    return '<svg viewBox="0 0 1000 56" xmlns="http://www.w3.org/2000/svg">' +
+        '<line x1="74" y1="28" x2="850" y2="28" stroke="#E67E22" stroke-width="6" stroke-dasharray="20 14" stroke-linecap="round" stroke-opacity=".75"/>' +
+        '<polygon points="74,12 28,28 74,44" fill="#E67E22"/>' +
+        '<text x="992" y="42" text-anchor="end" font-size="36" font-weight="800" fill="#D35400">从右边数</text></svg>';
+}
+
+const LV3 = {
+    new() {
+        const st = S.lv[3];
+        let n, dir, key, g = 0;
+        do {
+            dir = Math.random() < 0.5 ? 'left' : 'right';
+            n = 1 + rnd(CONFIG.MAX_ORDINAL);
+            key = dir + '-' + n;
+            g++;
+        } while (st.hist.indexOf(key) >= 0 && g < 40);
+        st.hist.push(key); if (st.hist.length > 3) st.hist.shift();
+        /* 从左边数：目标编号 = 节次；从右边数：目标编号 = 总节数 + 1 - 节次 */
+        st.q = { dir: dir, n: n, target: dir === 'left' ? n : (CONFIG.TRAIN_WAGONS + 1 - n) };
+        st.wrong = 0; st.hinted = false; st.busy = false;
+        this.render();
+        kvHint();
+    },
+    render() {
+        const st = S.lv[3], q = st.q;
+        $('dirbar').innerHTML = dirSVG(q.dir);
+        updDiff();
+        let wag = '';
+        for (let i = 1; i <= CONFIG.TRAIN_WAGONS; i++) {
+            wag += '<div class="wagon' + (st.hard ? ' nonum' : '') + '" data-n="' + i + '">' +
+                '<div class="conn"></div><div class="step"></div>' +
+                '<div class="wbody"><div class="wroof"></div><div class="wnum">' + i + '</div></div>' +
+                '<div class="wheels"><i></i><i></i></div></div>';
+        }
+        const train = $('train');
+        train.innerHTML = '<div class="loco">' +
+            '<div class="chimney"></div><div class="smoke"></div>' +
+            '<div class="boiler"></div><div class="cab"></div><div class="lwin"></div>' +
+            '<div class="lwheels"><i></i><i></i><i></i></div></div>' +
+            '<div class="wagons">' + wag + '</div>';
+        train.querySelectorAll('.wagon').forEach(w => {
+            w.addEventListener('click', () => { if (guard(w)) LV3.tap(+w.dataset.n, w); });
+        });
+        st.tip = q.dir === 'left'
+            ? '从左边数，第 ' + q.n + ' 节车厢——是哪一节？'
+            : '从右边数，第 ' + q.n + ' 节车厢——是哪一节？';
+        setTip(st.tip); NARR.speak(st.tip);
+    },
+    tap(n, el) {
+        const st = S.lv[3], q = st.q;
+        if (st.busy) return;
+        if (n === q.target) {
+            el.classList.add('ok'); anim(el, 'pop');
+            st.busy = true; sGood(); NARR.praise();
+            setTip('答对啦！从' + (q.dir === 'left' ? '左' : '右') + '边数，第 ' + q.n + ' 节就是它 🎉');
+            st.correct++; st.streak++; st.failStreak = 0;
+            renderProgress();
+            if (st.streak >= CONFIG.HARD_STREAK && !st.hard) {
+                st.hard = true;
+                setTimeout(() => { updDiff(); toast('升级啦！车厢上的数字藏起来咯 ★★'); }, 700);
+            }
+            if (st.correct >= CONFIG.PER_LEVEL) { setTimeout(() => celebrate(3), CONFIG.AUTO_NEXT); return; }
+            setTimeout(() => { st.qi++; st.busy = false; LV3.new(); }, CONFIG.AUTO_NEXT);
+        } else {
+            st.wrong++; st.streak = 0; st.failStreak++;
+            if (st.failStreak >= CONFIG.BACK_STREAK && st.hard) {
+                st.hard = false; applyHard(false);
+                toast('难度降回 ★ 简单：车厢上的数字又出现啦');
+            }
+            sBad(); anim(el, 'shake');
+            NARR.speak('从' + (q.dir === 'left' ? '左' : '右') + '边开始数：1、2、3……再试试');
+            if (st.wrong >= CONFIG.HINT_AFTER && !st.hinted) { st.hinted = true; this.walk(); }
+        }
+    },
+    /* 支架提示：从正确方向逐格亮起计数箭头，走到目标车厢 */
+    walk() {
+        const q = S.lv[3].q;
+        const order = [];
+        if (q.dir === 'left') { for (let i = 1; i <= CONFIG.TRAIN_WAGONS; i++) order.push(i); }
+        else { for (let i = CONFIG.TRAIN_WAGONS; i >= 1; i--) order.push(i); }
+        setTip('跟着数：从' + (q.dir === 'left' ? '左' : '右') + '边开始，1、2、3……第 ' + q.n + ' 节就是它');
+        order.forEach((num, idx) => {
+            setTimeout(() => {
+                const w = document.querySelector('.wagon[data-n="' + num + '"]');
+                if (!w) return;
+                const s = w.querySelector('.step'); if (s) s.textContent = idx + 1;
+                w.classList.add('walk');
+                setTimeout(() => w.classList.remove('walk'), 520);
+            }, idx * 330);
+        });
+    }
+};
+function applyHard(isHard) {
+    $('train').querySelectorAll('.wagon').forEach(w => w.classList.toggle('nonum', isHard));
+}
+function updDiff() {
+    const el = $('diffchip'); if (!el) return;
+    const hard = S.lv[3].hard;
+    el.textContent = hard ? '难度 ★★ 车厢数字已隐藏' : '难度 ★ 车厢带数字';
+    el.className = 'diffchip' + (hard ? ' hard' : '');
+}
+
+/* =========================================================================
+   关卡切换 / 进度 / 通关
+   ========================================================================= */
+const LVOBJ = { 1: LV1, 2: LV2, 3: LV3 };
+function showLevel(lv) {
+    const st = S.lv[lv];
+    if (!st.ready) { st.ready = true; LVOBJ[lv].new(); }
+    else { setTip(st.tip || ''); NARR.speak(st.tip || ''); }
+    renderProgress();
+    if (lv === 3) updDiff();
+}
+function setLevel(lv) {
+    S.level = lv;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.lv === lv));
+    document.querySelectorAll('.lv').forEach(s => s.classList.toggle('active', s.id === 'lv' + lv));
+    showLevel(lv);
+}
+/* 重置某一关（进度归零、重新出题） */
+function resetLevel(lv) {
+    if (S.lv[lv] && S.lv[lv].flyEl) { try { S.lv[lv].flyEl.remove(); } catch (e) {} }
+    S.lv[lv] = newLevelState(lv);
+    if (S.level === lv) showLevel(lv);
+}
+function celebrate(lv) {
+    $('overlay').classList.remove('hidden');
+    $('ovTitle').textContent = '太棒了！这一关完成啦！';
+    $('ovSub').textContent = '「' + LVNAME[lv] + '」5 题全部答对 🎉';
+    sWin(); NARR.speak('太棒了！这一关完成啦，你真厉害！');
+    const nextBtn = $('ovNext');
+    if (lv < 3) {
+        nextBtn.style.display = '';
+        nextBtn.textContent = '进入下一关 →';
+        nextBtn.onclick = () => {
+            $('overlay').classList.add('hidden');
+            resetLevel(lv + 1);
+            setLevel(lv + 1);
+        };
+    } else {
+        nextBtn.style.display = 'none';
+    }
+    $('ovAgain').onclick = () => {
+        $('overlay').classList.add('hidden');
+        resetLevel(lv);
+        setLevel(lv);
+    };
+}
+
+/* =========================================================================
+   顶部 / 底部按钮 与 键盘快捷键
+   ========================================================================= */
+$('btnSound').addEventListener('click', function () {
+    S.sound = !S.sound;
+    this.classList.toggle('off', !S.sound);
+    if (!S.sound && 'speechSynthesis' in window) speechSynthesis.cancel();
+    if (S.sound) sTap();
+    toast(S.sound ? '声音已打开' : '声音已关闭');
+});
+$('btnNext').addEventListener('click', () => {
+    const st = S.lv[S.level];
+    if (st.busy) return;
+    st.qi++;
+    LVOBJ[S.level].new();
+});
+$('btnReset').addEventListener('click', () => { resetLevel(S.level); toast('已重置本关，重新开始吧'); });
+$('btnReplay').addEventListener('click', () => {
+    if (!S.sound) { toast('声音已关闭，点右上角 🔊 打开'); return; }
+    NARR.speak(S.lv[S.level].tip || '');
+});
+$('btnClear').addEventListener('click', () => LV1.clear());
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => setLevel(+t.dataset.lv)));
+
+/* 教师控制台：空格=下一题  R=重来  A=显示答案  Esc=返回目录 */
+document.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'Escape') { location.href = '../index.html'; return; }
+    if (k === ' ' || k === 'Spacebar') {
+        e.preventDefault();
+        const st = S.lv[S.level];
+        if (st.busy) return;
+        st.qi++; LVOBJ[S.level].new();
+        return;
+    }
+    if (k === 'r' || k === 'R') { resetLevel(S.level); toast('已重置本关'); return; }
+    if (k === 'a' || k === 'A') { showAnswer(); }
+});
+/* 老师查看答案：只做高亮提示，不计分、不推进 */
+function showAnswer() {
+    const lv = S.level, st = S.lv[lv];
+    if (lv === 1) {
+        const b = document.querySelector('#numrow .num[data-v="' + st.q.n + '"]');
+        if (b) b.classList.add('ans');
+        toast('答案：' + st.q.n + ' 个');
+    } else if (lv === 2) {
+        const b = document.querySelector('#numrow2 .num[data-v="' + st.q.h + '"]');
+        if (b) b.classList.add('ans');
+        LV2.reveal();                                // 老师查看：直接补上缺口里的数字
+        toast('答案：' + st.q.h);
+    } else {
+        const w = document.querySelector('.wagon[data-n="' + st.q.target + '"]');
+        if (w) w.classList.add('ans');
+        toast('答案：第 ' + st.q.target + ' 节（从' + (st.q.dir === 'left' ? '左' : '右') + '边数第 ' + st.q.n + ' 节）');
+    }
+}
+
+/* ================= 启动 ================= */
+S.lv[1] = newLevelState(1);
+S.lv[2] = newLevelState(2);
+S.lv[3] = newLevelState(3);
+setLevel(1);
+/* 首次交互时激活 Web Audio（浏览器自动播放策略） */
+document.addEventListener('pointerdown', function once() {
+    try { ac(); } catch (e) {}
+    document.removeEventListener('pointerdown', once);
+}, { once: true });
+</script>
+</body>
+</html>
