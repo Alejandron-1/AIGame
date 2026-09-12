@@ -1,0 +1,5 @@
+rapidocr-onnxruntime
+python-docx
+pillow
+numpy
+opencv-python

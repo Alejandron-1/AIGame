@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 破十训练营 - 20以内退位减法</title>
+<style>
+/* ===== 全局：热血训练营风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 45%, #a1c4fd 100%);
+    min-height: 100vh; color: #2c3e50; user-select: none; -webkit-user-select: none;
+    overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶部 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(24px, 2.8vw, 36px); font-weight: 800; color: #d63031;
+    text-shadow: 2px 2px 0 #fff; letter-spacing: 2px; }
+.statbar { display: flex; gap: 10px; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,19px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.pill b { color: #d63031; font-size: 1.25em; }
+.pill.time b { color: #0984e3; }
+
+/* ===== 题目卡 ===== */
+.qcard { margin: 0 22px; background: #fff; border-radius: 24px; border: 5px solid #ffd200;
+    padding: 14px 26px; text-align: center; box-shadow: 0 8px 0 rgba(0,0,0,.1); }
+.qexpr { font-size: clamp(36px, 4.6vw, 62px); font-weight: 900; letter-spacing: 6px; color: #2d3436; }
+.qexpr .box { display: inline-block; min-width: 1.6em; border-bottom: 6px solid #d63031; color: #d63031; }
+.qsub { margin-top: 4px; font-size: clamp(14px, 1.5vw, 19px); color: #636e72; font-weight: 800; }
+
+/* ===== 小棒舞台 ===== */
+.stage { margin: 14px 22px 0; background: rgba(255,255,255,.55); border-radius: 26px;
+    padding: 14px 16px 12px; min-height: 240px; }
+.zones { display: flex; gap: 14px; align-items: stretch; }
+.zone { flex: 1; border-radius: 20px; padding: 10px 12px 12px; min-height: 190px;
+    border: 4px dashed rgba(0,0,0,.15); transition: all .25s; }
+.zone.tzone { background: rgba(253, 227, 167, .45); }
+.zone.ozone { background: rgba(178, 235, 242, .45); }
+.zone.hot { border-color: #d63031; background: rgba(255, 235, 235, .6); animation: hotp 1s ease-in-out infinite; }
+@keyframes hotp { 50% { box-shadow: 0 0 0 6px rgba(214,48,49,.15); } }
+.zone .zcap { text-align: center; font-size: clamp(14px, 1.6vw, 19px); font-weight: 900; color: #636e72; margin-bottom: 8px; }
+.stickrow { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+.stickwrap { position: relative; width: 34px; height: 92px; cursor: pointer; transition: transform .12s; }
+.stickwrap.can:hover { transform: translateY(-8px) rotate(-3deg); }
+.stickwrap svg { display: block; width: 100%; height: 100%; }
+.stickwrap.fly { animation: flyUp .55s forwards; pointer-events: none; }
+.stickwrap.wob { animation: wob2 .35s; }
+@keyframes flyUp { 40% { transform: translateY(-24px) rotate(14deg); opacity: 1; }
+    100% { transform: translateY(-90px) rotate(30deg); opacity: 0; } }
+@keyframes wob2 { 25% { translate: -6px 0; } 50% { translate: 6px 0; } }
+.bundleBox { position: relative; width: 150px; height: 110px; margin: 4px auto; cursor: pointer;
+    transition: transform .15s; }
+.bundleBox:hover { transform: scale(1.06); }
+.bundleBox svg { width: 100%; height: 100%; display: block; }
+.bundleBox.can { animation: bshake .8s ease-in-out infinite; }
+@keyframes bshake { 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+.bundleBox.opened { animation: boom .5s; }
+@keyframes boom { 30% { transform: scale(1.25); } 100% { transform: scale(0); opacity: 0; } }
+
+/* ===== 步骤/提示/计数 ===== */
+.stepbar { margin: 12px 22px 0; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.steptip { background: #fff; border-radius: 30px; padding: 11px 28px; font-size: clamp(16px, 1.9vw, 24px);
+    font-weight: 900; box-shadow: 0 5px 0 rgba(0,0,0,.1); }
+.steptip b { color: #d63031; }
+.chain { background: #2d3436; color: #ffd200; border-radius: 16px; padding: 8px 20px;
+    font-size: clamp(15px, 1.7vw, 21px); font-weight: 900; letter-spacing: 2px; }
+.chain .done { color: #55efc4; }
+.actbtn { padding: 13px 34px; border-radius: 18px; font-size: clamp(17px, 1.9vw, 23px); font-weight: 900;
+    color: #fff; background: linear-gradient(180deg, #ff7675, #d63031); box-shadow: 0 6px 0 #a21616;
+    transition: all .12s; animation: btnPulse 1.4s ease-in-out infinite; }
+.actbtn:hover { transform: translateY(-3px); }
+.actbtn:active { transform: scale(.94); box-shadow: none; }
+@keyframes btnPulse { 50% { filter: brightness(1.12); } }
+.counter { background: #2d3436; color: #55efc4; border-radius: 16px; padding: 8px 22px;
+    font-size: clamp(15px, 1.8vw, 22px); font-weight: 900; }
+
+/* ===== 选项 ===== */
+.opts { display: flex; justify-content: center; gap: 16px; margin: 16px 22px 0; flex-wrap: wrap; }
+.opt { min-width: 130px; min-height: 70px; border-radius: 20px; background: #fff;
+    font-size: clamp(22px, 2.5vw, 34px); font-weight: 900; color: #2d3436;
+    box-shadow: 0 6px 0 rgba(0,0,0,.14); transition: all .12s; }
+.opt:hover:not(:disabled) { transform: translateY(-5px); }
+.opt:active:not(:disabled) { transform: scale(.93); }
+.opt.right { background: linear-gradient(180deg, #55efc4, #00b894); color: #fff; animation: opop .45s; }
+.opt.wrong { background: linear-gradient(180deg, #ff9d9d, #ff7675); color: #fff; animation: owob .4s; }
+@keyframes opop { 40% { transform: scale(1.16); } }
+@keyframes owob { 25% { translate: -9px 0; } 50% { translate: 9px 0; } }
+.opt.str { font-size: clamp(17px, 1.9vw, 25px); min-height: 62px; padding: 8px 14px; }
+
+/* ===== 答案卡（题目揭示） ===== */
+.eqcard { position: fixed; left: 50%; top: 42%; transform: translate(-50%,-50%) scale(0);
+    z-index: 45; background: #fff; border: 6px solid #ffd200; border-radius: 26px;
+    padding: 26px 54px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.3);
+    transition: transform .35s cubic-bezier(.2,1.5,.4,1); pointer-events: none; }
+.eqcard.show { transform: translate(-50%,-50%) scale(1); }
+.eqcard .e { font-size: clamp(40px, 5.4vw, 68px); font-weight: 900; color: #00b894; letter-spacing: 4px; }
+.eqcard .t { font-size: clamp(16px, 1.8vw, 22px); font-weight: 800; color: #636e72; margin-top: 6px; }
+
+/* ===== 首页 / 反馈 / 弹窗 ===== */
+#homeScreen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    background: linear-gradient(180deg, #ffecd2, #fcb69f 45%, #a1c4fd); }
+#homeScreen h1 { font-size: clamp(32px, 4.6vw, 58px); font-weight: 900; color: #d63031;
+    text-shadow: 3px 3px 0 #fff; letter-spacing: 4px; }
+#homeScreen .sub { font-size: clamp(15px, 2vw, 22px); color: #2d3436; font-weight: 800;
+    background: rgba(255,255,255,.7); padding: 8px 24px; border-radius: 24px; }
+.modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0 26px; }
+.modecard { background: #fff; border-radius: 24px; padding: 22px 14px; text-align: center;
+    box-shadow: 0 7px 0 rgba(0,0,0,.12); cursor: pointer; transition: all .15s; }
+.modecard:hover { transform: translateY(-7px) rotate(-1deg); }
+.modecard .ic { font-size: 46px; }
+.modecard h3 { font-size: clamp(17px, 1.9vw, 23px); margin: 10px 0 5px; color: var(--c); }
+.modecard p { font-size: 13px; color: #95a5a6; line-height: 1.55; }
+.backbtn { position: fixed; top: 14px; left: 14px; z-index: 35; background: #fff; border-radius: 14px;
+    padding: 9px 18px; font-size: 15px; font-weight: 800; color: #d63031; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.feedback { text-align: center; margin-top: 12px; min-height: 40px; font-size: 24px; font-weight: 900; }
+.feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+.overlay { position: fixed; inset: 0; background: rgba(44,62,80,.55); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 42px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.28); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin-bottom: 18px; }
+.pbtns { display: flex; gap: 14px; justify-content: center; }
+.bigbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.bigbtn:active { transform: scale(.93); }
+.bigbtn.red { background: #d63031; } .bigbtn.gray { background: #b2bec3; }
+.hintcard { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 55;
+    background: #2d3436; color: #ffd200; border-radius: 18px; padding: 16px 30px;
+    font-size: clamp(18px, 2.2vw, 26px); font-weight: 900; letter-spacing: 2px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 70; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+</style>
+</head>
+<body>
+
+<!-- 首页 -->
+<div id="homeScreen">
+    <h1>🔥 破十训练营</h1>
+    <div class="sub">20以内退位减法 · 拆小棒 · 学策略 · 闯四关</div>
+    <div class="modes">
+        <div class="modecard" data-mode="know" style="--c:#0984e3"><div class="ic">🧮</div><h3>认识十几</h3><p>十几就是<br>1个十和几个一</p></div>
+        <div class="modecard" data-mode="break" style="--c:#d63031"><div class="ic">💥</div><h3>破十法</h3><p>破开十 先减十<br>一步一步拆小棒</p></div>
+        <div class="modecard" data-mode="flat" style="--c:#e67e22"><div class="ic">🪄</div><h3>平十法</h3><p>先减个位 再减十<br>连着减两次</p></div>
+        <div class="modecard" data-mode="rush" style="--c:#00b894"><div class="ic">⚡</div><h3>限时速算</h3><p>60秒抢答<br>随时看提示</p></div>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea">
+    <div class="top">
+        <h1 id="title"></h1>
+        <div class="statbar">
+            <div class="pill hidden" id="timePill">⏱ <b id="timeN">60</b>秒</div>
+            <div class="pill">得分 <b id="scoreN">0</b></div>
+        </div>
+    </div>
+    <div class="qcard">
+        <div class="qexpr" id="qexpr"></div>
+        <div class="qsub hidden" id="qsub"></div>
+    </div>
+    <div class="stage">
+        <div class="zones">
+            <div class="zone tzone" id="zT"><div class="zcap">十位区</div></div>
+            <div class="zone ozone" id="zO"><div class="zcap">个位区</div></div>
+        </div>
+    </div>
+    <div class="stepbar">
+        <div class="steptip hidden" id="stepTip"></div>
+        <div class="counter hidden" id="counter"></div>
+        <div class="chain hidden" id="chain"></div>
+        <button class="actbtn hidden" id="actBtn"></button>
+    </div>
+    <div class="opts hidden" id="opts"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="actbar" style="display:flex;justify-content:center;margin-top:10px">
+        <button class="bigbtn gray hidden" id="hintBtn" style="background:#636e72">💡 提示</button>
+    </div>
+</div>
+
+<button class="backbtn hidden" id="backBtn">🏠 选关卡</button>
+<div class="eqcard hidden" id="eqcard"><div class="e" id="eqText"></div><div class="t">回答正确，策略学会啦！</div></div>
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="bigbtn red" id="againBtn">🔁 再来一局</button>
+            <button class="bigbtn gray" id="homeBtn">🏠 换关卡</button></div></div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(700, .05, 'triangle');
+const sSnap = () => { beep(180, .12, 'square', .2); setTimeout(() => beep(520, .1, 'triangle'), 80); };
+const sFly = () => beep(950, .08, 'sine', .1);
+function fb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback ' + (good ? 'good' : 'bad'); }
+function confetti(n = 50) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 小棒绘制 ============ */
+function stickSVG(h) {
+    return `<svg viewBox="0 0 30 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="9" y="4" width="12" height="${h}" rx="6" fill="#e74c3c" stroke="#b2bec3" stroke-width="2"/>
+        <rect x="11" y="8" width="3" height="${Math.max(4, h - 16)}" fill="#fff" opacity=".7"/>
+        <rect x="17" y="8" width="2" height="${Math.max(4, h - 16)}" fill="#fff" opacity=".4"/>
+    </svg>`;
+}
+function bundleSVG() {
+    let sticks = '';
+    for (let i = 0; i < 10; i++) {
+        const x = 18 + (i % 5) * 26, y = Math.floor(i / 5) * 12;
+        sticks += `<rect x="${x}" y="${y + 6}" width="13" height="88" rx="6" fill="#e74c3c" stroke="#b2bec3" stroke-width="2" transform="rotate(${(i - 4.5) * 2.2} ${x + 6} ${y + 50})"/>`;
+    }
+    return `<svg viewBox="0 0 190 120" xmlns="http://www.w3.org/2000/svg">
+        ${sticks}
+        <rect x="52" y="46" width="86" height="20" rx="8" fill="#ffd200" stroke="#e1a90f" stroke-width="3" transform="rotate(-4 95 56)"/>
+        <text x="95" y="61" text-anchor="middle" font-size="15" font-weight="900" fill="#7a5a00" font-family="Microsoft YaHei" transform="rotate(-4 95 56)">10根</text>
+    </svg>`;
+}
+
+/* ============ 状态 ============ */
+let mode = null, score = 0, round = 0, ROUND_MAX = 6;
+let Q = null;            // { a, b, ones, p1, p2 }  a-b, ones=a-10, p1/p2 为平十法拆解
+let step = 0;            // 当前步骤
+let removed = 0;         // 已拿走根数
+let timeLeft = 0, timerId = 0, rushCombo = 0;
+
+function resetUI() {
+    step = 0; removed = 0; locked = false;
+    $('zT').innerHTML = '<div class="zcap">十位区</div>';
+    $('zO').innerHTML = '<div class="zcap">个位区</div>';
+    ['zT', 'zO'].forEach(id => $(id).classList.remove('hot'));
+    $('stepTip').classList.add('hidden'); $('counter').classList.add('hidden');
+    $('chain').classList.add('hidden'); $('actBtn').classList.add('hidden');
+    $('opts').classList.add('hidden'); $('opts').innerHTML = '';
+    $('eqcard').classList.add('hidden'); $('eqcard').classList.remove('show');
+    fb('', '');
+}
+function addScore(d) { score += d; $('scoreN').textContent = score; }
+function showResult(title, sub) {
+    $('rEmoji').textContent = '🏅'; $('rTitle').textContent = title; $('rSub').textContent = sub;
+    $('resultOverlay').classList.remove('hidden'); confetti(70); sWin();
+}
+
+/* ============ 出题（保证退位：个位 < 减数） ============ */
+function genQ() {
+    const ones = randInt(1, 8);
+    const b = randInt(ones + 1, 9);
+    const a = 10 + ones;
+    return { a, b, ones, p1: ones, p2: b - ones };
+}
+
+/* ============ 通用小棒区渲染 ============ */
+function renderSingles(zone, count, removable, tag) {
+    const z = $(zone);
+    z.querySelectorAll('.stickwrap').forEach(e => e.remove());
+    const row = document.createElement('div');
+    row.className = 'stickrow';
+    for (let i = 0; i < count; i++) {
+        const w = document.createElement('div');
+        w.className = 'stickwrap' + (removable ? ' can' : '');
+        w.innerHTML = stickSVG(88);
+        if (removable) w.onclick = () => takeStick(w, tag);
+        row.appendChild(w);
+    }
+    z.appendChild(row);
+}
+function renderOpenedTens(removable) {   // 破开后：10根排两行
+    const z = $('zT');
+    z.querySelectorAll('.stickrow').forEach(e => e.remove());
+    for (let r = 0; r < 2; r++) {
+        const row = document.createElement('div');
+        row.className = 'stickrow';
+        for (let i = 0; i < 5; i++) {
+            const w = document.createElement('div');
+            w.className = 'stickwrap' + (removable ? ' can' : '');
+            w.innerHTML = stickSVG(80);
+            if (removable) w.onclick = () => takeStick(w, 'T');
+            row.appendChild(w);
+        }
+        z.appendChild(row);
+    }
+}
+function takeStick(w, tag) {
+    if (locked || !w.classList.contains('can') || w.classList.contains('fly')) return;
+    removed++;
+    w.classList.remove('can'); w.classList.add('fly');
+    sFly();
+    $('counter').textContent = `已拿走 ${removed} / ${Q.need} 根`;
+    if (removed >= Q.need) setTimeout(() => stepDone(), 600);
+}
+
+/* ============ 模式1：认识十几 ============ */
+function knowNew() {
+    resetUI();
+    const n = randInt(11, 19), ones = n - 10;
+    Q = { a: n, b: 0, ones };
+    $('qexpr').innerHTML = `${n}`;
+    $('qsub').classList.remove('hidden');
+    $('qsub').textContent = '数一数：它有几个十和几个一？';
+    $('zT').querySelector('.zcap').textContent = '十位区';
+    $('zT').insertAdjacentHTML('beforeend',
+        `<div class="bundleBox" id="kb">${bundleSVG()}</div>`);
+    renderSingles('zO', ones, false);
+    fb('', '');
+    mkKnowOpts(n, ones);
+}
+function mkKnowOpts(n, ones) {
+    const right = `1个十和${ones}个一`;
+    const wrongs = new Set();
+    wrongs.add(`${ones}个十和1个一`);
+    while (wrongs.size < 3) {
+        const k = randInt(1, 9);
+        if (k !== ones) wrongs.add(`1个十和${k}个一`);
+    }
+    const opts = $('opts'); opts.classList.remove('hidden'); opts.innerHTML = '';
+    shuffle([right, ...wrongs]).forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'opt str'; b.textContent = o; b._ok = o === right;
+        b.onclick = () => {
+            if (b.disabled) return;
+            [...opts.children].forEach(x => x.disabled = true);
+            if (b._ok) { b.classList.add('right'); sGood(); addScore(10); confetti(14);
+                fb(`${n} = 1个十 + ${ones}个一，记住啦！`, true);
+                round++;
+                if (round >= ROUND_MAX) setTimeout(showResult, 1000);
+                else setTimeout(knowNew, 1400); }
+            else { b.classList.add('wrong'); sBad(); fb('再数数散着的小棒有几根～', false);
+                const rb = [...opts.children].find(x => x._ok);
+                rb.classList.add('right');
+                setTimeout(() => { [...opts.children].forEach(x => { x.disabled = false; x.classList.remove('wrong', 'right'); }); fb('', ''); }, 1100); }
+        };
+        opts.appendChild(b);
+    });
+}
+
+/* ============ 模式2：破十法 ============ */
+let locked = false;
+function breakNew() {
+    resetUI();
+    Q = genQ(); Q.need = Q.b;
+    $('qexpr').innerHTML = `${Q.a} − <span class="box">${Q.b}</span> = <span class="box">?</span>`;
+    $('qsub').classList.remove('hidden');
+    $('qsub').textContent = `${Q.a} = 10 + ${Q.ones}（1捆 + ${Q.ones}根）`;
+    $('zT').querySelector('.zcap').textContent = '十位区';
+    $('zT').insertAdjacentHTML('beforeend', `<div class="bundleBox can" id="kb">${bundleSVG()}</div>`);
+    renderSingles('zO', Q.ones, false);
+    step = 0;
+    $('stepTip').classList.remove('hidden');
+    $('stepTip').innerHTML = `第1步：把 <b>1捆（10根）</b> 破开！点它！`;
+    $('actBtn').classList.add('hidden');
+    $('kb').onclick = () => {
+        if (step !== 0) return;
+        step = 1;
+        const kb = $('kb');
+        kb.classList.remove('can'); kb.classList.add('opened');
+        sSnap();
+        setTimeout(() => { kb.remove(); renderOpenedTens(true); }, 380);
+        $('zT').classList.add('hot');
+        $('stepTip').innerHTML = `第2步：从散开的 10 根里<b>拿走 ${Q.b} 根</b>（点小棒）`;
+        $('counter').classList.remove('hidden');
+        $('counter').textContent = `已拿走 0 / ${Q.b} 根`;
+        $('chain').classList.remove('hidden');
+        $('chain').innerHTML = `${Q.a} = 10 + ${Q.ones}　→　<span class="done">10 − ${Q.b} = ?</span>`;
+    };
+}
+function breakDone() {
+    // 拿完：剩 10-b 根散棒 + ones 根个位棒
+    step = 2;
+    locked = false;
+    $('zT').classList.remove('hot');
+    $('counter').classList.add('hidden');
+    $('chain').innerHTML = `${Q.a} = 10 + ${Q.ones}　→　<span class="done">10 − ${Q.b} = ${10 - Q.b}</span>　→　<span class="done">${10 - Q.b} + ${Q.ones} = ?</span>`;
+    $('stepTip').innerHTML = `第3步：数一数，还剩几根？选出答案！`;
+    mkOpts(Q.a - Q.b, `${10 - Q.b} + ${Q.ones}`);
+}
+function breakHint() { return `破十法：先算 10 − ${Q.b} = ${10 - Q.b}，再算 ${10 - Q.b} + ${Q.ones} = ${Q.a - Q.b}`; }
+
+/* ============ 模式3：平十法 ============ */
+function flatNew() {
+    resetUI();
+    Q = genQ();
+    Q.need = Q.p1;   // 第一步先拿走个位 p1 根
+    $('qexpr').innerHTML = `${Q.a} − <span class="box">${Q.b}</span> = <span class="box">?</span>`;
+    $('qsub').classList.remove('hidden');
+    $('qsub').textContent = `${Q.b} 可以拆成 ${Q.p1} 和 ${Q.p2}！`;
+    $('zT').querySelector('.zcap').textContent = '十位区';
+    $('zT').insertAdjacentHTML('beforeend', `<div class="bundleBox" id="kb">${bundleSVG()}</div>`);
+    renderSingles('zO', Q.ones, true);
+    step = 0; removed = 0;
+    $('zO').classList.add('hot');
+    $('stepTip').classList.remove('hidden');
+    $('stepTip').innerHTML = `第1步：先从右边<b>拿走 ${Q.p1} 根</b>（点个位小棒）`;
+    $('counter').classList.remove('hidden');
+    $('counter').textContent = `已拿走 0 / ${Q.p1} 根`;
+    $('chain').classList.remove('hidden');
+    $('chain').innerHTML = `${Q.b} = ${Q.p1} + ${Q.p2}　→　<span class="done">${Q.a} − ${Q.p1} = ?</span>`;
+}
+function flatStep2() {
+    step = 2; locked = false; removed = 0; Q.need = Q.p2;
+    $('zO').classList.remove('hot');
+    $('zT').classList.add('hot');
+    const kb = $('kb');
+    if (kb) { kb.classList.add('opened'); sSnap(); setTimeout(() => { kb.remove(); renderOpenedTens(true); }, 380); }
+    $('stepTip').innerHTML = `第2步：破开十，再从 10 根里<b>拿走 ${Q.p2} 根</b>`;
+    $('counter').textContent = `已拿走 0 / ${Q.p2} 根`;
+    $('chain').innerHTML = `${Q.b} = ${Q.p1} + ${Q.p2}　→　<span class="done">${Q.a} − ${Q.p1} = 10</span>　→　<span class="done">10 − ${Q.p2} = ?</span>`;
+}
+function flatDone() {
+    step = 3; locked = false;
+    $('zT').classList.remove('hot');
+    $('counter').classList.add('hidden');
+    $('chain').innerHTML = `${Q.a} − ${Q.p1} = 10　→　<span class="done">10 − ${Q.p2} = ${10 - Q.p2}</span>　→　<span class="done">${10 - Q.p2} = ?</span>`;
+    $('stepTip').innerHTML = `第3步：数一数剩下的，选出答案！`;
+    mkOpts(Q.a - Q.b, `${10 - Q.p2}`);
+}
+function flatHint() { return `平十法：先算 ${Q.a} − ${Q.p1} = 10，再算 10 − ${Q.p2} = ${Q.a - Q.b}`; }
+
+/* ============ 步骤推进调度 ============ */
+function stepDone() {
+    if (mode === 'break') { if (step === 1) breakDone(); }
+    else if (mode === 'flat') { if (step === 0) flatStep2(); else if (step === 2) flatDone(); }
+}
+
+/* ============ 选项 ============ */
+function mkOpts(right, work) {
+    const wrongs = new Set();
+    while (wrongs.size < 3) {
+        const d = pick([-2, -1, 1, 2, right - 10, 10 - Q.b, Q.ones, Q.b]);
+        const v = right + d;
+        if (v >= 0 && v !== right) wrongs.add(v);
+    }
+    const opts = $('opts'); opts.classList.remove('hidden'); opts.innerHTML = '';
+    shuffle([right, ...wrongs]).forEach(v => {
+        const b = document.createElement('button');
+        b.className = 'opt'; b.textContent = v; b._ok = v === right;
+        b.onclick = () => {
+            if (b.disabled || locked) return;
+            locked = true;
+            [...opts.children].forEach(x => x.disabled = true);
+            if (b._ok) { b.classList.add('right'); sGood(); addScore(10); confetti(16);
+                fb('回答正确，策略学会啦！', true);
+                const ec = $('eqcard');
+                $('eqText').textContent = `${Q.a} − ${Q.b} = ${Q.a - Q.b}`;
+                ec.classList.remove('hidden'); ec.classList.add('show');
+                setTimeout(() => { ec.classList.remove('show'); setTimeout(() => ec.classList.add('hidden'), 350); }, 1400);
+                round++;
+                if (round >= ROUND_MAX) setTimeout(showResult, 1500);
+                else setTimeout(mode === 'break' ? breakNew : flatNew, 1500);
+            } else { b.classList.add('wrong'); sBad(); fb('数一数剩下的小棒再选～', false);
+                const rb = [...opts.children].find(x => x._ok);
+                rb.classList.add('right');
+                setTimeout(() => { [...opts.children].forEach(x => { x.disabled = false; x.classList.remove('wrong', 'right'); }); locked = false; fb('', ''); }, 1200); }
+        };
+        opts.appendChild(b);
+    });
+}
+
+/* ============ 模式4：限时速算 ============ */
+function rushNew() {
+    resetUI();
+    Q = genQ();
+    $('qexpr').innerHTML = `${Q.a} − <span class="box">${Q.b}</span> = <span class="box">?</span>`;
+    $('qsub').classList.add('hidden');
+    const right = Q.a - Q.b;
+    const wrongs = new Set();
+    while (wrongs.size < 3) { const v = right + pick([-2, -1, 1, 2, 10, -10]); if (v > 0 && v !== right) wrongs.add(v); }
+    const opts = $('opts'); opts.classList.remove('hidden'); opts.innerHTML = '';
+    shuffle([right, ...wrongs]).forEach(v => {
+        const b = document.createElement('button');
+        b.className = 'opt'; b.textContent = v; b._ok = v === right;
+        b.onclick = () => {
+            if (b.disabled || locked) return;
+            locked = true;
+            if (b._ok) { b.classList.add('right'); sGood(); rushCombo++; addScore(10 + (rushCombo >= 3 ? 5 : 0));
+                fb(rushCombo >= 3 ? `${rushCombo} 连击！🔥` : '答对啦！', true);
+                setTimeout(() => { locked = false; if (mode === 'rush') rushNew(); }, 420); }
+            else { b.classList.add('wrong'); sBad(); rushCombo = 0;
+                const rb = [...opts.children].find(x => x._ok); rb.classList.add('right');
+                fb(`提示：${breakHintText()}`, false);
+                setTimeout(() => { locked = false; if (mode === 'rush') rushNew(); }, 1600); }
+        };
+        opts.appendChild(b);
+    });
+}
+function breakHintText() { return `破十法：10 − ${Q.b} = ${10 - Q.b}，${10 - Q.b} + ${Q.ones} = ${Q.a - Q.b}`; }
+function rushStart() {
+    resetUI(); rushCombo = 0;
+    $('title').textContent = '⚡ 限时速算';
+    $('timePill').classList.remove('hidden');
+    $('hintBtn').classList.remove('hidden');
+    timeLeft = 60; $('timeN').textContent = timeLeft;
+    clearInterval(timerId);
+    timerId = setInterval(() => { timeLeft--; $('timeN').textContent = timeLeft;
+        if (timeLeft <= 0) { clearInterval(timerId);
+            showResult(`冲刺完成！`, `得分 ${score} 分`); } }, 1000);
+    rushNew();
+}
+$('hintBtn').onclick = () => {
+    if (mode !== 'rush' || !Q) return;
+    sClick();
+    const h = document.createElement('div');
+    h.className = 'hintcard'; h.textContent = '💡 ' + breakHintText();
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 2600);
+};
+
+/* ============ 流程 ============ */
+const TITLES = { know: '🧮 认识十几', break: '💥 破十法', flat: '🪄 平十法', rush: '⚡ 限时速算' };
+function enterMode(m) {
+    sClick(); mode = m; score = 0; round = 0; $('scoreN').textContent = 0;
+    $('homeScreen').classList.add('hidden'); $('backBtn').classList.remove('hidden');
+    $('resultOverlay').classList.add('hidden');
+    $('timePill').classList.add('hidden'); $('hintBtn').classList.add('hidden');
+    clearInterval(timerId);
+    $('title').textContent = TITLES[m];
+    resetUI();
+    if (m === 'know') { locked = false; knowNew(); }
+    if (m === 'break') breakNew();
+    if (m === 'flat') flatNew();
+    if (m === 'rush') rushStart();
+}
+function goHome() {
+    mode = null; clearInterval(timerId);
+    $('homeScreen').classList.remove('hidden'); $('backBtn').classList.add('hidden');
+    $('resultOverlay').classList.add('hidden'); $('timePill').classList.add('hidden'); $('hintBtn').classList.add('hidden');
+    resetUI();
+}
+function showResult() {
+    $('rEmoji').textContent = '🏅'; $('rTitle').textContent = '训练营毕业！';
+    $('rSub').textContent = `得分 ${score} 分`;
+    $('resultOverlay').classList.remove('hidden'); confetti(70); sWin(); round = 0;
+}
+document.querySelectorAll('.modecard').forEach(c => c.onclick = () => enterMode(c.dataset.mode));
+$('backBtn').onclick = goHome;
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); enterMode(mode); };
+$('homeBtn').onclick = () => { sClick(); goHome(); };
+</script>
+</body>
+</html>
