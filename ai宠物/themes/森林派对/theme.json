@@ -1,0 +1,101 @@
+{
+  "name": "森林派对",
+  "palette": {
+    "bgTop": "#d9f2d9",
+    "bgBottom": "#a1c4fd",
+    "card": "#ffffff",
+    "accent": "#2e9e5b"
+  },
+  "bgm": {
+    "track": "",
+    "volume": 0.3,
+    "evolveSting": true
+  },
+  "animations": {
+    "feed": "drop",
+    "upgrade": "jumpGold",
+    "evolve": "leafFall",
+    "speed": 1.0
+  },
+  "foods": [
+    {
+      "icon": "🍓",
+      "name": "浆果",
+      "exp": 5,
+      "label": "课堂发言"
+    },
+    {
+      "icon": "🌰",
+      "name": "松果",
+      "exp": 10,
+      "label": "作业满分"
+    },
+    {
+      "icon": "🍯",
+      "name": "蜂蜜",
+      "exp": 20,
+      "label": "乐于助人"
+    }
+  ],
+  "corpus": [
+    "森林小知识：大树是用叶子呼吸的！",
+    "叽叽喳喳，真棒呀！",
+    "森林伙伴为你鼓掌！"
+  ],
+  "pets": [
+    {
+      "id": "bear",
+      "name": "小熊",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "森林勇士"
+    },
+    {
+      "id": "fox",
+      "name": "狐狸",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "机智之星"
+    },
+    {
+      "id": "mushroom",
+      "name": "蘑菇精",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "雨后精灵"
+    },
+    {
+      "id": "woodpecker",
+      "name": "啄木鸟",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "森林医生"
+    }
+  ],
+  "rules": {
+    "stageExp": [
+      30,
+      100,
+      250
+    ],
+    "levelExpBase": 10,
+    "maxLevel": 20,
+    "critChance": 0.1
+  }
+}

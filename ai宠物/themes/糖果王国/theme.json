@@ -1,0 +1,101 @@
+{
+  "name": "糖果王国",
+  "palette": {
+    "bgTop": "#fbc2eb",
+    "bgBottom": "#a6c1ee",
+    "card": "#ffffff",
+    "accent": "#e84393"
+  },
+  "bgm": {
+    "track": "",
+    "volume": 0.3,
+    "evolveSting": true
+  },
+  "animations": {
+    "feed": "arc",
+    "upgrade": "starRing",
+    "evolve": "rainbow",
+    "speed": 1.0
+  },
+  "foods": [
+    {
+      "icon": "🍭",
+      "name": "棒棒糖",
+      "exp": 5,
+      "label": "课堂发言"
+    },
+    {
+      "icon": "🍬",
+      "name": "软糖",
+      "exp": 10,
+      "label": "作业满分"
+    },
+    {
+      "icon": "🍰",
+      "name": "小蛋糕",
+      "exp": 20,
+      "label": "乐于助人"
+    }
+  ],
+  "corpus": [
+    "甜甜的表扬给你！",
+    "糖果小知识：彩虹是天空的糖纸！",
+    "又甜又棒！"
+  ],
+  "pets": [
+    {
+      "id": "candy",
+      "name": "糖果兽",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "甜蜜骑士"
+    },
+    {
+      "id": "lollipop",
+      "name": "棒棒糖精灵",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "旋风舞者"
+    },
+    {
+      "id": "marsh",
+      "name": "棉花糖云",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "云朵诗人"
+    },
+    {
+      "id": "pudding",
+      "name": "布丁",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "Q弹冠军"
+    }
+  ],
+  "rules": {
+    "stageExp": [
+      30,
+      100,
+      250
+    ],
+    "levelExpBase": 10,
+    "maxLevel": 20,
+    "critChance": 0.1
+  }
+}

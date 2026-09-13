@@ -1,2 +1,6 @@
 .zcode/
 .workbuddy/
+ai宠物/data/
+ai宠物/backups/
+__pycache__/
+*.pyc

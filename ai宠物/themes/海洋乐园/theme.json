@@ -1,0 +1,102 @@
+{
+  "name": "海洋乐园",
+  "palette": {
+    "bgTop": "#a8edea",
+    "bgBottom": "#fed6e3",
+    "card": "#ffffff",
+    "accent": "#e84393"
+  },
+  "bgm": {
+    "track": "",
+    "volume": 0.3,
+    "evolveSting": true
+  },
+  "animations": {
+    "feed": "arc",
+    "upgrade": "jumpGold",
+    "evolve": "whiteFlash",
+    "speed": 1.0
+  },
+  "foods": [
+    {
+      "icon": "🦐",
+      "name": "小虾米",
+      "exp": 5,
+      "label": "课堂发言"
+    },
+    {
+      "icon": "🐟",
+      "name": "大鱼",
+      "exp": 10,
+      "label": "作业满分"
+    },
+    {
+      "icon": "🦀",
+      "name": "大螃蟹",
+      "exp": 20,
+      "label": "乐于助人"
+    }
+  ],
+  "corpus": [
+    "小鸭子为你骄傲！",
+    "今天也要加油鸭！",
+    "咕噜咕噜，吃饱啦！",
+    "海底小知识：鱼睡觉不闭眼哦！"
+  ],
+  "pets": [
+    {
+      "id": "duck",
+      "name": "小鸭",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "海洋小卫士"
+    },
+    {
+      "id": "fish",
+      "name": "小鱼",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "泡泡骑士"
+    },
+    {
+      "id": "octopus",
+      "name": "章鱼",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "智慧博士"
+    },
+    {
+      "id": "star",
+      "name": "海星",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "闪亮之星"
+    }
+  ],
+  "rules": {
+    "stageExp": [
+      30,
+      100,
+      250
+    ],
+    "levelExpBase": 10,
+    "maxLevel": 20,
+    "critChance": 0.1
+  }
+}

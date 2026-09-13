@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚙️ AI宠物乐园 · 管理后台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh; color: #2d3436; user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+.top { display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+    background: rgba(0,0,0,.25); flex-wrap: wrap; }
+.top h1 { font-size: 22px; color: #fff; margin-right: 8px; }
+.tabs { display: flex; gap: 8px; }
+.tab { padding: 9px 20px; border-radius: 12px; font-size: 15px; font-weight: 800;
+    background: rgba(255,255,255,.15); color: #fff; }
+.tab.on { background: #fff; color: #6c5ce7; }
+.spacer { flex: 1; }
+.clsSel { padding: 8px 12px; border-radius: 10px; font-size: 15px; font-weight: 800; border: none; }
+.tbtn { padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 800; background: #00b894; color: #fff; }
+.tbtn.gray { background: #636e72; } .tbtn.red { background: #d63031; } .tbtn.orange { background: #e67e22; }
+.tbtn:active { transform: scale(.94); }
+.pinTag { color: #ffeaa7; font-size: 13px; font-weight: 800; }
+
+.page { padding: 16px 20px 40px; max-width: 1280px; margin: 0 auto; }
+.pgtitle { color: #fff; font-size: 19px; font-weight: 900; margin: 6px 0 12px; letter-spacing: 1px; }
+
+/* 卡片通用 */
+.panel { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,.18); margin-bottom: 16px; }
+.panel h3 { font-size: 17px; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 12px; }
+
+/* ===== 主题工厂 ===== */
+.tfWrap { display: flex; gap: 16px; align-items: flex-start; }
+.tfLeft { flex: 1.2; min-width: 0; }
+.tfPrev { flex: 1; position: sticky; top: 12px; }
+.prevSheet { border-radius: 20px; padding: 14px; min-height: 300px;
+    background: linear-gradient(180deg, var(--pbgTop, #a8edea), var(--pbgBottom, #fed6e3));
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.prevCard { background: var(--pcard, #fff); border-radius: 16px; padding: 10px; text-align: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,.1); }
+.prevCard .pet { width: 84px; height: 84px; margin: 0 auto; }
+.prevCard .pet img, .prevCard .pet svg { width: 100%; height: 100%; }
+.prevCard .nm { font-size: 15px; font-weight: 900; margin-top: 4px; }
+.prevCard .lv { font-size: 11.5px; color: var(--paccent, #e84393); font-weight: 800; margin: 2px 0; }
+.prevCard .bar { height: 8px; background: rgba(0,0,0,.1); border-radius: 6px; overflow: hidden; }
+.prevCard .bar i { display: block; height: 100%; background: #ffd200; }
+.prevCap { text-align: center; color: rgba(255,255,255,.9); font-size: 13px; font-weight: 800; margin-bottom: 8px; }
+.themegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.themeCard { background: #fff; border-radius: 16px; padding: 12px; border: 3px solid transparent; }
+.themeCard.cur { border-color: #00b894; }
+.themeCard .tn { font-weight: 900; font-size: 16px; }
+.themeCard .ti { font-size: 12.5px; color: #7f8c8d; margin: 4px 0 8px; }
+.themeCard .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.sbtn { padding: 7px 13px; border-radius: 9px; font-size: 13px; font-weight: 800; color: #fff; background: #4a69bd; }
+.sbtn.green { background: #00b894; } .sbtn.red { background: #d63031; } .sbtn.gray { background: #95a5a6; }
+.sbtn:active { transform: scale(.93); }
+.frow { display: flex; align-items: center; gap: 10px; margin: 9px 0; flex-wrap: wrap; }
+.frow label { font-size: 14px; font-weight: 800; color: #555; min-width: 86px; }
+input[type=text], input[type=number], select, textarea {
+    padding: 9px 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; }
+input:focus, select:focus, textarea:focus { border-color: #6c5ce7; }
+input[type=color] { width: 46px; height: 32px; border: none; background: none; cursor: pointer; }
+input[type=range] { accent-color: #6c5ce7; }
+.petrow { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+.petrow .pn { min-width: 120px; font-weight: 800; font-size: 14px; }
+.stslot { display: flex; align-items: center; gap: 5px; }
+.stslot .pv { width: 46px; height: 46px; border-radius: 10px; background: #f5f6fa; display: flex;
+    align-items: center; justify-content: center; overflow: hidden; }
+.stslot .pv img, .stslot .pv svg { width: 80%; height: 80%; }
+.stslot .sl { font-size: 11px; color: #888; }
+
+/* ===== 班级/投喂/数据 ===== */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+table.sttable { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.sttable th, .sttable td { padding: 7px 8px; border-bottom: 1px solid #eee; text-align: left; }
+.sttable input { padding: 5px 8px; border: 1.5px solid #ddd; border-radius: 7px; width: 90px; font-family: inherit; }
+.sttable select { padding: 5px; border-radius: 7px; }
+.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.av { background: #f5f6fa; border-radius: 14px; padding: 10px 6px; text-align: center; cursor: pointer;
+    border: 3px solid transparent; transition: all .12s; }
+.av:hover { transform: translateY(-3px); }
+.av.sel { border-color: #00b894; background: #e6fff5; }
+.av .p { width: 62px; height: 62px; margin: 0 auto 4px; }
+.av .p img, .av .p svg { width: 100%; height: 100%; }
+.av .n { font-size: 14px; font-weight: 900; }
+.av .l { font-size: 11.5px; color: #636e72; }
+.foods { display: flex; gap: 12px; justify-content: center; }
+.foodb { background: #fff; border-radius: 16px; padding: 12px 18px; text-align: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,.12); cursor: pointer; transition: all .12s; }
+.foodb:hover { transform: translateY(-4px); }
+.foodb .fi { font-size: 34px; }
+.foodb .fn { font-size: 13px; font-weight: 800; }
+.foodb .fe { font-size: 12px; color: #e84393; font-weight: 800; }
+.statline { background: #f5f6fa; border-radius: 12px; padding: 10px 16px; margin: 6px 0; font-size: 15px; font-weight: 700; }
+
+/* 弹窗 / toast / pin */
+.overlay { position: fixed; inset: 0; background: rgba(20,20,40,.6); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.panel2 { background: #fff; border-radius: 20px; padding: 30px 40px; text-align: center; min-width: 320px; }
+.panel2 h3 { margin-bottom: 14px; }
+.panel2 input { font-size: 20px; text-align: center; width: 180px; letter-spacing: 4px; }
+#toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: rgba(44,62,80,.92);
+    color: #fff; padding: 11px 24px; border-radius: 24px; font-size: 15px; z-index: 99; opacity: 0; transition: all .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="top">
+    <h1>⚙️ AI宠物乐园 · 管理后台</h1>
+    <div class="tabs">
+        <button class="tab on" data-pg="theme">🎨 主题工厂</button>
+        <button class="tab" data-pg="cls">🏫 班级管理</button>
+        <button class="tab" data-pg="feed">🍖 投喂遥控</button>
+        <button class="tab" data-pg="data">💾 数据管理</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="pinTag hidden" id="pinTag">🔒 已设 PIN</span>
+    <select class="clsSel" id="clsSel"></select>
+    <a href="/show" target="_blank"><button class="tbtn">🖥 打开展示端</button></a>
+</div>
+
+<div class="page">
+    <!-- 主题工厂 -->
+    <div id="pg-theme">
+        <div class="tfWrap">
+            <div class="tfLeft panel">
+                <h3>主题列表</h3>
+                <div class="themegrid" id="themeGrid"></div>
+                <div class="frow" style="margin-top:12px">
+                    <button class="sbtn green" id="newBlank">🆕 空白新建</button>
+                    <button class="sbtn" id="newCopy">📋 复制当前主题为模板</button>
+                    <button class="sbtn" id="impBtn">📦 导入主题包(.zip)</button>
+                    <input type="file" id="impFile" accept=".zip" hidden>
+                </div>
+            </div>
+            <div class="tfPrev panel hidden" id="editor">
+                <h3>✏️ 编辑主题：<span id="edName"></span></h3>
+                <div class="prevCap" id="prevCap">实时预览（随左侧修改即时变化）</div>
+                <div class="prevSheet" id="prevSheet"></div>
+                <div class="frow"><label>背景渐变</label>
+                    <input type="color" id="cTop"> <span style="color:#999">→</span> <input type="color" id="cBottom">
+                    <label style="min-width:0">卡片色</label><input type="color" id="cCard">
+                    <label style="min-width:0">强调色</label><input type="color" id="cAccent"></div>
+                <div class="frow"><label>背景图</label>
+                    <button class="sbtn gray" id="bgUp">🖼️ 上传背景图</button>
+                    <button class="sbtn gray" id="bgClear">恢复渐变</button>
+                    <span id="bgName" style="font-size:13px;color:#888"></span>
+                    <input type="file" id="bgFile" accept="image/*" hidden></div>
+                <div class="frow"><label>BGM 音乐</label>
+                    <button class="sbtn gray" id="bgmUp">🎵 上传音乐</button>
+                    <span id="bgmName" style="font-size:13px;color:#888"></span>
+                    <label style="min-width:0">音量</label><input type="range" id="bgmVol" min="0" max="100" style="width:90px">
+                    <input type="file" id="bgmFile" accept="audio/*" hidden></div>
+                <div class="frow"><label>投喂动画</label>
+                    <select id="aFeed"><option value="arc">抛物线</option><option value="drop">垂直落下</option><option value="blink">原地闪烁</option></select>
+                    <label style="min-width:0">升级特效</label>
+                    <select id="aUp"><option value="jumpGold">金光跳字</option><option value="starRing">星星环绕</option></select>
+                    <label style="min-width:0">进化特效</label>
+                    <select id="aEvolve"><option value="whiteFlash">白光</option><option value="stardust">星尘粒子</option>
+                        <option value="leafFall">落叶纷飞</option><option value="rainbow">彩虹闪光</option></select>
+                    <label style="min-width:0">速度</label><input type="range" id="aSpeed" min="50" max="200" value="100"></div>
+                <h3 style="margin-top:14px">🍖 食物（图标/名称/经验/行为标签）</h3>
+                <div id="foodRows"></div>
+                <h3 style="margin-top:14px">💬 宠物说话语料（每行一句）</h3>
+                <textarea id="corpus" rows="4" style="width:100%"></textarea>
+                <h3 style="margin-top:14px">🐾 宠物形象（每只 4 形态，可上传图片替换）</h3>
+                <div id="petRows"></div>
+                <div class="frow" style="margin-top:14px">
+                    <button class="sbtn green" id="saveBtn">💾 保存</button>
+                    <button class="sbtn orange" id="applyBtn">🚀 应用到当前班级</button>
+                    <button class="sbtn" id="resetBtn">↩️ 恢复默认形象</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 班级管理 -->
+    <div id="pg-cls" class="hidden">
+        <div class="grid2">
+            <div class="panel"><h3>🏫 班级列表</h3>
+                <div id="clsList"></div>
+                <div class="frow" style="margin-top:12px">
+                    <button class="sbtn green" id="newClsBtn">➕ 新建班级</button>
+                    <button class="sbtn red" id="delClsBtn">🗑️ 删除班级</button></div></div>
+            <div class="panel"><h3>🧑‍🎓 学生管理</h3>
+                <div class="frow"><input type="text" id="stNames" placeholder="输入姓名，逗号分隔可批量"
+                        style="flex:1"><button class="sbtn green" id="stAdd">➕ 添加</button></div>
+                <div style="max-height:420px;overflow:auto"><table class="sttable" id="stTable"></table></div></div>
+        </div>
+    </div>
+
+    <!-- 投喂遥控 -->
+    <div id="pg-feed" class="hidden">
+        <div class="panel">
+            <h3>🍖 投喂 <span style="font-size:13px;color:#888;font-weight:normal">（点头像选中 → 点食物投喂；展示端即时播放动画）</span></h3>
+            <div class="wall" id="feedWall"></div>
+            <div class="frow" style="margin-top:14px"><label>行为标签</label>
+                <select id="feedTag"><option>课堂发言</option><option>作业满分</option><option>乐于助人</option>
+                    <option>进步明显</option><option>课堂纪律</option></select>
+                <label style="min-width:0">次数</label>
+                <input type="number" id="feedCount" min="1" max="10" value="1" style="width:64px">
+                <button class="sbtn gray" id="undoBtn">↩️ 撤销上次</button>
+                <button class="sbtn red" id="lockBtn">🔒 投喂锁定</button></div>
+            <div class="foods" id="foodPlate"></div>
+        </div>
+    </div>
+
+    <!-- 数据管理 -->
+    <div id="pg-data" class="hidden">
+        <div class="grid2">
+            <div class="panel"><h3>💾 备份与恢复</h3>
+                <div class="frow"><a href="/api/backup/export" download><button class="sbtn green">⬇️ 导出全量备份(.zip)</button></a>
+                    <button class="sbtn" id="impZipBtn">⬆️ 导入备份</button>
+                    <input type="file" id="impZip" accept=".zip" hidden></div>
+                <div class="statline">📌 每天首次启动会自动备份到 backups/ 目录（保留 7 份）</div></div>
+            <div class="panel"><h3>📊 本周统计</h3>
+                <div id="statsBox" style="font-size:14px"></div>
+                <div class="frow" style="margin-top:10px">
+                    <button class="sbtn" id="praiseBtn">📋 生成本周表扬名单</button></div>
+                <div class="statline hidden" id="praiseBox" style="white-space:pre-line"></div></div>
+            <div class="panel"><h3>🔒 安全</h3>
+                <div class="frow"><label>管理 PIN 码</label>
+                    <input type="text" id="pinInput" placeholder="留空=不启用" style="width:130px">
+                    <button class="sbtn orange" id="pinSet">保存 PIN</button>
+                    <span style="font-size:13px;color:#888">启用后：切班/删除/导入备份需验证</span></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- PIN 弹窗 -->
+<div id="pinOverlay" class="overlay hidden">
+    <div class="panel2"><h3>🔒 请输入管理 PIN</h3>
+        <input type="password" id="pinGot"><div class="frow" style="justify-content:center;margin-top:14px">
+        <button class="sbtn green" id="pinGo">确定</button></div></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/pets.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const qs = s => document.querySelector(s);
+let state = null, themes = [], curThemeName = '', editTheme = null, editOrig = '';
+let selStudents = new Set(), pendingPinCb = null;
+
+/* ============ 基础 ============ */
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+async function api(path, body, method) {
+    const opt = method === 'POST' ? { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body || {}) } : {};
+    const r = await fetch(path, opt);
+    const j = await r.json().catch(() => ({ ok: false, error: '响应异常' }));
+    if (!j.ok && j.error) toast('⚠️ ' + j.error);
+    return j;
+}
+function withPin(fn) {
+    if (!state || !state.pinSet) { fn(); return; }
+    pendingPinCb = fn; $('pinOverlay').classList.remove('hidden'); $('pinGot').focus();
+}
+$('pinGo').onclick = async () => {
+    const j = await api('/api/pin/verify', { pin: $('pinGot').value }, 'POST');
+    if (j.ok) { $('pinOverlay').classList.add('hidden'); $('pinGot').value = '';
+        const cb = pendingPinCb; pendingPinCb = null; if (cb) cb(); }
+    else toast('PIN 错误');
+};
+$('pinGot').onkeydown = e => { if (e.key === 'Enter') $('pinGo').click(); };
+
+/* ============ 标签页 ============ */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    ['theme', 'cls', 'feed', 'data'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== t.dataset.pg));
+    if (t.dataset.pg === 'feed') renderFeed();
+    if (t.dataset.pg === 'data') renderStats();
+});
+
+/* ============ 数据拉取 ============ */
+async function refresh() {
+    state = await api('/api/state');
+    const tj = await api('/api/themes');
+    themes = tj.themes || []; curThemeName = tj.current || '';
+    if (!state.ok) { toast('⚠️ ' + (state.error || '状态异常')); return; }
+    renderClsSel();
+    renderThemes();
+    renderClsPage();
+    renderFeed();
+    $('pinTag').classList.toggle('hidden', !state.pinSet);
+    if (editTheme) fillEditorPreview();   // 实时预览跟随数据
+}
+function renderClsSel() {
+    api('/api/classes').then(j => {
+        const sel = $('clsSel'); sel.innerHTML = '';
+        (j.classes || []).forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id; o.textContent = (c.current ? '📺 ' : '') + c.name;
+            sel.appendChild(o);
+        });
+        sel.value = state.classId;
+    });
+}
+$('clsSel').onchange = () => withPin(async () => {
+    const j = await api('/api/classes/switch', { id: $('clsSel').value }, 'POST');
+    if (j.ok) { toast('已切换班级'); refresh(); }
+});
+
+/* ============ 主题工厂 ============ */
+function renderThemes() {
+    const g = $('themeGrid'); g.innerHTML = '';
+    themes.forEach(t => {
+        const c = document.createElement('div');
+        c.className = 'themeCard' + (t.name === curThemeName ? ' cur' : '');
+        c.innerHTML = `<div class="tn">${t.name === curThemeName ? '📺 ' : ''}${t.name}</div>
+            <div class="ti">${t.petCount} 种宠物 · ${((t.theme && t.theme.foods) || []).map(f => f.icon).join('')}</div>
+            <div class="btns">
+                <button class="sbtn green">应用</button>
+                <button class="sbtn">编辑</button>
+                <button class="sbtn red">删除</button></div>`;
+        const [bA, bE, bD] = c.querySelectorAll('button');
+        bA.onclick = () => withPin(async () => { const j = await api('/api/themes/apply', { name: t.name }, 'POST');
+            if (j.ok) { toast('🚀 已应用「' + t.name + '」，展示端即将热切换'); refresh(); } });
+        bE.onclick = () => startEdit(t.name);
+        bD.onclick = () => withPin(async () => {
+            if (!confirm('确定删除主题「' + t.name + '」？')) return;
+            const j = await api('/api/themes/delete', { name: t.name }, 'POST');
+            if (j.ok) { toast('已删除'); refresh(); } });
+        g.appendChild(c);
+    });
+}
+$('newBlank').onclick = () => {
+    const name = prompt('新主题名称：');
+    if (!name) return;
+    editTheme = JSON.parse(JSON.stringify(BLANK_THEME));
+    editTheme.name = name;
+    editTheme.pets = [{ id: 'duck', name: '小鸭', stages: ['', '', '', ''], title: '小明星' }];
+    startEdit(name, editTheme, '');
+};
+$('newCopy').onclick = () => {
+    const src = themes.find(t => t.name === (editOrig || curThemeName)) || themes[0];
+    if (!src) return;
+    const name = prompt('新主题名称（复制自「' + src.name + '」）：');
+    if (!name) return;
+    editTheme = JSON.parse(JSON.stringify(src.theme)); editTheme.name = name;
+    startEdit(name, editTheme, '');   // 复制主题：素材暂共用内置，保存为新名
+};
+function startEdit(name, themeObj, origName) {
+    editTheme = JSON.parse(JSON.stringify(themeObj || (themes.find(t => t.name === name) || {}).theme));
+    editTheme.name = name;
+    editOrig = origName !== undefined ? origName : name;
+    $('editor').classList.remove('hidden');
+    $('edName').textContent = name;
+    /* 表单填充 */
+    const p = editTheme.palette || {};
+    $('cTop').value = p.bgTop || '#a8edea'; $('cBottom').value = p.bgBottom || '#fed6e3';
+    $('cCard').value = p.card || '#ffffff'; $('cAccent').value = p.accent || '#e84393';
+    $('bgName').textContent = editTheme.bgImage || '（渐变）';
+    $('bgmName').textContent = (editTheme.bgm && editTheme.bgm.track) || '（无）';
+    $('bgmVol').value = ((editTheme.bgm && editTheme.bgm.volume) || .3) * 100;
+    const an = editTheme.animations || {};
+    $('aFeed').value = an.feed || 'arc'; $('aUp').value = an.upgrade || 'jumpGold'; $('aEvolve').value = an.evolve || 'whiteFlash';
+    $('aSpeed').value = ((an.speed) || 1) * 100;
+    /* 食物行 */
+    const fr = $('foodRows'); fr.innerHTML = '';
+    (editTheme.foods || []).forEach((f, i) => {
+        const r = document.createElement('div');
+        r.className = 'frow';
+        r.innerHTML = `<input type="text" value="${f.icon}" style="width:56px" data-k="icon">
+            <input type="text" value="${f.name}" style="width:120px" data-k="name">
+            <input type="number" value="${f.exp}" min="1" max="100" style="width:70px" data-k="exp">
+            <input type="text" value="${f.label || ''}" style="flex:1" data-k="label">`;
+        r.querySelectorAll('input').forEach(inp => inp.oninput = () => {
+            const k = inp.dataset.k;
+            editTheme.foods[i][k] = k === 'exp' ? (+inp.value || 5) : inp.value;
+            fillEditorPreview();
+        });
+        fr.appendChild(r);
+    });
+    $('corpus').value = (editTheme.corpus || []).join('\n');
+    $('corpus').oninput = () => { editTheme.corpus = $('corpus').value.split('\n').filter(x => x.trim()); fillEditorPreview(); };
+    /* 宠物行 */
+    const pr = $('petRows'); pr.innerHTML = '';
+    (editTheme.pets || []).forEach((p, i) => {
+        const r = document.createElement('div');
+        r.className = 'petrow';
+        r.innerHTML = `<div class="pn">${p.name}</div>` +
+            [0, 1, 2, 3].map(st => `<div class="stslot">
+                <div class="pv" id="pv_${p.id}_${st}"></div><div class="sl">${['蛋', '幼', '成', '进化'][st]}</div>
+                <button class="sbtn gray" data-up="${st}">上传</button></div>`).join('') +
+            `<input type="file" hidden data-fp="${p.id}">`;
+        pr.appendChild(r);
+        [0, 1, 2, 3].forEach(st => drawSlot(p, st));
+        r.querySelectorAll('button[data-up]').forEach(b => b.onclick = () => {
+            const inp = r.querySelector(`input[data-fp="${p.id}"]`);
+            inp.onchange = () => {
+                const fd = new FormData();
+                fd.append('theme', editTheme.name); fd.append('kind', 'pet');
+                fd.append('petId', p.id); fd.append('stage', b.dataset.up);
+                fd.append('file', inp.files[0]);
+                fetch('/api/themes/upload_asset', { method: 'POST', body: fd })
+                    .then(x => x.json()).then(j => {
+                        if (j.ok) { toast('🖼️ 已上传'); refresh().then(() => startEdit(editTheme.name, null, editTheme.name)); }
+                    });
+            };
+            inp.click();
+        });
+    });
+    fillEditorPreview();
+}
+function drawSlot(p, st) {
+    const el = $('pv_' + p.id + '_' + st);
+    if (!el) return;
+    el.innerHTML = p.stages[st]
+        ? `<img src="/themes/${encodeURIComponent(editTheme.name)}/${p.stages[st]}">`
+        : petSVG(p.id, st);
+}
+function collectTheme() {
+    editTheme.palette = { bgTop: $('cTop').value, bgBottom: $('cBottom').value, card: $('cCard').value, accent: $('cAccent').value };
+    editTheme.bgImage = $('bgName').textContent.startsWith('（') ? null : $('bgName').textContent;
+    editTheme.bgm = { track: $('bgmName').textContent.startsWith('（') ? '' : $('bgmName').textContent,
+        volume: $('bgmVol').value / 100, evolveSting: editTheme.bgm ? editTheme.bgm.evolveSting !== false : true };
+    editTheme.animations = { feed: $('aFeed').value, upgrade: $('aUp').value, evolve: $('aEvolve').value, speed: $('aSpeed').value / 100 };
+    return editTheme;
+}
+function fillEditorPreview() {
+    collectTheme();
+    const p = editTheme.palette || {};
+    const sheet = $('prevSheet');
+    sheet.style.setProperty('--pbgTop', p.bgTop); sheet.style.setProperty('--pbgBottom', p.bgBottom);
+    sheet.style.setProperty('--pcard', p.card); sheet.style.setProperty('--paccent', p.accent);
+    const anim = editTheme.animations || {};
+    const evoName = { whiteFlash: '白光', stardust: '星尘', leafFall: '落叶', rainbow: '彩虹' }[anim.evolve] || anim.evolve;
+    $('prevCap').textContent = `实时预览 · 进化特效：${evoName} · 投喂：${{ arc: '抛物线', drop: '垂直落下', blink: '原地闪烁' }[anim.feed] || anim.feed}`;
+    /* 每次重建 4 张预览卡：本班学生优先，不足用主题宠物补 */
+    const stu = (state && state.students) || [];
+    let html = '';
+    for (let i = 0; i < 4; i++) {
+        const petDef = (editTheme.pets || [])[i % Math.max(1, (editTheme.pets || []).length)] || { id: 'duck', stages: ['', '', '', ''], name: '宠物' };
+        const s = stu[i];
+        const stage = i === 3 ? 3 : i;
+        const petHtml = petDef.stages[stage]
+            ? `<img src="/themes/${encodeURIComponent(editTheme.name)}/${petDef.stages[stage]}">`
+            : petSVG(petDef.id, stage, { cracks: i === 0 ? 2 : 0 });
+        html += `<div class="prevCard"><div class="pet">${petHtml}</div>
+            <div class="nm">${s ? (s.nickname || s.name) : (petDef.name || '宠物')}</div>
+            <div class="lv">Lv.${i + 2}</div><div class="bar"><i style="width:${40 + i * 15}%"></i></div></div>`;
+    }
+    sheet.innerHTML = html;
+}
+/* 表单变化 → 实时预览 */
+['cTop', 'cBottom', 'cCard', 'cAccent'].forEach(id => $(id).oninput = fillEditorPreview);
+['aFeed', 'aUp', 'aEvolve', 'aSpeed'].forEach(id => $(id).onchange = fillEditorPreview);
+$('bgmVol').oninput = () => { collectTheme(); };
+
+$('saveBtn').onclick = async () => {
+    collectTheme();
+    const j = await api('/api/themes/save', { name: editTheme.name, origName: editOrig, theme: editTheme }, 'POST');
+    if (j.ok) { toast('💾 主题已保存'); editOrig = editTheme.name; refresh(); }
+};
+$('applyBtn').onclick = () => {
+    collectTheme();
+    withPin(async () => {
+        const j = await api('/api/themes/save', { name: editTheme.name, origName: editOrig, theme: editTheme }, 'POST');
+        if (!j.ok) return;
+        editOrig = editTheme.name;
+        const j2 = await api('/api/themes/apply', { name: editTheme.name }, 'POST');
+        if (j2.ok) { toast('🚀 已应用，展示端热切换中'); refresh(); }
+    });
+};
+$('resetBtn').onclick = () => {
+    (editTheme.pets || []).forEach(p => p.stages = ['', '', '', '']);
+    startEdit(editTheme.name, editTheme, editOrig);
+    toast('已恢复内置形象（保存后生效）');
+};
+$('bgUp').onclick = () => $('bgFile').click();
+$('bgFile').onchange = () => uploadAsset('bg', $('bgFile'), j => { if (j.ok) { $('bgName').textContent = $('bgFile').value.split('\\').pop(); fillEditorPreview(); } });
+$('bgClear').onclick = () => { editTheme.bgImage = null; $('bgName').textContent = '（渐变）'; fillEditorPreview(); toast('已恢复渐变背景（保存后生效）'); };
+$('bgmUp').onclick = () => $('bgmFile').click();
+$('bgmFile').onchange = () => uploadAsset('bgm', $('bgmFile'), j => { if (j.ok) { $('bgmName').textContent = $('bgmFile').value.split('\\').pop(); toast('🎵 BGM 已上传'); } });
+function uploadAsset(kind, inp, done) {
+    if (!inp.files[0]) return;
+    if (!editTheme) { toast('请先选择要编辑的主题'); return; }
+    const fd = new FormData();
+    fd.append('theme', editTheme.name); fd.append('kind', kind); fd.append('file', inp.files[0]);
+    fetch('/api/themes/upload_asset', { method: 'POST', body: fd }).then(x => x.json()).then(j => {
+        if (j.ok) done(j); else toast('⚠️ ' + j.error);
+        inp.value = '';
+    });
+}
+$('impBtn').onclick = () => $('impFile').click();
+$('impFile').onchange = () => { toast('主题包导入在 P1 提供，可先用「备份导入」整体恢复'); $('impFile').value = ''; };
+
+/* ============ 班级管理 ============ */
+function renderClsPage() {
+    api('/api/classes').then(j => {
+        const box = $('clsList'); box.innerHTML = '';
+        (j.classes || []).forEach(c => {
+            const d = document.createElement('div');
+            d.className = 'statline';
+            d.innerHTML = `${c.current ? '📺 ' : ''}<b>${c.name}</b> · ${c.students} 名学生 · 主题：${c.theme}`;
+            box.appendChild(d);
+        });
+    });
+    renderStTable();
+}
+$('newClsBtn').onclick = () => withPin(async () => {
+    const name = prompt('新班级名称：');
+    if (!name) return;
+    const names = prompt('学生名单（每行一个，可留空后添加）：') || '';
+    const j = await api('/api/classes', { name, students: names.split('\n').map(x => x.trim()).filter(Boolean) }, 'POST');
+    if (j.ok) { toast('班级已创建'); refresh(); }
+});
+$('delClsBtn').onclick = () => withPin(async () => {
+    if (state.classId === $('clsSel').value) { toast('不能删除当前展示中的班级'); return; }
+    if (!confirm('确定删除该班级？数据将先自动备份。')) return;
+    await fetch('/api/backup/export');   // 先备份
+    const j = await api('/api/classes/delete', { id: $('clsSel').value }, 'POST');
+    if (j.ok) { toast('已删除'); refresh(); }
+});
+function renderStTable() {
+    const tb = $('stTable');
+    tb.innerHTML = `<tr><th>姓名</th><th>宠物</th><th>昵称</th><th>经验</th><th>等级</th><th>操作</th></tr>`;
+    (state.students || []).forEach(s => {
+        const tr = document.createElement('tr');
+        const petOpts = Object.keys(SPECIES).map(k => `<option value="${k}" ${k === s.petId ? 'selected' : ''}>${SPECIES[k].name}</option>`).join('');
+        tr.innerHTML = `<td>${s.name}</td><td><select data-k="petId">${petOpts}</select></td>
+            <td><input data-k="nickname" value="${s.nickname || ''}" placeholder="昵称"></td>
+            <td><input data-k="totalExp" type="number" value="${s.totalExp}"></td>
+            <td>Lv.${s.level}</td>
+            <td><button class="sbtn gray">保存</button> <button class="sbtn red">删除</button></td>`;
+        const [bSave, bDel] = tr.querySelectorAll('button');
+        bSave.onclick = () => {
+            const body = { action: 'update', id: s.id };
+            tr.querySelectorAll('[data-k]').forEach(inp => {
+                const k = inp.dataset.k;
+                body[k] = k === 'totalExp' ? Math.max(0, +inp.value || 0) : inp.value;
+            });
+            api('/api/students', body, 'POST').then(j => { if (j.ok) { toast('已保存'); refresh(); } });
+        };
+        bDel.onclick = () => {
+            if (!confirm('删除「' + s.name + '」？（数据会存档）')) return;
+            api('/api/students', { action: 'delete', id: s.id }, 'POST').then(j => { if (j.ok) { toast('已删除'); refresh(); } });
+        };
+        tb.appendChild(tr);
+    });
+}
+$('stAdd').onclick = () => {
+    const names = $('stNames').value.split(/[,，\n]/).map(x => x.trim()).filter(Boolean);
+    if (!names.length) { toast('请输入姓名'); return; }
+    api('/api/students', { action: 'add', names }, 'POST').then(j => {
+        if (j.ok) { toast('已添加'); $('stNames').value = ''; refresh(); } });
+};
+
+/* ============ 投喂遥控 ============ */
+function renderFeed() {
+    const wall = $('feedWall'); wall.innerHTML = '';
+    (state.students || []).forEach(s => {
+        const d = document.createElement('div');
+        d.className = 'av' + (selStudents.has(s.id) ? ' sel' : '');
+        const petDef = ((state.theme || {}).pets || []).find(p => p.id === s.petId) || { id: s.petId, stages: ['', '', '', ''] };
+        d.innerHTML = `<div class="p">${renderPet(state.theme, petDef, s.stage, {})}</div>
+            <div class="n">${s.nickname || s.name}</div><div class="l">Lv.${s.level} · ${s.totalExp}EXP</div>`;
+        d.onclick = () => { selStudents.has(s.id) ? selStudents.delete(s.id) : selStudents.add(s.id);
+            d.classList.toggle('sel', selStudents.has(s.id)); };
+        wall.appendChild(d);
+    });
+    const plate = $('foodPlate'); plate.innerHTML = '';
+    ((state.theme || {}).foods || []).forEach((f, i) => {
+        const b = document.createElement('div');
+        b.className = 'foodb';
+        b.innerHTML = `<div class="fi">${f.icon}</div><div class="fn">${f.name}</div><div class="fe">+${f.exp}</div>`;
+        b.onclick = () => doFeed(i);
+        plate.appendChild(b);
+    });
+    $('lockBtn').textContent = (state.config || {}).feedLocked ? '🔓 解锁投喂' : '🔒 投喂锁定';
+}
+async function doFeed(foodIdx) {
+    if (!selStudents.size) { toast('先点头像选择学生'); return; }
+    const j = await api('/api/feed', { studentIds: [...selStudents], food: foodIdx, tag: $('feedTag').value,
+        count: +$('feedCount').value || 1 }, 'POST');
+    if (j.ok) {
+        (j.results || []).forEach(r => {
+            toast(`${r.name} ${r.food}${r.crit ? ' 💥暴击' : ''} +${r.exp}` + (r.evolve ? ' 🎉进化！' : r.levelup ? ' ⬆️升级！' : ''));
+        });
+        refresh();
+    }
+}
+$('undoBtn').onclick = () => api('/api/undo', {}, 'POST').then(j => { if (j.ok) { toast('已撤销上次投喂'); refresh(); } });
+$('lockBtn').onclick = () => api('/api/config', { feedLocked: !((state.config || {}).feedLocked) }, 'POST')
+    .then(j => { if (j.ok) { toast('投喂已' + ((state.config || {}).feedLocked ? '解锁' : '锁定')); refresh(); } });
+
+/* ============ 数据管理 ============ */
+function renderStats() {
+    api('/api/stats').then(j => {
+        const box = $('statsBox');
+        const tags = Object.entries(j.byTag || {}).map(([k, v]) => `<div class="statline">🏷️ ${k}：${v} 次</div>`).join('');
+        const top = (j.weekTop || []).map((w, i) => `<div class="statline">${['🥇', '🥈', '🥉'][i] || '⭐'} ${w.name}：+${w.exp} 经验</div>`).join('');
+        box.innerHTML = (tags || '<div class="statline">还没有投喂记录</div>') + (top || '');
+    });
+}
+$('praiseBtn').onclick = () => api('/api/praise_week').then(j => {
+    if (j.ok) { $('praiseBox').classList.remove('hidden'); $('praiseBox').textContent = j.text; }
+});
+$('impZipBtn').onclick = () => withPin(() => $('impZip').click());
+$('impZip').onchange = () => {
+    const fd = new FormData(); fd.append('file', $('impZip').files[0]);
+    fetch('/api/backup/import', { method: 'POST', body: fd, headers: { 'X-Pin': sessionStorage.getItem('pin') || '' } })
+        .then(x => x.json()).then(j => { if (j.ok) { toast('✅ 备份已恢复'); refresh(); } });
+};
+$('pinSet').onclick = () => {
+    const pin = $('pinInput').value.trim();
+    const doSet = hdr => fetch('/api/pin/set', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Pin': hdr || '' },
+        body: JSON.stringify({ pin }) }).then(x => x.json()).then(j => {
+        if (j.ok) { toast(pin ? 'PIN 已启用' : 'PIN 已关闭'); sessionStorage.setItem('pin', pin); refresh(); } });
+    if (state.pinSet) withPin(() => doSet(sessionStorage.getItem('pin') || ''));
+    else doSet('');
+};
+
+/* ============ PIN 弹窗联动 ============ */
+const _withPin = withPin;
+withPin = function (fn) {
+    if (!state || !state.pinSet) { fn(); return; }
+    pendingPinCb = fn; $('pinOverlay').classList.remove('hidden'); $('pinGot').focus();
+};
+$('pinGo').onclick = async () => {
+    const j = await api('/api/pin/verify', { pin: $('pinGot').value }, 'POST');
+    if (j.ok) { sessionStorage.setItem('pin', $('pinGot').value);
+        $('pinOverlay').classList.add('hidden'); $('pinGot').value = '';
+        const cb = pendingPinCb; pendingPinCb = null; if (cb) cb(); }
+    else toast('PIN 错误');
+};
+
+/* ============ 启动 ============ */
+const BLANK_THEME = { name: '', palette: { bgTop: '#a8edea', bgBottom: '#fed6e3', card: '#ffffff', accent: '#e84393' },
+    bgm: { track: '', volume: .3, evolveSting: true },
+    animations: { feed: 'arc', upgrade: 'jumpGold', evolve: 'whiteFlash', speed: 1 },
+    foods: [{ icon: '🍎', name: '小红花', exp: 5, label: '课堂表现' }],
+    corpus: ['加油！'], pets: [], rules: { stageExp: [30, 100, 250], levelExpBase: 10, maxLevel: 20, critChance: 0.1 } };
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+{
+  "name": "太空冒险",
+  "palette": {
+    "bgTop": "#0b1026",
+    "bgBottom": "#2b3a67",
+    "card": "#1c2340",
+    "accent": "#4a9eff"
+  },
+  "bgm": {
+    "track": "",
+    "volume": 0.25,
+    "evolveSting": true
+  },
+  "animations": {
+    "feed": "drop",
+    "upgrade": "starRing",
+    "evolve": "stardust",
+    "speed": 1.0
+  },
+  "foods": [
+    {
+      "icon": "⭐",
+      "name": "星星饼",
+      "exp": 5,
+      "label": "课堂发言"
+    },
+    {
+      "icon": "🔋",
+      "name": "能量块",
+      "exp": 10,
+      "label": "作业满分"
+    },
+    {
+      "icon": "🛸",
+      "name": "太空餐",
+      "exp": 20,
+      "label": "乐于助人"
+    }
+  ],
+  "corpus": [
+    "3，2，1，发射！",
+    "太空小知识：在太空里会长高哦！",
+    "航线正确，继续保持！"
+  ],
+  "pets": [
+    {
+      "id": "spacedog",
+      "name": "太空犬",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "星际船长"
+    },
+    {
+      "id": "rocketcat",
+      "name": "火箭猫",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "引擎大师"
+    },
+    {
+      "id": "uforabbit",
+      "name": "UFO兔",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "飞行队长"
+    },
+    {
+      "id": "stardragon",
+      "name": "星龙",
+      "stages": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "title": "银河传奇"
+    }
+  ],
+  "rules": {
+    "stageExp": [
+      30,
+      100,
+      250
+    ],
+    "levelExpBase": 10,
+    "maxLevel": 20,
+    "critChance": 0.1
+  }
+}
