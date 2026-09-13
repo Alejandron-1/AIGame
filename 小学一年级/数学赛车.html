@@ -367,6 +367,7 @@ input[type=number] {
 
 <div id="toast"></div>
 
+<script src="出题引擎.js"></script>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
@@ -379,15 +380,15 @@ const T = {
 };
 
 /* ================= 可调参数 =================
-   难度同时决定「题目难度」和「AI 正确率」：
-   简单 = 10以内一位数加减（2个数）      · AI 50%
-   中等 = 20以内一位数加减（最多3个数）  · AI 70%
-   困难 = 两位数加减（2个数，不进位为主）· AI 85% */
+   难度同时决定「题目难度」（走出题引擎的教材进度）和「AI 正确率」：
+   简单 = 一年级上 · 10以内加减          · AI 50%
+   中等 = 一年级下 · 20以内为主          · AI 70%
+   困难 = 一年级下 · 100以内两位数       · AI 85% */
 const AI_RATES = { easy: 0.5, mid: 0.7, hard: 0.85 };
 const DIFF_INFO = {
-    easy: '简单：10以内加减（2个数） · AI正确率 50%',
-    mid:  '中等：20以内一位数（最多3个数） · AI正确率 70%',
-    hard: '困难：两位数加减（2个数） · AI正确率 85%',
+    easy: '一年级上 · 10以内加减 · AI正确率 50%',
+    mid:  '一年级下 · 20以内为主 · AI正确率 70%',
+    hard: '一年级下 · 100以内两位数 · AI正确率 85%',
 };
 
 /* 内置样例题库：一年级 10/20 以内加减法（可自行增删） */
@@ -566,69 +567,22 @@ function updateBankLabel() {
         : `CSV题库：${BANK.length} 道题`;
 }
 
-/* ================= 自动出题（按难度实时生成，无限出题） =================
-   简单：一位数、2个数，10以内（和≤10 / 差≥1）
-   中等：一位数、最多3个数，中间过程非负、结果0~20
-   困难：两位数、2个数，不进位不借位为主（含少量20以内退位减），结果0~100 */
-function mkQ(a, op, b) { return { q: `${a}${op}${b}=?`, a: op === '+' ? a + b : a - b }; }
-function qEasy() {
-    if (Math.random() < 0.5) {                       // 加法：和 ≤ 10
-        const a = randInt(1, 9);
-        return mkQ(a, '+', randInt(1, 10 - a));
-    }
-    const a = randInt(2, 9);                         // 减法：差 ≥ 1
-    return mkQ(a, '-', randInt(1, a - 1));
-}
-function qMid() {
-    const n = Math.random() < 0.5 ? 2 : 3;           // 2个数 或 3个数
-    for (let t = 0; t < 200; t++) {
-        let val = randInt(1, 9), s = String(val), ok = true;
-        for (let i = 1; i < n; i++) {
-            const x = randInt(1, 9);
-            const plus = Math.random() < 0.5 || val - x < 0;   // 减不开就改加法，保证过程非负
-            s += (plus ? '+' : '-') + x;
-            val = plus ? val + x : val - x;
-        }
-        if (val > 20 || val < 0) continue;           // 结果限制在 20 以内
-        return { q: s + '=?', a: val };
-    }
-    return { q: '2+3=?', a: 5 };
-}
-function qHard() {
-    for (let t = 0; t < 200; t++) {
-        const kind = Math.random();
-        if (kind < 0.3) {                            // 整十数 ± 整十数
-            const a = randInt(1, 9) * 10, b = randInt(1, 9) * 10;
-            if (Math.random() < 0.5) { if (a + b <= 100) return mkQ(a, '+', b); }
-            else if (a !== b) return mkQ(Math.max(a, b), '-', Math.min(a, b));
-        } else if (kind < 0.65) {                    // 两位数 ± 一位数
-            const a = randInt(10, 99), b = randInt(1, 9);
-            if (Math.random() < 0.3 && a <= 18) {    // 少量 20以内退位减（一年级下册重点）
-                const c = randInt(1, 9), hi = randInt(11, 18), lo = randInt(hi - 9, 9);
-                if (hi - lo >= 1) return mkQ(hi, '-', lo);
-            } else if (Math.random() < 0.5) {
-                if (a % 10 + b <= 9) return mkQ(a, '+', b);   // 不进位
-            } else {
-                if (a % 10 >= b && a - b >= 1) return mkQ(a, '-', b);  // 不借位
-            }
-        } else {                                     // 两位数 ± 两位数（不进位不借位）
-            const a = randInt(10, 89);
-            if (Math.random() < 0.5) {
-                const b = randInt(10, 100 - a - 1);
-                if (b >= 10 && a % 10 + b % 10 <= 9 && Math.floor(a / 10) + Math.floor(b / 10) <= 9) return mkQ(a, '+', b);
-            } else {
-                const b = randInt(10, a - 1);
-                if (b >= 10 && a % 10 >= b % 10) return mkQ(a, '-', b);
-            }
-        }
-    }
-    return { q: '20+10=?', a: 30 };
-}
-const GEN = { easy: qEasy, mid: qMid, hard: qHard };
+/* ================= 自动出题（走出题引擎，按教材进度实时生成，无限出题） =================
+   简单 = 一年级上 · 10以内加减（2个数）
+   中等 = 一年级下 · 20以内为主（最多3个数）
+   困难 = 一年级下 · 100以内两位数不进位不借位为主 */
+const GEN_PRESETS = {
+    easy: { grade: 'g1a', topic: 'auto', difficulty: '基础' },
+    mid:  { grade: 'g1b', topic: 'auto', difficulty: '标准' },
+    hard: { grade: 'g1b', topic: 'g1b_no100', difficulty: '挑战' },
+};
 
 /* 抽一道题：自动出题模式实时生成；题库模式洗牌抽取，不重复直到用完再重发 */
 function drawQuestion() {
-    if (qSource === 'auto') return GEN[aiDiff]();
+    if (qSource === 'auto') {
+        const g = 题库引擎.gen(GEN_PRESETS[aiDiff] || GEN_PRESETS.mid);
+        return { q: g.text, a: g.ans };
+    }
     if (!deck.length) deck = shuffle(BANK);
     return deck.pop();
 }

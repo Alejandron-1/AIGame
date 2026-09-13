@@ -32,6 +32,12 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .top h1 { font-size: clamp(30px, 3.4vw, 46px); font-weight: 800; letter-spacing: 4px; text-shadow: 0 4px 18px rgba(74, 158, 255, .45); }
 .top .sub { margin-top: 8px; font-size: clamp(14px, 1.6vw, 19px); color: #c9d6f5; letter-spacing: 2px; }
 .top .rule { margin-top: 6px; font-size: clamp(13px, 1.4vw, 17px); color: #ffd200; font-weight: bold; }
+/* 智能出题设置条 */
+.qset { display: flex; justify-content: center; gap: 12px; margin: 10px 0 2px; flex-wrap: wrap; }
+.qchip { background: rgba(255,255,255,.12); border-radius: 14px; padding: 8px 14px;
+    font-size: 14.5px; font-weight: 800; color: #c9d6f5; }
+.qchip select { margin-left: 6px; padding: 5px 8px; border-radius: 9px; font-size: 14px;
+    font-weight: 800; border: none; background: #f7f9ff; color: #2c3e50; font-family: inherit; }
 #btnRestart {
     position: absolute; right: 0; top: 4px;
     padding: 11px 22px; border-radius: 13px; font-size: 16px; font-weight: bold;
@@ -133,9 +139,21 @@ button { font-family: inherit; cursor: pointer; border: none; }
   <!-- 顶部 -->
   <div class="top">
     <h1>🏎️ 飞驰人生</h1>
-    <div class="sub">20以内加减法口算小游戏</div>
-    <div class="rule">⚡ 最快答对 10 题就获胜！</div>
+    <div class="sub">口算竞速小游戏 · 智能出题</div>
+    <div class="rule" id="ruleLine">⚡ 最快答对 10 题就获胜！</div>
     <button id="btnRestart">🔄 重新开始</button>
+  </div>
+
+  <!-- 智能出题设置（按教材年级进度） -->
+  <div class="qset">
+    <span class="qchip">📖 年级
+      <select id="gGrade"></select></span>
+    <span class="qchip">📌 知识点
+      <select id="gTopic"></select></span>
+    <span class="qchip">🎯 难度
+      <select id="gDiff">
+        <option>基础</option><option selected>标准</option><option>挑战</option>
+      </select></span>
   </div>
 
   <!-- 三栏玩家面板 -->
@@ -153,6 +171,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 
 <div id="toast"></div>
 
+<script src="出题引擎.js"></script>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
@@ -220,39 +239,69 @@ function carSVG(c, d) {
     </svg>`;
 }
 
-/* ================= 出题：20以内加减（含0参与） =================
-   加法：a+b ≤ 20；减法：a ≤ 20 且 a ≥ b（差非负） */
+/* ================= 智能出题（题库引擎：年级/知识点/难度） ================= */
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
 let gameOver = false;
 let P = [];   // 三名玩家状态
+let Qcfg = { grade: 'g1b', topic: 'auto', difficulty: '标准' };   // 默认：一年级下册 · 综合 · 标准
+function fillGradeSel() {
+    const s = $('gGrade'); s.innerHTML = '';
+    题库引擎.GRADES.forEach(g => {
+        const o = document.createElement('option');
+        o.value = g.id; o.textContent = g.name;
+        s.appendChild(o);
+    });
+    s.value = Qcfg.grade;
+}
+function fillTopicSel() {
+    const s = $('gTopic'); s.innerHTML = '';
+    const g = 题库引擎.GRADES.find(x => x.id === Qcfg.grade) || 题库引擎.GRADES[0];
+    const auto = document.createElement('option');
+    auto.value = 'auto'; auto.textContent = '综合练习（推荐）';
+    s.appendChild(auto);
+    g.topics.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.id; o.textContent = t.name;
+        s.appendChild(o);
+    });
+    s.value = Qcfg.topic;
+}
+function applyQSet(doRestart) {
+    Qcfg = { grade: $('gGrade').value, topic: $('gTopic').value, difficulty: $('gDiff').value };
+    $('ruleLine').textContent = `⚡ 最快答对 10 题就获胜！ · ${题库引擎.gradeName(Qcfg.grade)} · ${题库引擎.topicName(Qcfg.grade, Qcfg.topic)} · ${Qcfg.difficulty}`;
+    if (doRestart) { restart(); toast(`出题已切换：${题库引擎.gradeName(Qcfg.grade)} · ${题库引擎.topicName(Qcfg.grade, Qcfg.topic)} · ${Qcfg.difficulty}`); }
+}
+$('gGrade').onchange = () => { Qcfg.grade = $('gGrade').value; fillTopicSel(); applyQSet(true); };
+$('gTopic').onchange = () => { Qcfg.topic = $('gTopic').value; applyQSet(true); };
+$('gDiff').onchange = () => { Qcfg.difficulty = $('gDiff').value; applyQSet(true); };
+fillGradeSel(); fillTopicSel(); applyQSet(false);
+
+/* ================= 出题（走题库引擎，三人当前题互不相同） ================= */
 function genExpr(others) {
     let q, guard = 0;
     do {
-        if (Math.random() < 0.5) {          // 加法
-            const a = randInt(0, 20);
-            const b = randInt(0, 20 - a);
-            q = { text: `${a}+${b}=?`, a: a + b };
-        } else {                            // 减法
-            const a = randInt(0, 20);
-            const b = randInt(0, a);
-            q = { text: `${a}-${b}=?`, a: a - b };
-        }
+        const g = 题库引擎.gen(Qcfg);
+        q = { text: g.text, a: g.ans };
         guard++;
-    } while (others.includes(q.text) && guard < 30);   // 同一轮三人当前题互不相同
+    } while (others.includes(q.text) && guard < 30);
     return q;
 }
-/* 4个选项：1正确 + 3干扰（非负、≤20、邻近值优先、互不重复） */
+/* 4个选项：1正确 + 3干扰（非负、上限随答案自适应、邻近值优先、互不重复） */
 function makeOptions(ans) {
+    const hi = Math.max(20, ans);
     const set = new Set([ans]);
     const cands = [];
-    for (const d of [1, 2, 3, 4, 5, 9, 8, 7, 6, 10]) cands.push(ans - d, ans + d);
+    for (const d of [1, 2, 3, 4, 5, 10, 20, 9, 8, 7, 6, 30]) cands.push(ans - d, ans + d);
     shuffle(cands);
     for (const c of cands) {
         if (set.size >= 4) break;
-        if (c < 0 || c > 20 || set.has(c)) continue;
+        if (c < 0 || c > hi || set.has(c)) continue;
         set.add(c);
     }
     let x = 0;
-    while (set.size < 4 && x <= 20) set.add(x++);
+    while (set.size < 4 && x <= hi) set.add(x++);
     return shuffle([...set]);
 }
 
