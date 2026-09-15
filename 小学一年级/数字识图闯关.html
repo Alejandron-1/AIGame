@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔢 数字识图闯关 - 10以内数数PK</title>
+<style>
+/* ===== 全局：糖果PK风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #a8c8ff 100%);
+    min-height: 100vh; color: #2d3436; user-select: none; -webkit-user-select: none;
+    overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 设置页 ===== */
+#setup { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    background: linear-gradient(135deg, #ffecd2, #fcb69f 50%, #a8c8ff); }
+#setup h1 { font-size: clamp(32px, 5vw, 60px); font-weight: 900; color: #e84393;
+    text-shadow: 3px 3px 0 #fff; letter-spacing: 4px; }
+#setup .sub { font-size: clamp(15px, 2vw, 22px); font-weight: 800; color: #0984e3;
+    background: rgba(255,255,255,.7); padding: 8px 26px; border-radius: 24px; }
+.setupCard { background: #fff; border-radius: 26px; padding: 30px 40px; box-shadow: 0 10px 0 rgba(0,0,0,.1);
+    display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.setupCard .frow { display: flex; align-items: center; gap: 12px; }
+.setupCard label { font-size: 19px; font-weight: 800; color: #555; }
+.setupCard input { width: 110px; font-size: 26px; font-weight: 900; text-align: center;
+    padding: 10px; border: 3px solid #ffeaa7; border-radius: 14px; color: #e84393; outline: none; font-family: inherit; }
+.setupCard input:focus { border-color: #e84393; }
+.setupCard .tip { font-size: 13px; color: #aaa; }
+#startBtn { padding: 16px 60px; border-radius: 40px; font-size: 26px; font-weight: 900; color: #fff;
+    background: linear-gradient(180deg, #ff9a9e, #e84393); box-shadow: 0 8px 0 #b3326d; letter-spacing: 4px; }
+#startBtn:active { transform: translateY(5px); box-shadow: 0 2px 0 #b3326d; }
+.teamsPreview { display: flex; gap: 18px; }
+.tp { width: 130px; text-align: center; background: #fff; border-radius: 16px; padding: 10px;
+    box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.tp .ic { font-size: 40px; } .tp .t { font-size: 15px; font-weight: 900; }
+.tp.red .t { color: #e84393; } .tp.blue .t { color: #0984e3; }
+
+/* ===== 顶栏 ===== */
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
+.top h1 { font-size: clamp(22px, 2.6vw, 34px); font-weight: 900; color: #e84393; text-shadow: 2px 2px 0 #fff; }
+.pill { background: #fff; border-radius: 20px; padding: 8px 18px; font-size: clamp(14px,1.5vw,18px);
+    font-weight: 800; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+
+/* ===== 双队主区 ===== */
+.arena { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 0 18px 14px; height: calc(100vh - 76px); }
+.team { border-radius: 26px; padding: 14px 16px 16px; display: flex; flex-direction: column;
+    border: 5px solid var(--pc); background: rgba(255,255,255,.92); box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    position: relative; overflow: hidden; }
+.team .thead { display: flex; align-items: center; justify-content: space-between; }
+.team .tname { font-size: clamp(18px, 2vw, 25px); font-weight: 900; color: var(--pc); }
+.team .tprog { font-size: clamp(13px, 1.4vw, 17px); font-weight: 800; color: #636e72; }
+.team .tprog b { color: var(--pc); }
+.team .terr { font-size: 13px; color: #aaa; font-weight: 700; }
+
+/* 图卡 */
+.picbox { flex: 1; margin: 10px 0; border-radius: 20px; background: #f8fbff;
+    border: 3px solid #e3ecf5; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; min-height: 130px; }
+.picwrap { position: relative; width: 100%; height: 100%; display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center; align-content: center; gap: 6px; padding: 10px; }
+.picitem { font-size: clamp(34px, 4.6vh, 54px); line-height: 1.15; animation: picIn .35s backwards;
+    transform: rotate(var(--rot)) translate(var(--jx), var(--jy)); }
+.picitem:nth-child(n) { animation-delay: calc(var(--i) * .05s); }
+@keyframes picIn { from { transform: scale(0); } }
+.emptyplate { width: clamp(110px, 16vh, 160px); height: clamp(90px, 13vh, 130px); border-radius: 50%;
+    border: 5px dashed #cbd8e6; display: flex; align-items: center; justify-content: center;
+    color: #b2bec3; font-size: clamp(13px, 1.6vh, 16px); font-weight: 800; text-align: center; }
+.prompt { text-align: center; font-size: clamp(14px, 1.7vh, 18px); color: #636e72; font-weight: 800; margin: 2px 0 6px; }
+
+/* 输入显示 */
+.disp { height: clamp(52px, 8vh, 74px); margin-bottom: 8px; border-radius: 16px; background: #fff;
+    border: 4px solid var(--pc); display: flex; align-items: center; justify-content: center;
+    font-size: clamp(30px, 4.4vh, 50px); font-weight: 900; color: #2d3436; letter-spacing: 6px; }
+.disp.ok { background: #e6fff5; border-color: #00b894; color: #00b894; animation: popOk .4s; }
+.disp.no { animation: shk .4s; }
+@keyframes popOk { 40% { transform: scale(1.1); } }
+@keyframes shk { 25% { translate: -9px 0; } 50% { translate: 9px 0; } 75% { translate: -6px 0; } }
+
+/* 键盘 */
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.key { height: clamp(46px, 7.2vh, 62px); border-radius: 14px; font-size: clamp(22px, 3vh, 32px);
+    font-weight: 900; color: #2d3436; background: #fff; border: 3px solid #e3ecf5;
+    box-shadow: 0 4px 0 rgba(0,0,0,.12); transition: all .1s; }
+.key:hover:not(:disabled) { border-color: var(--pc); }
+.key:active:not(:disabled) { transform: scale(.92); box-shadow: none; }
+.key:disabled { opacity: .5; cursor: default; }
+.key.ok { background: #00b894; color: #fff; border-color: #00b894; }
+.key.fn { background: #f5f6fa; font-size: 18px; }
+.key.enter { background: var(--pc); color: #fff; border-color: var(--pc); }
+
+/* 通关横幅（队伍内） */
+.team .done { position: absolute; inset: 0; z-index: 10; background: rgba(255,255,255,.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.team .done .c { font-size: 70px; }
+.team .done .t { font-size: clamp(22px, 2.6vw, 32px); font-weight: 900; color: var(--pc); }
+.team .done .e { font-size: 15px; color: #636e72; font-weight: 800; }
+
+/* ===== 烟花粒子 ===== */
+.fw { position: fixed; width: 10px; height: 10px; border-radius: 50%; z-index: 90; pointer-events: none; }
+@keyframes fwb { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
+
+/* ===== 结算 / toast ===== */
+.overlay { position: fixed; inset: 0; background: rgba(30,25,60,.55); display: flex; align-items: center;
+    justify-content: center; z-index: 60; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 46px; text-align: center; min-width: 340px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.3); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin: 4px 0; }
+.pbtns { display: flex; gap: 14px; justify-content: center; margin-top: 18px; }
+.pbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.pbtn:active { transform: scale(.93); }
+.pbtn.pink { background: #e84393; } .pbtn.gray { background: #b2bec3; }
+#toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: rgba(44,62,80,.92);
+    color: #fff; padding: 11px 24px; border-radius: 24px; font-size: 15px; z-index: 99; opacity: 0; transition: all .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- 设置页 -->
+<div id="setup">
+    <h1>🔢 数字识图闯关</h1>
+    <div class="sub">看图数一数 · 键盘输数字 · 两队大PK！</div>
+    <div class="teamsPreview">
+        <div class="tp red"><div class="ic">🍓</div><div class="t">🍓 红队</div></div>
+        <div class="tp blue"><div class="ic">🍎</div><div class="t">🍎 蓝队</div></div>
+    </div>
+    <div class="setupCard">
+        <div class="frow"><label>每队题目数量</label>
+            <input type="number" id="qCount" min="3" max="30" value="10"> <span style="font-weight:800;color:#636e72">道</span></div>
+        <div class="tip">3~30 题 · 数量 0~10（包括0）· 答对方可闯下一题 · 先完成者获胜</div>
+        <button id="startBtn">🚀 开始闯关</button>
+    </div>
+</div>
+
+<!-- 游戏 -->
+<div id="gameArea" class="hidden">
+    <div class="top">
+        <h1>🔢 数字识图闯关</h1>
+        <div class="pill" id="topPill">🎂 每队 10 题 · 数一数输答案</div>
+        <button class="pill" id="setupBtn">⚙️ 重新设置</button>
+    </div>
+    <div class="arena">
+        <!-- 左队 -->
+        <div class="team" id="teamL" style="--pc:#e84393">
+            <div class="thead"><div class="tname" id="nameL">🍓 红队</div>
+                <div class="tprog">第 <b id="pgL">1</b>/<span id="totL">10</span> 题</div></div>
+            <div class="terr" id="errL">失误 0 次</div>
+            <div class="picbox"><div class="picwrap" id="picL"></div></div>
+            <div class="prompt" id="promptL"></div>
+            <div class="disp" id="dispL">&nbsp;</div>
+            <div class="keypad" id="padL"></div>
+            <div class="done hidden" id="doneL"><div class="c">🏆</div><div class="t">红队 通关！</div>
+                <div class="e" id="errDoneL"></div></div>
+        </div>
+        <!-- 右队 -->
+        <div class="team" id="teamR" style="--pc:#0984e3">
+            <div class="thead"><div class="tname" id="nameR">🍎 蓝队</div>
+                <div class="tprog">第 <b id="pgR">1</b>/<span id="totR">10</span> 题</div></div>
+            <div class="terr" id="errR">失误 0 次</div>
+            <div class="picbox"><div class="picwrap" id="picR"></div></div>
+            <div class="prompt" id="promptR"></div>
+            <div class="disp" id="dispR">&nbsp;</div>
+            <div class="keypad" id="padR"></div>
+            <div class="done hidden" id="doneR"><div class="c">🏆</div><div class="t">蓝队 通关！</div>
+                <div class="e" id="errDoneR"></div></div>
+        </div>
+    </div>
+</div>
+
+<div id="resultOverlay" class="overlay hidden">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2>
+        <p id="rLine1"></p><p id="rLine2"></p>
+        <div class="pbtns"><button class="pbtn pink" id="againBtn">🔁 再来一局</button>
+            <button class="pbtn gray" id="homeBtn">⚙️ 返回设置</button></div></div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(220, .22, 'sawtooth', .1);
+const sClick = () => beep(700, .05, 'triangle');
+const sFire = () => { beep(600, .06, 'square', .09); setTimeout(() => beep(1000, .1, 'triangle', .1), 60); };
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000); }
+
+/* ============ 图案库（水果/蔬菜/动物） ============ */
+const POOLS = [
+    { cat: '水果', items: ['🍎', '🍌', '🍇', '🍓', '🍊', '🍉', '🍍', '🍑'] },
+    { cat: '蔬菜', items: ['🥕', '🥦', '🍅', '🌽', '🍆', '🥬', '🥒'] },
+    { cat: '小动物', items: ['🐱', '🐶', '🐰', '🐸', '🦋', '🐔', '🐠', '🦁'] },
+];
+
+/* ============ 状态 ============ */
+let TOTAL = 10;
+let startedAt = 0;
+function newTeam() { return { idx: 0, errors: 0, input: '', cur: null, done: false, finishedAt: 0, locked: false }; }
+let teams = { L: newTeam(), R: newTeam() };
+
+/* ============ 出题 ============ */
+function genQuestion() {
+    const pool = pick(POOLS);
+    const icon = pick(pool.items);
+    return { cat: pool.cat, icon, n: randInt(0, 10) };
+}
+function renderQuestion(side) {
+    const T = teams[side];
+    const q = genQuestion();
+    /* 同队相邻题避免同一图案 */
+    if (T.cur && T.cur.icon === q.icon) { q.icon = pick(POOLS.find(p => p.cat === q.cat).items.filter(x => x !== q.icon)); }
+    T.cur = q; T.input = ''; T.locked = false;
+    const box = $(side === 'L' ? 'picL' : 'picR');
+    box.innerHTML = '';
+    if (q.n === 0) {
+        box.innerHTML = `<div class="emptyplate">空空的盘子<br>什么都没有</div>`;
+    } else {
+        for (let i = 0; i < q.n; i++) {
+            const d = document.createElement('div');
+            d.className = 'picitem';
+            d.textContent = q.icon;
+            d.style.setProperty('--i', i);
+            d.style.setProperty('--rot', (randInt(-14, 14)) + 'deg');
+            d.style.setProperty('--jx', randInt(-5, 5) + 'px');
+            d.style.setProperty('--jy', randInt(-4, 4) + 'px');
+            box.appendChild(d);
+        }
+    }
+    $(side === 'L' ? 'promptL' : 'promptR').textContent =
+        `数一数，图里有几个${q.cat === '小动物' ? '小动物' : q.cat.slice(0, 2)}？`;
+    updateSide(side);
+}
+function updateSide(side) {
+    const T = teams[side], S = side === 'L' ? 'L' : 'R';
+    $('pg' + S).textContent = Math.min(T.idx + 1, TOTAL);
+    $('tot' + S).textContent = TOTAL;
+    $('err' + S).textContent = `失误 ${T.errors} 次`;
+    const disp = $('disp' + S);
+    disp.textContent = T.input === '' ? '\u00a0' : T.input;
+    disp.classList.remove('ok', 'no');
+}
+
+/* ============ 键盘 ============ */
+function buildPad(side) {
+    const pad = $(side === 'L' ? 'padL' : 'padR');
+    pad.innerHTML = '';
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', '✓'];
+    keys.forEach(k => {
+        const b = document.createElement('button');
+        b.className = 'key' + (k === '✓' ? ' enter' : k === '⌫' ? ' fn' : '');
+        b.textContent = k;
+        b.onclick = () => pressKey(side, k, b);
+        pad.appendChild(b);
+    });
+}
+function pressKey(side, k, btn) {
+    const T = teams[side];
+    if (T.locked || T.done) return;
+    const now = Date.now();
+    if (btn._last && now - btn._last < 300) return;   // 防连点
+    btn._last = now;
+    const disp = $(side === 'L' ? 'dispL' : 'dispR');
+    if (k === '⌫') { sClick(); T.input = T.input.slice(0, -1); }
+    else if (k === '✓') { submit(side); return; }
+    else { if (T.input.length >= 2) return; sClick(); T.input += k; }
+    updateSide(side);
+    /* 满2位（只能是10）自动提交 */
+    if (k !== '⌫' && T.input.length === 2) submit(side);
+}
+function submit(side) {
+    const T = teams[side];
+    if (T.locked || T.done || T.input === '') {
+        if (T.input === '') { const d = $(side === 'L' ? 'dispL' : 'dispR'); d.classList.add('no'); setTimeout(() => d.classList.remove('no'), 350); }
+        return;
+    }
+    const ans = +T.input;
+    if (ans === T.cur.n) { onCorrect(side); }
+    else {
+        T.errors++;
+        sBad();
+        const disp = $(side === 'L' ? 'dispL' : 'dispR');
+        disp.classList.add('no');
+        fb(side, ans > T.cur.n ? '❌ 多了，再数一数～' : '❌ 少了，再数一数～');
+        setTimeout(() => { T.input = ''; updateSide(side); }, 450);
+    }
+}
+function fb(side, txt) {
+    const el = $(side === 'L' ? 'promptL' : 'promptR');
+    el.textContent = txt; el.style.color = '#e17055';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = `数一数，图里有几个${teams[side].cur.cat === '小动物' ? '小动物' : teams[side].cur.cat.slice(0, 2)}？`; el.style.color = ''; }, 1600);
+}
+
+/* ============ 答对：烟花 + 下一题 ============ */
+function onCorrect(side) {
+    const T = teams[side];
+    T.locked = true;
+    const disp = $(side === 'L' ? 'dispL' : 'dispR');
+    disp.classList.add('ok');
+    sGood(); sFire();
+    fireworksAt(side);
+    fb(side, pick(['🎉 答对啦！', '🎉 数对了，真棒！', '🎉 烟花送给你！']));
+    setTimeout(() => {
+        T.idx++;
+        if (T.idx >= TOTAL) { teamDone(side); return; }
+        renderQuestion(side);
+    }, 1000);
+}
+/* 烟花：从队伍图卡中心放射粒子 */
+function fireworksAt(side) {
+    const box = $(side === 'L' ? 'picL' : 'picR');
+    const r = box.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2, 1);
+    setTimeout(() => burst(r.left + r.width * .3, r.top + r.height * .35, .7), 150);
+    setTimeout(() => burst(r.left + r.width * .7, r.top + r.height * .3, .7), 280);
+}
+function burst(x, y, scale) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50', '#fff'];
+    for (let i = 0; i < 22; i++) {
+        const p = document.createElement('i');
+        p.className = 'fw';
+        const a = Math.PI * 2 * i / 22 + Math.random() * .3;
+        const d = (46 + Math.random() * 60) * scale;
+        p.style.left = x + 'px'; p.style.top = y + 'px';
+        p.style.background = cs[i % cs.length];
+        p.style.setProperty('--dx', Math.cos(a) * d + 'px');
+        p.style.setProperty('--dy', Math.sin(a) * d + 'px');
+        p.style.animation = `fwb ${.55 + Math.random() * .4}s cubic-bezier(.1,.8,.3,1) forwards`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1100);
+    }
+}
+
+/* ============ 通关 / 结算 ============ */
+function teamDone(side) {
+    const T = teams[side];
+    T.done = true; T.finishedAt = Date.now();
+    $(side === 'L' ? 'doneL' : 'doneR').classList.remove('hidden');
+    $(side === 'L' ? 'errDoneL' : 'errDoneR').textContent = `用时 ${Math.round((T.finishedAt - startedAt) / 1000)} 秒 · 失误 ${T.errors} 次`;
+    confetti(50);
+    if (teams.L.done && teams.R.done) {
+        setTimeout(showResult, 900);
+    } else {
+        /* 先通关的队伍：直接展示结果横幅（另一队可继续） */
+        const first = !$('resultOverlay')._shown;
+        sWin();
+        $('rEmoji').textContent = '🏆'; $('rTitle').textContent =
+            (side === 'L' ? '🍓 红队' : '🍎 蓝队') + ' 率先通关！';
+        $('rLine1').textContent = `用时 ${Math.round((T.finishedAt - startedAt) / 1000)} 秒 · 失误 ${T.errors} 次`;
+        $('rLine2').textContent = '另一队可以继续完成挑战～';
+        $('resultOverlay').classList.remove('hidden');
+        $('resultOverlay')._shown = true;
+        setTimeout(() => { $('resultOverlay').classList.add('hidden'); }, 3200);
+    }
+}
+function showResult() {
+    const el = $('resultOverlay'); el._shown = true;
+    const lFast = teams.L.finishedAt <= teams.R.finishedAt;
+    $('rEmoji').textContent = '🎊'; $('rTitle').textContent = '两队都闯关成功！';
+    $('rLine1').textContent = `🍓 红队：用时 ${Math.round((teams.L.finishedAt - startedAt) / 1000)} 秒 · 失误 ${teams.L.errors} 次`;
+    $('rLine2').textContent = `🍎 蓝队：用时 ${Math.round((teams.R.finishedAt - startedAt) / 1000)} 秒 · 失误 ${teams.R.errors} 次`;
+    el.classList.remove('hidden'); sWin(); confetti(70);
+}
+function confetti(n) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'fw';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.top = '-16px';
+        c.style.width = '11px'; c.style.height = '16px'; c.style.borderRadius = '3px';
+        c.style.background = cs[i % cs.length];
+        c.style.animation = `cfall ${2 + Math.random() * 1.5}s linear forwards`;
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+const st = document.createElement('style');
+st.textContent = '@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }';
+document.head.appendChild(st);
+
+/* ============ 开始 / 重置 ============ */
+function startGame() {
+    let n = parseInt($('qCount').value, 10);
+    if (isNaN(n)) n = 10;
+    n = Math.max(3, Math.min(30, n));
+    TOTAL = n;
+    teams = { L: newTeam(), R: newTeam() };
+    $('resultOverlay').classList.add('hidden'); $('resultOverlay')._shown = false;
+    $('setup').classList.add('hidden');
+    $('gameArea').classList.remove('hidden');
+    ['doneL', 'doneR'].forEach(id => $(id).classList.add('hidden'));
+    $('topPill').textContent = `🎂 每队 ${TOTAL} 题 · 数一数输答案`;
+    startedAt = Date.now();
+    buildPad('L'); buildPad('R');
+    renderQuestion('L'); renderQuestion('R');
+    updateSide('L'); updateSide('R');
+}
+$('startBtn').onclick = () => { sClick(); startGame(); };
+$('setupBtn').onclick = () => { sClick(); $('gameArea').classList.add('hidden'); $('setup').classList.remove('hidden'); };
+$('againBtn').onclick = () => { sClick(); startGame(); };
+$('homeBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); $('gameArea').classList.add('hidden'); $('setup').classList.remove('hidden'); };
+</script>
+</body>
+</html>
