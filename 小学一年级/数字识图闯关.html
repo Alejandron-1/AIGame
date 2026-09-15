@@ -41,6 +41,17 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .tp .ic { font-size: 40px; } .tp .t { font-size: 15px; font-weight: 900; }
 .tp.red .t { color: #e84393; } .tp.blue .t { color: #0984e3; }
 
+/* 划走的物品（减法） */
+.picitem.crossed { opacity: .42; filter: grayscale(1); }
+.picitem .xmark { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) rotate(-8deg);
+    font-size: clamp(30px, 4vh, 44px); opacity: .95; pointer-events: none; }
+.picitem { position: relative; }
+/* 加法的加号 */
+.plusSym { font-size: clamp(36px, 5vh, 56px); font-weight: 900; color: #e84393;
+    animation: plusPulse 1.2s ease-in-out infinite; padding: 0 4px; }
+@keyframes plusPulse { 50% { transform: scale(1.2); } }
+.gapLabel { font-size: clamp(12px, 1.5vh, 15px); color: #8899aa; font-weight: 800; }
+
 /* ===== 顶栏 ===== */
 .top { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; }
 .top h1 { font-size: clamp(22px, 2.6vw, 34px); font-weight: 900; color: #e84393; text-shadow: 2px 2px 0 #fff; }
@@ -133,6 +144,13 @@ button { font-family: inherit; cursor: pointer; border: none; }
         <div class="tp blue"><div class="ic">🍎</div><div class="t">🍎 蓝队</div></div>
     </div>
     <div class="setupCard">
+        <div class="frow"><label>题型</label>
+            <select id="qType">
+                <option value="count" selected>🔢 数一数（纯数字）</option>
+                <option value="add">➕ 加法（两部分合起来）</option>
+                <option value="sub">✂️ 减法（划走了几个）</option>
+                <option value="mix">🎲 混合（随机出）</option>
+            </select></div>
         <div class="frow"><label>每队题目数量</label>
             <input type="number" id="qCount" min="3" max="30" value="10"> <span style="font-weight:800;color:#636e72">道</span></div>
         <div class="tip">3~30 题 · 数量 0~10（包括0）· 答对方可闯下一题 · 先完成者获胜</div>
@@ -220,39 +238,89 @@ const POOLS = [
 /* ============ 状态 ============ */
 let TOTAL = 10;
 let startedAt = 0;
+let qType = 'count';   // count 数一数 | add 加法 | sub 减法 | mix 混合
 function newTeam() { return { idx: 0, errors: 0, input: '', cur: null, done: false, finishedAt: 0, locked: false }; }
 let teams = { L: newTeam(), R: newTeam() };
 
-/* ============ 出题 ============ */
+/* ============ 出题（按题型） ============ */
 function genQuestion() {
+    const type = (qType === 'mix') ? pick(['count', 'add', 'sub']) : qType;
+    if (type === 'add') {
+        /* 加法：两组不同图案合起来，总和 2~10（各组≥1） */
+        const pool = pick(POOLS);
+        let i1 = randInt(0, pool.items.length - 1), i2 = randInt(0, pool.items.length - 1);
+        if (i2 === i1) i2 = (i2 + 1) % pool.items.length;
+        const total = randInt(2, 10);
+        const n1 = randInt(1, total - 1);
+        return { kind: 'add', cat: pool.cat, icon1: pool.items[i1], icon2: pool.items[i2], n1, n2: total - n1, n: total };
+    }
+    if (type === 'sub') {
+        /* 减法：总数划走一部分（约15%全划走=答案0），剩0~9 */
+        const pool = pick(POOLS);
+        const icon = pick(pool.items);
+        const total = randInt(2, 10);
+        const crossed = Math.random() < .15 ? total : randInt(1, total - 1);
+        return { kind: 'sub', cat: pool.cat, icon, total, crossed, n: total - crossed };
+    }
+    /* 数一数（含 0：空盘表示一个也没有） */
     const pool = pick(POOLS);
     const icon = pick(pool.items);
-    return { cat: pool.cat, icon, n: randInt(0, 10) };
+    return { kind: 'count', cat: pool.cat, icon, n: randInt(0, 10) };
+}
+function promptText(side) {
+    const T = teams[side], q = T.cur;
+    if (q.kind === 'add') return `一共有多少个${q.cat === '小动物' ? '小动物' : q.cat.slice(0, 2)}？`;
+    if (q.kind === 'sub') return `划走了几个，还剩下几个？`;
+    return `数一数，图里有几个${q.cat === '小动物' ? '小动物' : q.cat.slice(0, 2)}？`;
 }
 function renderQuestion(side) {
     const T = teams[side];
     const q = genQuestion();
-    /* 同队相邻题避免同一图案 */
-    if (T.cur && T.cur.icon === q.icon) { q.icon = pick(POOLS.find(p => p.cat === q.cat).items.filter(x => x !== q.icon)); }
+    /* 同队相邻题避免同一图案（简单去重：只对数数题） */
+    if (q.kind === 'count' && T.cur && T.cur.icon === q.icon) {
+        q.icon = pick(POOLS.find(p => p.cat === q.cat).items.filter(x => x !== q.icon));
+    }
     T.cur = q; T.input = ''; T.locked = false;
     const box = $(side === 'L' ? 'picL' : 'picR');
     box.innerHTML = '';
-    if (q.n === 0) {
-        box.innerHTML = `<div class="emptyplate">空空的盘子<br>什么都没有</div>`;
+    let items = [];
+    if (q.kind === 'add') {
+        items = [{ icon: q.icon1, n: q.n1 }, { icon: q.icon2, n: q.n2 }];
     } else {
-        for (let i = 0; i < q.n; i++) {
+        items = [{ icon: q.icon, n: q.total ?? q.n, crossed: q.kind === 'sub' ? q.crossed : 0 }];
+    }
+    let idx = 0;
+    items.forEach((grp, gi) => {
+        if (gi > 0) {
+            const plus = document.createElement('div');
+            plus.className = 'plusSym'; plus.textContent = '+';
+            box.appendChild(plus);
+        }
+        if (grp.n === 0) {
             const d = document.createElement('div');
-            d.className = 'picitem';
-            d.textContent = q.icon;
-            d.style.setProperty('--i', i);
+            d.className = 'emptyplate'; d.textContent = '没有啦';
+            box.appendChild(d);
+            return;
+        }
+        for (let i = 0; i < grp.n; i++) {
+            const d = document.createElement('div');
+            d.className = 'picitem' + (grp.crossed && i < grp.crossed ? ' crossed' : '');
+            d.style.setProperty('--i', idx++);
             d.style.setProperty('--rot', (randInt(-14, 14)) + 'deg');
             d.style.setProperty('--jx', randInt(-5, 5) + 'px');
             d.style.setProperty('--jy', randInt(-4, 4) + 'px');
+            d.textContent = grp.icon;
+            if (grp.crossed && i < grp.crossed) {
+                const x = document.createElement('span');
+                x.className = 'xmark'; x.textContent = '❌';
+                d.appendChild(x);
+            }
             box.appendChild(d);
         }
-    }
-    $(side === 'L' ? 'promptL' : 'promptR').textContent =
-        `数一数，图里有几个${q.cat === '小动物' ? '小动物' : q.cat.slice(0, 2)}？`;
+    });
+    $(side === 'L' ? 'promptL' : 'promptR').textContent = '';
+    T.promptText = promptText(side);
+    $(side === 'L' ? 'promptL' : 'promptR').textContent = T.promptText;
     updateSide(side);
 }
 function updateSide(side) {
@@ -313,7 +381,7 @@ function fb(side, txt) {
     const el = $(side === 'L' ? 'promptL' : 'promptR');
     el.textContent = txt; el.style.color = '#e17055';
     clearTimeout(el._t);
-    el._t = setTimeout(() => { el.textContent = `数一数，图里有几个${teams[side].cur.cat === '小动物' ? '小动物' : teams[side].cur.cat.slice(0, 2)}？`; el.style.color = ''; }, 1600);
+    el._t = setTimeout(() => { el.textContent = teams[side].promptText || ''; el.style.color = ''; }, 1600);
 }
 
 /* ============ 答对：烟花 + 下一题 ============ */
@@ -405,6 +473,7 @@ function startGame() {
     if (isNaN(n)) n = 10;
     n = Math.max(3, Math.min(30, n));
     TOTAL = n;
+    qType = $('qType').value;
     teams = { L: newTeam(), R: newTeam() };
     $('resultOverlay').classList.add('hidden'); $('resultOverlay')._shown = false;
     $('setup').classList.add('hidden');
