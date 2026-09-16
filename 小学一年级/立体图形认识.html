@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧊 立体图形认识 - 生活物品版（教师自定义图库）</title>
+<style>
+/* ===== 全局：奶油糖果风 · 手机优先自适应 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(160deg, #fff7ed 0%, #fef3c7 50%, #dbeafe 100%);
+    min-height: 100vh; color: #2d3436; user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶栏 ===== */
+.top { display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-wrap: wrap; }
+.top h1 { font-size: clamp(21px, 3.4vw, 32px); font-weight: 900; color: #d35400; text-shadow: 2px 2px 0 #fff; }
+.top .spacer { flex: 1; }
+.tab { padding: 10px 18px; border-radius: 14px; font-size: clamp(14px, 1.8vw, 18px); font-weight: 900;
+    background: #fff; color: #d35400; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.tab.on { background: #e67e22; color: #fff; }
+.tab:active { transform: scale(.94); }
+
+/* ===== 通用卡片网格 ===== */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.itemCard { background: #fff; border-radius: 18px; padding: 12px 10px; text-align: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,.08); cursor: pointer; transition: transform .15s; position: relative; }
+.itemCard:hover { transform: translateY(-4px); }
+.itemCard .im { font-size: clamp(44px, 8vw, 64px); line-height: 1.2; }
+.itemCard img.im { width: 100%; height: 92px; object-fit: contain; }
+.itemCard .nm { font-size: 15px; font-weight: 800; margin-top: 4px; }
+.shapeTag { display: inline-block; margin-top: 5px; padding: 3px 12px; border-radius: 12px;
+    font-size: 12.5px; font-weight: 900; color: #fff; }
+.st-ball { background: #e84393; } .st-cube { background: #00b894; }
+.st-cuboid { background: #0984e3; } .st-cyl { background: #e67e22; }
+.delx { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+    background: #ff7675; color: #fff; font-size: 14px; font-weight: 900; line-height: 26px; }
+
+/* ===== 学一学大图弹层 ===== */
+.bigview { position: fixed; inset: 0; z-index: 60; background: rgba(30,30,50,.6);
+    display: flex; align-items: center; justify-content: center; }
+.bigcard { background: #fff; border-radius: 26px; padding: 26px 34px; text-align: center; max-width: 86vw;
+    box-shadow: 0 16px 50px rgba(0,0,0,.3); animation: pin .35s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pin { from { transform: scale(.6); opacity: 0; } }
+.bigcard .im { font-size: clamp(80px, 16vh, 130px); line-height: 1.2; }
+.bigcard img.im { width: min(60vw, 260px); height: auto; }
+.bigcard .nm { font-size: 26px; font-weight: 900; margin-top: 6px; }
+.bigcard .tip { font-size: 16px; color: #636e72; font-weight: 800; margin: 10px 0 16px; line-height: 1.7; }
+.closeb { padding: 10px 34px; border-radius: 14px; background: #2d3436; color: #fff; font-size: 16px; font-weight: 800; }
+
+/* ===== 编辑器 ===== */
+.editorWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 820px) { .editorWrap { grid-template-columns: 1fr; } }
+.upBox { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+.upBox .drop { border: 3px dashed #f0b27a; border-radius: 16px; padding: 22px 10px; text-align: center;
+    font-size: 16px; font-weight: 800; color: #b9770e; cursor: pointer; background: #fffaf0; }
+.upBox .drop:hover { background: #fff5e0; }
+.preview { width: 130px; height: 92px; object-fit: contain; border-radius: 12px; background: #f5f6fa;
+    display: none; margin: 8px auto 0; }
+.frow { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+.frow label { font-size: 14px; font-weight: 800; color: #555; }
+.frow input[type=text], .frow select { padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 10px;
+    font-size: 16px; font-family: inherit; outline: none; }
+.frow input:focus, .frow select:focus { border-color: #e67e22; }
+.saveb { width: 100%; margin-top: 6px; padding: 14px; border-radius: 14px; font-size: 18px;
+    font-weight: 900; color: #fff; background: #e67e22; }
+.saveb:active { transform: scale(.97); }
+
+/* ===== 考一考 ===== */
+.quizSet { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 5px 0 rgba(0,0,0,.08);
+    display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.quizSet .frow { justify-content: center; }
+#quizPlay { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.progress { width: min(92%, 640px); height: 14px; background: rgba(0,0,0,.1); border-radius: 8px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: linear-gradient(90deg, #ff9f43, #e84393); border-radius: 8px; transition: width .4s; }
+.objBox { width: min(76vw, 300px); height: min(76vw, 300px); background: #fff; border-radius: 26px;
+    border: 5px solid #ffeaa7; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12); overflow: hidden; }
+.objBox .im { font-size: clamp(90px, 18vh, 150px); }
+.objBox img { max-width: 88%; max-height: 88%; object-fit: contain; }
+.objBox.wrong { animation: shk .4s; }
+@keyframes shk { 25% { translate: -10px 0; } 50% { translate: 10px 0; } 75% { translate: -6px 0; } }
+.shpOpts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: min(92vw, 520px); }
+.shp { min-height: 68px; border-radius: 18px; font-size: clamp(20px, 2.6vw, 30px); font-weight: 900;
+    color: #2d3436; background: #fff; box-shadow: 0 5px 0 rgba(0,0,0,.14); transition: all .12s; }
+.shp:hover:not(:disabled) { transform: translateY(-4px); }
+.shp:active:not(:disabled) { transform: scale(.94); }
+.shp.right { background: #00b894; color: #fff; animation: opop .4s; }
+.shp.wrong { background: #ff7675; color: #fff; animation: owob .4s; }
+@keyframes opop { 40% { transform: scale(1.13); } }
+@keyframes owob { 25% { translate: -9px 0; } 50% { translate: 9px 0; } }
+.feedback { min-height: 40px; font-size: 24px; font-weight: 900; text-align: center; }
+.feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+
+/* ===== 烟花/结算/通用 ===== */
+.fw { position: fixed; width: 10px; height: 10px; border-radius: 50%; z-index: 90; pointer-events: none; }
+@keyframes fwb { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
+.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 90; pointer-events: none; animation: cfall linear forwards; }
+@keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }
+.overlay { position: fixed; inset: 0; background: rgba(30,25,60,.55); display: flex; align-items: center; justify-content: center; z-index: 70; }
+.panel { background: #fff; border-radius: 26px; padding: 32px 44px; text-align: center; min-width: 320px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.3); animation: pin .4s cubic-bezier(.2,1.4,.4,1); }
+.panel .big { font-size: 60px; } .panel h2 { font-size: 28px; margin: 10px 0 6px; }
+.panel p { color: #7f8c8d; font-size: 16px; margin: 4px 0; }
+.pbtns { display: flex; gap: 14px; justify-content: center; margin-top: 18px; }
+.pbtn { padding: 13px 34px; border-radius: 18px; font-size: 18px; font-weight: 800; color: #fff; }
+.pbtn:active { transform: scale(.93); }
+.pbtn.orange { background: #e67e22; } .pbtn.gray { background: #b2bec3; }
+#toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: rgba(44,62,80,.92);
+    color: #fff; padding: 11px 24px; border-radius: 24px; font-size: 15px; z-index: 99; opacity: 0; transition: all .25s; pointer-events: none; }
+#toast.show { opacity: 1; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="top">
+    <h1>🧊 立体图形认识</h1>
+    <div class="spacer"></div>
+    <button class="tab on" data-pg="learn">📖 学一学</button>
+    <button class="tab" data-pg="edit">👜 我的物品</button>
+    <button class="tab" data-pg="quiz">🎮 考一考</button>
+</div>
+
+<div class="page" style="padding:6px 16px 40px">
+    <!-- 学一学 -->
+    <div id="pg-learn">
+        <div id="learnGrid" class="grid"></div>
+    </div>
+
+    <!-- 我的物品（教师编辑器） -->
+    <div id="pg-edit" class="hidden">
+        <div class="editorWrap">
+            <div class="upBox">
+                <h3 style="margin-bottom:10px">📷 上传我拍的物品</h3>
+                <div class="drop" id="dropZone">点击选择照片<br><span style="font-size:12px;color:#bbb">自动压缩，手机拍的也可以</span></div>
+                <img class="preview" id="upPreview">
+                <input type="file" id="upFile" accept="image/*" hidden>
+                <div class="frow"><label>物品名字</label><input type="text" id="upName" placeholder="如：爸爸的保温杯" style="flex:1"></div>
+                <div class="frow"><label>它是什么形状</label>
+                    <select id="upShape" style="flex:1">
+                        <option value="ball">⚽ 球</option>
+                        <option value="cube">🎲 正方体</option>
+                        <option value="cuboid">📚 长方体</option>
+                        <option value="cyl">🥫 圆柱</option>
+                    </select></div>
+                <button class="saveb" id="upSave">💾 保存到我的物品</button>
+            </div>
+            <div class="upBox">
+                <h3 style="margin-bottom:10px">🎒 我的物品列表 <span style="font-size:12px;color:#999;font-weight:normal">（会出现在考一考里，出现机会更多）</span></h3>
+                <div id="myGrid" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))"></div>
+                <div class="frow" style="margin-top:10px">
+                    <button class="sbtn2" id="clearMine" style="padding:9px 16px;border-radius:10px;background:#ff7675;color:#fff;font-weight:800;font-size:14px">🗑️ 清空全部</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考一考 -->
+    <div id="pg-quiz" class="hidden">
+        <div class="quizSet" id="quizSet">
+            <h3>🎮 准备好了吗？</h3>
+            <div class="frow"><label>题目数量</label>
+                <input type="number" id="qCount" min="5" max="20" value="10" style="width:80px">
+                <span style="font-size:13px;color:#999">（内置 + 我上传的物品一起出题）</span></div>
+            <button class="bigbtn orange" id="quizStart">🚀 开始考一考</button>
+        </div>
+        <div id="quizPlay" class="hidden">
+            <div class="progress"><i id="progI"></i></div>
+            <div class="objBox" id="objBox"></div>
+            <div class="shpOpts" id="shpOpts"></div>
+            <div class="feedback" id="fb"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 学一学大图 -->
+<div class="bigview hidden" id="bigView">
+    <div class="bigcard"><div class="im" id="bvIm"></div><div class="nm" id="bvNm"></div>
+        <div class="tip" id="bvTip"></div><button class="closeb" id="bvClose">知道啦</button></div>
+</div>
+
+<!-- 结算 -->
+<div class="overlay hidden" id="resultOverlay">
+    <div class="panel"><div class="big" id="rEmoji">🎉</div><h2 id="rTitle"></h2><p id="rSub"></p>
+        <div class="pbtns"><button class="pbtn orange" id="againBtn">🔁 再来一次</button>
+            <button class="pbtn gray" id="backBtn">返回</button></div></div>
+</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+const sClick = () => beep(700, .05, 'triangle');
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+function confetti(n = 50) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+function fireworksAt(x, y) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#fff'];
+    for (let i = 0; i < 24; i++) {
+        const p = document.createElement('i'); p.className = 'fw';
+        const a = Math.PI * 2 * i / 24 + Math.random() * .3, d = 50 + Math.random() * 70;
+        p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.background = cs[i % cs.length];
+        p.style.setProperty('--dx', Math.cos(a) * d + 'px'); p.style.setProperty('--dy', Math.sin(a) * d + 'px');
+        p.style.animation = `fwb ${.55 + Math.random() * .4}s cubic-bezier(.1,.8,.3,1) forwards`;
+        document.body.appendChild(p); setTimeout(() => p.remove(), 1100);
+    }
+}
+
+/* ============ 形状定义 ============ */
+const SHAPES = {
+    ball:   { name: '球',     tag: 'st-ball',   tip: '圆圆滚滚，到处都能滚——它就是球！' },
+    cube:   { name: '正方体', tag: 'st-cube',   tip: '方方正正，六个面一样大——它就是正方体！' },
+    cuboid: { name: '长方体', tag: 'st-cuboid', tip: '像长长方方的盒子——它就是长方体！' },
+    cyl:    { name: '圆柱',   tag: 'st-cyl',    tip: '上圆下圆，像个柱子——它就是圆柱！' },
+};
+/* 内置生活物品（emoji 版；教师上传的照片会追加进来） */
+const BUILTIN = [
+    { shape: 'ball',   name: '足球',   im: '⚽' }, { shape: 'ball', name: '篮球',  im: '🏀' },
+    { shape: 'ball',   name: '西瓜',   im: '🍉' },
+    { shape: 'cube',   name: '魔方',   im: '🎲' }, { shape: 'cube', name: '冰块',  im: '🧊' },
+    { shape: 'cuboid', name: '书本',   im: '📚' }, { shape: 'cuboid', name: '快递箱', im: '📦' },
+    { shape: 'cuboid', name: '积木砖', im: '🧱' },
+    { shape: 'cyl',    name: '罐头',   im: '🥫' }, { shape: 'cyl',  name: '电池',  im: '🔋' },
+    { shape: 'cyl',    name: '水杯',   im: '🥤' }, { shape: 'cyl',  name: '蜡烛',  im: '🕯️' },
+];
+
+/* ============ 自定义物品（localStorage 持久） ============ */
+const MY_KEY = 'shape3d_items';
+let MY = [];
+try { MY = JSON.parse(localStorage.getItem(MY_KEY) || '[]'); } catch (e) { MY = []; }
+function saveMY() { try { localStorage.setItem(MY_KEY, JSON.stringify(MY)); }
+    catch (e) { toast('存储空间不足，请删除一些旧物品'); } }
+
+/* 图片压缩：最长边 800px，JPEG 0.85 */
+function compressImageFile(file, maxSide = 800) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('read'));
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('decode'));
+            img.onload = () => {
+                const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+                const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+                const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+                cv.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(cv.toDataURL('image/jpeg', 0.85));
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+/* ============ 页签 ============ */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    sClick();
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    ['learn', 'edit', 'quiz'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== t.dataset.pg));
+    if (t.dataset.pg === 'edit') renderMine();
+    if (t.dataset.pg === 'quiz') renderQuizSet();
+});
+
+/* ============ 学一学 ============ */
+function itemCardHTML(it, del) {
+    const sh = SHAPES[it.shape];
+    const im = it.img ? `<img class="im" src="${it.img}">` : `<div class="im">${it.im}</div>`;
+    return `${im}<div class="nm">${it.name}</div><div class="shapeTag ${sh.tag}">${sh.name}</div>` + (del ? `<button class="delx">✕</button>` : '');
+}
+function renderLearn() {
+    const g = $('learnGrid'); g.innerHTML = '';
+    const all = [...BUILTIN, ...MY.map(m => ({ ...m, custom: true, key: m.id }))].sort((a, b) => a.custom - b.custom);
+    all.forEach(it => {
+        const d = document.createElement('div');
+        d.className = 'itemCard';
+        d.innerHTML = itemCardHTML(it, it.custom);
+        d.onclick = () => openBig(it);
+        const del = d.querySelector('.delx');
+        if (del) del.onclick = (e) => {
+            e.stopPropagation();
+            if (!confirm('删除「' + it.name + '」？')) return;
+            MY = MY.filter(m => m.id !== it.key);
+            saveMY(); renderLearn(); renderMine();
+        };
+        g.appendChild(d);
+    });
+}
+function openBig(it) {
+    sClick();
+    const sh = SHAPES[it.shape];
+    $('bvIm').innerHTML = it.img ? `<img class="im" src="${it.img}">` : it.im;
+    $('bvNm').textContent = it.name + ' —— ' + sh.name;
+    $('bvTip').textContent = sh.tip;
+    $('bigView').classList.remove('hidden');
+}
+$('bvClose').onclick = () => { $('bigView').classList.add('hidden'); sClick(); };
+
+/* ============ 编辑器 ============ */
+let pendingImg = null;
+$('dropZone').onclick = () => $('upFile').click();
+$('upFile').onchange = async () => {
+    const f = $('upFile').files[0];
+    $('upFile').value = '';
+    if (!f) return;
+    try {
+        pendingImg = await compressImageFile(f);
+        const pv = $('upPreview');
+        pv.src = pendingImg; pv.style.display = 'block';
+        toast('🖼️ 照片已就绪，填名字和形状后保存');
+    } catch (e) { toast('❌ 图片读取失败，换一张试试'); }
+};
+$('upSave').onclick = () => {
+    const name = $('upName').value.trim();
+    if (!pendingImg) { toast('请先选择照片'); return; }
+    if (!name) { toast('请给物品起个名字'); return; }
+    MY.push({ id: 'm' + Date.now(), name, shape: $('upShape').value, img: pendingImg });
+    if (MY.length > 60) { MY.shift(); toast('物品较多，已自动移除最早的一件'); }
+    saveMY();
+    pendingImg = null; $('upName').value = '';
+    $('upPreview').style.display = 'none';
+    renderLearn(); renderMine();
+    sGood(); toast('✅ 已保存，考一考会用到它！');
+};
+$('clearMine').onclick = () => {
+    if (!MY.length) { toast('已经是空的了'); return; }
+    if (!confirm('确定清空全部自定义物品吗？')) return;
+    MY = []; saveMY(); renderLearn(); renderMine(); toast('已清空');
+};
+function renderMine() {
+    const g = $('myGrid'); g.innerHTML = '';
+    if (!MY.length) { g.innerHTML = '<span style="color:#bbb;font-size:14px;grid-column:1/-1;text-align:center;padding:20px">还没有上传物品，左边拍一张试试！</span>'; return; }
+    MY.forEach(m => {
+        const d = document.createElement('div');
+        d.className = 'itemCard';
+        d.innerHTML = itemCardHTML(m, true);
+        const del = d.querySelector('.delx');
+        del.onclick = (e) => { e.stopPropagation();
+            if (!confirm('删除「' + m.name + '」？')) return;
+            MY = MY.filter(x => x.id !== m.id); saveMY(); renderMine(); renderLearn(); };
+        g.appendChild(d);
+    });
+}
+
+/* ============ 考一考 ============ */
+let quiz = null;
+function allPool() {
+    const builtin = BUILTIN.map(b => ({ ...b }));
+    const mine = MY.map(m => ({ ...m, mine: true }));
+    return [...builtin, ...mine, ...mine];    // 自定义物品权重×2
+}
+function renderQuizSet() {
+    $('quizSet').classList.remove('hidden');
+    $('quizPlay').classList.add('hidden');
+}
+$('quizStart').onclick = () => {
+    sClick();
+    let n = parseInt($('qCount').value, 10) || 10;
+    n = Math.max(5, Math.min(20, n));
+    const pool = allPool();
+    quiz = { n, idx: 0, correct: 0, wrong: 0, cur: null, pool, locked: false };
+    $('quizSet').classList.add('hidden');
+    $('quizPlay').classList.remove('hidden');
+    fb('', '');
+    nextQ();
+};
+function nextQ() {
+    if (!quiz) return;
+    if (quiz.idx >= quiz.n) {
+        $('rEmoji').textContent = '🏅'; $('rTitle').textContent = '考一考完成！';
+        $('rSub').textContent = `答对 ${quiz.correct} / ${quiz.n} 题`;
+        $('resultOverlay').classList.remove('hidden'); confetti(70); sWin();
+        return;
+    }
+    const prev = quiz.cur;
+    let it;
+    do { it = pick(quiz.pool); } while (quiz.pool.length > 1 && prev && it.name === prev.name && it.shape === prev.shape);
+    quiz.cur = it; quiz.locked = false;
+    $('progI').style.width = (quiz.idx / quiz.n * 100) + '%';
+    const box = $('objBox');
+    box.classList.remove('wrong');
+    box.innerHTML = it.img ? `<img src="${it.img}">` : `<div class="im">${it.im}</div>`;
+    const shapes = shuffle(Object.keys(SHAPES));
+    const opts = $('shpOpts'); opts.innerHTML = '';
+    shapes.forEach(k => {
+        const b = document.createElement('button');
+        b.className = 'shp'; b.textContent = SHAPES[k].name; b.dataset.k = k; b._ok = k === it.shape;
+        b.onclick = () => answerShape(b, k);
+        opts.appendChild(b);
+    });
+    fb('', '');
+}
+function answerShape(btn, k) {
+    if (quiz.locked) return;
+    if (btn._ok) {
+        quiz.locked = true;
+        btn.classList.add('right'); sGood();
+        quiz.correct++; addFb('✓ 答对啦！' + quiz.cur.name + ' 是' + SHAPES[quiz.cur.shape].name, true);
+        const r = $('objBox').getBoundingClientRect();
+        fireworksAt(r.left + r.width / 2, r.top + r.height / 2);
+        confetti(14);
+        quiz.idx++;
+        setTimeout(nextQ, 900);
+    } else {
+        btn.classList.add('wrong'); sBad();
+        $('objBox').classList.add('wrong');
+        addFb('❌ 再想一想，看看它滚不滚、方不方～', false);
+        setTimeout(() => { btn.classList.remove('wrong'); $('objBox').classList.remove('wrong'); }, 700);
+    }
+}
+function addFb(txt, good) { const f = $('fb'); f.textContent = txt; f.className = 'feedback ' + (good ? 'good' : 'bad'); }
+$('againBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); renderQuizSet(); };
+$('backBtn').onclick = () => { sClick(); $('resultOverlay').classList.add('hidden'); renderQuizSet(); };
+
+/* ============ 初始化 ============ */
+renderLearn();
+renderMine();
+</script>
+</body>
+</html>

@@ -248,22 +248,62 @@ function startBubble() {
         if (timeLeft <= 0) { clearInterval(timerId); endBubble(); } }, 1000);
 }
 function addBubble(num) {
-    // 保证场上始终至少一对能凑十：每补两个时插入一对
     const f = $('bubbleField');
+    const W = f.clientWidth || 800, H = f.clientHeight || 500;
+    const sz = Math.max(64, Math.min(118, Math.min(W / 4.2, H / 3.4)) + randInt(-10, 10));
     const n = num !== undefined ? num : randInt(0, 10);
-    const sz = randInt(78, 118);
+    /* 防重叠放置：随机采样 60 次，选不与现有泡泡相交的位置；全部失败则取重叠最小的 */
+    const placed = bubbles.map(b => ({ x: b.x + b.sz / 2, y: b.y + b.sz / 2, r: b.sz / 2 }));
+    const r = sz / 2;
+    let best = null, bestOverlap = Infinity;
+    for (let t = 0; t < 60; t++) {
+        const x = randInt(4, Math.max(5, W - sz - 4));
+        const y = randInt(6, Math.max(7, H - sz - 6));
+        const cx = x + r, cy = y + r;
+        let overlap = 0;
+        for (const p of placed) {
+            const d = Math.hypot(cx - p.x, cy - p.y);
+            overlap = Math.max(overlap, (r + p.r) - d);   // >0 即相交，值=侵入深度
+        }
+        if (overlap <= 0) { best = { x, y }; break; }
+        if (overlap < bestOverlap) { bestOverlap = overlap; best = { x, y }; }
+    }
     const el = document.createElement('div');
     el.className = 'bubble';
     el.style.setProperty('--sz', sz + 'px');
     el.style.setProperty('--bg', `radial-gradient(circle at 35% 30%, ${pick(BUB_COLORS)}, ${pick(BUB_COLORS)} 120%)`);
-    el.style.left = randInt(2, 82) + '%';
-    el.style.top = randInt(8, 78) + '%';
+    el.style.left = best.x + 'px';
+    el.style.top = best.y + 'px';
     el.style.animationDuration = (2.4 + Math.random() * 2) + 's';
     el.style.animationDelay = (Math.random() * 2) + 's';
     el.textContent = n;
     el.onclick = () => tapBubble(el, n);
     f.appendChild(el);
-    bubbles.push({ el, n });
+    bubbles.push({ el, n, x: best.x, y: best.y, sz });
+}
+/* 碰撞推挤：泡泡破裂/消失时，把邻近泡泡推开一点（波纹感） */
+function pushNeighbors(poppedEls) {
+    const cs = poppedEls.map(el => {
+        const b = bubbles.find(x => x.el === el);
+        return b ? { x: b.x + b.sz / 2, y: b.y + b.sz / 2, r: b.sz / 2 } : null;
+    }).filter(Boolean);
+    bubbles.forEach(b => {
+        if (poppedEls.includes(b.el)) return;
+        const bc = { x: b.x + b.sz / 2, y: b.y + b.sz / 2 };
+        let dx = 0, dy = 0;
+        for (const c of cs) {
+            const d = Math.hypot(bc.x - c.x, bc.y - c.y) || 1;
+            if (d < c.r + b.sz / 2 + 260) {
+                const f = (1 - d / (c.r + b.sz / 2 + 120)) * 34;
+                dx += (bc.x - c.x) / d * f; dy += (bc.y - c.y) / d * f;
+            }
+        }
+        if (dx || dy) {
+            b.el.style.transition = 'transform .3s cubic-bezier(.2,1.4,.4,1)';
+            b.el.style.transform = `translate(${dx}px, ${dy}px)`;
+            setTimeout(() => { b.el.style.transform = ''; }, 340);
+        }
+    });
 }
 function ensurePair() { // 场上凑不成十时补一对（不同的两个泡泡能凑十才算有解）
     const has = bubbles.some((x, i) => bubbles.some((y, j) => i !== j && x.n + y.n === 10));
@@ -277,6 +317,7 @@ function tapBubble(el, n) {
     if (a.n + n === 10) {   // 碰对啦
         el.classList.remove('sel'); a.el.classList.remove('sel');
         el.classList.add('pop'); a.el.classList.add('pop');
+        pushNeighbors([el, a.el]);   // 邻近泡泡被推开（碰撞效果）
         bubbles = bubbles.filter(b => b.el !== el && b.el !== a.el);
         setScore(10); setCombo(1); pairsMade++; sPop(); bigMsg(pick(['凑十成功！', '太棒了！', '10 来啦！']), true);
         setTimeout(() => { el.remove(); a.el.remove();
