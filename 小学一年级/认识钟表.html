@@ -87,6 +87,28 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .dots { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
 .dot { width: 14px; height: 14px; border-radius: 50%; background: #d5e0da; transition: all .2s; }
 .dot.on { background: #2e9e5b; transform: scale(1.25); }
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    .wrap { padding: 10px 12px 30px; }
+    .top { flex-direction: column; align-items: center; gap: 8px; }
+    .top h1 { text-align: center; }
+    .modetabs { justify-content: center; }
+    .mtab { padding: 9px 16px; font-size: 14px; }
+    .stage { padding: 14px 10px 16px; }
+    .filters { gap: 6px; }
+    .fchip { padding: 7px 12px; font-size: 13px; }
+    /* 三端改为纵向：小男孩 / 钟表 / 场景图标 */
+    .clockrow { flex-direction: column; gap: 8px; }
+    .clockbox { width: min(74vw, 300px); }
+    .sceneart { width: 34vw; }
+    .sceneboy { width: 22vw; }
+    .actname { font-size: 19px; margin-top: 4px; }
+    #answer { min-height: 52px; font-size: 30px; }
+    #answer .hinttxt { font-size: 0.5em; }
+    .btns { gap: 10px; }
+    .bigbtn { padding: 12px 22px; font-size: 16px; }
+    .dots { margin-top: 10px; }
+}
 </style>
 </head>
 <body>

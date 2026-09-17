@@ -124,6 +124,32 @@ button { font-family: inherit; cursor: pointer; border: none; }
 #toast.show { opacity: 1; }
 .feedback { text-align: center; margin-top: 14px; min-height: 44px; font-size: 25px; font-weight: 900; }
 .feedback.good { color: #00b894; } .feedback.bad { color: #e17055; }
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    .wrap { padding: 10px 12px 30px; }
+    .top { flex-direction: column; align-items: center; gap: 8px; }
+    .top h1 { text-align: center; }
+    .qtip { font-size: 16px; }
+    .picbox { min-height: 190px; padding: 12px; }
+    .pic { width: 19vw; }
+    .feedback { font-size: 20px; min-height: 32px; }
+    .optbtn { min-height: 62px; font-size: 22px; border-radius: 14px; }
+    .opts4 { gap: 10px; }
+    /* 换钱/购物 纵向排列 */
+    .exWrap { flex-direction: column; gap: 10px; }
+    .exBox { width: 100%; min-width: 0; }
+    .exArrow { transform: rotate(90deg); }
+    .shopWrap { flex-direction: column; }
+    .goods .gi { font-size: 64px; }
+    .goods .price { font-size: 24px; padding: 6px 20px; }
+    .shelf .cap, .payBox .cap { font-size: 13px; }
+    .payTray { min-height: 84px; }
+    .paySum { font-size: 18px; }
+    .actbar { gap: 8px; }
+    .bigbtn { padding: 11px 22px; font-size: 16px; }
+    .money svg { max-width: 100%; height: auto; }
+    .bankItem svg { width: 84px; height: auto; }
+}
 </style>
 </head>
 <body>

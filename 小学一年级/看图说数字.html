@@ -91,6 +91,19 @@ button { font-family: inherit; cursor: pointer; border: none; }
     opacity: 0; pointer-events: none; transition: all .25s;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    .wrap { padding: 10px 12px 26px; }
+    .top { flex-direction: column; align-items: center; gap: 8px; }
+    .top h1 { text-align: center; }
+    .qtip { font-size: 16px; padding: 0 6px; }
+    .picbox { min-height: 190px; padding: 12px; }
+    .pic { width: 20vw; }
+    .feedback { font-size: 19px; min-height: 30px; }
+    .keypad { gap: 9px; }
+    .key { width: 26vw; height: 56px; font-size: 24px; border-radius: 12px; }
+    .key.wide { width: 54vw; }
+}
 </style>
 </head>
 <body>
