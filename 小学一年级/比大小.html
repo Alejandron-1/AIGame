@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>比大小 · 数一数 比一比</title>
+<style>
+  /* ============ 基础：全屏自适应，无滚动条 ============ */
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#FFF7E8;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif; user-select:none; }
+  #stage { position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+    transform-origin:center center; background:linear-gradient(180deg,#FFFDF6 0%,#FFF3DC 100%); }
+
+  /* ============ 顶栏：只有标题和题号 ============ */
+  #topbar { position:absolute; left:0; top:36px; width:100%; display:flex;
+    align-items:center; justify-content:center; gap:36px; }
+  #title { font-size:64px; font-weight:bold; color:#5A4632; letter-spacing:6px; }
+  #roundTag { font-size:34px; color:#A08B6C; background:#FFFFFF; border-radius:30px;
+    padding:10px 32px; border:3px solid #F2DFB9; }
+
+  /* ============ 主区：左右两组图案 + 中间符号 ============ */
+  #main { position:absolute; left:120px; top:170px; width:1680px; height:560px;
+    display:flex; align-items:stretch; justify-content:space-between; }
+  .side { width:660px; border-radius:48px; padding:30px 20px 26px;
+    display:flex; flex-direction:column; align-items:center; }
+  #sideL { background:#FFEFE3; border:6px solid #FFB877; }
+  #sideR { background:#E3F4FF; border:6px solid #7EC8F0; }
+  .sideTag { font-size:40px; font-weight:bold; margin-bottom:14px; }
+  #sideL .sideTag { color:#D97B29; }
+  #sideR .sideTag { color:#2E7FB5; }
+  .grid { flex:1; width:100%; display:flex; flex-wrap:wrap; align-content:center;
+    justify-content:center; gap:18px 26px; padding:10px 16px; }
+  .obj { line-height:1; animation:pop .35s backwards; }
+  @keyframes pop { from{transform:scale(0);} to{transform:scale(1);} }
+
+  .sideNum { height:76px; font-size:60px; font-weight:bold; visibility:hidden; }
+  #sideL .sideNum { color:#D97B29; }
+  #sideR .sideNum { color:#2E7FB5; }
+  .sideNum.show { visibility:visible; animation:pop .35s; }
+
+  /* 中间符号圆 */
+  #center { align-self:center; width:280px; height:280px; border-radius:50%;
+    background:#FFFFFF; border:8px solid #F2C94C; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; box-shadow:0 10px 0 #EAD9A8; flex:none; }
+  #centerQ { font-size:96px; font-weight:bold; color:#E0CFA8; line-height:1; }
+  #centerSym { font-size:120px; font-weight:bold; color:#4CAF50; line-height:1;
+    display:none; animation:pop .4s; }
+  #centerWord { font-size:34px; font-weight:bold; color:#4CAF50; display:none; }
+  #center.ok { border-color:#4CAF50; box-shadow:0 10px 0 #3D8B40; }
+  #center.ok #centerQ { display:none; }
+  #center.ok #centerSym, #center.ok #centerWord { display:block; }
+
+  /* ============ 底部：三个大按钮 ============ */
+  #btnRow { position:absolute; left:0; top:800px; width:100%; display:flex;
+    justify-content:center; gap:90px; }
+  .ansBtn { width:400px; height:160px; border-radius:40px; cursor:pointer;
+    border:none; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:6px; color:#fff; font-weight:bold;
+    transition:transform .1s; }
+  .ansBtn .sym { font-size:72px; line-height:1; }
+  .ansBtn .word { font-size:42px; line-height:1; }
+  #btnGt { background:#FF9F43; box-shadow:0 10px 0 #D97F2B; }
+  #btnEq { background:#5CB85C; box-shadow:0 10px 0 #449944; }
+  #btnLt { background:#5AB0E2; box-shadow:0 10px 0 #3E8CBF; }
+  .ansBtn:active { transform:translateY(6px); box-shadow:0 4px 0 rgba(0,0,0,.25); }
+  .ansBtn.good { background:#4CAF50; box-shadow:0 10px 0 #3D8B40; animation:pop .35s; }
+  .ansBtn.dim { opacity:.55; }
+  .ansBtn.shake { animation:shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-14px);}
+    50%{transform:translateX(14px);} 75%{transform:translateX(-8px);} }
+
+  /* ============ 轻提示 ============ */
+  #toast { position:absolute; left:50%; top:1000px; transform:translateX(-50%);
+    background:#A08B6C; color:#fff; font-size:36px; font-weight:bold;
+    padding:16px 48px; border-radius:32px; visibility:hidden; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="topbar">
+    <div id="title">比 大 小</div>
+    <div id="roundTag">第 1 题</div>
+  </div>
+
+  <div id="main">
+    <div class="side" id="sideL">
+      <div class="sideTag">左 边</div>
+      <div class="grid" id="gridL"></div>
+      <div class="sideNum" id="numL">5 个</div>
+    </div>
+    <div id="center">
+      <div id="centerQ">?</div>
+      <div id="centerSym">＞</div>
+      <div id="centerWord">大于</div>
+    </div>
+    <div class="side" id="sideR">
+      <div class="sideTag">右 边</div>
+      <div class="grid" id="gridR"></div>
+      <div class="sideNum" id="numR">3 个</div>
+    </div>
+  </div>
+
+  <div id="btnRow">
+    <button class="ansBtn" id="btnGt"><span class="sym">＞</span><span class="word">大于</span></button>
+    <button class="ansBtn" id="btnEq"><span class="sym">＝</span><span class="word">等于</span></button>
+    <button class="ansBtn" id="btnLt"><span class="sym">＜</span><span class="word">小于</span></button>
+  </div>
+
+  <div id="toast">再想一想，数一数两边各有几个～</div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+ * 比大小 · 数一数 比一比（V2.0 极简版）
+ * 玩法：左右两组图案（数量 1~10）→ 数一数 → 大于 / 等于 / 小于 三选一
+ *       → 答对显示数字和符号，2 秒后自动出下一题
+ * 教师快捷键（隐藏）：空格=下一题  R=换一题  A=显示答案  Esc=返回目录
+ * ================================================================ */
+
+/* ---------------- CONFIG：改这里调难度 ---------------- */
+var CONFIG = {
+  MIN: 1,        // 每侧数量下限
+  MAX: 10,       // 每侧数量上限
+  NEXT_MS: 2000, // 答对后自动下一题的等待毫秒
+  TTS_RATE: 0.85,
+  // 图案池：左右各随机取一种（保证不同），可自由增删
+  EMOJIS: ['🍎','🍌','🍓','🍊','🍇','🍉','⭐','🎈','🌸','🐞','🐟','🎁']
+};
+
+/* ---------------- 状态 ---------------- */
+var S = {
+  left: 0, right: 0,     // 左右数量
+  eL: '', eR: '',        // 左右图案
+  round: 0,              // 第几题
+  locked: false,         // 答对后的过渡锁
+  gen: 0                 // 代数戳：换题后作废旧的自动下一题定时器
+};
+
+/* ---------------- 工具 ---------------- */
+function $(id) { return document.getElementById(id); }
+function ri(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+/* ---------------- 音效（Web Audio 合成，静默降级） ---------------- */
+var AC = null;
+function tone(freq, dur, delay, vol, type) {
+  try {
+    if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); }
+    if (!AC) return;
+    if (AC.state === 'suspended') { try { AC.resume(); } catch (e) {} }
+    var o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.18, AC.currentTime + (delay || 0));
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + (delay || 0) + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(AC.currentTime + (delay || 0));
+    o.stop(AC.currentTime + (delay || 0) + dur + 0.05);
+  } catch (e) {}
+}
+function sndGood() { tone(523,0.14,0,0.2,'triangle'); tone(659,0.14,0.12,0.2,'triangle'); tone(784,0.24,0.24,0.2,'triangle'); }
+function sndBad()  { tone(196, 0.22, 0, 0.16, 'square'); }
+
+/* ---------------- 语音（zh-CN，静默降级） ---------------- */
+function speak(txt) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(txt);
+    u.lang = 'zh-CN'; u.rate = CONFIG.TTS_RATE;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------------- 出题 ---------------- */
+function newQuestion() {
+  S.gen++;
+  S.round++;
+  S.locked = false;
+
+  // 左右图案：随机两种、保证不同
+  var i = ri(0, CONFIG.EMOJIS.length - 1);
+  var j = ri(0, CONFIG.EMOJIS.length - 2);
+  if (j >= i) j++;
+  S.eL = CONFIG.EMOJIS[i]; S.eR = CONFIG.EMOJIS[j];
+  S.left = ri(CONFIG.MIN, CONFIG.MAX);
+  S.right = ri(CONFIG.MIN, CONFIG.MAX);
+
+  renderGrid('gridL', S.eL, S.left);
+  renderGrid('gridR', S.eR, S.right);
+  $('roundTag').textContent = '第 ' + S.round + ' 题';
+
+  // 复位：隐藏数字、中央问号、按钮状态
+  $('numL').className = 'sideNum'; $('numR').className = 'sideNum';
+  $('numL').textContent = S.left + ' 个'; $('numR').textContent = S.right + ' 个';
+  $('center').className = '';
+  $('btnGt').className = 'ansBtn'; $('btnEq').className = 'ansBtn'; $('btnLt').className = 'ansBtn';
+  hideToast();
+}
+
+function renderGrid(gridId, emoji, n) {
+  var g = $(gridId);
+  g.innerHTML = '';
+  // 数量不同字号不同：少则大、多则小，保证 10 个也放得下
+  var size = n <= 3 ? 110 : (n <= 5 ? 96 : (n <= 7 ? 82 : 72));
+  for (var k = 0; k < n; k++) {
+    var d = document.createElement('div');
+    d.className = 'obj';
+    d.style.fontSize = size + 'px';
+    d.style.animationDelay = (k * 0.06) + 's';
+    d.textContent = emoji;
+    g.appendChild(d);
+  }
+}
+
+/* ---------------- 判定 ---------------- */
+function answerOf() {
+  if (S.left > S.right) return 'gt';
+  if (S.left < S.right) return 'lt';
+  return 'eq';
+}
+
+function onPick(kind) { // kind: 'gt' | 'eq' | 'lt'
+  if (S.locked) return;
+  var btn = kind === 'gt' ? $('btnGt') : (kind === 'lt' ? $('btnLt') : $('btnEq'));
+  if (kind === answerOf()) {
+    S.locked = true;
+    // 答对：按钮变绿、其他按钮变淡、亮出数字和符号
+    btn.className = 'ansBtn good';
+    (kind === 'gt' ? $('btnEq') : $('btnGt')).className = 'ansBtn dim';
+    (kind === 'lt' ? $('btnEq') : $('btnLt')).className = 'ansBtn dim';
+    $('numL').className = 'sideNum show'; $('numR').className = 'sideNum show';
+    var sym = kind === 'gt' ? '＞' : (kind === 'lt' ? '＜' : '＝');
+    var word = kind === 'gt' ? '大于' : (kind === 'lt' ? '小于' : '等于');
+    $('centerSym').textContent = sym;
+    $('centerWord').textContent = word;
+    $('center').className = 'ok';
+    sndGood();
+    speak(S.left + ' ' + word + ' ' + S.right);
+    hideToast();
+    // 2 秒后自动下一题（代数戳防连点串题）
+    var g = S.gen;
+    setTimeout(function () { if (g === S.gen) newQuestion(); }, CONFIG.NEXT_MS);
+  } else {
+    btn.className = 'ansBtn'; void btn.offsetWidth; btn.classList.add('shake');
+    sndBad();
+    showToast('再想一想，数一数两边各有几个～');
+  }
+}
+
+/* ---------------- 轻提示 ---------------- */
+var toastTimer = null;
+function showToast(txt) {
+  var t = $('toast');
+  t.textContent = txt; t.style.visibility = 'visible';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.style.visibility = 'hidden'; }, 1800);
+}
+function hideToast() { $('toast').style.visibility = 'hidden'; clearTimeout(toastTimer); }
+
+/* ---------------- 1920×1080 自适应缩放 ---------------- */
+function fit() {
+  try {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    $('stage').style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  } catch (e) {}
+}
+
+/* ---------------- 初始化 ---------------- */
+function init() {
+  $('btnGt').addEventListener('click', function () { onPick('gt'); });
+  $('btnEq').addEventListener('click', function () { onPick('eq'); });
+  $('btnLt').addEventListener('click', function () { onPick('lt'); });
+
+  // 教师快捷键（隐藏功能，不影响学生）
+  document.addEventListener('keydown', function (ev) {
+    try {
+      if (ev.key === ' ') { ev.preventDefault(); newQuestion(); }
+      else if (ev.key === 'r' || ev.key === 'R') newQuestion();
+      else if (ev.key === 'a' || ev.key === 'A') { if (!S.locked) onPick(answerOf()); }
+      else if (ev.key === 'Escape') { try { window.location.href = '../index.html'; } catch (e) {} }
+    } catch (e) {}
+  });
+
+  fit();
+  if (window.addEventListener) window.addEventListener('resize', fit);
+  newQuestion();
+}
+
+if (typeof window !== 'undefined' && window.document) init();
+</script>
+</body>
+</html>

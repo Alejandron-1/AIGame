@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分与合 · 一年级数学游戏</title>
+<style>
+/* ============================================================
+   分与合 V2.0 —— 严格对照课堂截图重写
+   交互只有两条：
+     ① 点「放到左边 / 放到右边」→ 待分配区第一颗球飞过去
+     ② 点房间里的球 → 拿回待分配区
+   没有"选球"中间态、没有幽灵球动画、没有状态互踩。
+   ============================================================ */
+
+:root{
+  --bd-pool: clamp(40px, 3.6vw, 70px);   /* 待分配区小球直径 */
+  --bd-room: clamp(28px, 2.4vw, 48px);   /* 房间内小球直径 */
+  --ink: #2A3B47;        /* 主文字 */
+  --ink-soft: #5F7A6C;   /* 次文字 */
+  --green: #1E7A3C;
+  --warn: #96610A;
+}
+
+*{ box-sizing: border-box; }
+html, body{ margin:0; padding:0; height:100%; overflow:hidden; }
+body{
+  font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg,#EEF3F7 0%,#DFE8EF 100%);
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#app{
+  height:100vh; display:flex; flex-direction:column;
+  gap: clamp(6px,1vh,14px);
+  padding: clamp(8px,1.4vh,18px) clamp(18px,2.2vw,44px);
+}
+
+/* ---------- 顶栏 ---------- */
+#topbar{ flex:0 0 auto; display:flex; align-items:center; gap:clamp(8px,1vw,16px); }
+#topbar h1{
+  margin:0 0 0 clamp(6px,1vw,16px);
+  font-size:clamp(20px,1.9vw,34px); letter-spacing:4px; color:#233C33;
+}
+.grow{ flex:1 1 auto; }
+
+.tbtn{
+  font-family:inherit; font-weight:800; cursor:pointer;
+  font-size:clamp(14px,1.05vw,20px); color:#3C5A4C;
+  background:#fff; border:2px solid #C9D8CE; border-radius:999px;
+  padding:clamp(6px,.9vh,12px) clamp(14px,1.3vw,24px);
+  transition:background .15s, border-color .15s, transform .12s;
+}
+.tbtn:hover{ background:#F3FAF5; border-color:#9CCDAF; }
+.tbtn:active{ transform:scale(.96); }
+#btnNext{ background:#EAF7EE; border-color:#8FD8AB; color:#1B6E37; }
+
+/* ---------- 提示条（静态引导语，全程不变，还原截图） ---------- */
+#tipbar{
+  flex:0 0 auto; text-align:center; font-weight:800;
+  font-size:clamp(15px,1.25vw,24px); color:#33566F;
+  background:#fff; border:3px solid #D8E6EF; border-radius:999px;
+  padding:clamp(8px,1.1vh,15px) clamp(16px,2vw,32px);
+}
+
+/* ---------- 待分配区 ---------- */
+#poolwrap{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  min-height:calc(var(--bd-pool) + 18px);
+}
+#pool{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:clamp(8px,1vw,18px); }
+
+/* ---------- 小球（橙红 + 深色圆心，还原截图"甜甜圈"造型） ---------- */
+.ball{
+  width:var(--bd-pool); height:var(--bd-pool); border-radius:50%; position:relative;
+  cursor:pointer; box-shadow:0 5px 12px rgba(150,70,20,.25);
+  background:radial-gradient(circle at 35% 28%, #FFE0BC 0%, #F7A76C 32%, #E0703C 64%, #A8451E 100%);
+}
+.ball::before{  /* 深橙圆环 */
+  content:""; position:absolute; left:50%; top:50%; width:54%; height:54%;
+  transform:translate(-50%,-50%); border-radius:50%;
+  border:clamp(2px,.25vw,5px) solid #C85A28;
+}
+.ball::after{   /* 中心深色小孔 */
+  content:""; position:absolute; left:50%; top:50%; width:20%; height:20%;
+  transform:translate(-50%,-50%); border-radius:50%; background:#57220E;
+}
+@keyframes bpop{ 0%{ transform:scale(.4); opacity:0; } 70%{ transform:scale(1.1); opacity:1; } 100%{ transform:scale(1); } }
+.ball.pop{ animation:bpop .26s ease; }
+
+/* ---------- 两个房间 ---------- */
+#rooms{ flex:0 0 auto; display:flex; gap:clamp(12px,1.6vw,28px); height:clamp(150px,24vh,260px); }
+.room{
+  flex:1 1 0; min-width:0; display:flex; flex-direction:column;
+  background:#E9F5EC; border:3px dashed #BBDCC7;
+  border-radius:clamp(14px,1.4vw,26px);
+  padding:clamp(6px,1vh,14px) clamp(12px,1.2vw,22px);
+}
+.rlab{ flex:0 0 auto; font-size:clamp(13px,1vw,19px); font-weight:800; color:var(--ink-soft); }
+.rballs{
+  flex:1 1 auto; display:flex; flex-wrap:wrap; align-content:center; justify-content:center;
+  gap:clamp(6px,.7vw,12px); min-height:0;
+}
+#rooms .ball{ width:var(--bd-room); height:var(--bd-room); box-shadow:0 3px 8px rgba(150,70,20,.18); }
+#rooms .ball:hover{ transform:translateY(-3px); }
+#rooms .ball.pop{ animation:bpop .26s ease; }
+.rnum{
+  flex:0 0 auto; text-align:center;
+  font-size:clamp(34px,3.4vw,64px); font-weight:900; line-height:1.05; color:#233C33;
+}
+
+/* ---------- 操作按钮（截图里是浅色胶囊，不是蓝渐变） ---------- */
+#actions{ flex:0 0 auto; display:flex; justify-content:center; gap:clamp(10px,1.2vw,22px); }
+.actbtn{
+  font-family:inherit; font-weight:800; cursor:pointer;
+  font-size:clamp(15px,1.2vw,23px); color:#33513F;
+  background:linear-gradient(180deg,#FFFFFF,#EAF3ED);
+  border:2px solid #C9D8CE; border-radius:999px;
+  box-shadow:0 3px 0 #B9CCBF;
+  padding:clamp(8px,1.2vh,16px) clamp(20px,2.2vw,44px);
+  transition:transform .12s, box-shadow .12s;
+}
+.actbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #B9CCBF; }
+.actbtn:disabled{ background:#E3E9E5; color:#A9B6AD; border-color:#D5DED8; box-shadow:0 3px 0 #CFDAD2; cursor:default; transform:none; }
+
+/* ---------- 底部：分合式 + 结论 + 记录区 ---------- */
+#formula{ flex:0 0 auto; display:flex; justify-content:center; }
+#fsvg{ width:clamp(150px,13vw,240px); height:auto; }
+.fnum{ font-size:46px; font-weight:900; fill:#2A3B47; }
+.fpart{ font-size:30px; font-weight:900; fill:#9DB2A6; transition:fill .2s; }
+.fpart.on{ fill:var(--green); }
+.fline{ stroke:#6B8577; stroke-width:4; stroke-linecap:round; }
+.fbox{ fill:#F7FBF8; stroke:#C9D8CE; stroke-width:3; transition:fill .2s, stroke .2s; }
+.fbox.on{ fill:#E4F7EA; stroke:#63C286; }
+
+#sentence{
+  flex:0 0 auto; text-align:center;
+  font-size:clamp(17px,1.5vw,29px); font-weight:900; color:#2C5A7C;
+  line-height:1.5; min-height:1.5em;
+  transition:color .2s;
+}
+#sentence.good{ color:var(--green); }
+#sentence.warn{ color:var(--warn); }
+
+#foundbox{
+  flex:1 1 auto; min-height:0; display:flex; flex-direction:column;
+  transition:background .25s;
+  border-radius:clamp(12px,1.2vw,20px); padding:2px clamp(8px,1vw,18px);
+}
+#foundbox.done{ background:#F1FBF4; border:3px solid #8FD8AB; padding:0 clamp(5px,.7vw,15px); }
+.fhead{ flex:0 0 auto; text-align:center; display:flex; align-items:baseline; justify-content:center; gap:14px; }
+.ftitle{ font-size:clamp(14px,1.1vw,21px); font-weight:900; color:#3C5F7A; }
+#fprog{ font-size:clamp(13px,1vw,19px); font-weight:800; color:#2F80ED; }
+#foundbox.done #fprog{ color:var(--green); }
+#fcards{
+  flex:1 1 auto; min-height:0; overflow:auto; display:flex; flex-wrap:wrap;
+  align-content:flex-start; justify-content:center; gap:clamp(8px,.9vw,16px);
+  padding-top:clamp(4px,.7vh,10px);
+}
+.fcard{
+  width:clamp(60px,4.8vw,90px); flex:0 0 auto;
+  background:#fff; border:2px solid #BFE3CC; border-radius:clamp(8px,.8vw,14px);
+  padding:clamp(3px,.5vh,8px) 0 clamp(4px,.6vh,9px);
+}
+.fcard.new{ animation:bpop .3s ease; }
+#foundbox.done .fcard{ border-color:#8FD8AB; background:#F7FDF9; }
+.csvg{ width:78%; display:block; margin:0 auto; }
+.csvg text{ font-weight:900; fill:#2C7A4C; }
+.csvg .ctop{ font-size:20px; }
+.csvg .cbot{ font-size:16px; }
+.csvg line{ stroke:#7FCB9A; stroke-width:2.5; stroke-linecap:round; }
+
+/* ---------- 设置弹窗 ---------- */
+.modal{
+  position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center;
+  background:rgba(22,38,54,.42);
+}
+.modal.hidden{ display:none; }
+.mbox{
+  background:#fff; border-radius:clamp(16px,1.6vw,28px);
+  padding:clamp(20px,2.6vh,34px) clamp(24px,2.6vw,44px);
+  min-width:min(680px,90vw); max-width:min(880px,94vw); max-height:88vh; overflow:auto;
+  box-shadow:0 18px 46px rgba(20,40,60,.28);
+}
+.mbox h2{ margin:0 0 clamp(10px,1.6vh,20px); font-size:clamp(19px,1.7vw,28px); letter-spacing:2px; color:#233C33; }
+.srow{
+  display:flex; align-items:center; gap:clamp(12px,1.4vw,24px);
+  padding:clamp(10px,1.4vh,16px) 0; border-top:2px solid #EDF3F0;
+}
+.srow:first-of-type{ border-top:none; }
+.slab{ flex:0 0 auto; width:clamp(76px,7vw,120px); font-size:clamp(14px,1.15vw,21px); font-weight:900; color:#3C5F7A; }
+.sctl{ flex:1 1 auto; display:flex; align-items:center; gap:clamp(8px,1vw,16px); flex-wrap:wrap; }
+select{
+  font-family:inherit; font-size:clamp(15px,1.2vw,22px); font-weight:800; color:#33513F;
+  padding:clamp(6px,.9vh,12px) clamp(10px,1vw,18px);
+  border:2px solid #C9D8CE; border-radius:12px; background:#FAFDFB; cursor:pointer;
+}
+.tilde{ font-size:clamp(15px,1.2vw,22px); font-weight:900; color:#8FA6B8; }
+.snote{ font-size:clamp(12px,.95vw,17px); font-weight:700; color:#9DB2C2; }
+.pbtn, .npick{
+  font-family:inherit; font-weight:800; cursor:pointer;
+  font-size:clamp(14px,1.15vw,21px); color:#3C5A4C;
+  background:#fff; border:2px solid #C9D8CE; border-radius:999px;
+  padding:clamp(7px,1vh,13px) clamp(14px,1.4vw,26px);
+  transition:background .15s, border-color .15s, color .15s;
+}
+.pbtn:hover, .npick:hover{ background:#F3FAF5; border-color:#9CCDAF; }
+.npick{ min-width:clamp(48px,3.6vw,68px); padding-left:0; padding-right:0; text-align:center; }
+.npick.on{ color:#fff; background:#3C9E68; border-color:#3C9E68; box-shadow:0 3px 0 #2C7A4C; }
+.mfoot{ display:flex; justify-content:flex-end; padding-top:clamp(10px,1.6vh,20px); border-top:2px solid #EDF3F0; }
+
+/* ---------- 提示气泡 / 撒花 ---------- */
+#toast{
+  position:fixed; left:50%; bottom:9vh; z-index:85; max-width:80vw; text-align:center;
+  transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none;
+  background:#2A3B47; color:#fff; font-weight:800; font-size:clamp(16px,1.3vw,24px);
+  padding:clamp(10px,1.4vh,18px) clamp(20px,2.2vw,40px); border-radius:999px;
+  transition:opacity .25s, transform .25s;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+.confetti{
+  position:fixed; z-index:90; width:10px; height:16px; border-radius:2px;
+  pointer-events:none; animation:fall 1.7s linear forwards;
+}
+@keyframes fall{
+  0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(115vh) rotate(720deg); opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header id="topbar">
+    <button class="tbtn" id="btnBack">&larr; 返回目录</button>
+    <h1>分与合</h1>
+    <div class="grow"></div>
+    <button class="tbtn" id="btnSettings">&#9881; 设置</button>
+    <button class="tbtn" id="btnSound">&#128266; 声音：开</button>
+    <button class="tbtn" id="btnNext">换成 4 个</button>
+  </header>
+
+  <div id="tipbar">把小球分进两个房间，观察“总数在上，两个部分在下”的分合式。</div>
+
+  <div id="poolwrap"><div id="pool"></div></div>
+
+  <div id="rooms">
+    <div class="room" id="roomL">
+      <div class="rlab">左边一堆</div>
+      <div class="rballs" id="ballsL"></div>
+      <div class="rnum" id="numL">0</div>
+    </div>
+    <div class="room" id="roomR">
+      <div class="rlab">右边一堆</div>
+      <div class="rballs" id="ballsR"></div>
+      <div class="rnum" id="numR">0</div>
+    </div>
+  </div>
+
+  <div id="actions">
+    <button class="actbtn" id="btnToL">放到左边</button>
+    <button class="actbtn" id="btnToR">放到右边</button>
+    <button class="actbtn" id="btnReset">重新分</button>
+  </div>
+
+  <div id="formula">
+    <svg id="fsvg" viewBox="0 0 220 132" role="img" aria-label="分合式">
+      <text id="fTop" x="110" y="38" text-anchor="middle" class="fnum">5</text>
+      <line x1="108" y1="52" x2="56" y2="78" class="fline"/>
+      <line x1="112" y1="52" x2="164" y2="78" class="fline"/>
+      <rect id="fBoxL" x="28" y="80" width="56" height="44" rx="10" class="fbox"/>
+      <text id="fL" x="56" y="111" text-anchor="middle" class="fpart">0</text>
+      <rect id="fBoxR" x="136" y="80" width="56" height="44" rx="10" class="fbox"/>
+      <text id="fR" x="164" y="111" text-anchor="middle" class="fpart">0</text>
+    </svg>
+  </div>
+
+  <div id="sentence">试一试不同的分法。</div>
+
+  <div id="foundbox">
+    <div class="fhead">
+      <span class="ftitle">已经发现的分法</span>
+      <span id="fprog">已找到 0 / 4</span>
+    </div>
+    <div id="fcards"></div>
+  </div>
+</div>
+
+<div id="settings" class="modal hidden">
+  <div class="mbox">
+    <h2>设置</h2>
+    <div class="srow">
+      <div class="slab">数字范围</div>
+      <div class="sctl">
+        <select id="setMin"></select>
+        <span class="tilde">~</span>
+        <select id="setMax"></select>
+        <span class="snote">最多到 10；当前数还在范围内时，改动不会清空正在玩的进度</span>
+      </div>
+    </div>
+    <div class="srow">
+      <div class="slab">快捷选择</div>
+      <div class="sctl">
+        <button class="pbtn" id="presetA">2 ~ 5</button>
+        <button class="pbtn" id="presetB">6 ~ 10</button>
+        <button class="pbtn" id="presetC">2 ~ 10</button>
+      </div>
+    </div>
+    <div class="srow">
+      <div class="slab">当前数字</div>
+      <div class="sctl" id="numPick"></div>
+    </div>
+    <div class="mfoot"><button class="tbtn" id="setClose">完成</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   分与合 V2.0 —— 参数集中在 CONFIG，改数值即可调难度
+   ============================================================ */
+var CONFIG = {
+  MIN_ALLOWED : 2,      // 数字硬下限（1 没有分法，不出现）
+  MAX_ALLOWED : 10,     // 数字硬上限（十以内）
+  START_N     : 5,      // 初始总数（与截图一致）
+  HINT_REPEAT : 3,      // 连续重复同一种分法几次后，给"按顺序"支架
+  HINT_SIDE   : 3,      // 连续几次全放一边后，给"两边都要有"支架
+  DEBOUNCE    : 300,    // 防抖毫秒（只作用于同一元素）
+  SPEECH_RATE : 0.85,
+  STORE_KEY   : 'fenhe_settings'
+};
+
+var TIP_DEFAULT = '把小球分进两个房间，观察"总数在上，两个部分在下"的分合式。';
+var SENT_TRY    = '试一试不同的分法。';
+
+/* ============================================================
+   状态（只有一份，任何改动都走下面这几个函数）
+   ============================================================ */
+var S = {
+  n : 5,           // 当前总数
+  min : 2,         // 教师设置的范围下限
+  max : 10,        // 教师设置的范围上限
+  pool : [],       // 待分配区球 id（队首 = pool[0]，点方向按钮就飞它）
+  left : [],       // 左房间球 id
+  right : [],      // 右房间球 id
+  found : [],      // 已发现的分法 [[左,右], ...]
+  lastNew : -1,    // 最近一张新卡片的下标（只有它播弹出动画）
+  dupStreak : 0,   // 连续重复计数（重新分不清零，换数字才清零）
+  sideStreak : 0,  // 连续全放一边计数（同上）
+  hintedDup : false,
+  hintedSide : false,
+  celebrated : false, // 当前数是否已找齐庆祝过
+  gen : 0,            // 状态代数戳：任何重置/新发现都 +1，让过期定时器自动作废
+  sound : true,
+  locked : false      // 设置弹窗打开时为 true，屏蔽游戏操作
+};
+
+function $(id){ return document.getElementById(id); }
+function range(a, b){ var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+function allIds(){ return range(0, S.n - 1); }
+
+/* 300ms 防抖：只作用于同一元素（大屏多点触控，不同元素互不影响） */
+var _last = new WeakMap();
+function guard(el){
+  if (!el) return true;
+  var now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  var t = _last.has(el) ? _last.get(el) : -1e9;
+  if (now - t < CONFIG.DEBOUNCE) return false;
+  _last.set(el, now);
+  return true;
+}
+
+/* ============================================================
+   音效（Web Audio 程序合成，零音频文件；API 不可用静默降级）
+   ============================================================ */
+var AC = null;
+function ac(){
+  try{
+    if (AC) return AC;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return null;
+    AC = new C();
+    return AC;
+  }catch(e){ return null; }
+}
+function beep(freq, dur, type, vol, delay){
+  if (!S.sound) return;
+  var c = ac(); if (!c) return;
+  try{
+    var t0 = c.currentTime + (delay || 0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.18, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  }catch(e){}
+}
+function sfxDrop(){ beep(520,0.10,'sine',0.16); beep(720,0.09,'sine',0.10,0.06); }
+function sfxDing(){ beep(784,0.14,'sine',0.18); beep(1046,0.22,'sine',0.16,0.11); }
+function sfxSoft(){ beep(300,0.16,'triangle',0.09); }
+function sfxCheer(){
+  var notes = [523,659,784,1046,1318];
+  for (var i = 0; i < notes.length; i++) beep(notes[i], 0.24, 'sine', 0.15, i * 0.10);
+}
+
+/* 语音（Web Speech API，不可用时静默降级） */
+function speak(text){
+  if (!S.sound) return;
+  try{
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    window.speechSynthesis.cancel();
+    var u = new window.SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = CONFIG.SPEECH_RATE; u.pitch = 1.08;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ============================================================
+   渲染（每次全量重绘；只有带 .pop 的元素会播动画，
+   所以卡片不会整排重闪 —— V1 的闪屏 bug 就出在这）
+   ============================================================ */
+function render(){
+  renderPool();
+  renderRooms();
+  renderFormula();
+  renderFound();
+  renderActions();
+  renderNextBtn();
+}
+
+function renderPool(){
+  var box = $('pool');
+  var html = '';
+  for (var i = 0; i < S.pool.length; i++){
+    html += '<div class="ball" data-bid="' + S.pool[i] + '"></div>';
+  }
+  box.innerHTML = html;
+}
+
+function renderRooms(){
+  var sides = [['L', S.left, 'ballsL', 'numL'], ['R', S.right, 'ballsR', 'numR']];
+  for (var s = 0; s < sides.length; s++){
+    var side = sides[s][0], arr = sides[s][1], boxId = sides[s][2], numId = sides[s][3];
+    var box = $(boxId);
+    var html = '';
+    for (var i = 0; i < arr.length; i++){
+      /* 只有"刚放进去、动画还没播完"的那颗球带 .pop */
+      var isNew = (i === arr.length - 1) && S.lastPlaced && S.lastPlaced.side === side;
+      html += '<div class="ball' + (isNew ? ' pop' : '') + '" data-bid="' + arr[i] + '"></div>';
+    }
+    box.innerHTML = html;
+    var els = box.querySelectorAll('.ball');
+    for (var k = 0; k < els.length; k++){
+      (function(el, sd){
+        var id = parseInt(el.dataset.bid, 10);
+        el.addEventListener('click', function(){ if (guard(el)) takeBack(sd, id); });
+      })(els[k], side);
+    }
+    $(numId).textContent = arr.length;
+  }
+}
+
+function renderFormula(){
+  var l = S.left.length, r = S.right.length;
+  var done = (S.pool.length === 0 && l > 0 && r > 0);
+  $('fTop').textContent = S.n;
+  $('fL').textContent = l;
+  $('fR').textContent = r;
+  var boxes = [$('fBoxL'), $('fBoxR'), $('fL'), $('fR')];
+  for (var i = 0; i < boxes.length; i++){
+    if (done) boxes[i].classList.add('on');
+    else boxes[i].classList.remove('on');
+  }
+}
+
+function renderFound(){
+  var total = S.n - 1;
+  $('fprog').textContent = '已找到 ' + S.found.length + ' / ' + total;
+  /* 按"左边的数"从小到大排 —— 找齐后自然排成 1和4、2和3、3和2、4和1 */
+  var list = S.found.slice().sort(function(a, b){ return a[0] - b[0]; });
+  /* 找到"最新一张"在排序后的位置，只给它加 .new（弹入动画） */
+  var newest = (S.lastNew >= 0) ? S.found[S.lastNew] : null;
+  var newIdx = -1;
+  if (newest){
+    for (var j = 0; j < list.length; j++){
+      if (list[j][0] === newest[0] && list[j][1] === newest[1]){ newIdx = j; break; }
+    }
+  }
+  var html = '';
+  for (var i = 0; i < list.length; i++){
+    html += '<div class="fcard' + (i === newIdx ? ' new' : '') + '">'
+          +   '<svg class="csvg" viewBox="0 0 72 74">'
+          +     '<text x="36" y="18" text-anchor="middle" class="ctop">' + S.n + '</text>'
+          +     '<line x1="34" y1="26" x2="18" y2="46"/>'
+          +     '<line x1="38" y1="26" x2="54" y2="46"/>'
+          +     '<text x="18" y="66" text-anchor="middle" class="cbot">' + list[i][0] + '</text>'
+          +     '<text x="54" y="66" text-anchor="middle" class="cbot">' + list[i][1] + '</text>'
+          +   '</svg>'
+          + '</div>';
+  }
+  $('fcards').innerHTML = html;
+}
+
+function nextPreview(){
+  var n = S.n - 1;
+  if (n < S.min) n = S.max;
+  return n;
+}
+function renderNextBtn(){ $('btnNext').textContent = '换成 ' + nextPreview() + ' 个'; }
+
+function renderActions(){
+  var empty = (S.pool.length === 0);
+  $('btnToL').disabled = empty;
+  $('btnToR').disabled = empty;
+}
+
+function setSentence(text, cls){
+  var el = $('sentence');
+  el.textContent = text;
+  el.className = cls || '';
+}
+
+/* ============================================================
+   提示气泡 / 撒花
+   ============================================================ */
+var toastTimer = null;
+function toast(msg){
+  var el = $('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+}
+
+function confetti(){
+  try{
+    var colors = ['#F5A623','#4CD964','#2F80ED','#F45B69','#B07CF0','#FFD93D'];
+    for (var i = 0; i < 70; i++){
+      var d = document.createElement('div');
+      d.className = 'confetti';
+      d.style.left = (Math.random() * 100) + 'vw';
+      d.style.top = (-10 - Math.random() * 20) + 'vh';
+      d.style.background = colors[i % colors.length];
+      d.style.animationDelay = (Math.random() * 0.6) + 's';
+      document.body.appendChild(d);
+      (function(el){ setTimeout(function(){ if (el.remove) el.remove(); }, 2800); })(d);
+    }
+  }catch(e){}
+}
+
+/* ============================================================
+   玩法（全部走状态函数，交互只有三条路径）
+   ============================================================ */
+
+/* 换一个数字：全部清空重来（记录区也清 —— 每个数各有一套记录） */
+function newNumber(n, silent){
+  S.n = n;
+  S.pool = allIds();
+  S.left = []; S.right = [];
+  S.found = []; S.lastNew = -1;
+  S.dupStreak = 0; S.sideStreak = 0;
+  S.hintedDup = false; S.hintedSide = false;
+  S.celebrated = false;
+  S.gen++;
+  $('foundbox').classList.remove('done');
+  setSentence(SENT_TRY, '');
+  $('tipbar').textContent = TIP_DEFAULT;
+  render();
+  if (!silent) speak('现在有 ' + n + ' 个小球，分一分吧');
+}
+
+/* 换成 N 个：在教师设定的范围内循环递减 */
+function nextNumber(){
+  newNumber(nextPreview(), false);
+}
+
+/* 点「放到左边 / 放到右边」：待分配区第一颗球飞过去（还原截图交互，无选球步骤） */
+function putTo(side, btnEl){
+  if (S.locked) return;
+  if (btnEl && !guard(btnEl)) return;   // 300ms 防抖只拦同一按钮的连点
+  if (S.pool.length === 0) return;
+
+  var id = S.pool.shift();
+  (side === 'L' ? S.left : S.right).push(id);
+  S.lastPlaced = { side : side, id : id };
+
+  render();
+  sfxDrop();
+  /* 播完弹入动画后摘掉标记，避免下一次重绘重复播 */
+  setTimeout(function(){ S.lastPlaced = null; }, 300);
+
+  judge();
+}
+
+/* 点房间里的球：拿回待分配区末尾（截图 2 实证了这条路径：左 3 / 右 0 / 顶上 2） */
+function takeBack(side, id){
+  if (S.locked) return;
+  var arr = (side === 'L') ? S.left : S.right;
+  var i = arr.indexOf(id);
+  if (i < 0) return;
+  arr.splice(i, 1);
+  S.pool.push(id);
+  S.gen++;
+  if (S.celebrated){
+    S.celebrated = false;
+    $('foundbox').classList.remove('done');
+  }
+  sfxSoft();
+  render();
+}
+
+/* 重新分：球全部归位。
+   截图 3 实证：结论句和「已经发现的分法」都保留。
+   注意：dupStreak / sideStreak 也不能清 —— 学生每试完一种都要重新分，
+   清了计数支架提示就永远触发不了（V1 的 D1 教训）。只在换数字时清零。 */
+function resetBalls(){
+  if (S.locked) return;
+  S.pool = allIds();
+  S.left = []; S.right = [];
+  if (S.celebrated){
+    S.celebrated = false;
+    $('foundbox').classList.remove('done');
+  }
+  S.gen++;
+  render();
+}
+
+/* 判定：每放一颗球后检查一次（只在放完所有球时出结论） */
+function judge(){
+  var l = S.left.length, r = S.right.length;
+  if (l + r < S.n) return;                       // 还没放完，不说话
+
+  /* 情况一：全放在一边 —— 不算分法，温和提示 */
+  if (l === 0 || r === 0){
+    S.sideStreak++; S.dupStreak = 0;
+    setSentence('两个房间都要有小球哦，再摆摆看。', 'warn');
+    sfxSoft();
+    if (S.sideStreak >= CONFIG.HINT_SIDE && !S.hintedSide){
+      S.hintedSide = true;
+      var g1 = S.gen;   // 代数戳：期间只要重新分/发现新分法/换数字，提示就作废
+      setTimeout(function(){
+        if (S.gen !== g1) return;
+        var t = '先放 1 个到左边，再把剩下的放到右边试试';
+        setSentence(t, 'warn'); speak(t);
+      }, 1400);
+    }
+    return;
+  }
+
+  /* 是否已经找到过 */
+  var dup = false;
+  for (var i = 0; i < S.found.length; i++){
+    if (S.found[i][0] === l && S.found[i][1] === r){ dup = true; break; }
+  }
+
+  /* 情况二：重复 —— 不新增、不扣分，只提醒 */
+  if (dup){
+    S.dupStreak++; S.sideStreak = 0;
+    setSentence('这种分法已经找过啦，换一种试试。', 'warn');
+    sfxSoft();
+    if (S.dupStreak >= CONFIG.HINT_REPEAT && !S.hintedDup){
+      S.hintedDup = true;
+      var g2 = S.gen;
+      setTimeout(function(){
+        if (S.gen !== g2) return;
+        var t = '按顺序试一试：先 1 和几，再 2 和几，一个都不漏哦';
+        setSentence(t, 'warn'); speak(t);
+      }, 1200);
+    }
+    return;
+  }
+
+  /* 情况三：新分法 */
+  S.found.push([l, r]);
+  S.lastNew = S.found.length - 1;
+  S.dupStreak = 0; S.sideStreak = 0;
+  S.gen++;
+  setSentence(S.n + '可以分成' + l + '和' + r + '，' + l + '和' + r + '组成' + S.n + '。', 'good');
+  sfxDing();
+  speak(S.n + ' 可以分成 ' + l + ' 和 ' + r + '，' + l + ' 和 ' + r + ' 组成 ' + S.n);
+  renderFound();
+  renderFormula();
+
+  if (S.found.length === S.n - 1){
+    setTimeout(celebrate, 650);
+  }
+}
+
+/* 全部分法找齐（延时触发；期间若被重新分/取回打断，则自动作废） */
+function celebrate(){
+  if (S.celebrated) return;
+  if (S.pool.length > 0 || S.left.length + S.right.length !== S.n) return;
+  S.celebrated = true;
+  var total = S.n - 1;
+  setSentence('太棒了！' + S.n + ' 的 ' + total + ' 种分法全部找到啦！', 'good');
+  sfxCheer();
+  speak('太棒了！' + S.n + ' 的 ' + total + ' 种分法都找到啦');
+  confetti();
+  $('foundbox').classList.add('done');
+}
+
+/* 教师：A 键显示剩余答案（教学讲解用） */
+function revealAll(){
+  var miss = [];
+  for (var a = 1; a < S.n; a++){
+    var b = S.n - a;
+    var has = false;
+    for (var i = 0; i < S.found.length; i++){
+      if (S.found[i][0] === a && S.found[i][1] === b){ has = true; break; }
+    }
+    if (!has) miss.push([a, b]);
+  }
+  if (miss.length === 0){ toast('这个数的分法已经全部找到啦'); return; }
+  for (var k = 0; k < miss.length; k++) S.found.push(miss[k]);
+  S.lastNew = -1;                    // 补进来的不播动画，静静排好
+  S.celebrated = true;
+  renderFound();
+  $('foundbox').classList.add('done');
+  setSentence('老师把剩下的分法请出来啦，一起读一读。', 'good');
+  toast('已显示剩余 ' + miss.length + ' 种分法');
+}
+
+/* ============================================================
+   设置（改范围时若当前数字仍在范围内，绝不清空进度）
+   ============================================================ */
+function loadSettings(){
+  try{
+    var raw = window.localStorage ? window.localStorage.getItem(CONFIG.STORE_KEY) : null;
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (o && o.min >= CONFIG.MIN_ALLOWED && o.max <= CONFIG.MAX_ALLOWED && o.min < o.max){
+      S.min = o.min; S.max = o.max;
+    }
+  }catch(e){}
+}
+function saveSettings(){
+  try{
+    if (window.localStorage) window.localStorage.setItem(CONFIG.STORE_KEY, JSON.stringify({ min:S.min, max:S.max }));
+  }catch(e){}
+}
+
+function renderSettings(){
+  var mn = $('setMin'), mx = $('setMax');
+  var h1 = '', h2 = '';
+  for (var v = CONFIG.MIN_ALLOWED; v <= CONFIG.MAX_ALLOWED - 1; v++){
+    h1 += '<option value="' + v + '"' + (v === S.min ? ' selected' : '') + '>' + v + '</option>';
+  }
+  for (var w = CONFIG.MIN_ALLOWED + 1; w <= CONFIG.MAX_ALLOWED; w++){
+    h2 += '<option value="' + w + '"' + (w === S.max ? ' selected' : '') + '>' + w + '</option>';
+  }
+  mn.innerHTML = h1;
+  mx.innerHTML = h2;
+
+  var ph = '';
+  for (var n = S.min; n <= S.max; n++){
+    ph += '<button class="npick' + (n === S.n ? ' on' : '') + '" data-n="' + n + '">' + n + '</button>';
+  }
+  var pick = $('numPick');
+  pick.innerHTML = ph;
+  var btns = pick.querySelectorAll('.npick');
+  for (var k = 0; k < btns.length; k++){
+    (function(b){
+      b.addEventListener('click', function(){ applyNumber(parseInt(b.dataset.n, 10)); });
+    })(btns[k]);
+  }
+}
+
+/* 应用范围：当前数还在新范围内 → 保留全部进度，只换边界；
+   不在 → 跳到新范围下限（由易到难），重开当前数 */
+function applyRange(mn, mx){
+  if (isNaN(mn)) mn = CONFIG.MIN_ALLOWED;
+  if (isNaN(mx)) mx = CONFIG.MAX_ALLOWED;
+  if (mn >= mx) mn = mx - 1;
+  if (mn < CONFIG.MIN_ALLOWED) mn = CONFIG.MIN_ALLOWED;
+  if (mx > CONFIG.MAX_ALLOWED) mx = CONFIG.MAX_ALLOWED;
+  S.min = mn; S.max = mx;
+  saveSettings();
+  if (S.n < mn || S.n > mx){
+    newNumber(mn, true);
+  } else {
+    renderNextBtn();
+  }
+  renderSettings();
+}
+
+function applyPreset(mn, mx){ applyRange(mn, mx); }
+
+/* 设置面板里点数字：跳过去（面板保持打开，方便连跳） */
+function applyNumber(n){
+  if (n !== S.n) newNumber(n, true);
+  renderSettings();
+}
+
+function openSettings(){
+  S.locked = true;
+  renderSettings();
+  $('settings').classList.remove('hidden');
+}
+function closeSettings(){
+  S.locked = false;
+  $('settings').classList.add('hidden');
+}
+
+/* ============================================================
+   其他
+   ============================================================ */
+function toggleSound(){
+  S.sound = !S.sound;
+  $('btnSound').textContent = '声音：' + (S.sound ? '开' : '关');
+  if (!S.sound){
+    try{ if (window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  } else {
+    sfxDrop();
+  }
+}
+
+function goHome(){
+  try{ window.location.href = '../index.html'; }catch(e){}
+}
+
+/* ============================================================
+   初始化
+   ============================================================ */
+function init(){
+  loadSettings();
+
+  $('btnBack').addEventListener('click', function(){ if (guard($('btnBack'))) goHome(); });
+  $('btnSettings').addEventListener('click', function(){ if (guard($('btnSettings'))) openSettings(); });
+  $('btnSound').addEventListener('click', function(){ if (guard($('btnSound'))) toggleSound(); });
+  $('btnNext').addEventListener('click', function(){ if (guard($('btnNext'))) nextNumber(); });
+  $('btnToL').addEventListener('click', function(){ putTo('L', $('btnToL')); });
+  $('btnToR').addEventListener('click', function(){ putTo('R', $('btnToR')); });
+  $('btnReset').addEventListener('click', function(){ if (guard($('btnReset'))) resetBalls(); });
+  $('setClose').addEventListener('click', function(){ closeSettings(); });
+  $('setMin').addEventListener('change', function(){ applyRange(parseInt($('setMin').value, 10), S.max); });
+  $('setMax').addEventListener('change', function(){ applyRange(S.min, parseInt($('setMax').value, 10)); });
+  $('presetA').addEventListener('click', function(){ applyPreset(2, 5); });
+  $('presetB').addEventListener('click', function(){ applyPreset(6, 10); });
+  $('presetC').addEventListener('click', function(){ applyPreset(2, 10); });
+  $('settings').addEventListener('click', function(e){ if (e.target === $('settings')) closeSettings(); });
+
+  /* 教师快捷键 */
+  document.addEventListener('keydown', function(e){
+    var open = !$('settings').classList.contains('hidden');
+    if (e.key === 'Escape'){
+      if (open) closeSettings(); else goHome();
+      return;
+    }
+    if (open) return;
+    if (e.code === 'Space' || e.key === ' '){ e.preventDefault(); nextNumber(); }
+    else if (e.key === 'r' || e.key === 'R'){ resetBalls(); }
+    else if (e.key === 'a' || e.key === 'A'){ revealAll(); }
+    else if (e.key === 't' || e.key === 'T'){ openSettings(); }
+  });
+
+  /* 起始数字：教师设置的范围若不含 5，则取范围下限 */
+  var start = (CONFIG.START_N >= S.min && CONFIG.START_N <= S.max) ? CONFIG.START_N : S.min;
+  newNumber(start, true);
+}
+
+init();
+</script>
+</body>
+</html>
