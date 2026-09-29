@@ -219,6 +219,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
     <div id="pg-find">
         <div class="learnWrap">
             <div class="stageBox" id="stage">
+                <div id="glWrap" style="position:absolute;inset:0;"></div>
                 <div class="stageChip">🖱️ 拖一拖转一转 · 点一点认一认</div>
             </div>
             <div class="side">
@@ -308,6 +309,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 
 <div id="toast"></div>
 
+<script src="three.min.js"></script>
 <script src="立体图形素材.js"></script>
 <script>
 'use strict';
@@ -387,38 +389,294 @@ document.querySelectorAll('.navbtn').forEach(t => t.onclick = () => {
     document.querySelectorAll('.navbtn').forEach(x => x.classList.toggle('on', x === t));
     ['find', 'sort', 'build', 'pk'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== t.dataset.pg));
     if (t.dataset.pg === 'pk' && !pkStarted) { pkStarted = true; pkStartRound(); }   // 首次进入PK页才开始倒计时
+    if (t.dataset.pg === 'find') setTimeout(resize3D, 60);                           // 切回3D页重算画布尺寸
 });
 
 /* ================================================================
-   环节① 观察发现：伪 3D 椭圆舞台
+   环节① 观察发现：真 3D 舞台（本地 Three.js，可拖拽旋转视角/点击认物）
 ================================================================ */
-let rot = 0, discovered = new Set(), dragging = false;
-const foundShape = () => discovered.size > 0 && [...discovered].some(id => SCENE_ITEMS.find(x => x.id === id).shape === 'ball');
+let discovered = new Set(), dragging = false;
+let renderer3D, scene3D, camera3D, stageGroup, itemGroups = [];
+let camTheta = 0.75, camPhi = 1.05, camR = 8.2, idleT = 0;
+const raycaster = typeof THREE !== 'undefined' ? new THREE.Raycaster() : null;
 
-function layoutStage() {
-    const stage = $('stage');
-    stage.querySelectorAll('.obj').forEach(e => e.remove());
-    const W = stage.clientWidth, H = stage.clientHeight;
-    const cx = W / 2, cy = H * 0.60, rx = W * 0.40, ry = H * 0.24;
-    const n = SCENE_ITEMS.length;
-    SCENE_ITEMS.forEach((it, i) => {
-        const a = (i / n) * Math.PI * 2 + rot;
-        const depth = (Math.sin(a) + 1) / 2;          // 0后 1前
-        const x = cx + rx * Math.cos(a);
-        const y = cy + ry * Math.sin(a);
-        const s = 0.52 + depth * 0.62;
-        const el = document.createElement('div');
-        el.className = 'obj';
-        el.style.width = (76 * s) + 'px';
-        el.style.height = (76 * s) + 'px';
-        el.style.left = x + 'px';
-        el.style.top = y + 'px';
-        el.style.zIndex = 10 + Math.round(depth * 100);
-        el.innerHTML = drawItem(it.id);
-        el.onclick = () => { if (!dragging) clickItem(it); };
-        stage.appendChild(el);
-    });
+/* ---- canvas 贴图工具 ---- */
+function makeTex(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    return new THREE.CanvasTexture(c);
 }
+const mat = (color, opts) => new THREE.MeshLambertMaterial(Object.assign({ color }, opts || {}));
+
+/* ---- 15 件物品的 3D 造型（几何体组合 + canvas 贴图） ---- */
+function buildItem3D(id) {
+    const g = new THREE.Group();
+    const add = m => { g.add(m); return m; };
+    switch (id) {
+        case 'ball_bk': add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 32, 24),
+            mat(0xffffff, { map: makeTex(256, 256, x => {
+                x.fillStyle = '#f0932b'; x.fillRect(0, 0, 256, 256);
+                x.strokeStyle = '#5b3a0e'; x.lineWidth = 9;
+                x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.stroke();
+                x.beginPath(); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke();
+                x.beginPath(); x.moveTo(0, 44); x.quadraticCurveTo(128, 104, 256, 44); x.stroke();
+                x.beginPath(); x.moveTo(0, 212); x.quadraticCurveTo(128, 152, 256, 212); x.stroke();
+            }) }))); break;
+        case 'ball_soc': add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 32, 24),
+            mat(0xffffff, { map: makeTex(256, 256, x => {
+                x.fillStyle = '#f5f6fa'; x.fillRect(0, 0, 256, 256);
+                x.fillStyle = '#2d3436';
+                [[128, 60], [52, 108], [204, 108], [86, 190], [170, 190], [128, 128]].forEach(p => {
+                    x.beginPath();
+                    for (let k = 0; k < 5; k++) {
+                        const a = -Math.PI / 2 + k * Math.PI * 2 / 5;
+                        const px = p[0] + Math.cos(a) * 26, py = p[1] + Math.sin(a) * 26;
+                        k ? x.lineTo(px, py) : x.moveTo(px, py);
+                    }
+                    x.closePath(); x.fill();
+                });
+            }) }))); break;
+        case 'ball_sm': add(new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 24),
+            mat(0xffffff, { map: makeTex(256, 128, x => {
+                x.fillStyle = '#fd79a8'; x.fillRect(0, 0, 256, 128);
+                x.fillStyle = '#ffeaa7'; x.fillRect(0, 50, 256, 28);
+            }) }))); break;
+        case 'cube_mf': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#1b1b1b'; x.fillRect(0, 0, 128, 128);
+                const cs = ['#e84393', '#00b894', '#f39c12', '#0984e3', '#d63031', '#ffd200', '#55efc4', '#a29bfe', '#ff9f43'];
+                cs.forEach((c, k) => { x.fillStyle = c; x.fillRect(6 + (k % 3) * 41, 6 + Math.floor(k / 3) * 41, 36, 36); });
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.66, 0.66),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cube_y': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#ffd200'; x.fillRect(0, 0, 128, 128);
+                x.fillStyle = '#d9ad00';
+                [[24, 24], [104, 24], [64, 64], [24, 104], [104, 104]].forEach(p => {
+                    x.beginPath(); x.arc(p[0], p[1], 10, 0, 7); x.fill();
+                });
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cube_box': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#c8956a'; x.fillRect(0, 0, 128, 128);
+                x.strokeStyle = '#8d6035'; x.lineWidth = 10;
+                x.strokeRect(5, 5, 118, 118);
+                x.beginPath(); x.moveTo(8, 8); x.lineTo(120, 120); x.moveTo(120, 8); x.lineTo(8, 120); x.stroke();
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.72),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cyl_bat': {
+            const t = makeTex(128, 256, x => {
+                x.fillStyle = '#f0932b'; x.fillRect(0, 0, 128, 256);
+                x.fillStyle = '#ffffff'; x.fillRect(0, 96, 128, 64);
+                x.fillStyle = '#e67e22'; x.font = 'bold 44px sans-serif';
+                x.textAlign = 'center'; x.fillText('+', 64, 142);
+            });
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.78, 28),
+                new THREE.MeshLambertMaterial({ map: t }));
+            add(body);
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 16), mat(0xb2bec3));
+            cap.position.y = 0.43; add(cap);
+            break;
+        }
+        case 'cyl_cup': {
+            add(new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.85, 28), mat(0xa55eea)));
+            const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.14, 24), mat(0x6c5ce7));
+            lid.position.y = 0.5; add(lid);
+            const handle = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 12, 24, Math.PI), mat(0x8d44ad));
+            handle.position.set(0.32, 0.08, 0); handle.rotation.z = Math.PI / 2; handle.rotation.y = Math.PI / 2;
+            add(handle);
+            break;
+        }
+        case 'cyl_can': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#dfe6e9'; x.fillRect(0, 0, 128, 128);
+                x.fillStyle = '#ff9f43'; x.fillRect(0, 34, 128, 60);
+                x.fillStyle = '#fff'; x.font = 'bold 30px Microsoft YaHei';
+                x.textAlign = 'center'; x.fillText('罐头', 64, 76);
+            });
+            add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.72, 28),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cub_yg': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#74b9ff'; x.fillRect(0, 0, 128, 128);
+                x.fillStyle = '#fff'; x.font = 'bold 34px Microsoft YaHei';
+                x.textAlign = 'center'; x.fillText('牙膏', 64, 76);
+                x.fillRect(88, 14, 26, 20);
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.85, 0.24),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cub_board': {
+            const t = makeTex(256, 64, x => {
+                x.fillStyle = '#c8956a'; x.fillRect(0, 0, 256, 64);
+                x.strokeStyle = '#a8763f'; x.lineWidth = 3;
+                for (let k = 0; k < 5; k++) { x.beginPath(); x.moveTo(0, 10 + k * 12); x.lineTo(256, 10 + k * 12); x.stroke(); }
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.48),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cub_soap': add(new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.5), mat(0xfd79a8))); break;
+        case 'cub_milk': {
+            const t = makeTex(128, 128, x => {
+                x.fillStyle = '#f0f6fb'; x.fillRect(0, 0, 128, 128);
+                x.fillStyle = '#0984e3'; x.font = 'bold 36px Microsoft YaHei';
+                x.textAlign = 'center'; x.fillText('牛奶', 64, 78);
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.78, 0.5),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        case 'cub_gear': {
+            add(new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.55, 0.5), mat(0x74b9ff)));
+            const gear = new THREE.Group();
+            gear.add(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.1, 20), mat(0x2f7fd4)));
+            for (let k = 0; k < 8; k++) {
+                const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05), mat(0x2f7fd4));
+                const a = k * Math.PI / 4;
+                tooth.position.set(Math.cos(a) * 0.16, 0, Math.sin(a) * 0.16);
+                gear.add(tooth);
+            }
+            gear.rotation.x = Math.PI / 2; gear.position.set(0, 0, 0.26);
+            add(gear);
+            break;
+        }
+        case 'cub_pen': {
+            const t = makeTex(256, 64, x => {
+                x.fillStyle = '#00b894'; x.fillRect(0, 0, 256, 64);
+                x.fillStyle = 'rgba(255,255,255,.4)'; x.fillRect(0, 10, 256, 14);
+            });
+            add(new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.24, 0.34),
+                new THREE.MeshLambertMaterial({ map: t })));
+            break;
+        }
+        default: add(new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 16), mat(0xcccccc)));
+    }
+    return g;
+}
+
+/* ---- 3D 场景初始化 ---- */
+function init3D() {
+    const wrap = $('glWrap');
+    if (!wrap || typeof THREE === 'undefined') return;
+    renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer3D.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    wrap.appendChild(renderer3D.domElement);
+    scene3D = new THREE.Scene();
+    camera3D = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    scene3D.add(new THREE.AmbientLight(0xffffff, 0.72));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+    sun.position.set(4, 9, 5);
+    scene3D.add(sun);
+    const sun2 = new THREE.DirectionalLight(0xfff2d9, 0.3);
+    sun2.position.set(-5, 4, -6);
+    scene3D.add(sun2);
+    /* 舞台底座：木质圆台 */
+    stageGroup = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.3, 0.32, 56), mat(0xe8d5b0));
+    base.position.y = -0.16;
+    stageGroup.add(base);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(3.18, 0.07, 14, 56), mat(0x8d6035));
+    rim.rotation.x = Math.PI / 2;
+    stageGroup.add(rim);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(3.9, 48),
+        new THREE.MeshBasicMaterial({ color: 0xd8c49a, transparent: true, opacity: 0.5 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.34;
+    stageGroup.add(floor);
+    /* 15 件物品：内圈 5 + 外圈 10 */
+    itemGroups = [];
+    SCENE_ITEMS.forEach((it, i) => {
+        const m = buildItem3D(it.id);
+        const inner = i < 5;
+        const a = ((inner ? i : i - 5) / (inner ? 5 : 10)) * Math.PI * 2 + (inner ? 0.3 : 0) + ((i % 3) - 1) * 0.09;
+        const r = inner ? 1.25 : 2.42;
+        m.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r);
+        m.rotation.y = Math.random() * Math.PI * 2;
+        m.userData.item = it;
+        stageGroup.add(m);
+        itemGroups.push(m);
+    });
+    scene3D.add(stageGroup);
+    bindGL();
+    resize3D();
+    animate3D();
+}
+function updateCam3D() {
+    camera3D.position.set(
+        camR * Math.sin(camPhi) * Math.sin(camTheta),
+        camR * Math.cos(camPhi),
+        camR * Math.sin(camPhi) * Math.cos(camTheta));
+    camera3D.lookAt(0, 0.1, 0);
+}
+function resize3D() {
+    if (!renderer3D) return;
+    const wrap = $('glWrap');
+    const W = wrap.clientWidth || 600, H = wrap.clientHeight || 400;
+    renderer3D.setSize(W, H);
+    camera3D.aspect = W / H;
+    camera3D.updateProjectionMatrix();
+}
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    if (!renderer3D) return;
+    if (!dragging) { idleT += 0.016; if (idleT > 2.5) camTheta += 0.0024; }   // 空闲缓慢自转
+    updateCam3D();
+    renderer3D.render(scene3D, camera3D);
+}
+/* 拖拽旋转视角 + 点击拾取 */
+function bindGL() {
+    const el = renderer3D.domElement;
+    let down = null;
+    el.style.touchAction = 'none';
+    el.addEventListener('pointerdown', e => {
+        down = { x: e.clientX, y: e.clientY };
+        dragging = false; idleT = 0;
+        el.setPointerCapture && el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', e => {
+        if (!down) return;
+        const dx = e.clientX - down.x, dy = e.clientY - down.y;
+        if (Math.abs(dx) + Math.abs(dy) > 7) dragging = true;
+        if (dragging) {
+            camTheta -= dx * 0.0085;
+            camPhi = Math.max(0.38, Math.min(1.32, camPhi - dy * 0.006));
+            down = { x: e.clientX, y: e.clientY };
+        }
+    });
+    el.addEventListener('pointerup', e => {
+        if (down && !dragging) pick3D(e);
+        down = null;
+        setTimeout(() => { dragging = false; }, 60);
+    });
+    el.addEventListener('pointercancel', () => { down = null; dragging = false; });
+}
+function pick3D(e) {
+    const rect = renderer3D.domElement.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera({ x: nx, y: ny }, camera3D);
+    const hits = raycaster.intersectObjects(itemGroups, true);
+    if (hits.length) {
+        let o = hits[0].object;
+        while (o && !o.userData.item) o = o.parent;
+        if (o) clickItem(o.userData.item);
+    }
+}
+window.addEventListener('resize', () => { if (!$('pg-find').classList.contains('hidden')) resize3D(); });
 function clickItem(it) {
     sGood();
     discovered.add(it.id);
@@ -443,20 +701,6 @@ $('revealBtn').onclick = () => {
     $('ballRow')._revealed = true;
     confetti(24); toast('已揭晓全部 15 件物品的形状');
 };
-/* 拖拽旋转 */
-(function () {
-    const stage = $('stage');
-    let down = null, moved = 0;
-    stage.addEventListener('pointerdown', e => { down = e.clientX; moved = 0; dragging = false; });
-    stage.addEventListener('pointermove', e => {
-        if (down === null) return;
-        const dx = e.clientX - down;
-        if (Math.abs(dx) > 6) dragging = true;
-        if (dragging) { rot += dx * 0.006; down = e.clientX; layoutStage(); }
-    });
-    window.addEventListener('pointerup', () => { down = null; setTimeout(() => { dragging = false; }, 50); });
-})();
-window.addEventListener('resize', () => { if (!$('pg-find').classList.contains('hidden')) layoutStage(); });
 function confetti(n) {
     const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
     for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
@@ -915,7 +1159,7 @@ $('nextBtn').onclick = () => { sClick(); pkRound++; $('roundN').textContent = pk
 $('clearBtn').onclick = () => { sClick(); wins = { L: 0, R: 0 }; $('winL').textContent = ''; $('winR').textContent = ''; toast('比分已清空'); };
 
 /* ============ 启动 ============ */
-layoutStage();
+init3D();
 sortInit();
 renderModelChips();
 startBuild('stoolCyl');
