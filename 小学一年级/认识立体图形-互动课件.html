@@ -35,8 +35,8 @@ button { font-family: inherit; cursor: pointer; border: none; }
 /* ===== 环节① 观察发现 ===== */
 .learnWrap { display: flex; gap: 14px; align-items: stretch; }
 .stageBox { flex: 1; position: relative; border-radius: 24px; border: 4px solid #2f5d50;
-    background: radial-gradient(ellipse at 50% 62%, #e8d5b0 0 55%, #ddc79c 56%, #f7f0dd 57%);
-    overflow: hidden; height: clamp(340px, 58vh, 560px); touch-action: none; }
+    background: linear-gradient(180deg, #fdf9f0 0%, #f1e9d6 100%);
+    overflow: hidden; height: clamp(430px, 66vh, 660px); touch-action: none; }
 .stageChip { position: absolute; top: 12px; left: 12px; z-index: 50; background: #fff;
     border: 2px solid #2f5d50; border-radius: 20px; padding: 6px 16px; font-size: clamp(13px,1.5vw,17px);
     font-weight: 900; color: #2f5d50; }
@@ -68,7 +68,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .revealb { width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px; background: #ffd200;
     font-weight: 900; color: #5b4300; font-size: 15px; }
 /* 身份卡 */
-.idcard { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60;
+.idcard { position: absolute; left: 50%; top: 54px; transform: translateX(-50%); z-index: 60;
     background: #fff; border: 3px solid #2f5d50; border-radius: 18px; padding: 10px 18px;
     display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 26px rgba(0,0,0,.22);
     animation: up .3s cubic-bezier(.2,1.3,.4,1); max-width: 92%; }
@@ -584,64 +584,125 @@ function buildItem3D(id) {
     return g;
 }
 
-/* ---- 3D 场景初始化 ---- */
+/* ---- 3D 场景初始化（V2.0：双层台+阴影+相机自适应+底部对齐+浮起选中） ---- */
+let selectedGroup = null, haloRing = null;
+function bottomAlign(g) {
+    /* 把物品底部对齐 group 原点（修复"嵌进盘子里"） */
+    const box = new THREE.Box3().setFromObject(g);
+    const dy = -box.min.y;
+    [...g.children].forEach(c => { c.position.y += dy; });
+    return g;
+}
+function castShadows(g) {
+    g.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+}
 function init3D() {
     const wrap = $('glWrap');
     if (!wrap || typeof THREE === 'undefined') return;
     renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer3D.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer3D.shadowMap.enabled = true;
+    renderer3D.shadowMap.type = THREE.PCFSoftShadowMap;
     wrap.appendChild(renderer3D.domElement);
     scene3D = new THREE.Scene();
-    camera3D = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    scene3D.add(new THREE.AmbientLight(0xffffff, 0.72));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.75);
-    sun.position.set(4, 9, 5);
+    camera3D = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    scene3D.add(new THREE.AmbientLight(0xffffff, 0.66));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(5, 10, 6);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+    sun.shadow.camera.top = 6; sun.shadow.camera.bottom = -6;
     scene3D.add(sun);
-    const sun2 = new THREE.DirectionalLight(0xfff2d9, 0.3);
+    const sun2 = new THREE.DirectionalLight(0xfff2d9, 0.32);
     sun2.position.set(-5, 4, -6);
     scene3D.add(sun2);
-    /* 舞台底座：木质圆台（加大） */
+
+    /* ---- 双层展示台（上层奶油台面 + 下层木色宽底 + 金边） ---- */
     stageGroup = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.72, 0.34, 56), mat(0xe8d5b0));
-    base.position.y = -0.17;
-    stageGroup.add(base);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.08, 14, 56), mat(0x8d6035));
-    rim.rotation.x = Math.PI / 2;
-    stageGroup.add(rim);
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(4.3, 48),
-        new THREE.MeshBasicMaterial({ color: 0xd8c49a, transparent: true, opacity: 0.5 }));
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.36;
+    const topTex = makeTex(512, 512, x => {
+        x.fillStyle = '#f7efdc'; x.fillRect(0, 0, 512, 512);
+        x.strokeStyle = 'rgba(143,96,53,.35)'; x.lineWidth = 3;
+        [70, 130, 190, 245].forEach(r => { x.beginPath(); x.arc(256, 256, r, 0, 7); x.stroke(); });
+        x.strokeStyle = 'rgba(143,96,53,.22)';
+        for (let k = 0; k < 12; k++) {
+            const a = k * Math.PI / 6;
+            x.beginPath(); x.moveTo(256 + Math.cos(a) * 70, 256 + Math.sin(a) * 70);
+            x.lineTo(256 + Math.cos(a) * 245, 256 + Math.sin(a) * 245); x.stroke();
+        }
+    });
+    const topMat = new THREE.MeshLambertMaterial({ map: topTex });
+    const sideMat = mat(0xd9c49a);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.3, 0.28, 56), [sideMat, topMat, sideMat]);
+    top.position.y = 0.14;
+    top.receiveShadow = true;
+    stageGroup.add(top);
+    const bottom = new THREE.Mesh(new THREE.CylinderGeometry(3.62, 3.8, 0.34, 56), mat(0xb08a5a));
+    bottom.position.y = -0.15;
+    stageGroup.add(bottom);
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(3.32, 0.075, 14, 56), mat(0xc9a24d));
+    trim.rotation.x = Math.PI / 2; trim.position.y = 0.29;
+    stageGroup.add(trim);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(5.2, 48),
+        new THREE.MeshBasicMaterial({ color: 0xe4d7bd, transparent: true, opacity: 0.55 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -0.34;
     stageGroup.add(floor);
-    /* 15 件物品：内圈 5 + 外圈 10，整体放大 */
+
+    /* ---- 15 件物品：底部对齐 + 投影 ---- */
     itemGroups = [];
     SCENE_ITEMS.forEach((it, i) => {
         const m = buildItem3D(it.id);
-        /* 长条物品少放大一点，避免外圈相邻碰撞 */
+        bottomAlign(m);
+        castShadows(m);
         const long = it.id === 'cub_board' || it.id === 'cub_pen';
-        m.scale.setScalar(long ? 1.06 : 1.26);
+        m.scale.setScalar(long ? 1.05 : 1.24);
         const inner = i < 5;
         const a = ((inner ? i : i - 5) / (inner ? 5 : 10)) * Math.PI * 2 + (inner ? 0.3 : 0) + ((i % 3) - 1) * 0.09;
         const r = inner ? 1.5 : 2.72;
-        m.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r);
+        const baseY = 0.29;                     // 台面高度
+        m.position.set(Math.cos(a) * r, baseY, Math.sin(a) * r);
         m.rotation.y = Math.random() * Math.PI * 2;
         m.userData.item = it;
-        m.userData.baseScale = m.scale.x;
-        m.userData.popAt = 0;      // 弹跳动画时间戳
+        m.userData.baseY = baseY;
+        m.userData.baseRotY = m.rotation.y;
+        m.userData.state = 'idle';              // idle | sel | found
+        m.userData.wrongAt = 0;
         stageGroup.add(m);
         itemGroups.push(m);
     });
+    /* 选中光环（留在台面上，不跟随浮起） */
+    haloRing = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.72, 40),
+        new THREE.MeshBasicMaterial({ color: 0xffd200, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    haloRing.rotation.x = -Math.PI / 2;
+    haloRing.position.y = 0.305;
+    haloRing.visible = false;
+    stageGroup.add(haloRing);
+
     scene3D.add(stageGroup);
     buildTaskShapes();
     bindGL();
     resize3D();
     animate3D();
 }
+/* 相机自动适配：无论屏幕比例，盘子完整可见且尽量占满画面 */
+function fitCamR() {
+    const wrap = $('glWrap');
+    const aspect = (wrap.clientWidth || 800) / (wrap.clientHeight || 500);
+    const fovV = camera3D.fov * Math.PI / 180;
+    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * aspect);
+    const need = 4.5;                                    // 场景半径（含边距）
+    const distH = need / Math.tan(fovH / 2);
+    const distV = need / Math.tan(fovV / 2);
+    return Math.max(distH, distV) / Math.sin(camPhi);      // 斜视角换算球坐标距离
+}
+let zoomK = 1;                                            // 用户滚轮缩放系数
 function updateCam3D() {
+    const R = fitCamR() * zoomK;
     camera3D.position.set(
-        camR * Math.sin(camPhi) * Math.sin(camTheta),
-        camR * Math.cos(camPhi),
-        camR * Math.sin(camPhi) * Math.cos(camTheta));
-    camera3D.lookAt(0, 0.1, 0);
+        R * Math.sin(camPhi) * Math.sin(camTheta),
+        R * Math.cos(camPhi),
+        R * Math.sin(camPhi) * Math.cos(camTheta));
+    camera3D.lookAt(0, 0.2, 0);
 }
 function resize3D() {
     if (!renderer3D) return;
@@ -651,23 +712,31 @@ function resize3D() {
     camera3D.aspect = W / H;
     camera3D.updateProjectionMatrix();
 }
+const floatH = 0.62, foundH = 0.38;
 function animate3D() {
     requestAnimationFrame(animate3D);
     if (!renderer3D) return;
-    const now = performance.now();
+    const t = performance.now() / 1000;
     itemGroups.forEach(m => {
-        if (m.userData.popAt) {
-            const t = (now - m.userData.popAt) / 600;          // 0~1 弹跳
-            if (t < 1) {
-                const s = m.userData.baseScale * (1 + Math.sin(t * Math.PI * 3) * 0.16 * (1 - t));
-                m.scale.setScalar(s);
-            } else { m.scale.setScalar(m.userData.baseScale); m.userData.popAt = 0; }
-        }
+        const u = m.userData;
+        const targetY = u.baseY + (u.state === 'sel' ? floatH + Math.sin(t * 2.1) * 0.05
+                                   : u.state === 'found' ? foundH + Math.sin(t * 1.6 + u.baseRotY) * 0.035
+                                   : 0);
+        m.position.y += (targetY - m.position.y) * 0.14;              // 浮起/落回缓动
+        if (u.state === 'sel') m.rotation.y = u.baseRotY + Math.sin(t * 2.4) * 0.4;   // 选中：左右摇摆
+        else if (u.wrongAt && performance.now() - u.wrongAt < 600) {  // 找错：抖动
+            m.rotation.z = Math.sin((performance.now() - u.wrongAt) / 25) * 0.09;
+        } else { m.rotation.z = 0; }
     });
+    if (haloRing && haloRing.visible) {
+        haloRing.rotation.z = t * 1.5;                                // 光环慢转
+        const sc = 1 + Math.sin(t * 3) * 0.06;
+        haloRing.scale.set(sc, sc, 1);
+    }
     updateCam3D();
     renderer3D.render(scene3D, camera3D);
 }
-/* 拖拽旋转视角 + 滚轮缩放 + 点击拾取 */
+/* 拖拽视角 + 滚轮缩放 + 点击拾取 */
 function bindGL() {
     const el = renderer3D.domElement;
     let down = null;
@@ -683,7 +752,7 @@ function bindGL() {
         if (Math.abs(dx) + Math.abs(dy) > 7) dragging = true;
         if (dragging) {
             camTheta -= dx * 0.0085;
-            camPhi = Math.max(0.38, Math.min(1.32, camPhi - dy * 0.006));
+            camPhi = Math.max(0.42, Math.min(1.3, camPhi - dy * 0.006));
             down = { x: e.clientX, y: e.clientY };
         }
     });
@@ -693,23 +762,21 @@ function bindGL() {
         setTimeout(() => { dragging = false; }, 60);
     });
     el.addEventListener('pointercancel', () => { down = null; dragging = false; });
-    /* 滚轮缩放（双指捏合走 wheel 的 ctrlKey 也可用） */
     el.addEventListener('wheel', e => {
         e.preventDefault();
-        camR = Math.max(4.2, Math.min(14, camR + e.deltaY * 0.006));
+        zoomK = Math.max(0.6, Math.min(1.8, zoomK + e.deltaY * 0.0012));
     }, { passive: false });
-    /* 手机双指捏合缩放 */
-    let pinch0 = 0, r0 = 0;
+    let pinch0 = 0, k0 = 1;
     el.addEventListener('touchstart', e => {
         if (e.touches.length === 2) {
             pinch0 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            r0 = camR;
+            k0 = zoomK;
         }
     }, { passive: true });
     el.addEventListener('touchmove', e => {
         if (e.touches.length === 2 && pinch0) {
             const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            camR = Math.max(4.2, Math.min(14, r0 * pinch0 / d));
+            zoomK = Math.max(0.6, Math.min(1.8, k0 * pinch0 / d));
         }
     }, { passive: true });
 }
@@ -718,7 +785,7 @@ function pick3D(e) {
     const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera({ x: nx, y: ny }, camera3D);
-    const hits = raycaster.intersectObjects(itemGroups, true);
+    const hits = raycaster.intersectObjects(itemGroups.filter(g => g.userData.state !== 'found'), true);
     if (hits.length) {
         let o = hits[0].object;
         while (o && !o.userData.item) o = o.parent;
@@ -738,7 +805,7 @@ function buildTaskShapes() {
         b.innerHTML = `<span class="msvg">${shapeModelSVG(k)}</span>${SHAPES[k].name}`;
         b.onclick = () => {
             sClick();
-            taskShape = (taskShape === k) ? null : k;    // 再点一次取消
+            taskShape = (taskShape === k) ? null : k;
             foundIds = new Set();
             clearMarks();
             buildTaskShapes();
@@ -757,34 +824,48 @@ function updateTaskBoard() {
     $('leftN').textContent = total - found;
     $('taskProgI').style.width = (found / total * 100) + '%';
 }
-/* 3D 高亮标记：金色发光 + 头顶星星 */
-const starTex = () => makeTex(64, 64, x => {
-    x.font = '52px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText('⭐', 32, 34);
-});
+/* 选中效果：浮起+摇摆+台面光环 */
+function selectGroup(g) {
+    if (selectedGroup && selectedGroup !== g && selectedGroup.userData.state === 'sel') selectedGroup.userData.state = 'idle';
+    selectedGroup = g;
+    g.userData.state = 'sel';
+    if (haloRing) {
+        haloRing.visible = true;
+        haloRing.position.x = g.position.x;
+        haloRing.position.z = g.position.z;
+    }
+}
+function deselect() {
+    if (selectedGroup && selectedGroup.userData.state === 'sel') selectedGroup.userData.state = 'idle';
+    selectedGroup = null;
+    if (haloRing) haloRing.visible = false;
+}
 let _starTex = null;
-function markFound(group) {
-    group.traverse(o => {
-        if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x8a6d00);
+function markFound(g) {
+    g.traverse(o => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x8a6d00); });
+    if (!_starTex) _starTex = makeTex(64, 64, x => {
+        x.font = '52px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.fillText('\u2b50', 32, 34);
     });
-    group.userData.popAt = performance.now();
-    if (!_starTex) _starTex = starTex();
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: _starTex, transparent: true }));
     sp.scale.setScalar(0.55);
-    sp.position.y = 1.05;
+    sp.position.y = 1.1;
     sp.userData.isStar = true;
-    group.add(sp);
+    g.add(sp);
+    g.userData.state = 'found';
+    if (selectedGroup === g) deselect();
 }
-function flashWrong(group) {
-    group.traverse(o => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x991111); });
-    group.userData.popAt = performance.now();
+function flashWrong(g) {
+    g.userData.wrongAt = performance.now();
+    g.traverse(o => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x991111); });
     setTimeout(() => {
-        group.traverse(o => { if (o.isMesh && o.material && o.material.emissive && !group.userData.found) o.material.emissive.setHex(0x000000); });
+        if (g.userData.state !== 'found') g.traverse(o => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x000000); });
     }, 700);
 }
 function clearMarks() {
+    deselect();
     itemGroups.forEach(g => {
-        g.userData.found = false;
+        g.userData.state = 'idle';
         g.traverse(o => {
             if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(0x000000);
             if (o.userData.isStar) o.parent.remove(o);
@@ -793,7 +874,7 @@ function clearMarks() {
 }
 function clickItem(it, group3d) {
     const sh = SHAPES[it.shape];
-    /* 身份卡：点任何物品都告诉学生这是什么 */
+    /* 身份卡：点任何物品都告诉学生这是什么（置顶显示） */
     $('icShape').textContent = sh.name;
     $('icShape').className = 'badge ' + sh.tag;
     $('icName').textContent = it.name;
@@ -801,31 +882,33 @@ function clickItem(it, group3d) {
     const ic = $('idcard');
     ic.classList.remove('hidden');
     clearTimeout(ic._t); ic._t = setTimeout(() => ic.classList.add('hidden'), 3200);
-    /* 任务模式：判定对错 + 计数 */
-    if (taskShape && group3d) {
-        if (foundIds.has(it.id)) { toast('⭐ 这个已经找到过啦，转一转找找别的'); return; }
+    if (!group3d) return;
+    /* 已找到的物品：点击只提示 */
+    if (group3d.userData.state === 'found') { toast('\u2b50 ' + it.name + ' 已经找到啦'); return; }
+    /* 任务模式：判定对错 */
+    if (taskShape) {
         if (it.shape === taskShape) {
             foundIds.add(it.id);
-            group3d.userData.found = true;
             markFound(group3d);
             sGood(); confetti(14);
             const total = taskTotal(), found = foundIds.size;
             if (found >= total) {
                 sWin(); confetti(60);
-                toast(`🎉 ${sh.name} ${total} 个全部找到啦！点「换个形状重新找」继续`);
+                toast('\ud83c\udf89 ' + sh.name + ' ' + total + ' 个全部找到啦！点「换个形状重新找」继续');
             } else {
-                toast(`✓ 又找到一个${sh.name}！还剩 ${total - found} 个`);
+                toast('\u2713 又找到一个' + sh.name + '！还剩 ' + (total - found) + ' 个');
             }
             updateTaskBoard();
         } else {
             flashWrong(group3d);
             sBad();
-            toast(`❌ 这是${sh.name}，不是${SHAPES[taskShape].name}哦，再找找`);
+            toast('\u274c 这是' + sh.name + '，不是' + SHAPES[taskShape].name + '哦，再找找');
         }
-    } else if (group3d) {
-        group3d.userData.popAt = performance.now();   // 自由模式：点一下跳一跳
-        sClick();
+        return;
     }
+    /* 自由模式：选中浮起摇摆；再点自己取消 */
+    if (selectedGroup === group3d) { deselect(); sClick(); }
+    else { selectGroup(group3d); sClick(); }
 }
 $('revealBtn').onclick = () => {
     if (!taskShape) { toast('先在右边选一个形状哦'); return; }
