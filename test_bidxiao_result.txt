@@ -1,0 +1,41 @@
+==== 比大小 V2.0（极简版）回归测试 ====
+PASS A1 状态对象存在
+PASS A2 第一题
+PASS A3 左数量 1~10: 10
+PASS A4 右数量 1~10: 3
+PASS A5 左图案数与数量一致
+PASS A6 右图案数与数量一致
+PASS A7 左右图案类型不同
+PASS A8 题号显示正确
+PASS A9 初始未显示符号
+PASS A10 初始隐藏数字（先数数）
+PASS B1 300 题数量/图案/答案全部一致 (bad=0)
+PASS B2 三种答案都出现 (gt=129, lt=140, eq=31)
+PASS C0 已造出左>右的题
+PASS C1 答错不锁定
+PASS C2 错误按钮抖动
+PASS C3 出现鼓励提示
+PASS C4 提示文案: 再想一想，数一数两边各有几个～
+PASS C5 连续答错仍留在本题
+PASS D1 答对后锁定
+PASS D2 正确按钮变绿
+PASS D3 其他按钮变淡
+PASS D4 中央显示符号
+PASS D5 符号和文字正确
+PASS D6 亮出两侧数字
+PASS D7 左数字正确: 9 个
+PASS D8 锁定后点击无效
+PASS D9 2 秒内不换题（提前触发检查）
+PASS D10 2 秒后自动下一题
+PASS D11 新题解锁
+PASS D12 新题符号复位
+PASS D13 新题数字重新隐藏
+PASS E1 等于题符号正确
+PASS E2 小于题符号正确
+PASS F1 A 键显示答案
+PASS F2 空格键下一题
+PASS F3 手动换题后旧定时器不串题
+PASS G1 50 题随机全流程零失败 (bad=0)
+
+
+==== 结果: 37 通过 / 0 失败 ====
