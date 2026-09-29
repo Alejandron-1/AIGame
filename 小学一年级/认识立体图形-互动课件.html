@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧊 认识立体图形 · 公开课互动课件</title>
+<style>
+/* ===== 全局：黑板绿公开课风 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(180deg, #fdf8ef 0%, #f7f0dd 100%);
+    min-height: 100vh; color: #2d3436; user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+/* ===== 顶栏 ===== */
+.top { display: flex; align-items: center; gap: 12px; padding: 10px 18px;
+    background: linear-gradient(180deg, #f4edd8, #efe6cd); border-bottom: 3px solid #2f5d50; flex-wrap: wrap; }
+.logo { width: 46px; height: 46px; border-radius: 12px; background: #f5a623; display: flex;
+    align-items: center; justify-content: center; font-size: 26px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.15); }
+.titles h1 { font-size: clamp(20px, 2.4vw, 30px); font-weight: 900; color: #2f5d50; letter-spacing: 2px; }
+.titles small { display: block; font-size: 12px; color: #8a9a94; font-weight: 700; }
+.tabs { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+.navbtn { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 16px;
+    border-radius: 24px; background: #fff; border: 3px solid #2f5d50; color: #2f5d50; text-align: center; }
+.navbtn b { font-size: clamp(13px, 1.5vw, 17px); }
+.navbtn small { font-size: 10.5px; font-weight: 700; opacity: .75; }
+.navbtn.on { background: #2f5d50; color: #ffeaa7; }
+.navbtn:active { transform: scale(.95); }
+
+.page { max-width: 1280px; margin: 0 auto; padding: 14px 18px 40px; }
+
+/* ===== 环节① 观察发现 ===== */
+.learnWrap { display: flex; gap: 14px; align-items: stretch; }
+.stageBox { flex: 1; position: relative; border-radius: 24px; border: 4px solid #2f5d50;
+    background: radial-gradient(ellipse at 50% 62%, #e8d5b0 0 55%, #ddc79c 56%, #f7f0dd 57%);
+    overflow: hidden; height: clamp(340px, 58vh, 560px); touch-action: none; }
+.stageChip { position: absolute; top: 12px; left: 12px; z-index: 50; background: #fff;
+    border: 2px solid #2f5d50; border-radius: 20px; padding: 6px 16px; font-size: clamp(13px,1.5vw,17px);
+    font-weight: 900; color: #2f5d50; }
+.obj { position: absolute; transform: translate(-50%, -100%); cursor: pointer;
+    transition: filter .2s; }
+.obj:hover { filter: brightness(1.12) drop-shadow(0 0 6px #ffd200); }
+.obj svg, .obj img { display: block; width: 100%; height: 100%; pointer-events: none; }
+.obj.sel { filter: brightness(1.2) drop-shadow(0 0 10px #ffd200); }
+.side { width: 280px; flex-shrink: 0; background: #fff; border: 3px solid #2f5d50;
+    border-radius: 20px; padding: 14px; }
+.side h3 { font-size: 17px; color: #2f5d50; margin-bottom: 4px; }
+.side .sdesc { font-size: 13px; color: #7f8c8d; line-height: 1.7; margin-bottom: 10px; }
+.cntRow { display: flex; align-items: center; gap: 8px; border: 2.5px solid #2f5d50;
+    border-radius: 24px; padding: 8px 14px; margin: 7px 0; background: #fff; }
+.cntRow .dot { width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0; }
+.cntRow .nm { font-weight: 900; font-size: 15px; }
+.cntRow .ct { margin-left: auto; font-weight: 900; color: #2f5d50; font-size: 14.5px; }
+.revealb { width: 100%; margin-top: 10px; padding: 10px; border-radius: 12px; background: #ffd200;
+    font-weight: 900; color: #5b4300; font-size: 15px; }
+/* 身份卡 */
+.idcard { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60;
+    background: #fff; border: 3px solid #2f5d50; border-radius: 18px; padding: 10px 18px;
+    display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 26px rgba(0,0,0,.22);
+    animation: up .3s cubic-bezier(.2,1.3,.4,1); max-width: 92%; }
+@keyframes up { from { transform: translate(-50%, 20px); opacity: 0; } }
+.idcard .badge { background: #ffd200; border-radius: 16px; padding: 5px 14px; font-weight: 900;
+    font-size: 15px; color: #5b4300; flex-shrink: 0; }
+.idcard .who { font-weight: 900; font-size: 18px; }
+.idcard .tip { font-size: 13.5px; color: #636e72; margin-top: 2px; }
+
+/* ===== 环节② 分类命名 ===== */
+.sortPanel { background: #fff; border: 4px solid #2f5d50; border-radius: 20px; padding: 14px; margin-bottom: 14px; }
+.sortCap { font-size: clamp(14px, 1.6vw, 18px); font-weight: 900; color: #2f5d50; margin-bottom: 10px; }
+.poolRow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 74px;
+    background: #fdf8ef; border-radius: 14px; padding: 8px; }
+.itemchip { width: 86px; background: #fff; border: 3px solid #dfe6e9; border-radius: 14px;
+    padding: 7px 4px 5px; text-align: center; cursor: grab; position: relative; touch-action: none; }
+.itemchip:active { cursor: grabbing; }
+.itemchip .im { font-size: 34px; line-height: 1.15; }
+.itemchip img.im { width: 100%; height: 52px; object-fit: contain; }
+.itemchip .nm { font-size: 12px; font-weight: 800; color: #555; }
+.ghost { position: fixed; z-index: 99; pointer-events: none; transform: translate(-50%,-50%) scale(1.1) rotate(-3deg);
+    opacity: .9; }
+.mrow { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; flex-wrap: wrap; }
+.modelchip { display: flex; align-items: center; gap: 7px; background: #fff; border: 3px solid #2f5d50;
+    border-radius: 24px; padding: 7px 15px; cursor: grab; font-weight: 900; font-size: 15px;
+    color: #2f5d50; touch-action: none; }
+.modelchip .msvg { width: 30px; height: 26px; }
+.regions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 6px; }
+.bottomRow { display: grid; grid-template-columns: 3fr 1fr; gap: 12px; margin-top: 12px; }
+.region { border: 3px dashed #2f5d50; border-radius: 18px; min-height: 170px; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px; transition: background .2s, border-color .2s; }
+.region.hover { background: #eaf6ef; border-style: solid; }
+.region.good { border-color: #00b894; background: #e6fff5; }
+.region.bad { border-color: #ff7675; background: #fff0f0; }
+.rhead { border: 2.5px solid #2f5d50; border-radius: 14px; min-height: 40px; background: #fff;
+    display: flex; align-items: center; justify-content: center; gap: 8px; padding: 5px 10px;
+    font-weight: 900; font-size: 15px; color: #2f5d50; }
+.rhead .msvg { width: 30px; height: 24px; }
+.rhead.empty { color: #b2bec3; }
+.ritems { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.rtag { width: 64px; background: #fff; border: 2.5px solid #dfe6e9; border-radius: 12px;
+    padding: 5px 3px; text-align: center; cursor: grab; position: relative; touch-action: none; }
+.rtag .im { font-size: 27px; line-height: 1.1; }
+.rtag img.im { width: 100%; height: 40px; object-fit: contain; }
+.rtag .nm { font-size: 11px; font-weight: 800; color: #666; }
+.otherBin { border: 3px dashed #a04040; border-radius: 18px; min-height: 170px; padding: 10px;
+    background: #fff5f5; display: flex; flex-direction: column; gap: 8px; }
+.otherBin.hover { background: #ffe9e9; border-style: solid; }
+.otherBin .rhead { border-color: #a04040; color: #a04040; background: #fff; }
+.binCap { font-size: 11.5px; color: #a04040; font-weight: 700; line-height: 1.5; }
+.sortBtns { display: flex; gap: 14px; justify-content: center; margin-top: 16px; }
+.bigb { padding: 14px 40px; border-radius: 30px; font-size: 18px; font-weight: 900; color: #5b4300;
+    background: linear-gradient(180deg, #ffd200, #f5a623); box-shadow: 0 5px 0 #d99114; }
+.bigb:active { transform: translateY(3px); box-shadow: none; }
+.bigb.gray { background: #b2bec3; color: #fff; box-shadow: 0 5px 0 #95a5a6; }
+.verdict { text-align: center; margin-top: 12px; min-height: 34px; font-size: clamp(16px, 2vw, 22px); font-weight: 900; }
+.verdict.good { color: #00b894; } .verdict.bad { color: #e17055; }
+
+/* ===== 环节③ 拼搭 ===== */
+.subtabs { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.subtab { padding: 10px 20px; border-radius: 24px; background: #fff; border: 3px solid #2f5d50;
+    font-weight: 900; font-size: clamp(14px, 1.6vw, 17px); color: #2f5d50; }
+.subtab.on { background: #f5a623; border-color: #d99114; color: #5b4300; }
+.buildStage { position: relative; height: clamp(340px, 52vh, 520px); border-radius: 22px;
+    border: 4px solid #2f5d50; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 66%, #e8d5b0 0 52%, #ddc79c 53%, #f7f0dd 54%); }
+.tray { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 12px; justify-content: center; }
+.part { width: 64px; height: 84px; cursor: grab; touch-action: none; position: relative; z-index: 20; }
+.part svg, .part img { width: 100%; height: 100%; pointer-events: none; }
+.ring { position: absolute; width: 58px; height: 58px; border-radius: 50%;
+    border: 4px dashed #f5a623; background: rgba(255, 210, 0, .15);
+    transform: translate(-50%, -50%); animation: ringPulse 1.4s ease-in-out infinite; }
+@keyframes ringPulse { 50% { box-shadow: 0 0 0 8px rgba(255,210,0,.2); } }
+.plankEl { position: absolute; transform: translate(-50%, -50%); transition: top .7s cubic-bezier(.4,1.6,.5,1); z-index: 30; }
+.speakBubble { position: absolute; right: 14px; bottom: 14px; background: #fff; border: 3px solid #2f5d50;
+    border-radius: 18px; padding: 12px 20px; max-width: 60%; font-size: clamp(14px, 1.8vw, 20px);
+    font-weight: 800; color: #2f5d50; box-shadow: 0 8px 20px rgba(0,0,0,.15); z-index: 40; }
+.rollBtn { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    padding: 13px 40px; border-radius: 30px; font-size: 19px; font-weight: 900; color: #5b4300;
+    background: linear-gradient(180deg, #ffd200, #f5a623); box-shadow: 0 5px 0 #d99114; z-index: 40; }
+.rollBtn:active { transform: translateX(-50%) scale(.94); }
+.cartAll { position: absolute; transition: transform 2.4s ease-in; z-index: 25; }
+@keyframes cartRoll { to { transform: translateX(560px); } }
+@keyframes cartFail { 0%,100% { translate: 0 0; } 25% { translate: 8px -6px; rotate: 2deg; }
+    55% { translate: -6px 4px; rotate: -3deg; } 80% { translate: 4px -3px; } }
+
+/* ===== 环节④ PK ===== */
+.pkCtrl { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+.roundPill { background: #fff; border-radius: 20px; padding: 9px 22px; font-weight: 900; font-size: 16px; }
+.nextBtn { padding: 11px 30px; border-radius: 26px; font-size: 17px; font-weight: 900; color: #5b4300;
+    background: linear-gradient(180deg, #ffd200, #f5a623); box-shadow: 0 4px 0 #d99114; }
+.clearBtn { padding: 11px 22px; border-radius: 26px; font-size: 15px; font-weight: 900;
+    background: #fff; color: #636e72; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.pkRule { text-align: center; font-size: clamp(12px, 1.4vw, 15.5px); color: #7f8c8d;
+    font-weight: 800; margin-bottom: 10px; padding: 0 10px; }
+.pkWrap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+.pkTeam { border-radius: 22px; border: 5px solid var(--pc); overflow: hidden; background: #fff;
+    display: flex; flex-direction: column; }
+.pkHead { background: var(--pc); color: #fff; padding: 8px 16px; display: flex;
+    align-items: center; justify-content: space-between; font-weight: 900; font-size: 18px; }
+.pkHead .wins { font-size: 20px; letter-spacing: 2px; }
+.pkBody { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.winBadge { background: #ffd200; border: 2.5px solid #e1a90f; color: #5b4300; border-radius: 24px;
+    padding: 6px 18px; font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+.podium { width: min(100%, 260px); height: 84px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, #e8d5b0 40%, #ddc79c 100%);
+    display: flex; align-items: center; justify-content: center; min-height: 84px; }
+.podium .obj3d { width: 86px; height: 74px; display: flex; align-items: center; justify-content: center; }
+.podium .obj3d svg { width: 100%; height: 100%; }
+.resLine { min-height: 26px; font-size: 15.5px; font-weight: 900; color: #00b894; }
+.pkOpts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.pko { padding: 11px 6px; border-radius: 14px; background: #f5f6fa; border: 2.5px solid #dfe6e9;
+    font-weight: 900; font-size: 15.5px; color: #2d3436; display: flex; align-items: center;
+    justify-content: center; gap: 7px; transition: all .1s; }
+.pko:hover:not(:disabled) { border-color: var(--pc); }
+.pko:disabled { opacity: .45; }
+.pko.right { background: #00b894; color: #fff; border-color: #00b894; }
+.pko.wrong { background: #ff7675; color: #fff; border-color: #ff7675; animation: owob2 .35s; }
+@keyframes owob2 { 25% { translate: -7px 0; } 50% { translate: 7px 0; } }
+.vsBadge { align-self: center; font-size: clamp(26px, 3.4vw, 40px); font-weight: 900; color: #e84393;
+    font-style: italic; text-shadow: 2px 2px 0 #fff; }
+.countdown { position: fixed; inset: 0; z-index: 95; display: none; align-items: center;
+    justify-content: center; background: rgba(20,25,45,.75); font-size: clamp(90px, 18vh, 160px);
+    font-weight: 900; color: #ffd200; text-shadow: 0 6px 24px rgba(0,0,0,.5); }
+.countdown.show { display: flex; }
+
+/* ===== 手机适配 ===== */
+@media (max-width: 900px) {
+    .learnWrap { flex-direction: column; }
+    .side { width: 100%; }
+    .regions { grid-template-columns: 1fr 1fr; }
+    .bottomRow { grid-template-columns: 1fr; }
+    .pkWrap { grid-template-columns: 1fr; }
+    .vsBadge { text-align: center; }
+}
+@media (max-width: 560px) {
+    .regions { grid-template-columns: 1fr; }
+    .itemchip { width: 72px; }
+    .tabs { justify-content: center; }
+    .navbtn { padding: 6px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+    <div class="logo">🧊</div>
+    <div class="titles"><h1>认识立体图形</h1><small>人教版一年级上册 · 公开课互动课件</small></div>
+    <div class="tabs">
+        <button class="navbtn on" data-pg="find"><b>① 观察发现</b><small>3D 情境图</small></button>
+        <button class="navbtn" data-pg="sort"><b>② 分类命名</b><small>拖一拖 分一分</small></button>
+        <button class="navbtn" data-pg="build"><b>③ 动手拼搭</b><small>拼凳子 玩滚动</small></button>
+        <button class="navbtn" data-pg="pk"><b>④ PK练习</b><small>双人对战</small></button>
+    </div>
+</div>
+
+<div class="page">
+    <!-- ① 观察发现 -->
+    <div id="pg-find">
+        <div class="learnWrap">
+            <div class="stageBox" id="stage">
+                <div class="stageChip">🖱️ 拖一拖转一转 · 点一点认一认</div>
+            </div>
+            <div class="side">
+                <h3>🔍 我发现的形状</h3>
+                <div class="sdesc">情境图里藏着 <b>15 件物品</b>，转动视角找一找，点击物品看看它是什么形状。</div>
+                <div class="cntRow"><span class="dot" style="background:#a29bfe"></span><span class="nm">正方体</span><span class="ct">3 件</span></div>
+                <div class="cntRow"><span class="dot" style="background:#74b9ff"></span><span class="nm">长方体</span><span class="ct">6 件</span></div>
+                <div class="cntRow"><span class="dot" style="background:#fdcb6e"></span><span class="nm">圆柱</span><span class="ct">3 件</span></div>
+                <div class="cntRow" id="ballRow"><span class="dot" style="background:#ff9dd3"></span><span class="nm">？</span><span class="ct">共 3 件</span></div>
+                <button class="revealb" id="revealBtn">👩‍🏫 老师揭晓全部形状</button>
+            </div>
+        </div>
+        <div class="idcard hidden" id="idcard">
+            <span class="badge" id="icShape"></span>
+            <div><div class="who" id="icName"></div><div class="tip" id="icTip"></div></div>
+        </div>
+    </div>
+
+    <!-- ② 分类命名 -->
+    <div id="pg-sort" class="hidden">
+        <div class="sortPanel">
+            <div class="sortCap">① 把物品拖进下面 4 个区域——同一类放在一起；不属于的，扔进「另类桶」</div>
+            <div class="poolRow" id="poolRow"></div>
+            <div class="sortCap" style="margin-top:12px">② 把「模型图+名字」拖到区域头上，给区域命名</div>
+            <div class="mrow" id="modelRow"></div>
+        </div>
+        <div class="regions" id="regions"></div>
+        <div class="bottomRow">
+            <div class="otherBin" id="otherBin"><div class="rhead">🗑️ 另类桶</div>
+                <div class="binCap">不属于这四类的上半图书页物放这里（如圆锥、三棱柱）</div>
+                <div class="ritems" id="binItems" style="justify-content:flex-start"></div></div>
+        </div>
+        <div class="sortBtns">
+            <button class="bigb" id="verifyBtn">✅ 验证分类</button>
+            <button class="bigb gray" id="reBtn">🔄 重新整理</button>
+        </div>
+        <div class="verdict" id="verdict"></div>
+    </div>
+
+    <!-- ③ 动手拼搭 -->
+    <div id="pg-build" class="hidden">
+        <div class="subtabs" id="buildTabs">
+            <button class="subtab on" data-b="stoolCyl">拼一拼：圆柱小凳</button>
+            <button class="subtab" data-b="stoolCube">拼一拼：方柱小凳</button>
+            <button class="subtab" data-b="cart">玩一玩：会滚的平板车</button>
+        </div>
+        <div class="buildStage" id="buildStage">
+            <div class="tray" id="tray"></div>
+            <div class="speakBubble hidden" id="speakB"></div>
+            <button class="rollBtn hidden" id="rollBtn">🔄 滚一滚！</button>
+            <button class="rollBtn hidden" id="swapBtn" style="bottom:70px;background:#fff;color:#2f5d50">🔄 换成长方体试试</button>
+        </div>
+    </div>
+
+    <!-- ④ PK练习 -->
+    <div id="pg-pk" class="hidden">
+        <div class="pkCtrl">
+            <div class="roundPill">第 <span id="roundN">1</span> 轮</div>
+            <button class="nextBtn" id="nextBtn">▶ 下一轮</button>
+            <button class="clearBtn" id="clearBtn">清空比分</button>
+        </div>
+        <div class="pkRule">倒计时后两边同时出现物品，谁先点对它的名字（正方体 / 长方体 / 圆柱 / 球）谁得分；点错不扣分，答正即可，但时间还在走哦！</div>
+        <div class="pkWrap">
+            <div class="pkTeam" style="--pc:#74b9ff">
+                <div class="pkHead"><span>🫐 蓝莓队</span><span class="wins" id="winL"></span></div>
+                <div class="pkBody">
+                    <div class="winBadge hidden" id="bwL">🏆 本轮获胜！</div>
+                    <div class="podium"><div class="obj3d" id="objL"></div></div>
+                    <div class="resLine" id="resL">&nbsp;</div>
+                    <div class="pkOpts" id="optsL"></div>
+                </div>
+            </div>
+            <div class="vsBadge">VS</div>
+            <div class="pkTeam" style="--pc:#f5a623">
+                <div class="pkHead"><span>🍊 橙子队</span><span class="wins" id="winR"></span></div>
+                <div class="pkBody">
+                    <div class="winBadge hidden" id="bwR">🏆 本轮获胜！</div>
+                    <div class="podium"><div class="obj3d" id="objR"></div></div>
+                    <div class="resLine" id="resR">&nbsp;</div>
+                    <div class="pkOpts" id="optsR"></div>
+                </div>
+            </div>
+        </div>
+        <div class="countdown hidden" id="cd"></div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="立体图形素材.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[randInt(0, a.length - 1)];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ============ 音效 ============ */
+let actx = null;
+function beep(f, d = .12, t = 'sine', v = .15) {
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = t; o.frequency.value = f;
+        g.gain.setValueAtTime(v, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + d);
+        o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+    } catch (e) {}
+}
+const sGood = () => { beep(660, .1); setTimeout(() => beep(880, .16), 90); };
+const sBad = () => beep(200, .25, 'sawtooth', .1);
+const sClick = () => beep(700, .05, 'triangle');
+const sSnap = () => { beep(300, .08, 'square', .16); setTimeout(() => beep(600, .1), 60); };
+const sWin = () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .2), i * 130));
+let toastT = 0;
+function toast(s) { const t = $('toast'); t.textContent = s; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
+function confetti(n = 50) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+
+/* ============ 物品库（素材 js 提供 drawItem） ============ */
+const SCENE_ITEMS = [
+    { id: 'ball_bk',  name: '篮球',   shape: 'ball' },
+    { id: 'ball_soc', name: '足球',   shape: 'ball' },
+    { id: 'ball_sm',  name: '小皮球', shape: 'ball' },
+    { id: 'cube_mf',  name: '魔方',   shape: 'cube' },
+    { id: 'cube_y',   name: '黄积木', shape: 'cube' },
+    { id: 'cube_box', name: '木箱',   shape: 'cube' },
+    { id: 'cyl_bat',  name: '电池',   shape: 'cyl' },
+    { id: 'cyl_cup',  name: '保温杯', shape: 'cyl' },
+    { id: 'cyl_can',  name: '罐头',   shape: 'cyl' },
+    { id: 'cub_yg',   name: '牙膏盒', shape: 'cuboid' },
+    { id: 'cub_board',name: '木板',   shape: 'cuboid' },
+    { id: 'cub_soap', name: '香皂盒', shape: 'cuboid' },
+    { id: 'cub_milk', name: '牛奶盒', shape: 'cuboid' },
+    { id: 'cub_gear', name: '齿轮盒', shape: 'cuboid' },
+    { id: 'cub_pen',  name: '铅笔盒', shape: 'cuboid' },
+];
+const OTHER_ITEMS = [
+    { id: 'other_cone',  name: '冰淇淋',   shape: 'other' },
+    { id: 'other_prism', name: '三角积木', shape: 'other' },
+];
+const TIPS = {
+    ball: '圆圆滚滚，到处都能滚',
+    cube: '方方正正，六个面一样大',
+    cuboid: '长长方方，像个小盒子',
+    cyl: '上下一样粗，两头是平平的圆',
+    other: '它不是这四种形状哦',
+};
+/* 形状元数据（名称/统计栏色点/徽章类） */
+const SHAPES = {
+    ball:   { name: '球',     dot: '#ff9dd3', tag: 'st-ball' },
+    cube:   { name: '正方体', dot: '#a29bfe', tag: 'st-cube' },
+    cuboid: { name: '长方体', dot: '#74b9ff', tag: 'st-cuboid' },
+    cyl:    { name: '圆柱',   dot: '#fdcb6e', tag: 'st-cyl' },
+    other:  { name: '其他',   dot: '#c8a0a0', tag: '' },
+};
+
+/* ============ 页签 ============ */
+document.querySelectorAll('.navbtn').forEach(t => t.onclick = () => {
+    sClick();
+    document.querySelectorAll('.navbtn').forEach(x => x.classList.toggle('on', x === t));
+    ['find', 'sort', 'build', 'pk'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== t.dataset.pg));
+    if (t.dataset.pg === 'pk' && !pkStarted) { pkStarted = true; pkStartRound(); }   // 首次进入PK页才开始倒计时
+});
+
+/* ================================================================
+   环节① 观察发现：伪 3D 椭圆舞台
+================================================================ */
+let rot = 0, discovered = new Set(), dragging = false;
+const foundShape = () => discovered.size > 0 && [...discovered].some(id => SCENE_ITEMS.find(x => x.id === id).shape === 'ball');
+
+function layoutStage() {
+    const stage = $('stage');
+    stage.querySelectorAll('.obj').forEach(e => e.remove());
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const cx = W / 2, cy = H * 0.60, rx = W * 0.40, ry = H * 0.24;
+    const n = SCENE_ITEMS.length;
+    SCENE_ITEMS.forEach((it, i) => {
+        const a = (i / n) * Math.PI * 2 + rot;
+        const depth = (Math.sin(a) + 1) / 2;          // 0后 1前
+        const x = cx + rx * Math.cos(a);
+        const y = cy + ry * Math.sin(a);
+        const s = 0.52 + depth * 0.62;
+        const el = document.createElement('div');
+        el.className = 'obj';
+        el.style.width = (76 * s) + 'px';
+        el.style.height = (76 * s) + 'px';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.zIndex = 10 + Math.round(depth * 100);
+        el.innerHTML = drawItem(it.id);
+        el.onclick = () => { if (!dragging) clickItem(it); };
+        stage.appendChild(el);
+    });
+}
+function clickItem(it) {
+    sGood();
+    discovered.add(it.id);
+    const sh = SHAPES[it.shape];
+    $('icShape').textContent = sh.name;
+    $('icShape').className = 'badge ' + sh.tag;
+    $('icName').textContent = it.name;
+    $('icTip').textContent = sh.tip;
+    const ic = $('idcard');
+    ic.classList.remove('hidden'); ic.classList.add('show');
+    clearTimeout(ic._t); ic._t = setTimeout(() => ic.classList.add('hidden'), 3400);
+    /* 统计栏更新：球在发现前显示？ */
+    if (it.shape === 'ball' && !$('ballRow')._revealed) {
+        $('ballRow').querySelector('.nm').textContent = '球';
+        $('ballRow')._revealed = true;
+        confetti(16);
+    }
+}
+$('revealBtn').onclick = () => {
+    discovered = new Set(SCENE_ITEMS.map(x => x.id));
+    $('ballRow').querySelector('.nm').textContent = '球';
+    $('ballRow')._revealed = true;
+    confetti(24); toast('已揭晓全部 15 件物品的形状');
+};
+/* 拖拽旋转 */
+(function () {
+    const stage = $('stage');
+    let down = null, moved = 0;
+    stage.addEventListener('pointerdown', e => { down = e.clientX; moved = 0; dragging = false; });
+    stage.addEventListener('pointermove', e => {
+        if (down === null) return;
+        const dx = e.clientX - down;
+        if (Math.abs(dx) > 6) dragging = true;
+        if (dragging) { rot += dx * 0.006; down = e.clientX; layoutStage(); }
+    });
+    window.addEventListener('pointerup', () => { down = null; setTimeout(() => { dragging = false; }, 50); });
+})();
+window.addEventListener('resize', () => { if (!$('pg-find').classList.contains('hidden')) layoutStage(); });
+function confetti(n) {
+    const cs = ['#ff6b6b', '#ffa502', '#ffd32a', '#2ed573', '#1e90ff', '#a55eea', '#ff7f50'];
+    for (let i = 0; i < n; i++) { const c = document.createElement('i'); c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw'; c.style.background = cs[i % cs.length];
+        c.style.animationDelay = Math.random() * .8 + 's'; c.style.animationDuration = 2 + Math.random() * 1.5 + 's';
+        document.body.appendChild(c); setTimeout(() => c.remove(), 4200); }
+}
+const st = document.createElement('style');
+st.textContent = '.confetti { position: fixed; top: -16px; width: 11px; height: 16px; border-radius: 3px; z-index: 90; pointer-events: none; animation: cfall linear forwards; } @keyframes cfall { to { transform: translateY(108vh) rotate(720deg); } }';
+document.head.appendChild(st);
+
+/* ================================================================
+   环节② 分类命名：拖拽分类
+================================================================ */
+let REGIONS = [null, null, null, null];   // 每区域命名的形状(null=未命名)
+let sortState = [];                          // {item, loc:'pool'|{region:i}|'bin'}
+let dragGhost = null, dragPay = null;
+
+function sortInit() {
+    REGIONS = [null, null, null, null];
+    sortState = shuffle(SCENE_ITEMS.concat(OTHER_ITEMS)).map(it => ({ item: it, loc: 'pool' }));
+    renderSort();
+}
+function renderSort() {
+    /* 物品池 */
+    const pr = $('poolRow'); pr.innerHTML = '';
+    sortState.filter(s => s.loc === 'pool').forEach(s => pr.appendChild(chipEl(s)));
+    if (!pr.children.length) pr.innerHTML = '<span style="color:#b2bec3;font-size:13px;padding:8px">物品都分好啦！</span>';
+    /* 四区域 */
+    const rg = $('regions'); rg.innerHTML = '';
+    REGIONS.forEach((shape, i) => {
+        const d = document.createElement('div');
+        d.className = 'region'; d.dataset.region = i;
+        const head = document.createElement('div');
+        head.className = 'rhead' + (shape ? '' : ' empty');
+        head.dataset.region = i;
+        if (shape) {
+            head.innerHTML = `<span class="msvg">${shapeModelSVG(shape)}</span><span>${SHAPES[shape].name}</span>`;
+            head.title = '点击可重新命名';
+            head.onclick = () => { const n = prompt('给区域重新命名（如：圆圆的）：', SHAPES[shape].name); if (n && n.trim()) { head.querySelector('span:last-child').textContent = n.trim(); } };
+        } else head.innerHTML = '<span>? 贴名字</span>';
+        d.appendChild(head);
+        const items = document.createElement('div');
+        items.className = 'ritems'; items.dataset.region = i;
+        sortState.filter(s => s.loc && s.loc !== 'bin' && s.loc.region === i).forEach(s => items.appendChild(chipEl(s)));
+        d.appendChild(items);
+        rg.appendChild(d);
+    });
+    /* 另类桶 */
+    const bin = $('binItems'); bin.innerHTML = '';
+    sortState.filter(s => s.loc === 'bin').forEach(s => bin.appendChild(chipEl(s)));
+    if (!bin.children.length) bin.innerHTML = '<span style="color:#c9a0a0;font-size:12px;padding:4px">（暂无）</span>';
+    /* 拖拽绑定 */
+    bindChipDrag();
+    bindDropZones();
+}
+function chipEl(s) {
+    const d = document.createElement('div');
+    d.className = 'itemchip';
+    d.innerHTML = `${s.item.img ? `<img class="im" src="${s.item.img}">` : `<div class="im">${drawItem(s.item.id)}</div>`}<div class="nm">${s.item.name}</div>`;
+    d.dataset.sid = s.item.id;
+    return d;
+}
+/* 通用指针拖拽（芯片统一走这里） */
+function bindChipDrag() {
+    document.querySelectorAll('#poolRow .itemchip, .ritems .itemchip').forEach(chip => {
+        chip.onpointerdown = e => {
+            e.preventDefault();
+            const sid = chip.dataset.sid;
+            const ghost = chip.cloneNode(true);
+            ghost.className = 'itemchip ghost';
+            document.body.appendChild(ghost);
+            const move = ev => { ghost.style.left = ev.clientX + 'px'; ghost.style.top = ev.clientY + 'px'; };
+            move(e);
+            const up = ev => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                ghost.remove();
+                dropChipAt(sid, ev.clientX, ev.clientY);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+        };
+    });
+}
+function dropChipAt(sid, x, y) {
+    const hit = (el) => { const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom ? el : null; };
+    const s = sortState.find(v => v.item.id === sid);
+    const regions = document.querySelectorAll('#regions .region');
+    for (let i = 0; i < regions.length; i++) {
+        if (hit(regions[i])) { s.loc = { region: i }; sClick(); renderSort(); return; }
+    }
+    if (hit($('otherBin'))) { s.loc = 'bin'; sClick(); renderSort(); return; }
+    const pool = hit($('poolRow'));
+    if (pool) { s.loc = 'pool'; renderSort(); return; }
+    renderSort();   // 没落到任何区域：回原位
+}
+function bindDropZones() {
+    document.querySelectorAll('#regions .region, #otherBin, #poolRow').forEach(el => {
+        el.onpointerenter = () => { /* 高亮由 CSS hover 处理 */ };
+    });
+}
+/* 模型芯片拖到区域头命名 */
+function bindModelChips() {
+    document.querySelectorAll('#modelRow .modelchip').forEach(chip => {
+        chip.onpointerdown = e => {
+            e.preventDefault();
+            const shape = chip.dataset.shape;
+            const ghost = chip.cloneNode(true);
+            ghost.className = 'modelchip ghost'; ghost.style.position = 'fixed';
+            document.body.appendChild(ghost);
+            const move = ev => { ghost.style.left = ev.clientX + 'px'; ghost.style.top = ev.clientY + 'px'; };
+            move(e);
+            const up = ev => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                ghost.remove();
+                const heads = document.querySelectorAll('#regions .rhead');
+                heads.forEach((h, i) => {
+                    const r = h.getBoundingClientRect();
+                    if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) {
+                        REGIONS[i] = shape; sGood(); renderSort();
+                    }
+                });
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+        };
+    });
+}
+function renderModelChips() {
+    const row = $('modelRow'); row.innerHTML = '';
+    Object.keys(SHAPES).filter(k => k !== 'other').forEach(k => {
+        const c = document.createElement('div');
+        c.className = 'modelchip'; c.dataset.shape = k;
+        c.innerHTML = `<span class="msvg">${shapeModelSVG(k)}</span>${SHAPES[k].name}`;
+        row.appendChild(c);
+    });
+    bindModelChips();
+}
+$('verifyBtn').onclick = () => {
+    let allGood = true, filled = 0;
+    const rg = document.querySelectorAll('#regions .region');
+    REGIONS.forEach((shape, i) => {
+        const items = sortState.filter(s => s.loc && s.loc !== 'bin' && s.loc.region === i);
+        rg[i].classList.remove('good', 'bad');
+        if (!items.length) return;
+        filled++;
+        const ok = shape && items.every(s => s.item.shape === shape);
+        rg[i].classList.add(ok ? 'good' : 'bad');
+        if (!ok) allGood = false;
+    });
+    const binItems = sortState.filter(s => s.loc === 'bin');
+    const binOk = binItems.every(s => s.item.shape === 'other');
+    if (binItems.length && !binOk) { allGood = false; $('otherBin').style.borderColor = '#ff7675'; }
+    else $('otherBin').style.borderColor = '#a04040';
+    const v = $('verdict');
+    if (filled < 2 && !binItems.length) { v.className = 'verdict bad'; v.textContent = '先拖几个物品分一分吧～'; allGood = false; return; }
+    if (allGood) { v.className = 'verdict good'; v.textContent = '🎉 全部分对啦！每一类都是同一种形状，冰淇淋这种圆锥要进另类桶！'; confetti(40); sWin(); }
+    else { v.className = 'verdict bad'; v.textContent = '🔴 有区域「再想想」：看看每个区域里的物品是不是同一种形状？'; sBad(); }
+};
+$('reBtn').onclick = () => { sClick(); sortInit(); };
+
+/* ================================================================
+   环节③ 动手拼搭
+================================================================ */
+const BUILDS = {
+    stoolCyl: { label: '拼一拼：圆柱小凳', partShape: 'cyl', parts: 4, cap: '把 4 个圆柱拖到桌面下方的光圈里，拼成一张小凳子。', okText: '小凳搭好啦！圆柱上下是平平的圆面，立起来稳稳的！', cart: false },
+    stoolCube: { label: '拼一拼：方柱小凳', partShape: 'cuboid', parts: 4, cap: '把 4 个长方体拖到光圈里，也能拼出小凳子哦。', okText: '长方体也能承重！方方的小凳很结实！', cart: false },
+    cart: { label: '玩一玩：会滚的平板车', partShape: 'cyl', parts: 3, cap: '在平板下面放 3 个圆柱"轮子"，再点「滚一滚」。试试长方体行不行？', okText: '轮子装好啦！点「滚一滚」出发～', cart: true },
+};
+let buildMode = null, buildState = null;
+function startBuild(key) {
+    buildMode = key;
+    buildState = { placed: 0, phase: 1, rolled: false };
+    const cfg = BUILDS[key];
+    const stage = $('buildStage');
+    /* 清场（保留托盘/气泡/按钮） */
+    stage.querySelectorAll('.part,.ring,.plankEl,.cartAll').forEach(e => e.remove());
+    $('speakB').classList.add('hidden'); $('rollBtn').classList.add('hidden'); $('swapBtn').classList.add('hidden');
+    const stg = stage;
+    /* 平板 */
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const plank = document.createElement('div');
+    plank.className = 'plankEl'; plank.id = 'plank';
+    plank.style.left = (W / 2) + 'px';
+    plank.style.top = (H * 0.30) + 'px';
+    plank.innerHTML = drawItem(key === 'cart' ? 'plank_cart' : 'plank');
+    stage.appendChild(plank);
+    /* 光圈 */
+    const slots = [];
+    const n = cfg.parts;
+    const sx = W / 2, sy = H * 0.62;
+    for (let i = 0; i < n; i++) {
+        const ring = document.createElement('div');
+        ring.className = 'ring';
+        const dx = (i - (n - 1) / 2) * 74;
+        ring.style.left = (sx + dx) + 'px'; ring.style.top = (sy + 30) + 'px';
+        ring.dataset.filled = '0';
+        stage.appendChild(ring);
+        slots.push({ ring, x: sx + dx, y: sy + 30, filled: false });
+    }
+    buildState.slots = slots;
+    /* 托盘零件 */
+    const tray = $('tray'); tray.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+        const p = document.createElement('div');
+        p.className = 'part';
+        p.innerHTML = drawPart(cfg.partShape);
+        p.dataset.shape = cfg.partShape;
+        p.onpointerdown = e => dragPart(e, p);
+        tray.appendChild(p);
+    }
+    $('stepTip') && $('stepTip').remove();
+    /* 提示 */
+    let tip = stage.querySelector('.tipchip');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'stageChip tipchip'; stage.appendChild(tip); }
+    tip.style.top = '12px'; tip.style.left = '12px';
+    tip.innerHTML = cfg.cap + `　<b>已放好 <span id="cntN">0</span>/${n}</b> · 点已放好的零件可以取下来`;
+    buildState.cfg = cfg;
+}
+function dragPart(e, partEl) {
+    e.preventDefault();
+    const stage = $('buildStage');
+    const rect = stage.getBoundingClientRect();
+    const shape = partEl.dataset.shape;
+    const ghost = partEl.cloneNode(true);
+    ghost.style.position = 'fixed'; ghost.style.zIndex = 99;
+    ghost.style.left = (e.clientX - 32) + 'px'; ghost.style.top = (e.clientY - 42) + 'px';
+    ghost.style.width = '64px'; ghost.style.height = '84px'; ghost.style.pointerEvents = 'none';
+    document.body.appendChild(ghost);
+    partEl.style.opacity = '.3';
+    const move = ev => {
+        ghost.style.left = (ev.clientX - 32) + 'px'; ghost.style.top = (ev.clientY - 42) + 'px';
+    };
+    const up = ev => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        ghost.remove();
+        partEl.style.opacity = '';
+        /* 落点在舞台上？找最近空圈 */
+        const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+        let best = null, bd = 1e9;
+        buildState.slots.forEach(sl => {
+            if (sl.filled) return;
+            const d = Math.hypot(px - sl.x, py - sl.y);
+            if (d < bd) { bd = d; best = sl; }
+        });
+        const cfg = buildState.cfg;
+        if (best && bd < 90 && shape === cfg.partShape) {
+            best.filled = true; buildState.placed++;
+            best.ring.dataset.filled = '1';
+            best.ring.style.borderStyle = 'solid';
+            const p2 = partEl.cloneNode(true);
+            p2.style.width = '58px'; p2.style.height = '74px';
+            p2.style.position = 'absolute';
+            p2.style.left = (best.x - 29) + 'px'; p2.style.top = (best.y - 62) + 'px';
+            p2.style.zIndex = 20;
+            p2.onclick = () => {   // 点已放好的零件取下
+                if (buildState.placed <= 0) return;
+                buildState.placed--;
+                best.filled = false;
+                best.ring.style.borderStyle = 'dashed';
+                p2.remove(); sClick();
+                const c = $('buildStage').querySelector('#cntN'); if (c) c.textContent = buildState.placed;
+            };
+            $('buildStage').appendChild(p2);
+            buildState['part' + buildState.slots.indexOf(best)] = p2;
+            sSnap();
+            const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
+            if (buildState.placed >= cfg.parts) buildComplete();
+            partEl.remove();
+        } else if (best && bd < 200 && shape !== cfg.partShape) {
+            /* 形状不对：弹回并提示（平板车换长方体阶段除外——那阶段 partShape 已是 cuboid） */
+            sBad();
+            fbMsg('形状不对哦，再看看需要什么零件～');
+        } else {
+            fbMsg('');
+        }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+}
+function fbMsg(t) {
+    const b = $('speakB');
+    if (!t) { b.classList.add('hidden'); return; }
+    b.textContent = t; b.classList.remove('hidden');
+}
+function buildComplete() {
+    const cfg = buildState.cfg;
+    const plank = $('plank');
+    if (plank) plank.style.top = (parseFloat(plank.style.top) + 86) + 'px';   // 桌面落下
+    sWin(); confetti(30);
+    const b = $('speakB');
+    b.textContent = (buildMode === 'cart') ? cfg.okText : '🎉 ' + cfg.okText;
+    b.classList.remove('hidden');
+    if (buildMode === 'cart') {
+        setTimeout(() => {
+            $('rollBtn').classList.remove('hidden');
+            $('swapBtn').classList.remove('hidden');
+            b.textContent = '轮子装好啦！点「滚一滚」看看跑不跑得动～';
+        }, 1600);
+    }
+}
+$('rollBtn').onclick = () => {
+    sClick();
+    const stage = $('buildStage');
+    const cart = stage.querySelector('.cartAll') || buildCart();
+    const cylWheels = buildState.phase !== 2;
+    if (cylWheels) {
+        cart.style.animation = 'cartRoll 2.4s ease-in forwards';
+        sWin();
+        setTimeout(() => {
+            fbMsg('平板车滚起来啦！圆柱躺倒就能滚，古人用它搬重物～');
+            $('swapBtn').classList.remove('hidden');
+        }, 2400);
+    } else {
+        cart.style.animation = 'cartFail .8s ease-in-out 2';
+        sBad();
+        fbMsg('颠簸得厉害，滚不动！长方体的面是平的，圆柱躺倒才能滚哦');
+    }
+};
+$('swapBtn').onclick = () => {
+    sClick();
+    buildState.phase = 2;
+    /* 移除圆柱轮子与车，换成长方体零件 */
+    const stage = $('buildStage');
+    stage.querySelectorAll('.part,.ring,.cartAll').forEach(e => e.remove());
+    buildState.placed = 0; buildState.rolled = false;
+    $('rollBtn').classList.remove('hidden');
+    buildState.slots.forEach(sl => { sl.filled = false; });
+    const W = stage.clientWidth, H = stage.clientHeight, sx = W / 2, sy = H * 0.62;
+    buildState.slots.forEach((sl, i) => {
+        const dx = (i - 1) * 74;
+        sl.x = sx + dx; sl.y = sy + 30;
+        const ring = document.createElement('div');
+        ring.className = 'ring';
+        ring.style.left = sl.x + 'px'; ring.style.top = sl.y + 'px';
+        stage.appendChild(ring);
+    });
+    const tray = $('tray'); tray.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const p = document.createElement('div');
+        p.className = 'part'; p.dataset.shape = 'cuboid';
+        p.innerHTML = drawPart('cuboid');
+        p.onpointerdown = e => dragPart(e, p);
+        tray.appendChild(p);
+    }
+    fbMsg('把 3 个长方体当轮子，看看行不行？');
+};
+function buildCart() {
+    const stage = $('buildStage');
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const cart = document.createElement('div');
+    cart.className = 'cartAll';
+    cart.style.left = (W / 2 - 60) + 'px'; cart.style.top = (H * 0.62 - 66) + 'px';
+    cart.innerHTML = `<div style="position:relative;width:220px;height:90px">
+        <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="18" y="10" width="184" height="26" rx="6" fill="#c8a06a" stroke="#9a7440" stroke-width="3"/>
+            <circle cx="55" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
+            <circle cx="110" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
+            <circle cx="165" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
+            <ellipse cx="55" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
+            <ellipse cx="110" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
+            <ellipse cx="165" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
+        </svg></div>`;
+    stage.appendChild(cart);
+    return cart;
+}
+document.querySelectorAll('#buildTabs .subtab').forEach(b => b.onclick = () => {
+    sClick();
+    document.querySelectorAll('#buildTabs .subtab').forEach(x => x.classList.toggle('on', x === b));
+    startBuild(b.dataset.b);
+});
+
+/* ================================================================
+   环节④ PK练习
+================================================================ */
+let pkRound = 1, wins = { L: 0, R: 0 }, pkStarted = false;
+let pkTimers = { L: { start: 0, iv: 0 }, R: { start: 0, iv: 0 } };
+let pkAnswered = { L: false, R: false };
+
+function pkRandomItem() { return pick(SCENE_ITEMS); }
+function pkStartRound() {
+    if (!$('objL')) return;
+    pkAnswered = { L: false, R: false };
+    ['bwL', 'bwR'].forEach(id => $(id).classList.add('hidden'));
+    ['resL', 'resR'].forEach(id => $(id).innerHTML = '&nbsp;');
+    ['objL', 'objR'].forEach(id => { $(id).innerHTML = ''; });
+    const items = [pkRandomItem(), pkRandomItem()];
+    const sides = ['L', 'R'];
+    $('cd').classList.add('show');
+    let n = 3;
+    $('cd').textContent = n;
+    const iv = setInterval(() => {
+        n--;
+        if (n > 0) { $('cd').textContent = n; beep(500, .1, 'square', .12); }
+        else {
+            clearInterval(iv);
+            $('cd').textContent = '开始！'; beep(900, .2);
+            setTimeout(() => {
+                $('cd').classList.remove('show');
+                /* 亮出物品并开始计时 */
+                sides.forEach((side, k) => {
+                    const it = items[k];
+                    const team = side === 'L' ? 'L' : 'R';
+                    pkTimers[side].start = performance.now();
+                    pkTimers[side].item = it;
+                    $(side === 'L' ? 'objL' : 'objR').innerHTML = drawItem(it.id);
+                    const opts = $(side === 'L' ? 'optsL' : 'optsR');
+                    opts.innerHTML = '';
+                    const PK_SHAPES = ['ball', 'cube', 'cuboid', 'cyl'];
+                    shuffle(PK_SHAPES).forEach(sh => {
+                        const b = document.createElement('button');
+                        b.className = 'pko';
+                        b.dataset.k = sh;
+                        b.innerHTML = `<span class="dot" style="background:${SHAPES[sh].dot}"></span>${SHAPES[sh].name}`;
+                        b.onclick = () => pkAnswer(side, sh, b);
+                        opts.appendChild(b);
+                    });
+                });
+            }, 450);
+        }
+    }, 900);
+}
+function pkAnswer(side, shape, btn) {
+    const T = pkTimers[side];
+    if (!T.item || pkAnswered[side]) return;
+    if (shape === T.item.shape) {
+        pkAnswered[side] = true;
+        clearInterval(T.iv);
+        T.secs = +((performance.now() - T.start) / 1000).toFixed(2);
+        btn.classList.add('right');
+        [...(side === 'L' ? $('optsL') : $('optsR')).children].forEach(x => x.disabled = true);
+        sGood();
+        $(side === 'L' ? 'resL' : 'resR').textContent = `✓ 答对啦！用时 ${T.secs.toFixed(2)} 秒`;
+        const other = side === 'L' ? 'R' : 'L';
+        if (pkAnswered[other]) {
+            /* 两队都答对：用时短者本轮获胜得⭐ */
+            const O = pkTimers[other];
+            const winner = T.secs < O.secs ? side : O.secs < T.secs ? other : null;
+            if (winner) {
+                wins[winner]++;
+                $(winner === 'L' ? 'winL' : 'winR').textContent = '⭐'.repeat(Math.min(5, wins[winner]));
+                $(winner === 'L' ? 'bwL' : 'bwR').classList.remove('hidden');
+                sWin(); confetti(24);
+            } else toast('平局！下一轮见分晓');
+        }
+    } else {
+        btn.classList.add('wrong'); sBad();
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+    }
+}
+$('nextBtn').onclick = () => { sClick(); pkRound++; $('roundN').textContent = pkRound; pkStartRound(); };
+$('clearBtn').onclick = () => { sClick(); wins = { L: 0, R: 0 }; $('winL').textContent = ''; $('winR').textContent = ''; toast('比分已清空'); };
+
+/* ============ 启动 ============ */
+layoutStage();
+sortInit();
+renderModelChips();
+startBuild('stoolCyl');
+
+</script>
+</body>
+</html>
