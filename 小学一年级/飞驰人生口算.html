@@ -131,6 +131,24 @@ button { font-family: inherit; cursor: pointer; border: none; }
     opacity: 0; pointer-events: none; transition: all .25s;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    .wrap { padding: 12px 12px 30px; }
+    .top { flex-direction: column; gap: 8px; }
+    .top h1 { text-align: center; }
+    #btnRestart { position: static; margin-top: 8px; }
+    .qset { gap: 8px; }
+    .qchip { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; }
+    .qchip select { margin-left: 0; flex: 1; max-width: 60%; }
+    .cols { grid-template-columns: 1fr; gap: 12px; }
+    .col { padding: 12px 12px 12px; }
+    .qcard { font-size: 34px; padding: 14px 6px; }
+    .opts { gap: 9px; }
+    .opts button { min-height: 54px; font-size: 24px; }
+    .track { height: 40px; }
+    .car { width: 34px; }
+}
 </style>
 </head>
 <body>

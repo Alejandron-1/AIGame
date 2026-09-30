@@ -190,6 +190,17 @@
     .shake { animation: shake 0.35s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
     .hidden { display: none !important; }
+
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    .topbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+    .topbar .title { font-size: 17px; width: 100%; text-align: center; }
+    .topbar .stats { font-size: 13px; gap: 10px; }
+    .main { flex-direction: column; }
+    .team { flex: 0 0 auto; }
+    .arena { flex: 1; }
+    .overlay .panel { width: 92%; padding: 18px 16px; }
+}
 </style>
 </head>
 <body>

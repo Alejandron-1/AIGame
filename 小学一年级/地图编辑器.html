@@ -134,6 +134,22 @@
         position: absolute; top: 10px; right: 14px; background: rgba(0,0,0,0.55); color: #ffd200;
         padding: 6px 14px; border-radius: 20px; font-size: 12px; z-index: 8; pointer-events: none;
     }
+
+/* ===== 手机适配（基础：竖排布局） ===== */
+@media (max-width: 760px) {
+    body { height: auto; overflow: auto; }
+    .topbar { flex-wrap: wrap; gap: 6px; padding: 8px 10px; }
+    .topbar .title { font-size: 17px; }
+    .tbtn { padding: 7px 10px; font-size: 12px; }
+    .main { flex-direction: column; }
+    .toolbar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 6px; gap: 4px; }
+    .toolbar .grp { display: none; }
+    .tool { flex: 1 0 21%; padding: 6px 2px; }
+    .tool select { width: 100%; }
+    .canvaswrap { padding: 8px; }
+    .canvas { height: 120vw; }
+    .prop { width: 100%; border-left: none; border-top: 1px solid #ddd; }
+}
 </style>
 </head>
 <body>

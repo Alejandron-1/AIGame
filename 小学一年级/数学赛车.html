@@ -236,6 +236,36 @@ input[type=number] {
 /* ===== 撒花 ===== */
 .confetti { position: absolute; top: -16px; width: 10px; height: 15px; border-radius: 2px; animation: fall linear forwards; z-index: 1; }
 @keyframes fall { to { transform: translateY(108vh) rotate(720deg); } }
+
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    #homeScreen { padding: 14px 12px; }
+    .home { flex-direction: column; gap: 14px; }
+    .hero { margin-bottom: 14px; }
+    .hero h1 { letter-spacing: 2px; }
+    .modes { gap: 10px; }
+    .modecard { padding: 14px 10px; }
+    .modecard h3 { font-size: 17px; }
+    .modecard p { font-size: 12px; }
+    .side { width: 100%; padding: 12px; }
+    .start-row { margin-top: 16px; }
+    #btnStart { font-size: 21px; padding: 13px 40px; }
+    .rtop { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+    .rtitle { font-size: 17px; }
+    .rwrap { padding: 10px 12px 20px; }
+    .lane { grid-template-columns: 1fr; gap: 4px; }
+    .ltag { display: flex; align-items: center; justify-content: space-between; }
+    .lscore { margin-top: 0; }
+    .road { height: 72px; }
+    .car { width: 84px; }
+    .finish { width: 26px; background-size: 13px 13px; }
+    .answerArea { flex-direction: column; gap: 12px; }
+    .qpanel { max-width: 100%; padding: 12px 14px; }
+    .qtext { font-size: 32px; margin: 8px 0; }
+    .opts { gap: 9px; margin-top: 10px; }
+    .opts button { min-height: 52px; font-size: 24px; border-radius: 12px; }
+    .qmsg { font-size: 17px; }
+}
 </style>
 </head>
 <body>

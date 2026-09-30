@@ -147,6 +147,21 @@
         padding: 10px 22px; border-radius: 30px; font-size: 14px; z-index: 60; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
     .toast.show { opacity: 1; }
     .input-m { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; font-family: inherit; margin: 8px 0; text-align: center; outline: none; }
+
+/* ===== 手机适配 ===== */
+@media (max-width: 760px) {
+    body { height: auto; overflow: auto; }
+    .topbar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+    .topbar .title { font-size: 18px; }
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #ddd; max-height: none; }
+    .center { padding: 10px; }
+    .board { min-height: 88vw; }
+    .bottom { flex-direction: column; }
+    .curcard { width: 100%; }
+    .dicebox { width: 100%; padding: 10px 0; }
+    .log { max-height: 120px; }
+}
 </style>
 </head>
 <body>
