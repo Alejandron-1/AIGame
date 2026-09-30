@@ -36,7 +36,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .learnWrap { display: flex; gap: 14px; align-items: stretch; }
 .stageBox { flex: 1; position: relative; border-radius: 24px; border: 4px solid #2f5d50;
     background: linear-gradient(180deg, #fdf9f0 0%, #f1e9d6 100%);
-    overflow: hidden; height: clamp(430px, 66vh, 660px); touch-action: none; }
+    overflow: hidden; height: clamp(460px, 72vh, 760px); touch-action: none; }
 .stageChip { position: absolute; top: 12px; left: 12px; z-index: 50; background: #fff;
     border: 2px solid #2f5d50; border-radius: 20px; padding: 6px 16px; font-size: clamp(13px,1.5vw,17px);
     font-weight: 900; color: #2f5d50; }
@@ -127,35 +127,32 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .verdict { text-align: center; margin-top: 12px; min-height: 34px; font-size: clamp(16px, 2vw, 22px); font-weight: 900; }
 .verdict.good { color: #00b894; } .verdict.bad { color: #e17055; }
 
-/* ===== 环节③ 拼搭 ===== */
+/* ===== 环节③ 拼搭（真3D） ===== */
 .subtabs { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .subtab { padding: 10px 20px; border-radius: 24px; background: #fff; border: 3px solid #2f5d50;
     font-weight: 900; font-size: clamp(14px, 1.6vw, 17px); color: #2f5d50; }
 .subtab.on { background: #f5a623; border-color: #d99114; color: #5b4300; }
-.buildStage { position: relative; height: clamp(340px, 52vh, 520px); border-radius: 22px;
+.buildStage { position: relative; height: clamp(420px, 58vh, 600px); border-radius: 22px;
     border: 4px solid #2f5d50; overflow: hidden;
-    background: radial-gradient(ellipse at 50% 66%, #e8d5b0 0 52%, #ddc79c 53%, #f7f0dd 54%); }
-.tray { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 12px; justify-content: center; }
-.part { width: 64px; height: 84px; cursor: grab; touch-action: none; position: relative; z-index: 20; }
-.part svg, .part img { width: 100%; height: 100%; pointer-events: none; }
-.ring { position: absolute; width: 58px; height: 58px; border-radius: 50%;
-    border: 4px dashed #f5a623; background: rgba(255, 210, 0, .15);
-    transform: translate(-50%, -50%); animation: ringPulse 1.4s ease-in-out infinite; }
-@keyframes ringPulse { 50% { box-shadow: 0 0 0 8px rgba(255,210,0,.2); } }
-.plankEl { position: absolute; transform: translate(-50%, -50%); transition: top .7s cubic-bezier(.4,1.6,.5,1); z-index: 30; }
-.speakBubble { position: absolute; right: 14px; bottom: 14px; background: #fff; border: 3px solid #2f5d50;
-    border-radius: 18px; padding: 12px 20px; max-width: 60%; font-size: clamp(14px, 1.8vw, 20px);
-    font-weight: 800; color: #2f5d50; box-shadow: 0 8px 20px rgba(0,0,0,.15); z-index: 40; }
+    background: linear-gradient(180deg, #fdf6e8, #f0e4c8); }
+#glBuild { position: absolute; inset: 0; }
+#glBuild canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.tray { position: absolute; top: 96px; left: 0; right: 0; display: flex; gap: 12px;
+    justify-content: center; z-index: 40; pointer-events: none; }
+.part { pointer-events: auto; width: 60px; height: 78px; cursor: grab;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,.3)); }
+.part svg { width: 100%; height: 100%; pointer-events: none; }
+.tipchip { z-index: 55; }
+.speakBubble { position: absolute; top: 50px; left: 12px; right: auto; max-width: 52%;
+    z-index: 60; background: #fff; border: 3px solid #2f5d50; border-radius: 18px;
+    padding: 10px 18px; font-size: clamp(13px, 1.7vw, 19px); font-weight: 800; color: #2f5d50;
+    box-shadow: 0 8px 20px rgba(0,0,0,.16); }
 .rollBtn { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
     padding: 13px 40px; border-radius: 30px; font-size: 19px; font-weight: 900; color: #5b4300;
-    background: linear-gradient(180deg, #ffd200, #f5a623); box-shadow: 0 5px 0 #d99114; z-index: 40; }
+    background: linear-gradient(180deg, #ffd200, #f5a623); box-shadow: 0 5px 0 #d99114; z-index: 60; }
 .rollBtn:active { transform: translateX(-50%) scale(.94); }
-.cartAll { position: absolute; transition: transform 2.4s ease-in; z-index: 25; }
-@keyframes cartRoll { to { transform: translateX(560px); } }
-@keyframes cartFail { 0%,100% { translate: 0 0; } 25% { translate: 8px -6px; rotate: 2deg; }
-    55% { translate: -6px 4px; rotate: -3deg; } 80% { translate: 4px -3px; } }
 
-/* ===== 环节④ PK ===== */
+/* ===== 环节④ PK（真3D） ===== */
 .pkCtrl { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
 .roundPill { background: #fff; border-radius: 20px; padding: 9px 22px; font-weight: 900; font-size: 16px; }
 .nextBtn { padding: 11px 30px; border-radius: 26px; font-size: 17px; font-weight: 900; color: #5b4300;
@@ -170,14 +167,11 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .pkHead { background: var(--pc); color: #fff; padding: 8px 16px; display: flex;
     align-items: center; justify-content: space-between; font-weight: 900; font-size: 18px; }
 .pkHead .wins { font-size: 20px; letter-spacing: 2px; }
-.pkBody { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.pkBody { padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
 .winBadge { background: #ffd200; border: 2.5px solid #e1a90f; color: #5b4300; border-radius: 24px;
-    padding: 6px 18px; font-size: 16px; font-weight: 900; margin-bottom: 4px; }
-.podium { width: min(100%, 260px); height: 84px; border-radius: 50%;
-    background: radial-gradient(ellipse at center, #e8d5b0 40%, #ddc79c 100%);
-    display: flex; align-items: center; justify-content: center; min-height: 84px; }
-.podium .obj3d { width: 86px; height: 74px; display: flex; align-items: center; justify-content: center; }
-.podium .obj3d svg { width: 100%; height: 100%; }
+    padding: 6px 18px; font-size: 16px; font-weight: 900; }
+.podium3d { width: 100%; height: 200px; position: relative; }
+.podium3d canvas { width: 100%; height: 100%; display: block; }
 .resLine { min-height: 26px; font-size: 15.5px; font-weight: 900; color: #00b894; }
 .pkOpts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
 .pko { padding: 11px 6px; border-radius: 14px; background: #f5f6fa; border: 2.5px solid #dfe6e9;
@@ -282,6 +276,8 @@ button { font-family: inherit; cursor: pointer; border: none; }
             <button class="subtab" data-b="cart">玩一玩：会滚的平板车</button>
         </div>
         <div class="buildStage" id="buildStage">
+            <div id="glBuild"></div>
+            <div class="stageChip tipchip" id="buildTip" style="top:10px;left:10px;right:auto"></div>
             <div class="tray" id="tray"></div>
             <div class="speakBubble hidden" id="speakB"></div>
             <button class="rollBtn hidden" id="rollBtn">🔄 滚一滚！</button>
@@ -302,7 +298,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
                 <div class="pkHead"><span>🫐 蓝莓队</span><span class="wins" id="winL"></span></div>
                 <div class="pkBody">
                     <div class="winBadge hidden" id="bwL">🏆 本轮获胜！</div>
-                    <div class="podium"><div class="obj3d" id="objL"></div></div>
+                    <div class="podium3d" id="glPkL"></div>
                     <div class="resLine" id="resL">&nbsp;</div>
                     <div class="pkOpts" id="optsL"></div>
                 </div>
@@ -312,7 +308,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
                 <div class="pkHead"><span>🍊 橙子队</span><span class="wins" id="winR"></span></div>
                 <div class="pkBody">
                     <div class="winBadge hidden" id="bwR">🏆 本轮获胜！</div>
-                    <div class="podium"><div class="obj3d" id="objR"></div></div>
+                    <div class="podium3d" id="glPkR"></div>
                     <div class="resLine" id="resR">&nbsp;</div>
                     <div class="pkOpts" id="optsR"></div>
                 </div>
@@ -327,6 +323,8 @@ button { font-family: inherit; cursor: pointer; border: none; }
 <script src="three.min.js"></script>
 <script src="立体图形素材.js"></script>
 <script>
+window.__errs = [];
+window.addEventListener('error', e => window.__errs.push(e.message + ' @ ' + (e.filename||'') + ':' + e.lineno));
 'use strict';
 const $ = id => document.getElementById(id);
 const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
@@ -405,6 +403,8 @@ document.querySelectorAll('.navbtn').forEach(t => t.onclick = () => {
     ['find', 'sort', 'build', 'pk'].forEach(p => $('pg-' + p).classList.toggle('hidden', p !== t.dataset.pg));
     if (t.dataset.pg === 'pk' && !pkStarted) { pkStarted = true; pkStartRound(); }   // 首次进入PK页才开始倒计时
     if (t.dataset.pg === 'find') setTimeout(resize3D, 60);                           // 切回3D页重算画布尺寸
+    if (t.dataset.pg === 'build') setTimeout(resizeBuild3D, 60);
+    if (t.dataset.pg === 'pk') setTimeout(() => { resizePk3D('L'); resizePk3D('R'); }, 60);
 });
 
 /* ================================================================
@@ -599,6 +599,7 @@ function castShadows(g) {
 function init3D() {
     const wrap = $('glWrap');
     if (!wrap || typeof THREE === 'undefined') return;
+    try {
     renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer3D.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     renderer3D.shadowMap.enabled = true;
@@ -655,7 +656,7 @@ function init3D() {
         bottomAlign(m);
         castShadows(m);
         const long = it.id === 'cub_board' || it.id === 'cub_pen';
-        m.scale.setScalar(long ? 1.05 : 1.24);
+        m.scale.setScalar(long ? 1.12 : 1.34);
         const inner = i < 5;
         const a = ((inner ? i : i - 5) / (inner ? 5 : 10)) * Math.PI * 2 + (inner ? 0.3 : 0) + ((i % 3) - 1) * 0.09;
         const r = inner ? 1.5 : 2.72;
@@ -683,6 +684,7 @@ function init3D() {
     bindGL();
     resize3D();
     animate3D();
+    } catch (e) { renderer3D = null; console.error('init3D', e); throw e; }
 }
 /* 相机自动适配：无论屏幕比例，盘子完整可见且尽量占满画面 */
 function fitCamR() {
@@ -690,7 +692,7 @@ function fitCamR() {
     const aspect = (wrap.clientWidth || 800) / (wrap.clientHeight || 500);
     const fovV = camera3D.fov * Math.PI / 180;
     const fovH = 2 * Math.atan(Math.tan(fovV / 2) * aspect);
-    const need = 4.5;                                    // 场景半径（含边距）
+    const need = 4.0;                                    // 场景半径（贴边占满）
     const distH = need / Math.tan(fovH / 2);
     const distV = need / Math.tan(fovV / 2);
     return Math.max(distH, distV) / Math.sin(camPhi);      // 斜视角换算球坐标距离
@@ -1096,266 +1098,383 @@ $('verifyBtn').onclick = () => {
 $('reBtn').onclick = () => { sClick(); sortInit(); };
 
 /* ================================================================
-   环节③ 动手拼搭
+   环节③ 动手拼搭：真 3D（悬浮桌板 + 地面光圈 + 拖零件吸附 + 桌板落下）
 ================================================================ */
+let bR3 = null, bScene = null, bCam = null, bRay = null;
+let plank3D = null, ring3Ds = [], placedParts = [], trayStock = [];
+let buildKey = null, bState = null, buildDrag = null, cartGroup3D = null;
+let plankFloatY = 1.75, plankAssembledY = 0;
+
 const BUILDS = {
-    stoolCyl: { label: '拼一拼：圆柱小凳', partShape: 'cyl', parts: 4, cap: '把 4 个圆柱拖到桌面下方的光圈里，拼成一张小凳子。', okText: '小凳搭好啦！圆柱上下是平平的圆面，立起来稳稳的！', cart: false },
-    stoolCube: { label: '拼一拼：方柱小凳', partShape: 'cuboid', parts: 4, cap: '把 4 个长方体拖到光圈里，也能拼出小凳子哦。', okText: '长方体也能承重！方方的小凳很结实！', cart: false },
-    cart: { label: '玩一玩：会滚的平板车', partShape: 'cyl', parts: 3, cap: '在平板下面放 3 个圆柱"轮子"，再点「滚一滚」。试试长方体行不行？', okText: '轮子装好啦！点「滚一滚」出发～', cart: true },
+    stoolCyl: { partShape: 'cyl', parts: 4, cap: '把 4 个圆柱拖到桌板下方的光圈里，拼成一张小凳子。',
+        okText: '小凳搭好啦！圆柱上下是平平的圆面，立起来稳稳的！', mode: 'stool',
+        slots: [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4]] },
+    stoolCube: { partShape: 'cuboid', parts: 4, cap: '把 4 个长方体拖到光圈里，也能拼出一张小凳子哦。',
+        okText: '长方体也能承重！方方的小凳很结实！', mode: 'stool',
+        slots: [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4]] },
+    cart: { partShape: 'cyl', parts: 3, cap: '在平板下面放 3 个圆柱"轮子"，再点「滚一滚」。试试长方体行不行？',
+        okText: '轮子装好啦！点「滚一滚」出发～', mode: 'cart',
+        slots: [[-0.9, 0], [0, 0], [0.9, 0]] },
 };
-let buildMode = null, buildState = null;
-function startBuild(key) {
-    buildMode = key;
-    buildState = { placed: 0, phase: 1, rolled: false };
-    const cfg = BUILDS[key];
-    const stage = $('buildStage');
-    /* 清场（保留托盘/气泡/按钮） */
-    stage.querySelectorAll('.part,.ring,.plankEl,.cartAll').forEach(e => e.remove());
-    $('speakB').classList.add('hidden'); $('rollBtn').classList.add('hidden'); $('swapBtn').classList.add('hidden');
-    const stg = stage;
-    /* 平板 */
-    const W = stage.clientWidth, H = stage.clientHeight;
-    const plank = document.createElement('div');
-    plank.className = 'plankEl'; plank.id = 'plank';
-    plank.style.left = (W / 2) + 'px';
-    plank.style.top = (H * 0.30) + 'px';
-    plank.innerHTML = drawItem(key === 'cart' ? 'plank_cart' : 'plank');
-    stage.appendChild(plank);
-    /* 光圈 */
-    const slots = [];
-    const n = cfg.parts;
-    const sx = W / 2, sy = H * 0.62;
-    for (let i = 0; i < n; i++) {
-        const ring = document.createElement('div');
-        ring.className = 'ring';
-        const dx = (i - (n - 1) / 2) * 74;
-        ring.style.left = (sx + dx) + 'px'; ring.style.top = (sy + 30) + 'px';
-        ring.dataset.filled = '0';
-        stage.appendChild(ring);
-        slots.push({ ring, x: sx + dx, y: sy + 30, filled: false });
-    }
-    buildState.slots = slots;
-    /* 托盘零件 */
-    const tray = $('tray'); tray.innerHTML = '';
-    for (let i = 0; i < n; i++) {
-        const p = document.createElement('div');
-        p.className = 'part';
-        p.innerHTML = drawPart(cfg.partShape);
-        p.dataset.shape = cfg.partShape;
-        p.onpointerdown = e => dragPart(e, p);
-        tray.appendChild(p);
-    }
-    $('stepTip') && $('stepTip').remove();
-    /* 提示 */
-    let tip = stage.querySelector('.tipchip');
-    if (!tip) { tip = document.createElement('div'); tip.className = 'stageChip tipchip'; stage.appendChild(tip); }
-    tip.style.top = '12px'; tip.style.left = '12px';
-    tip.innerHTML = cfg.cap + `　<b>已放好 <span id="cntN">0</span>/${n}</b> · 点已放好的零件可以取下来`;
-    buildState.cfg = cfg;
+
+function bMakePart(shape) {
+    let geo;
+    if (shape === 'cyl') geo = new THREE.CylinderGeometry(0.22, 0.22, 0.92, 26);
+    else geo = new THREE.BoxGeometry(0.42, 0.92, 0.42);
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: shape === 'cyl' ? 0xf5a623 : 0x74b9ff }));
+    m.castShadow = true;
+    return m;
 }
-function dragPart(e, partEl) {
+function bWoodPlank(w, d) {
+    const t = makeTex(256, 96, x => {
+        x.fillStyle = '#c8a06a'; x.fillRect(0, 0, 256, 96);
+        x.fillStyle = '#e0bd85'; x.fillRect(0, 8, 256, 22);
+        x.strokeStyle = '#9a7440'; x.lineWidth = 4; x.strokeRect(2, 2, 252, 92);
+    });
+    return new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, d), new THREE.MeshLambertMaterial({ map: t }));
+}
+
+function initBuild3D() {
+    const wrap = $('glBuild');
+    if (!wrap || typeof THREE === 'undefined' || bR3) return;
+    try {
+    bR3 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    bR3.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    bR3.shadowMap.enabled = true; bR3.shadowMap.type = THREE.PCFSoftShadowMap;
+    wrap.appendChild(bR3.domElement);
+    bScene = new THREE.Scene();
+    bCam = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    bScene.add(new THREE.AmbientLight(0xffffff, 0.66));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sun.position.set(4, 9, 6); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
+    sun.shadow.camera.top = 5; sun.shadow.camera.bottom = -5;
+    bScene.add(sun);
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(4.4, 48), mat(0xe8d5b0));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+    bScene.add(ground);
+    bRay = new THREE.Raycaster();
+    bindBuildGL();
+    resizeBuild3D();
+    bAnimate();
+    } catch (e) { bR3 = null; console.error('initBuild3D', e); throw e; }
+}
+function resizeBuild3D() {
+    if (!bR3) return;
+    const wrap = $('glBuild');
+    const W = wrap.clientWidth || 600, H = wrap.clientHeight || 400;
+    bR3.setSize(W, H);
+    bCam.aspect = W / H; bCam.updateProjectionMatrix();
+}
+function bUpdateCam() { bCam.position.set(0, 6.2, 7.4); bCam.lookAt(0, 0.9, 0); }
+function bAnimate() {
+    requestAnimationFrame(bAnimate);
+    if (!bR3 || $('pg-build').classList.contains('hidden')) return;
+    const t = performance.now() / 1000;
+    if (plank3D && bState && bState.phase === 'float') plank3D.position.y = plankFloatY + Math.sin(t * 1.8) * 0.06;
+    if (plank3D && bState && bState.drop) { plank3D.position.y += (plankAssembledY - plank3D.position.y) * 0.12; }
+    if (bState && bState.rolling && cartGroup3D) {
+        const dx = 0.05;
+        cartGroup3D.position.x += dx;
+        (bState.wheels || []).forEach(w => { w.rotation.x -= dx / 0.28; });
+        if (cartGroup3D.position.x > 3.6) {
+            bState.rolling = false;
+            fbMsg('平板车滚起来啦！圆柱躺倒就能滚，车轮就是这么发明的～');
+        }
+    }
+    if (bState && bState.failAt) {
+        if (performance.now() - bState.failAt > 1300) { bState.failAt = 0; }
+        else if (cartGroup3D) {
+            cartGroup3D.rotation.z = Math.sin((performance.now() - bState.failAt) / 60) * 0.06;
+            cartGroup3D.position.y = Math.abs(Math.sin((performance.now() - bState.failAt) / 90)) * 0.1;
+        }
+    }
+    bUpdateCam();
+    bR3.render(bScene, bCam);
+}
+function startBuild(key) {
+    if (!bScene || !bCam) return;   // 3D 场景未就绪时忽略（bootAll 会重试）
+    buildKey = key;
+    const cfg = BUILDS[key];
+    bState = { cfg, placed: 0, phase: 'float', rolling: false, failAt: 0, wheels: [] };
+    /* 清场 */
+    if (bScene) {
+        [plank3D, ...ring3Ds.map(r => r.mesh), ...placedParts.map(p => p.mesh), cartGroup3D].forEach(o => {
+            if (o) bScene.remove(o);
+        });
+        if (cartGroup3D) cartGroup3D = null;
+    }
+    ring3Ds = []; placedParts = [];
+    /* 悬浮桌板 */
+    plankFloatY = 1.75;
+    plank3D = bWoodPlank(key === 'cart' ? 2.3 : 2.5, key === 'cart' ? 1.0 : 1.2);
+    plank3D.position.set(0, plankFloatY, 0);
+    plank3D.castShadow = true;
+    bScene.add(plank3D);
+    /* 地面光圈 */
+    ring3Ds = cfg.slots.map(([x, z]) => {
+        const r = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.46, 36),
+            new THREE.MeshBasicMaterial({ color: 0xf5a623, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+        r.rotation.x = -Math.PI / 2;
+        r.position.set(x, 0.03, z);
+        bScene.add(r);
+        return { mesh: r, x, z, filled: false };
+    });
+    plankAssembledY = cfg.mode === 'cart' ? 0.72 : 1.06;
+    /* 托盘零件（HTML 预览） */
+    const tray = $('tray'); tray.innerHTML = '';
+    trayStock = [];
+    for (let i = 0; i < cfg.parts; i++) {
+        const el = document.createElement('div');
+        el.className = 'part';
+        el.innerHTML = drawPart(cfg.partShape);
+        el.onpointerdown = e => beginPartDrag(e, el, cfg.partShape);
+        tray.appendChild(el);
+        trayStock.push(el);
+    }
+    const tip = $('buildTip');
+    tip.innerHTML = cfg.cap + `　<b>已放好 <span id="cntN">0</span>/${cfg.parts}</b> · 点已放好的零件可取下来`;
+    $('speakB').classList.add('hidden');
+    $('rollBtn').classList.add('hidden');
+    $('swapBtn').classList.add('hidden');
+}
+/* 把托盘零件拖进 3D 场景：跟随指针投影到地面，近光圈吸附 */
+function beginPartDrag(e, el, shape) {
+    if (!bR3 || bState.placed >= bState.cfg.parts) return;
     e.preventDefault();
-    const stage = $('buildStage');
-    const rect = stage.getBoundingClientRect();
-    const shape = partEl.dataset.shape;
-    const ghost = partEl.cloneNode(true);
-    ghost.style.position = 'fixed'; ghost.style.zIndex = 99;
-    ghost.style.left = (e.clientX - 32) + 'px'; ghost.style.top = (e.clientY - 42) + 'px';
-    ghost.style.width = '64px'; ghost.style.height = '84px'; ghost.style.pointerEvents = 'none';
-    document.body.appendChild(ghost);
-    partEl.style.opacity = '.3';
+    const mesh = bMakePart(shape);
+    const centerY = shape === 'cyl' ? 0.46 : 0.46;
+    mesh.position.set(0, centerY, 0);
+    bScene.add(mesh);
+    el.style.opacity = '.25';
+    let hoverRing = null;
     const move = ev => {
-        ghost.style.left = (ev.clientX - 32) + 'px'; ghost.style.top = (ev.clientY - 42) + 'px';
+        const p = groundPoint(ev, centerY);
+        mesh.position.x = Math.max(-3.4, Math.min(3.4, p.x));
+        mesh.position.z = Math.max(-2.6, Math.min(2.6, p.z));
+        /* 最近空光圈高亮 */
+        hoverRing = nearestRing(mesh.position.x, mesh.position.z);
+        ring3Ds.forEach(r => {
+            r.mesh.material.color.setHex(r === hoverRing ? 0xffe082 : 0xf5a623);
+            r.mesh.scale.setScalar(r === hoverRing ? 1.18 : 1);
+        });
     };
+    move(e);
     const up = ev => {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
-        ghost.remove();
-        partEl.style.opacity = '';
-        /* 落点在舞台上？找最近空圈 */
-        const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
-        let best = null, bd = 1e9;
-        buildState.slots.forEach(sl => {
-            if (sl.filled) return;
-            const d = Math.hypot(px - sl.x, py - sl.y);
-            if (d < bd) { bd = d; best = sl; }
-        });
-        const cfg = buildState.cfg;
-        if (best && bd < 90 && shape === cfg.partShape) {
-            best.filled = true; buildState.placed++;
-            best.ring.dataset.filled = '1';
-            best.ring.style.borderStyle = 'solid';
-            const p2 = partEl.cloneNode(true);
-            p2.style.width = '58px'; p2.style.height = '74px';
-            p2.style.position = 'absolute';
-            p2.style.left = (best.x - 29) + 'px'; p2.style.top = (best.y - 62) + 'px';
-            p2.style.zIndex = 20;
-            p2.onclick = () => {   // 点已放好的零件取下
-                if (buildState.placed <= 0) return;
-                buildState.placed--;
-                best.filled = false;
-                best.ring.style.borderStyle = 'dashed';
-                p2.remove(); sClick();
-                const c = $('buildStage').querySelector('#cntN'); if (c) c.textContent = buildState.placed;
-            };
-            $('buildStage').appendChild(p2);
-            buildState['part' + buildState.slots.indexOf(best)] = p2;
-            sSnap();
-            const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
-            if (buildState.placed >= cfg.parts) buildComplete();
-            partEl.remove();
-        } else if (best && bd < 200 && shape !== cfg.partShape) {
-            /* 形状不对：弹回并提示（平板车换长方体阶段除外——那阶段 partShape 已是 cuboid） */
-            sBad();
-            fbMsg('形状不对哦，再看看需要什么零件～');
+        el.style.opacity = '';
+        const ring = nearestRing(mesh.position.x, mesh.position.z);
+        if (ring && Math.hypot(mesh.position.x - ring.x, mesh.position.z - ring.z) < 0.75) {
+            placePart(mesh, shape, ring, el);
         } else {
+            bScene.remove(mesh);
             fbMsg('');
         }
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
 }
+function nearestRing(x, z) {
+    let best = null, bd = 1e9;
+    ring3Ds.forEach(r => {
+        if (r.filled) return;
+        const d = Math.hypot(x - r.x, z - r.z);
+        if (d < bd) { bd = d; best = r; }
+    });
+    return best;
+}
+function placePart(mesh, shape, ring, trayEl) {
+    ring.filled = true;
+    ring.mesh.material.opacity = 0.25;
+    ring.mesh.scale.setScalar(1);
+    ring.mesh.material.color.setHex(0xf5a623);
+    if (buildKey === 'cart') {
+        /* 平板车轮子：躺倒（几何轴向转成 X） */
+        mesh.geometry.dispose();
+        mesh.geometry = new THREE.CylinderGeometry(0.28, 0.28, 0.5, 26).rotateZ(Math.PI / 2);
+        mesh.position.set(ring.x, 0.28, ring.z);
+        mesh.rotation.set(0, 0, 0);
+        bState.wheels.push(mesh);
+    } else {
+        mesh.position.set(ring.x, 0.46, ring.z);
+    }
+    mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    placedParts.push({ mesh, shape, ring, trayEl });
+    mesh.onpointerdown = ev => { ev.stopPropagation(); removePart(mesh); };
+    sSnap();
+    buildState.placed = placedParts.length;
+    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
+    if (buildState.placed >= bState.cfg.parts) buildComplete();
+}
+function removePart(mesh) {
+    const rec = placedParts.find(p => p.mesh === mesh);
+    if (!rec) return;
+    placedParts = placedParts.filter(p => p !== rec);
+    rec.ring.filled = false;
+    rec.ring.mesh.material.opacity = 0.9;
+    bScene.remove(mesh);
+    rec.trayEl.style.opacity = '';
+    buildState.placed = placedParts.length;
+    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
+    sClick();
+}
+function buildComplete() {
+    const cfg = bState.cfg;
+    /* 桌板落下 */
+    bState.phase = 'drop';
+    plankAssembledY = cfg.mode === 'cart' ? 0.62 : 1.06;
+    bState.drop = true;
+    sWin(); confetti(30);
+    fbMsg('🎉 ' + cfg.okText);
+    if (cfg.mode === 'cart') {
+        setTimeout(() => {
+            $('rollBtn').classList.remove('hidden');
+            $('swapBtn').classList.remove('hidden');
+            fbMsg('轮子装好啦！点「滚一滚」看看跑不跑得动～');
+        }, 1500);
+    }
+}
+function groundPoint(e, y) {
+    const rect = bR3.domElement.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    bRay.setFromCamera({ x: nx, y: ny }, bCam);
+    const t = (y - bRay.ray.origin.y) / bRay.ray.direction.y;
+    return bRay.ray.origin.clone().addScaledVector(bRay.ray.direction, t);
+}
+function bindBuildGL() {
+    const el = bR3.domElement;
+    /* 点击已放好的零件取下（走 3D 拾取） */
+    el.addEventListener('pointerup', e => {
+        if (buildDrag) return;
+        const rect = bR3.domElement.getBoundingClientRect();
+        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        bRay.setFromCamera({ x: nx, y: ny }, bCam);
+        const hits = bRay.intersectObjects(placedParts.map(p => p.mesh));
+        if (hits.length) removePart(hits[0].object);
+    });
+}
 function fbMsg(t) {
     const b = $('speakB');
     if (!t) { b.classList.add('hidden'); return; }
     b.textContent = t; b.classList.remove('hidden');
 }
-function buildComplete() {
-    const cfg = buildState.cfg;
-    const plank = $('plank');
-    if (plank) plank.style.top = (parseFloat(plank.style.top) + 86) + 'px';   // 桌面落下
-    sWin(); confetti(30);
-    const b = $('speakB');
-    b.textContent = (buildMode === 'cart') ? cfg.okText : '🎉 ' + cfg.okText;
-    b.classList.remove('hidden');
-    if (buildMode === 'cart') {
-        setTimeout(() => {
-            $('rollBtn').classList.remove('hidden');
-            $('swapBtn').classList.remove('hidden');
-            b.textContent = '轮子装好啦！点「滚一滚」看看跑不跑得动～';
-        }, 1600);
-    }
-}
 $('rollBtn').onclick = () => {
+    if (!bState || bState.mode !== 'cart' || bState.placed < bState.cfg.parts) return;
     sClick();
-    const stage = $('buildStage');
-    const cart = stage.querySelector('.cartAll') || buildCart();
-    const cylWheels = buildState.phase !== 2;
-    if (cylWheels) {
-        cart.style.animation = 'cartRoll 2.4s ease-in forwards';
-        sWin();
-        setTimeout(() => {
-            fbMsg('平板车滚起来啦！圆柱躺倒就能滚，古人用它搬重物～');
-            $('swapBtn').classList.remove('hidden');
-        }, 2400);
+    /* 组装成整体：桌板 + 轮子 */
+    cartGroup3D = new THREE.Group();
+    const plankWorld = plank3D.position.clone();
+    bScene.remove(plank3D);
+    plank3D.position.set(0, 0, 0);
+    cartGroup3D.add(plank3D);
+    placedParts.forEach(p => {
+        bScene.remove(p.mesh);
+        p.mesh.position.sub(new THREE.Vector3(cartGroup3D.position.x, 0, 0));
+        cartGroup3D.add(p.mesh);
+    });
+    plank3D.position.y = plankAssembledY - cartGroup3D.position.y;   // 相对
+    cartGroup3D.position.set(0, 0, 0);
+    bScene.add(cartGroup3D);
+    /* 平板车整体轻微抬起：轮子躺倒支撑 */
+    if (bState.wheelShape !== 'cuboid') {
+        bState.rolling = true;
+        fbMsg('');
     } else {
-        cart.style.animation = 'cartFail .8s ease-in-out 2';
-        sBad();
+        bState.failAt = performance.now();
         fbMsg('颠簸得厉害，滚不动！长方体的面是平的，圆柱躺倒才能滚哦');
     }
 };
 $('swapBtn').onclick = () => {
     sClick();
-    buildState.phase = 2;
-    /* 移除圆柱轮子与车，换成长方体零件 */
-    const stage = $('buildStage');
-    stage.querySelectorAll('.part,.ring,.cartAll').forEach(e => e.remove());
-    buildState.placed = 0; buildState.rolled = false;
-    $('rollBtn').classList.remove('hidden');
-    buildState.slots.forEach(sl => { sl.filled = false; });
-    const W = stage.clientWidth, H = stage.clientHeight, sx = W / 2, sy = H * 0.62;
-    buildState.slots.forEach((sl, i) => {
-        const dx = (i - 1) * 74;
-        sl.x = sx + dx; sl.y = sy + 30;
-        const ring = document.createElement('div');
-        ring.className = 'ring';
-        ring.style.left = sl.x + 'px'; ring.style.top = sl.y + 'px';
-        stage.appendChild(ring);
-    });
+    /* 换成长方体当轮子：清轮子重摆 */
+    placedParts.forEach(p => { bScene.remove(p.mesh); p.ring.filled = false; p.ring.mesh.material.opacity = 0.9; });
+    placedParts = []; buildState.placed = 0; buildState.wheels = [];
+    buildState.wheelShape = 'cuboid';
     const tray = $('tray'); tray.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-        const p = document.createElement('div');
-        p.className = 'part'; p.dataset.shape = 'cuboid';
-        p.innerHTML = drawPart('cuboid');
-        p.onpointerdown = e => dragPart(e, p);
-        tray.appendChild(p);
+        const el = document.createElement('div');
+        el.className = 'part'; el.dataset.shape = 'cuboid';
+        el.innerHTML = drawPart('cuboid');
+        el.onpointerdown = e => beginPartDrag(e, el, 'cuboid');
+        tray.appendChild(el);
     }
-    fbMsg('把 3 个长方体当轮子，看看行不行？');
+    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = 0;
+    fbMsg('把 3 个长方体当轮子装上，再点「滚一滚」试试～');
+    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; plankFloatY = 1.55; }
 };
-function buildCart() {
-    const stage = $('buildStage');
-    const W = stage.clientWidth, H = stage.clientHeight;
-    const cart = document.createElement('div');
-    cart.className = 'cartAll';
-    cart.style.left = (W / 2 - 60) + 'px'; cart.style.top = (H * 0.62 - 66) + 'px';
-    cart.innerHTML = `<div style="position:relative;width:220px;height:90px">
-        <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg">
-            <rect x="18" y="10" width="184" height="26" rx="6" fill="#c8a06a" stroke="#9a7440" stroke-width="3"/>
-            <circle cx="55" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
-            <circle cx="110" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
-            <circle cx="165" cy="62" r="20" fill="#f5a623" stroke="#d99114" stroke-width="3"/>
-            <ellipse cx="55" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
-            <ellipse cx="110" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
-            <ellipse cx="165" cy="62" rx="8" ry="16" fill="#d99114" opacity=".5"/>
-        </svg></div>`;
-    stage.appendChild(cart);
-    return cart;
-}
 document.querySelectorAll('#buildTabs .subtab').forEach(b => b.onclick = () => {
     sClick();
     document.querySelectorAll('#buildTabs .subtab').forEach(x => x.classList.toggle('on', x === b));
+    buildState.wheelShape = 'cyl';
     startBuild(b.dataset.b);
 });
 
 /* ================================================================
-   环节④ PK练习
+   环节④ PK练习：真 3D 转台（每队独立小舞台，物品慢转）
 ================================================================ */
 let pkRound = 1, wins = { L: 0, R: 0 }, pkStarted = false;
 let pkTimers = { L: { start: 0, iv: 0 }, R: { start: 0, iv: 0 } };
 let pkAnswered = { L: false, R: false };
+const pk3d = {};
 
-function pkRandomItem() { return pick(SCENE_ITEMS); }
-function pkStartRound() {
-    if (!$('objL')) return;
-    pkAnswered = { L: false, R: false };
-    ['bwL', 'bwR'].forEach(id => $(id).classList.add('hidden'));
-    ['resL', 'resR'].forEach(id => $(id).innerHTML = '&nbsp;');
-    ['objL', 'objR'].forEach(id => { $(id).innerHTML = ''; });
-    const items = [pkRandomItem(), pkRandomItem()];
-    const sides = ['L', 'R'];
-    $('cd').classList.add('show');
-    let n = 3;
-    $('cd').textContent = n;
-    const iv = setInterval(() => {
-        n--;
-        if (n > 0) { $('cd').textContent = n; beep(500, .1, 'square', .12); }
-        else {
-            clearInterval(iv);
-            $('cd').textContent = '开始！'; beep(900, .2);
-            setTimeout(() => {
-                $('cd').classList.remove('show');
-                /* 亮出物品并开始计时 */
-                sides.forEach((side, k) => {
-                    const it = items[k];
-                    const team = side === 'L' ? 'L' : 'R';
-                    pkTimers[side].start = performance.now();
-                    pkTimers[side].item = it;
-                    $(side === 'L' ? 'objL' : 'objR').innerHTML = drawItem(it.id);
-                    const opts = $(side === 'L' ? 'optsL' : 'optsR');
-                    opts.innerHTML = '';
-                    const PK_SHAPES = ['ball', 'cube', 'cuboid', 'cyl'];
-                    shuffle(PK_SHAPES).forEach(sh => {
-                        const b = document.createElement('button');
-                        b.className = 'pko';
-                        b.dataset.k = sh;
-                        b.innerHTML = `<span class="dot" style="background:${SHAPES[sh].dot}"></span>${SHAPES[sh].name}`;
-                        b.onclick = () => pkAnswer(side, sh, b);
-                        opts.appendChild(b);
-                    });
-                });
-            }, 450);
-        }
-    }, 900);
+function initPk3D(side) {
+    if (pk3d[side] || typeof THREE === 'undefined') return;
+    const wrap = $('glPk' + side);
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    wrap.appendChild(r.domElement);
+    const sc = new THREE.Scene();
+    const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+    cam.position.set(0, 2.2, 3.6); cam.lookAt(0, 0.55, 0);
+    sc.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+    sun.position.set(3, 6, 4); sc.add(sun);
+    const sun2 = new THREE.DirectionalLight(0xfff2d9, 0.3);
+    sun2.position.set(-4, 3, -3); sc.add(sun2);
+    /* 木质转台 */
+    const podTex = makeTex(256, 256, x => {
+        x.fillStyle = '#e8d5b0'; x.fillRect(0, 0, 256, 256);
+        x.strokeStyle = 'rgba(143,96,53,.4)'; x.lineWidth = 3;
+        [60, 105].forEach(rr => { x.beginPath(); x.arc(128, 128, rr, 0, 7); x.stroke(); });
+    });
+    const pod = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.2, 0.34, 44),
+        [new THREE.MeshLambertMaterial({ color: 0xd9c49a }), new THREE.MeshLambertMaterial({ map: podTex }), new THREE.MeshLambertMaterial({ color: 0xb08a5a })]);
+    pod.position.y = 0.17;
+    sc.add(pod);
+    pk3d[side] = { r, sc, cam, item: null, wrap };
+    resizePk3D(side);
+}
+function resizePk3D(side) {
+    const p = pk3d[side];
+    if (!p) return;
+    const W = p.wrap.clientWidth || 300, H = p.wrap.clientHeight || 190;
+    p.r.setSize(W, H);
+    p.cam.aspect = W / H; p.cam.updateProjectionMatrix();
+}
+function pkSetItem(side, item) {
+    const p = pk3d[side];
+    if (p.item) { p.sc.remove(p.item); p.item = null; }
+    const g = buildItem3D(item.id);
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    const box = new THREE.Box3().setFromObject(g);
+    g.position.y = 0.34 - box.min.y;
+    g.scale.setScalar(1.18);
+    p.sc.add(g);
+    p.item = g;
+}
+function pkAnimAll() {
+    requestAnimationFrame(pkAnimAll);
+    const t = performance.now() / 1000;
+    ['L', 'R'].forEach(side => {
+        const p = pk3d[side];
+        if (!p || $('pg-pk').classList.contains('hidden')) return;
+        if (p.item) p.item.rotation.y = t * 0.8;
+        p.r.render(p.sc, p.cam);
+    });
 }
 function pkAnswer(side, shape, btn) {
     const T = pkTimers[side];
@@ -1370,7 +1489,6 @@ function pkAnswer(side, shape, btn) {
         $(side === 'L' ? 'resL' : 'resR').textContent = `✓ 答对啦！用时 ${T.secs.toFixed(2)} 秒`;
         const other = side === 'L' ? 'R' : 'L';
         if (pkAnswered[other]) {
-            /* 两队都答对：用时短者本轮获胜得⭐ */
             const O = pkTimers[other];
             const winner = T.secs < O.secs ? side : O.secs < T.secs ? other : null;
             if (winner) {
@@ -1385,9 +1503,81 @@ function pkAnswer(side, shape, btn) {
         setTimeout(() => btn.classList.remove('wrong'), 500);
     }
 }
+function pkRandomItem() { return pick(SCENE_ITEMS); }
 $('nextBtn').onclick = () => { sClick(); pkRound++; $('roundN').textContent = pkRound; pkStartRound(); };
 $('clearBtn').onclick = () => { sClick(); wins = { L: 0, R: 0 }; $('winL').textContent = ''; $('winR').textContent = ''; toast('比分已清空'); };
+pkStartRound = function () {
+    if (!pk3d.L || !pk3d.R) { initPk3D('L'); initPk3D('R'); }
+    pkAnswered = { L: false, R: false };
+    ['bwL', 'bwR'].forEach(id => $(id).classList.add('hidden'));
+    ['resL', 'resR'].forEach(id => $(id).innerHTML = '&nbsp;');
+    const itL = pkRandomItem();
+    let itR = pkRandomItem();
+    if (itR.id === itL.id) itR = SCENE_ITEMS[(SCENE_ITEMS.indexOf(itL) + 3) % SCENE_ITEMS.length];
+    pkTimers.L.item = itL; pkTimers.R.item = itR;
+    pkSetItem('L', itL); pkSetItem('R', itR);
+    $('cd').classList.add('show');
+    let n = 3;
+    $('cd').textContent = n;
+    beep(500, .1, 'square', .12);
+    const iv = setInterval(() => {
+        n--;
+        if (n > 0) { $('cd').textContent = n; beep(500, .1, 'square', .12); }
+        else {
+            clearInterval(iv);
+            $('cd').textContent = '开始！'; beep(900, .2);
+            setTimeout(() => {
+                $('cd').classList.remove('show');
+                ['L', 'R'].forEach(side => {
+                    pkTimers[side].start = performance.now();
+                    const box = side === 'L' ? $('optsL') : $('optsR');
+                    box.innerHTML = '';
+                    const PK_SHAPES = ['ball', 'cube', 'cuboid', 'cyl'];
+                    shuffle(PK_SHAPES).forEach(sh => {
+                        const b = document.createElement('button');
+                        b.className = 'pko';
+                        b.dataset.k = sh;
+                        b.innerHTML = `<span class="dot" style="background:${SHAPES[sh].dot}"></span>${SHAPES[sh].name}`;
+                        b.onclick = () => pkAnswer(side, sh, b);
+                        box.appendChild(b);
+                    });
+                });
+            }, 450);
+        }
+    }, 900);
+};
 
+/* ============ 启动（动态加载器：THREE 偶发加载失败自动重试） ============ */
+function bootAll() {
+    try { if (!renderer3D) init3D(); } catch (e) { console.error('init3D', e); }
+    try { sortInit(); } catch (e) { console.error(e); }
+    try { renderModelChips(); } catch (e) { console.error(e); }
+    try { if (!bR3) initBuild3D(); } catch (e) { console.error('initBuild', e); }
+    try { startBuild('stoolCyl'); } catch (e) { console.error(e); }
+    try { pkAnimAll(); } catch (e) { console.error(e); }
+    setTimeout(() => { try { resize3D(); resizeBuild3D(); resizePk3D('L'); resizePk3D('R'); } catch (e) {} }, 80);
+    if (!bScene) setTimeout(() => { if (!bScene) { try { initBuild3D(); startBuild('stoolCyl'); } catch (e) {} } }, 900);
+}
+function loadThree(retries) {
+    return new Promise((resolve) => {
+        if (typeof THREE !== 'undefined') { resolve(); return; }
+        const sc = document.createElement('script');
+        sc.src = 'three.min.js?r=' + Date.now();   // 绕过可能的坏缓存
+        sc.onload = () => resolve();
+        sc.onerror = () => {
+            if (retries > 0) setTimeout(() => loadThree(retries - 1).then(resolve), 400);
+            else resolve();
+        };
+        document.head.appendChild(sc);
+    });
+}
+(async () => {
+    await loadThree(3);
+    bootAll();
+    window.addEventListener('resize', () => {
+        try { resize3D(); resizeBuild3D(); resizePk3D('L'); resizePk3D('R'); } catch (e) {}
+    });
+})();
 /* ============ 启动 ============ */
 init3D();
 sortInit();
