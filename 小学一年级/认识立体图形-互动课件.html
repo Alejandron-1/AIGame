@@ -636,17 +636,17 @@ function init3D() {
     });
     const topMat = new THREE.MeshLambertMaterial({ map: topTex });
     const sideMat = mat(0xd9c49a);
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.3, 0.28, 56), [sideMat, topMat, sideMat]);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.28, 64), [sideMat, topMat, sideMat]);
     top.position.y = 0.14;
     top.receiveShadow = true;
     stageGroup.add(top);
-    const bottom = new THREE.Mesh(new THREE.CylinderGeometry(3.62, 3.8, 0.34, 56), mat(0xb08a5a));
+    const bottom = new THREE.Mesh(new THREE.CylinderGeometry(4.75, 4.95, 0.34, 64), mat(0xb08a5a));
     bottom.position.y = -0.15;
     stageGroup.add(bottom);
-    const trim = new THREE.Mesh(new THREE.TorusGeometry(3.32, 0.075, 14, 56), mat(0xc9a24d));
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(4.42, 0.08, 14, 64), mat(0xc9a24d));
     trim.rotation.x = Math.PI / 2; trim.position.y = 0.29;
     stageGroup.add(trim);
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(5.2, 48),
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(5.8, 48),
         new THREE.MeshBasicMaterial({ color: 0xe4d7bd, transparent: true, opacity: 0.55 }));
     floor.rotation.x = -Math.PI / 2; floor.position.y = -0.34;
     stageGroup.add(floor);
@@ -658,10 +658,10 @@ function init3D() {
         bottomAlign(m);
         castShadows(m);
         const long = it.id === 'cub_board' || it.id === 'cub_pen';
-        m.scale.setScalar(long ? 1.12 : 1.34);
+        m.scale.setScalar(long ? 1.15 : 1.45);
         const inner = i < 5;
         const a = ((inner ? i : i - 5) / (inner ? 5 : 10)) * Math.PI * 2 + (inner ? 0.3 : 0) + ((i % 3) - 1) * 0.09;
-        const r = inner ? 1.5 : 2.72;
+        const r = inner ? 1.9 : 3.5;
         const baseY = 0.29;                     // 台面高度
         m.position.set(Math.cos(a) * r, baseY, Math.sin(a) * r);
         m.rotation.y = Math.random() * Math.PI * 2;
@@ -697,8 +697,8 @@ function fitCamR() {
     const fovV = camera3D.fov * Math.PI / 180;
     const tV = Math.tan(fovV / 2);
     const tH = tV * aspect;
-    const dH = 3.78 / tH;              // 横向：盘缘 3.62 + 小余量
-    const dV = 3.35 / tV + 0.55;       // 纵向：倾斜投影高 + 物品高 + 余量
+    const dH = 4.85 / tH;              // 横向：盘缘 4.4 + 余量
+    const dV = 3.9 / tV + 0.7;         // 纵向：倾斜投影高 + 物品高 + 余量
     return Math.min(Math.max(dH, dV), 14);
 }
 let zoomK = 1;                                            // 用户滚轮缩放系数
@@ -1102,23 +1102,23 @@ $('verifyBtn').onclick = () => {
 $('reBtn').onclick = () => { sClick(); sortInit(); };
 
 /* ================================================================
-   环节③ 动手拼搭：真 3D（悬浮桌板 + 地面光圈 + 拖零件吸附 + 桌板落下）
+   环节③ 动手拼搭：真 3D（V3.0 悬浮桌板+光圈吸附+无限托盘+可旋转视角）
 ================================================================ */
 let bR3 = null, bScene = null, bCam = null, bRay = null;
-let plank3D = null, ring3Ds = [], placedParts = [], trayStock = [];
-let buildKey = null, bState = null, buildDrag = null, cartGroup3D = null;
-let plankFloatY = 1.75, plankAssembledY = 0;
+let plank3D = null, ring3Ds = [], placedParts = [], cartGroup3D = null;
+let buildKey = null, bState = null, buildDrag = null;
+let bCamTheta = 0, bCamPhi = 1.06, bZoomK = 1;
 
 const BUILDS = {
     stoolCyl: { partShape: 'cyl', parts: 4, cap: '把 4 个圆柱拖到桌板下方的光圈里，拼成一张小凳子。',
         okText: '小凳搭好啦！圆柱上下是平平的圆面，立起来稳稳的！', mode: 'stool',
-        slots: [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4]] },
+        slots: [[-0.85, -0.42], [0.85, -0.42], [-0.85, 0.42], [0.85, 0.42]] },
     stoolCube: { partShape: 'cuboid', parts: 4, cap: '把 4 个长方体拖到光圈里，也能拼出一张小凳子哦。',
         okText: '长方体也能承重！方方的小凳很结实！', mode: 'stool',
-        slots: [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4]] },
+        slots: [[-0.85, -0.42], [0.85, -0.42], [-0.85, 0.42], [0.85, 0.42]] },
     cart: { partShape: 'cyl', parts: 3, cap: '在平板下面放 3 个圆柱"轮子"，再点「滚一滚」。试试长方体行不行？',
         okText: '轮子装好啦！点「滚一滚」出发～', mode: 'cart',
-        slots: [[-0.9, 0], [0, 0], [0.9, 0]] },
+        slots: [[-0.95, 0], [0, 0], [0.95, 0]] },
 };
 
 function bMakePart(shape) {
@@ -1135,13 +1135,13 @@ function bWoodPlank(w, d) {
         x.fillStyle = '#e0bd85'; x.fillRect(0, 8, 256, 22);
         x.strokeStyle = '#9a7440'; x.lineWidth = 4; x.strokeRect(2, 2, 252, 92);
     });
-    return new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, d), new THREE.MeshLambertMaterial({ map: t }));
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.18, d), new THREE.MeshLambertMaterial({ map: t }));
+    m.castShadow = true;
+    return m;
 }
-
 function initBuild3D() {
     const wrap = $('glBuild');
     if (!wrap || typeof THREE === 'undefined' || bR3) return;
-    try {
     bR3 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     bR3.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     bR3.shadowMap.enabled = true; bR3.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1155,66 +1155,76 @@ function initBuild3D() {
     sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
     sun.shadow.camera.top = 5; sun.shadow.camera.bottom = -5;
     bScene.add(sun);
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(4.4, 48), mat(0xe8d5b0));
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(4.6, 56), new THREE.MeshLambertMaterial({ color: 0xead9b4 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
     bScene.add(ground);
     bRay = new THREE.Raycaster();
     bindBuildGL();
     resizeBuild3D();
     bAnimate();
-    } catch (e) { bR3 = null; console.error('initBuild3D', e); throw e; }
 }
 function resizeBuild3D() {
     if (!bR3) return;
     const wrap = $('glBuild');
-    const W = wrap.clientWidth || 600, H = wrap.clientHeight || 400;
+    const W = wrap.clientWidth || 600, H = wrap.clientHeight || 420;
     bR3.setSize(W, H);
     bCam.aspect = W / H; bCam.updateProjectionMatrix();
 }
-function bUpdateCam() { bCam.position.set(0, 6.2, 7.4); bCam.lookAt(0, 0.9, 0); }
+function bUpdateCam() {
+    const R = bFitR() * bZoomK;
+    bCam.position.set(
+        R * Math.sin(bCamPhi) * Math.sin(bCamTheta),
+        R * Math.cos(bCamPhi),
+        R * Math.sin(bCamPhi) * Math.cos(bCamTheta));
+    bCam.lookAt(0, 0.75, 0);
+}
+function bFitR() {
+    const wrap = $('glBuild');
+    const aspect = (wrap.clientWidth || 600) / (wrap.clientHeight || 420);
+    const tV = Math.tan(bCam.fov * Math.PI / 360);
+    const tH = tV * aspect;
+    return Math.max(5.1 / tH, 4.3 / tV);
+}
 function bAnimate() {
     requestAnimationFrame(bAnimate);
     if (!bR3 || $('pg-build').classList.contains('hidden')) return;
     const t = performance.now() / 1000;
-    if (plank3D && bState && bState.phase === 'float') plank3D.position.y = plankFloatY + Math.sin(t * 1.8) * 0.06;
-    if (plank3D && bState && bState.drop) { plank3D.position.y += (plankAssembledY - plank3D.position.y) * 0.12; }
+    if (plank3D && bState && bState.phase === 'float') plank3D.position.y = 1.85 + Math.sin(t * 1.8) * 0.07;
+    if (plank3D && bState && bState.phase === 'drop') plank3D.position.y += (plankAssembledY - plank3D.position.y) * 0.12;
     if (bState && bState.rolling && cartGroup3D) {
-        const dx = 0.05;
+        const dx = 0.042;
         cartGroup3D.position.x += dx;
         (bState.wheels || []).forEach(w => { w.rotation.x -= dx / 0.28; });
-        if (cartGroup3D.position.x > 3.6) {
+        if (cartGroup3D.position.x > 3.8) {
             bState.rolling = false;
             fbMsg('平板车滚起来啦！圆柱躺倒就能滚，车轮就是这么发明的～');
         }
     }
     if (bState && bState.failAt) {
-        if (performance.now() - bState.failAt > 1300) { bState.failAt = 0; }
+        if (performance.now() - bState.failAt > 1400) { bState.failAt = 0; if (cartGroup3D) { cartGroup3D.rotation.z = 0; cartGroup3D.position.y = 0; } }
         else if (cartGroup3D) {
-            cartGroup3D.rotation.z = Math.sin((performance.now() - bState.failAt) / 60) * 0.06;
-            cartGroup3D.position.y = Math.abs(Math.sin((performance.now() - bState.failAt) / 90)) * 0.1;
+            cartGroup3D.rotation.z = Math.sin((performance.now() - bState.failAt) / 55) * 0.055;
+            cartGroup3D.position.y = Math.abs(Math.sin((performance.now() - bState.failAt) / 85)) * 0.12;
         }
     }
     bUpdateCam();
     bR3.render(bScene, bCam);
 }
 function startBuild(key) {
-    if (!bScene || !bCam) return;   // 3D 场景未就绪时忽略（bootAll 会重试）
+    if (!bScene || !bCam) return;
     buildKey = key;
     const cfg = BUILDS[key];
-    bState = { cfg, placed: 0, phase: 'float', rolling: false, failAt: 0, wheels: [] };
+    bState = { cfg, placed: 0, phase: 'float', rolling: false, failAt: 0, wheels: [], wheelShape: 'cyl' };
     /* 清场 */
-    if (bScene) {
-        [plank3D, ...ring3Ds.map(r => r.mesh), ...placedParts.map(p => p.mesh), cartGroup3D].forEach(o => {
-            if (o) bScene.remove(o);
-        });
-        if (cartGroup3D) cartGroup3D = null;
-    }
+    if (plank3D) bScene.remove(plank3D);
+    ring3Ds.forEach(r => bScene.remove(r.mesh));
+    placedParts.forEach(p => bScene.remove(p.mesh));
+    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; }
     ring3Ds = []; placedParts = [];
     /* 悬浮桌板 */
-    plankFloatY = 1.75;
-    plank3D = bWoodPlank(key === 'cart' ? 2.3 : 2.5, key === 'cart' ? 1.0 : 1.2);
+    plankFloatY = 1.85;
+    plank3D = bWoodPlank(key === 'cart' ? 2.4 : 2.5, key === 'cart' ? 1.05 : 1.25);
     plank3D.position.set(0, plankFloatY, 0);
-    plank3D.castShadow = true;
     bScene.add(plank3D);
     /* 地面光圈 */
     ring3Ds = cfg.slots.map(([x, z]) => {
@@ -1225,55 +1235,60 @@ function startBuild(key) {
         bScene.add(r);
         return { mesh: r, x, z, filled: false };
     });
-    plankAssembledY = cfg.mode === 'cart' ? 0.72 : 1.06;
-    /* 托盘零件（HTML 预览） */
+    plankAssembledY = cfg.mode === 'cart' ? 0.65 : 1.01;
+    /* 托盘零件（预览，无限供应：拖出不消失） */
     const tray = $('tray'); tray.innerHTML = '';
-    trayStock = [];
     for (let i = 0; i < cfg.parts; i++) {
         const el = document.createElement('div');
         el.className = 'part';
         el.innerHTML = drawPart(cfg.partShape);
         el.onpointerdown = e => beginPartDrag(e, el, cfg.partShape);
         tray.appendChild(el);
-        trayStock.push(el);
     }
     const tip = $('buildTip');
     tip.innerHTML = cfg.cap + `　<b>已放好 <span id="cntN">0</span>/${cfg.parts}</b> · 点已放好的零件可取下来`;
     $('speakB').classList.add('hidden');
     $('rollBtn').classList.add('hidden');
     $('swapBtn').classList.add('hidden');
+    resizeBuild3D();
+    bUpdateCam();
 }
-/* 把托盘零件拖进 3D 场景：跟随指针投影到地面，近光圈吸附 */
+/* 从托盘拖出：生成新零件跟随指针，近光圈吸附；托盘原件保留（无限供应） */
 function beginPartDrag(e, el, shape) {
-    if (!bR3 || bState.placed >= bState.cfg.parts) return;
+    if (!bR3 || bState.phase !== 'float' && !(bState.mode === 'cart' && bState.phase === 'float')) {
+        if (bState.rolling || bState.failAt) return;
+    }
+    if (bState.rolling) return;
     e.preventDefault();
     const mesh = bMakePart(shape);
-    const centerY = shape === 'cyl' ? 0.46 : 0.46;
-    mesh.position.set(0, centerY, 0);
+    const centerY = 0.46;
+    mesh.position.set(0, centerY, 0);          // 拖起时先落在台面中心（托盘在"地平线以上"，射线不交地面）
     bScene.add(mesh);
-    el.style.opacity = '.25';
-    let hoverRing = null;
+    buildDrag = { mesh, shape };
+    let last = mesh.position.clone();          // 上一个有效位置
     const move = ev => {
-        const p = groundPoint(ev, centerY);
-        mesh.position.x = Math.max(-3.4, Math.min(3.4, p.x));
-        mesh.position.z = Math.max(-2.6, Math.min(2.6, p.z));
-        /* 最近空光圈高亮 */
-        hoverRing = nearestRing(mesh.position.x, mesh.position.z);
+        const p = groundPoint(ev, 0.03, last);   // 与地面求交（光圈所在地），避免后排光圈交点漂移
+        if (!isFinite(p.x)) return;
+        last = p;
+        mesh.position.x = p.x;
+        mesh.position.z = p.z;
+        const ring = nearestRingScreen(ev);
         ring3Ds.forEach(r => {
-            r.mesh.material.color.setHex(r === hoverRing ? 0xffe082 : 0xf5a623);
-            r.mesh.scale.setScalar(r === hoverRing ? 1.18 : 1);
+            r.mesh.material.color.setHex(r === ring ? 0xffe082 : 0xf5a623);
+            r.mesh.scale.setScalar(r === ring ? 1.2 : 1);
         });
     };
     move(e);
     const up = ev => {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
-        el.style.opacity = '';
-        const ring = nearestRing(mesh.position.x, mesh.position.z);
-        if (ring && Math.hypot(mesh.position.x - ring.x, mesh.position.z - ring.z) < 0.75) {
-            placePart(mesh, shape, ring, el);
+        buildDrag = null;
+        const ring = nearestRingScreen(ev);              // 按屏幕距离吸附：所见即所得
+        if (ring && ring._d < 150) {
+            placePart(mesh, shape, ring);
         } else {
             bScene.remove(mesh);
+            ring3Ds.forEach(r => { r.mesh.material.color.setHex(0xf5a623); r.mesh.scale.setScalar(1); });
             fbMsg('');
         }
     };
@@ -1289,13 +1304,28 @@ function nearestRing(x, z) {
     });
     return best;
 }
-function placePart(mesh, shape, ring, trayEl) {
+/* 按屏幕像素距离找最近空光圈（拖拽吸附所见即所得） */
+function nearestRingScreen(e) {
+    const rect = bR3.domElement.getBoundingClientRect();
+    let best = null, bd = 1e9;
+    ring3Ds.forEach(r => {
+        if (r.filled) return;
+        const v = new THREE.Vector3(r.x, 0.03, r.z);
+        v.project(bCam);
+        const sx = rect.left + (v.x + 1) / 2 * rect.width;
+        const sy = rect.top + (1 - v.y) / 2 * rect.height;
+        const d = Math.hypot(e.clientX - sx, e.clientY - sy);
+        if (d < bd) { bd = d; best = r; best._d = d; }
+    });
+    return best;
+}
+function placePart(mesh, shape, ring) {
     ring.filled = true;
-    ring.mesh.material.opacity = 0.25;
+    ring.mesh.material.opacity = 0.22;
     ring.mesh.scale.setScalar(1);
     ring.mesh.material.color.setHex(0xf5a623);
-    if (buildKey === 'cart') {
-        /* 平板车轮子：躺倒（几何轴向转成 X） */
+    if (bState.cfg.mode === 'cart') {
+        /* 平板车轮子：躺倒（几何烘焙旋转，轴向转成X，可滚动） */
         mesh.geometry.dispose();
         mesh.geometry = new THREE.CylinderGeometry(0.28, 0.28, 0.5, 26).rotateZ(Math.PI / 2);
         mesh.position.set(ring.x, 0.28, ring.z);
@@ -1304,13 +1334,12 @@ function placePart(mesh, shape, ring, trayEl) {
     } else {
         mesh.position.set(ring.x, 0.46, ring.z);
     }
-    mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
-    placedParts.push({ mesh, shape, ring, trayEl });
+    placedParts.push({ mesh, shape, ring });
     mesh.onpointerdown = ev => { ev.stopPropagation(); removePart(mesh); };
     sSnap();
-    buildState.placed = placedParts.length;
-    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
-    if (buildState.placed >= bState.cfg.parts) buildComplete();
+    bState.placed = placedParts.length;
+    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = bState.placed;
+    if (bState.placed >= bState.cfg.parts) buildComplete();
 }
 function removePart(mesh) {
     const rec = placedParts.find(p => p.mesh === mesh);
@@ -1319,16 +1348,14 @@ function removePart(mesh) {
     rec.ring.filled = false;
     rec.ring.mesh.material.opacity = 0.9;
     bScene.remove(mesh);
-    rec.trayEl.style.opacity = '';
-    buildState.placed = placedParts.length;
-    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = buildState.placed;
+    bState.placed = placedParts.length;
+    const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = bState.placed;
     sClick();
 }
 function buildComplete() {
     const cfg = bState.cfg;
-    /* 桌板落下 */
     bState.phase = 'drop';
-    plankAssembledY = cfg.mode === 'cart' ? 0.62 : 1.06;
+    plankAssembledY = cfg.mode === 'cart' ? 0.65 : 1.01;
     bState.drop = true;
     sWin(); confetti(30);
     fbMsg('🎉 ' + cfg.okText);
@@ -1340,26 +1367,69 @@ function buildComplete() {
         }, 1500);
     }
 }
-function groundPoint(e, y) {
+function groundPoint(e, y, fallback) {
     const rect = bR3.domElement.getBoundingClientRect();
     const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     bRay.setFromCamera({ x: nx, y: ny }, bCam);
+    if (Math.abs(bRay.ray.direction.y) < 1e-4) return fallback || new THREE.Vector3(0, y, 0);
     const t = (y - bRay.ray.origin.y) / bRay.ray.direction.y;
-    return bRay.ray.origin.clone().addScaledVector(bRay.ray.direction, t);
+    if (!isFinite(t) || t < 0) return fallback || new THREE.Vector3(0, y, 0);   // 指针在地平线以上
+    const p = bRay.ray.origin.clone().addScaledVector(bRay.ray.direction, t);
+    const d = Math.hypot(p.x, p.z);
+    if (d > 4.2) { p.x *= 4.2 / d; p.z *= 4.2 / d; }   // 限制在地面内
+    return p;
 }
+function pickPlaced(e) {
+    const rect = bR3.domElement.getBoundingClientRect();
+    const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    bRay.setFromCamera({ x: nx, y: ny }, bCam);
+    const hits = bRay.intersectObjects(placedParts.map(p => p.mesh));
+    return hits.length ? hits[0].object : null;
+}
+/* 视角旋转（拖空白处）/滚轮缩放；点击已放零件=取下 */
 function bindBuildGL() {
     const el = bR3.domElement;
-    /* 点击已放好的零件取下（走 3D 拾取） */
-    el.addEventListener('pointerup', e => {
-        if (buildDrag) return;
-        const rect = bR3.domElement.getBoundingClientRect();
-        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        const ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        bRay.setFromCamera({ x: nx, y: ny }, bCam);
-        const hits = bRay.intersectObjects(placedParts.map(p => p.mesh));
-        if (hits.length) removePart(hits[0].object);
+    el.style.touchAction = 'none';
+    let down = null, orbit = false, downPart = null;
+    el.addEventListener('pointerdown', e => {
+        downPart = pickPlaced(e);
+        down = { x: e.clientX, y: e.clientY };
+        orbit = false;
     });
+    el.addEventListener('pointermove', e => {
+        if (!down) return;
+        const dx = e.clientX - down.x, dy = e.clientY - down.y;
+        if (Math.abs(dx) + Math.abs(dy) > 7) orbit = true;
+        if (orbit) {
+            bCamTheta -= dx * 0.0085;
+            bCamPhi = Math.max(0.42, Math.min(1.3, bCamPhi - dy * 0.006));
+            down = { x: e.clientX, y: e.clientY };
+        }
+    });
+    el.addEventListener('pointerup', () => {
+        if (down && !orbit && downPart) removePart(downPart);
+        down = null; downPart = null;
+        setTimeout(() => { orbit = false; }, 50);
+    });
+    el.addEventListener('wheel', e => {
+        e.preventDefault();
+        bZoomK = Math.max(0.6, Math.min(1.8, bZoomK + e.deltaY * 0.0012));
+    }, { passive: false });
+    let pinch0 = 0, k0 = 1;
+    el.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+            pinch0 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            k0 = bZoomK;
+        }
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+        if (e.touches.length === 2 && pinch0) {
+            const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            bZoomK = Math.max(0.6, Math.min(1.8, k0 * pinch0 / d));
+        }
+    }, { passive: true });
 }
 function fbMsg(t) {
     const b = $('speakB');
@@ -1367,23 +1437,18 @@ function fbMsg(t) {
     b.textContent = t; b.classList.remove('hidden');
 }
 $('rollBtn').onclick = () => {
-    if (!bState || bState.mode !== 'cart' || bState.placed < bState.cfg.parts) return;
+    if (!bState || bState.mode !== 'cart' || bState.placed < bState.cfg.parts || bState.rolling) return;
     sClick();
-    /* 组装成整体：桌板 + 轮子 */
+    /* 组装成整体：桌板 + 躺倒的轮子 */
     cartGroup3D = new THREE.Group();
-    const plankWorld = plank3D.position.clone();
     bScene.remove(plank3D);
-    plank3D.position.set(0, 0, 0);
+    plank3D.position.set(0, plankAssembledY, 0);
     cartGroup3D.add(plank3D);
     placedParts.forEach(p => {
         bScene.remove(p.mesh);
-        p.mesh.position.sub(new THREE.Vector3(cartGroup3D.position.x, 0, 0));
         cartGroup3D.add(p.mesh);
     });
-    plank3D.position.y = plankAssembledY - cartGroup3D.position.y;   // 相对
-    cartGroup3D.position.set(0, 0, 0);
     bScene.add(cartGroup3D);
-    /* 平板车整体轻微抬起：轮子躺倒支撑 */
     if (bState.wheelShape !== 'cuboid') {
         bState.rolling = true;
         fbMsg('');
@@ -1394,28 +1459,30 @@ $('rollBtn').onclick = () => {
 };
 $('swapBtn').onclick = () => {
     sClick();
-    /* 换成长方体当轮子：清轮子重摆 */
-    placedParts.forEach(p => { bScene.remove(p.mesh); p.ring.filled = false; p.ring.mesh.material.opacity = 0.9; });
-    placedParts = []; buildState.placed = 0; buildState.wheels = [];
-    buildState.wheelShape = 'cuboid';
+    placedParts.forEach(p => bScene.remove(p.mesh));
+    placedParts = []; bState.placed = 0; bState.wheels = [];
+    bState.wheelShape = 'cuboid';
+    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; }
+    bState.phase = 'float';
+    if (plank3D) bScene.remove(plank3D);
+    plankFloatY = 1.7;
+    plank3D = bWoodPlank(2.4, 1.05);
+    plank3D.position.set(0, plankFloatY, 0);
+    bScene.add(plank3D);
+    ring3Ds.forEach(r => { r.filled = false; r.mesh.material.opacity = 0.9; });
     const tray = $('tray'); tray.innerHTML = '';
     for (let i = 0; i < 3; i++) {
         const el = document.createElement('div');
-        el.className = 'part'; el.dataset.shape = 'cuboid';
+        el.className = 'part';
         el.innerHTML = drawPart('cuboid');
         el.onpointerdown = e => beginPartDrag(e, el, 'cuboid');
         tray.appendChild(el);
     }
     const cnt = $('buildStage').querySelector('#cntN'); if (cnt) cnt.textContent = 0;
     fbMsg('把 3 个长方体当轮子装上，再点「滚一滚」试试～');
-    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; plankFloatY = 1.55; }
+    $('rollBtn').classList.add('hidden');
+    $('swapBtn').classList.add('hidden');
 };
-document.querySelectorAll('#buildTabs .subtab').forEach(b => b.onclick = () => {
-    sClick();
-    document.querySelectorAll('#buildTabs .subtab').forEach(x => x.classList.toggle('on', x === b));
-    buildState.wheelShape = 'cyl';
-    startBuild(b.dataset.b);
-});
 
 /* ================================================================
    环节④ PK练习：真 3D 转台（每队独立小舞台，物品慢转）
