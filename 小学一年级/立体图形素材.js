@@ -157,3 +157,35 @@ function drawPart(shape) {
         <rect x="10" y="6" width="40" height="78" rx="7" fill="none" stroke="#2f7fd4" stroke-width="2" opacity=".5"/>
     </svg>`;
 }
+
+/* ---- 3D 物品快照（把 buildItem3D 渲染成 png dataURL，供分类命名等平面处使用） ---- */
+let _snapR = null, _snapScene = null, _snapCam = null;
+const _snapCache = {};
+function snapshotItem3D(id) {
+    if (typeof THREE === 'undefined') return '';
+    if (_snapCache[id]) return _snapCache[id];
+    if (!_snapR) {
+        _snapR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        _snapR.setSize(240, 200);
+    }
+    if (!_snapScene) {
+        _snapScene = new THREE.Scene();
+        _snapCam = new THREE.PerspectiveCamera(38, 240 / 200, 0.1, 50);
+        _snapCam.position.set(0, 1.7, 2.7);
+        _snapCam.lookAt(0, 0.4, 0);
+        _snapScene.add(new THREE.AmbientLight(0xffffff, 0.72));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+        sun.position.set(3, 5, 4);
+        _snapScene.add(sun);
+    }
+    const g = buildItem3D(id);
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    const box = new THREE.Box3().setFromObject(g);
+    g.position.y = -box.min.y;
+    _snapScene.add(g);
+    _snapR.render(_snapScene, _snapCam);
+    const url = _snapR.domElement.toDataURL('image/png');
+    _snapScene.remove(g);
+    _snapCache[id] = url;
+    return url;
+}

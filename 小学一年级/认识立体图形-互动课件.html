@@ -87,6 +87,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
     padding: 7px 4px 5px; text-align: center; cursor: grab; position: relative; touch-action: none; }
 .itemchip:active { cursor: grabbing; }
 .itemchip .im { font-size: 34px; line-height: 1.15; }
+.itemchip img.im { width: 100%; height: 54px; object-fit: contain; }
 .itemchip img.im { width: 100%; height: 52px; object-fit: contain; }
 .itemchip .nm { font-size: 12px; font-weight: 800; color: #555; }
 .ghost { position: fixed; z-index: 99; pointer-events: none; transform: translate(-50%,-50%) scale(1.1) rotate(-3deg);
@@ -112,6 +113,7 @@ button { font-family: inherit; cursor: pointer; border: none; }
 .rtag { width: 64px; background: #fff; border: 2.5px solid #dfe6e9; border-radius: 12px;
     padding: 5px 3px; text-align: center; cursor: grab; position: relative; touch-action: none; }
 .rtag .im { font-size: 27px; line-height: 1.1; }
+.rtag img.im { width: 100%; height: 44px; object-fit: contain; }
 .rtag img.im { width: 100%; height: 40px; object-fit: contain; }
 .rtag .nm { font-size: 11px; font-weight: 800; color: #666; }
 .otherBin { border: 3px dashed #a04040; border-radius: 18px; min-height: 170px; padding: 10px;
@@ -688,14 +690,16 @@ function init3D() {
 }
 /* 相机自动适配：无论屏幕比例，盘子完整可见且尽量占满画面 */
 function fitCamR() {
+    /* V2.2：按盘子真实投影适配（旧版按球体半径算，扁盘子显得小）。
+       横向必须容下盘缘（半径3.62），纵向只需容下倾斜投影高+物品。 */
     const wrap = $('glWrap');
     const aspect = (wrap.clientWidth || 800) / (wrap.clientHeight || 500);
     const fovV = camera3D.fov * Math.PI / 180;
-    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * aspect);
-    const need = 4.0;                                    // 场景半径（贴边占满）
-    const distH = need / Math.tan(fovH / 2);
-    const distV = need / Math.tan(fovV / 2);
-    return Math.max(distH, distV) / Math.sin(camPhi);      // 斜视角换算球坐标距离
+    const tV = Math.tan(fovV / 2);
+    const tH = tV * aspect;
+    const dH = 3.78 / tH;              // 横向：盘缘 3.62 + 小余量
+    const dV = 3.35 / tV + 0.55;       // 纵向：倾斜投影高 + 物品高 + 余量
+    return Math.min(Math.max(dH, dV), 14);
 }
 let zoomK = 1;                                            // 用户滚轮缩放系数
 function updateCam3D() {
@@ -992,7 +996,7 @@ function renderSort() {
 function chipEl(s) {
     const d = document.createElement('div');
     d.className = 'itemchip';
-    d.innerHTML = `${s.item.img ? `<img class="im" src="${s.item.img}">` : `<div class="im">${drawItem(s.item.id)}</div>`}<div class="nm">${s.item.name}</div>`;
+    d.innerHTML = `<img class="im" src="${snapshotItem3D(s.item.id)}"><div class="nm">${s.item.name}</div>`;
     d.dataset.sid = s.item.id;
     return d;
 }
