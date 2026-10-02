@@ -1484,6 +1484,14 @@ $('swapBtn').onclick = () => {
     $('swapBtn').classList.add('hidden');
 };
 
+/* 三个子关卡页签切换 */
+document.querySelectorAll('#buildTabs .subtab').forEach(b => b.onclick = () => {
+    sClick();
+    document.querySelectorAll('#buildTabs .subtab').forEach(x => x.classList.toggle('on', x === b));
+    bState.wheelShape = 'cyl';
+    startBuild(b.dataset.b);
+});
+
 /* ================================================================
    环节④ PK练习：真 3D 转台（每队独立小舞台，物品慢转）
 ================================================================ */
