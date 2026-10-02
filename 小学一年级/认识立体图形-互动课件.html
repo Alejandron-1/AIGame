@@ -1105,7 +1105,7 @@ $('reBtn').onclick = () => { sClick(); sortInit(); };
    环节③ 动手拼搭：真 3D（V3.0 悬浮桌板+光圈吸附+无限托盘+可旋转视角）
 ================================================================ */
 let bR3 = null, bScene = null, bCam = null, bRay = null;
-let plank3D = null, ring3Ds = [], placedParts = [], cartGroup3D = null;
+let plank3D = null, ring3Ds = [], placedParts = [], rollers = [];
 let buildKey = null, bState = null, buildDrag = null;
 let bCamTheta = 0, bCamPhi = 1.06, bZoomK = 1;
 
@@ -1187,26 +1187,33 @@ function bFitR() {
 }
 function bAnimate() {
     requestAnimationFrame(bAnimate);
+    try {
     if (!bR3 || $('pg-build').classList.contains('hidden')) return;
     const t = performance.now() / 1000;
     if (plank3D && bState && bState.phase === 'float') plank3D.position.y = 1.85 + Math.sin(t * 1.8) * 0.07;
     if (plank3D && bState && bState.phase === 'drop') plank3D.position.y += (plankAssembledY - plank3D.position.y) * 0.12;
-    if (bState && bState.rolling && cartGroup3D) {
-        const dx = 0.042;
-        cartGroup3D.position.x += dx;
-        (bState.wheels || []).forEach(w => { w.rotation.x -= dx / 0.28; });
-        if (cartGroup3D.position.x > 3.8) {
+    if (bState && bState.rolling && plank3D) {
+        /* 圆柱滚木原地旋转，板从上面滚过去 */
+        const dx = 0.035;
+        plank3D.position.x += dx;
+        (bState.rollers || []).forEach(r => { r.rotation.z -= dx / 0.30; });
+        if (plank3D.position.x > 1.7) {
             bState.rolling = false;
-            fbMsg('平板车滚起来啦！圆柱躺倒就能滚，车轮就是这么发明的～');
+            fbMsg('平板车滚过去啦！圆柱躺倒能滚，长方体滚不动——轮子要做成圆柱哦');
         }
     }
     if (bState && bState.failAt) {
-        if (performance.now() - bState.failAt > 1400) { bState.failAt = 0; if (cartGroup3D) { cartGroup3D.rotation.z = 0; cartGroup3D.position.y = 0; } }
-        else if (cartGroup3D) {
-            cartGroup3D.rotation.z = Math.sin((performance.now() - bState.failAt) / 55) * 0.055;
-            cartGroup3D.position.y = Math.abs(Math.sin((performance.now() - bState.failAt) / 85)) * 0.12;
+        if (performance.now() - bState.failAt > 1600) {
+            bState.failAt = 0;
+            if (plank3D) { plank3D.rotation.z = 0; plank3D.position.x = Math.min(plank3D.position.x, 0.4); }
+            fbMsg('拉不动！长方体的棱卡住了，换成圆柱滚木试试');
+        } else if (plank3D) {
+            plank3D.rotation.z = Math.sin((performance.now() - bState.failAt) / 55) * 0.05;
+            /* 硬拖只能蹭一点点：1.6 秒内总共挪 0.28，教学点=长方体滚不动 */
+            plank3D.position.x = Math.min(0.28, (performance.now() - bState.failAt) / 1600 * 0.28);
         }
     }
+    } catch (e) { console.warn('bAnimate frame', e); }
     bUpdateCam();
     bR3.render(bScene, bCam);
 }
@@ -1214,12 +1221,11 @@ function startBuild(key) {
     if (!bScene || !bCam) return;
     buildKey = key;
     const cfg = BUILDS[key];
-    bState = { cfg, placed: 0, phase: 'float', rolling: false, failAt: 0, wheels: [], wheelShape: 'cyl' };
+    bState = { cfg, mode: key === 'cart' ? 'cart' : 'stool', placed: 0, phase: 'float', rolling: false, failAt: 0, rollers: [], wheelShape: 'cyl' };
     /* 清场 */
     if (plank3D) bScene.remove(plank3D);
     ring3Ds.forEach(r => bScene.remove(r.mesh));
     placedParts.forEach(p => bScene.remove(p.mesh));
-    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; }
     ring3Ds = []; placedParts = [];
     /* 悬浮桌板 */
     plankFloatY = 1.85;
@@ -1235,7 +1241,7 @@ function startBuild(key) {
         bScene.add(r);
         return { mesh: r, x, z, filled: false };
     });
-    plankAssembledY = cfg.mode === 'cart' ? 0.65 : 1.01;
+    plankAssembledY = cfg.mode === 'cart' ? 0.69 : 1.01;
     /* 托盘零件（预览，无限供应：拖出不消失） */
     const tray = $('tray'); tray.innerHTML = '';
     for (let i = 0; i < cfg.parts; i++) {
@@ -1327,10 +1333,10 @@ function placePart(mesh, shape, ring) {
     if (bState.cfg.mode === 'cart') {
         /* 平板车轮子：躺倒（几何烘焙旋转，轴向转成X，可滚动） */
         mesh.geometry.dispose();
-        mesh.geometry = new THREE.CylinderGeometry(0.28, 0.28, 0.5, 26).rotateZ(Math.PI / 2);
-        mesh.position.set(ring.x, 0.28, ring.z);
+        mesh.geometry = new THREE.CylinderGeometry(0.30, 0.30, 1.05, 28).rotateX(Math.PI / 2);
+        mesh.position.set(ring.x, 0.30, ring.z);
         mesh.rotation.set(0, 0, 0);
-        bState.wheels.push(mesh);
+        bState.rollers.push(mesh);
     } else {
         mesh.position.set(ring.x, 0.46, ring.z);
     }
@@ -1355,7 +1361,7 @@ function removePart(mesh) {
 function buildComplete() {
     const cfg = bState.cfg;
     bState.phase = 'drop';
-    plankAssembledY = cfg.mode === 'cart' ? 0.65 : 1.01;
+    plankAssembledY = cfg.mode === 'cart' ? 0.69 : 1.01;
     bState.drop = true;
     sWin(); confetti(30);
     fbMsg('🎉 ' + cfg.okText);
@@ -1363,7 +1369,7 @@ function buildComplete() {
         setTimeout(() => {
             $('rollBtn').classList.remove('hidden');
             $('swapBtn').classList.remove('hidden');
-            fbMsg('轮子装好啦！点「滚一滚」看看跑不跑得动～');
+            if (!bState.rolling && !bState.failAt) fbMsg('轮子装好啦！点「滚一滚」看看跑不跑得动～');
         }, 1500);
     }
 }
@@ -1439,30 +1445,20 @@ function fbMsg(t) {
 $('rollBtn').onclick = () => {
     if (!bState || bState.mode !== 'cart' || bState.placed < bState.cfg.parts || bState.rolling) return;
     sClick();
-    /* 组装成整体：桌板 + 躺倒的轮子 */
-    cartGroup3D = new THREE.Group();
-    bScene.remove(plank3D);
-    plank3D.position.set(0, plankAssembledY, 0);
-    cartGroup3D.add(plank3D);
-    placedParts.forEach(p => {
-        bScene.remove(p.mesh);
-        cartGroup3D.add(p.mesh);
-    });
-    bScene.add(cartGroup3D);
+    /* 板压在滚木上：滚木原地旋转，板向前滚过去（古法搬重物） */
     if (bState.wheelShape !== 'cuboid') {
         bState.rolling = true;
         fbMsg('');
     } else {
         bState.failAt = performance.now();
-        fbMsg('颠簸得厉害，滚不动！长方体的面是平的，圆柱躺倒才能滚哦');
+        fbMsg('拉不动！长方体的棱卡住了，圆柱滚木才能滚哦');
     }
 };
 $('swapBtn').onclick = () => {
     sClick();
     placedParts.forEach(p => bScene.remove(p.mesh));
-    placedParts = []; bState.placed = 0; bState.wheels = [];
+    placedParts = []; bState.placed = 0; bState.rollers = [];
     bState.wheelShape = 'cuboid';
-    if (cartGroup3D) { bScene.remove(cartGroup3D); cartGroup3D = null; }
     bState.phase = 'float';
     if (plank3D) bScene.remove(plank3D);
     plankFloatY = 1.7;
@@ -1657,11 +1653,6 @@ function loadThree(retries) {
         try { resize3D(); resizeBuild3D(); resizePk3D('L'); resizePk3D('R'); } catch (e) {}
     });
 })();
-/* ============ 启动 ============ */
-init3D();
-sortInit();
-renderModelChips();
-startBuild('stoolCyl');
 
 </script>
 </body>
