@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧱 立体图形小镇 · 认识立体图形（一年级公开课课件）</title>
+<!-- ============================================================
+     立体图形小镇 · 单文件离线课件（Block Town 同款结构 + 自家课本内容）
+     翻页课件（16 页）+ 四个互动游戏内嵌，方向键/翻页笔(PgUp/PgDn)/按钮翻页
+     素材：老师《认识图形》PPT 实拍图片（已抠图内嵌）
+     构建：本模板经 构建单文件.py 把 ASSET:名 替换为 base64 后即成单文件
+============================================================ -->
+<style>
+/* ================= 基础与配色 ================= */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+    --bg:#faf6ee; --ink:#3f3a34; --line:#3f3a34;
+    --cuboid:#f5a35c; --cuboid-d:#e08b45; --cuboid-l:#ffc28e;
+    --cube:#7fb2e5;   --cube-d:#5f92c9;   --cube-l:#a9cdf0;
+    --cyl:#7fc8a8;    --cyl-d:#5fae8c;    --cyl-l:#a8dfc6;
+    --ball:#f2a6b8;   --ball-d:#dd8497;   --ball-l:#f9c6d1;
+    --gold:#ffce4f;
+}
+html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
+body { font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif; color:var(--ink); }
+button { font-family:inherit; cursor:pointer; }
+
+/* ================= 课件翻页框架 ================= */
+#deck { position:fixed; inset:0; }
+.slide { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+         padding:56px 40px 84px; overflow:hidden; }
+.slide.on { display:flex; animation:slideIn .45s cubic-bezier(.22,1.2,.36,1); }
+@keyframes slideIn { from { opacity:0; transform:translateX(60px) scale(.985); } to { opacity:1; transform:none; } }
+.slide.on.rev { animation:slideInR .45s cubic-bezier(.22,1.2,.36,1); }
+@keyframes slideInR { from { opacity:0; transform:translateX(-60px) scale(.985); } to { opacity:1; transform:none; } }
+
+#chrome { position:fixed; z-index:900; pointer-events:none; }
+#lessonChip { position:fixed; top:14px; left:16px; z-index:900; background:#fff; border:2.5px solid var(--line);
+    border-radius:999px; padding:5px 16px 5px 10px; font-size:15px; font-weight:700; box-shadow:0 3px 0 rgba(63,58,52,.15);
+    pointer-events:none; display:flex; align-items:center; gap:6px; }
+#pageno { position:fixed; bottom:16px; left:18px; z-index:900; font-size:15px; font-weight:800; color:#9a938a;
+    background:#fff; border:2px solid #e8e1d4; border-radius:10px; padding:3px 12px; pointer-events:none; }
+#navbtns { position:fixed; bottom:14px; right:16px; z-index:950; display:flex; gap:10px; }
+#navbtns button { width:52px; height:44px; border-radius:14px; border:3px solid var(--line); background:#fff;
+    font-size:20px; font-weight:900; box-shadow:0 4px 0 rgba(63,58,52,.2); transition:transform .12s; }
+#navbtns button:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(63,58,52,.2); }
+#fsBtn { position:fixed; top:14px; right:16px; z-index:950; width:46px; height:38px; border-radius:12px;
+    border:2.5px solid var(--line); background:#fff; font-size:17px; box-shadow:0 3px 0 rgba(63,58,52,.2); }
+#progress { position:fixed; top:0; left:0; height:5px; background:linear-gradient(90deg,var(--cuboid),var(--cube),var(--cyl),var(--ball));
+    z-index:960; transition:width .35s; border-radius:0 4px 4px 0; }
+
+/* ================= 通用组件 ================= */
+.htitle { font-size:clamp(30px,4.4vw,52px); font-weight:900; letter-spacing:2px; margin-bottom:6px; text-align:center; }
+.htitle em { font-style:normal; color:#f0831f; }
+.hsub { font-size:clamp(15px,1.6vw,20px); color:#8b8378; font-weight:700; margin-bottom:22px; text-align:center; }
+.card { background:#fff; border:3px solid var(--line); border-radius:22px; box-shadow:0 8px 0 rgba(63,58,52,.10); }
+.pill { display:inline-flex; align-items:center; gap:8px; background:#fff; border:3px solid var(--line);
+    border-radius:999px; padding:10px 24px; font-weight:800; font-size:clamp(16px,1.7vw,22px); box-shadow:0 5px 0 rgba(63,58,52,.12); }
+.bigbtn { background:var(--gold); border:3.5px solid var(--line); border-radius:18px; padding:14px 34px;
+    font-size:clamp(18px,2vw,26px); font-weight:900; box-shadow:0 6px 0 #c99a1f; transition:transform .12s, box-shadow .12s; }
+.bigbtn:active { transform:translateY(5px); box-shadow:0 1px 0 #c99a1f; }
+.bigbtn.pulse { animation:pulse 1.1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+.minibtn { background:#fff; border:2.5px solid var(--line); border-radius:12px; padding:7px 16px; font-weight:800;
+    font-size:15px; box-shadow:0 3px 0 rgba(63,58,52,.15); }
+.minibtn:active { transform:translateY(2px); box-shadow:none; }
+.tag { font-size:14px; font-weight:800; color:#fff; border-radius:999px; padding:3px 12px; }
+.t-cuboid{background:var(--cuboid-d)} .t-cube{background:var(--cube-d)} .t-cyl{background:var(--cyl-d)} .t-ball{background:var(--ball-d)}
+
+.toast { position:fixed; left:50%; bottom:110px; transform:translateX(-50%) translateY(30px); z-index:980;
+    background:#fff; border:3px solid var(--line); border-radius:18px; padding:12px 26px; font-size:clamp(16px,1.8vw,22px);
+    font-weight:800; box-shadow:0 8px 24px rgba(63,58,52,.25); opacity:0; transition:all .3s; pointer-events:none; max-width:80vw; text-align:center; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* 卡通图形动画 */
+.wob { animation:wob 2.6s ease-in-out infinite; transform-origin:50% 90%; }
+@keyframes wob { 0%,100%{transform:rotate(-2.2deg)} 50%{transform:rotate(2.2deg)} }
+.pop { animation:pop .55s cubic-bezier(.2,1.6,.4,1); }
+@keyframes pop { 0%{transform:scale(0) rotate(-12deg)} 70%{transform:scale(1.12) rotate(3deg)} 100%{transform:scale(1)} }
+.flipout { animation:flipout .38s ease-in forwards; }
+@keyframes flipout { to { transform:rotateY(90deg) scale(.4); opacity:0; } }
+.bounceIn { animation:bounceIn .6s cubic-bezier(.2,1.4,.4,1); }
+@keyframes bounceIn { 0%{transform:translateY(-40px) scale(.3); opacity:0} 60%{transform:translateY(6px) scale(1.06)} 100%{transform:none; opacity:1} }
+.jiggle { animation:jiggle .5s; }
+@keyframes jiggle { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(4px)} }
+.fall { animation:fall 1s cubic-bezier(.3,1.2,.5,1) both; }
+@keyframes fall { from{transform:translateY(-70vh) rotate(-14deg); opacity:0} to{transform:none; opacity:1} }
+.floaty { animation:floaty 3s ease-in-out infinite; }
+@keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+
+/* 网格地面（游戏舞台） */
+.gridfloor { background:
+    linear-gradient(rgba(63,58,52,.07) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(63,58,52,.07) 1.5px, transparent 1.5px);
+    background-size:44px 44px, 44px 44px; }
+
+/* ================= 封面 ================= */
+#cover .town { margin-top:8px; }
+.cover-shapes { display:flex; gap:2vw; align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.cover-shapes svg { width:clamp(56px,12vw,150px); height:auto; }
+
+/* ================= 情境导入（课本P4） ================= */
+.shelfrow { display:flex; gap:clamp(10px,1.8vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
+.shelfitem { display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .15s; }
+.shelfitem img { height:clamp(64px,10vh,110px); filter:drop-shadow(0 5px 6px rgba(63,58,52,.18)); }
+.shelfitem:hover { transform:translateY(-8px) scale(1.05); }
+.shelfitem .nm { font-size:15px; font-weight:800; background:#fff; border:2px solid var(--line); border-radius:999px; padding:2px 12px; opacity:0; transform:translateY(6px); transition:all .25s; }
+.shelfitem.picked .nm { opacity:1; transform:none; }
+.shelfitem.picked img { animation:hop .5s; }
+@keyframes hop { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-16px) rotate(-4deg)} 70%{transform:translateY(0)} 85%{transform:translateY(-6px)} }
+
+/* ================= 分一分引入 ================= */
+.idearow { display:flex; gap:22px; justify-content:center; flex-wrap:wrap; }
+.ideacard { width:min(300px,26vw); padding:20px; text-align:center; cursor:pointer; transition:transform .15s; }
+.ideacard:hover { transform:translateY(-6px); }
+.ideacard .ic { font-size:44px; }
+.ideacard h3 { font-size:clamp(17px,1.8vw,22px); margin:8px 0; }
+.ideacard p { font-size:clamp(13px,1.4vw,16px); color:#7c746a; line-height:1.7; min-height:3.4em; }
+
+/* ================= 图形名片 ================= */
+.namegrid { display:flex; gap:clamp(12px,2vw,30px); flex-wrap:wrap; justify-content:center; }
+.namecard { width:clamp(150px,17vw,230px); padding:18px 12px 14px; text-align:center; cursor:pointer; transition:transform .18s; }
+.namecard:hover { transform:translateY(-8px) rotate(-1.5deg); }
+.namecard .nm { font-size:clamp(19px,2vw,26px); font-weight:900; margin-top:8px; }
+.namecard .ft { font-size:14px; color:#8b8378; font-weight:700; margin-top:5px; line-height:1.5; min-height:2.8em; }
+
+/* ================= 特征页 ================= */
+.featwrap { display:flex; gap:clamp(20px,3.4vw,54px); align-items:flex-start; justify-content:center; width:min(1380px,100%); flex-wrap:wrap; }
+.featleft { text-align:center; }
+.featshape { cursor:pointer; }
+.featright { max-width:560px; flex:1 1 380px; }
+.featline { display:flex; gap:10px; align-items:flex-start; background:#fff; border:3px solid var(--line); border-radius:16px;
+    padding:12px 16px; margin-bottom:12px; font-size:clamp(16px,1.7vw,21px); font-weight:800; opacity:0; transform:translateX(30px);
+    transition:all .4s cubic-bezier(.2,1.2,.4,1); box-shadow:0 4px 0 rgba(63,58,52,.1); }
+.featline.show { opacity:1; transform:none; }
+.featline .no { flex:0 0 30px; height:30px; border-radius:50%; background:var(--gold); border:2.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; }
+.liferow { display:flex; gap:14px; margin-top:16px; flex-wrap:wrap; }
+.lifeitem { text-align:center; background:#fff; border:2.5px solid var(--line); border-radius:14px; padding:8px 10px 5px; }
+.lifeitem img { height:56px; display:block; margin:0 auto; }
+.lifeitem div { font-size:13px; font-weight:800; color:#7c746a; margin-top:2px; }
+.fan { display:flex; justify-content:center; gap:6px; margin-top:10px; height:64px; }
+.fanface { width:44px; height:52px; border:2.5px solid var(--line); border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-weight:900; font-size:18px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);
+    animation:bounceIn .4s both; }
+.revealbtns { display:flex; gap:12px; margin:12px 0; flex-wrap:wrap; }
+.revcard { background:#fff; border:3px solid var(--line); border-radius:16px; padding:12px 18px; font-weight:800;
+    font-size:clamp(15px,1.6vw,19px); display:none; }
+.revcard.show { display:block; animation:bounceIn .45s; }
+.judgerow { display:flex; gap:18px; margin-top:10px; justify-content:center; flex-wrap:wrap; }
+.judgeitem { text-align:center; cursor:pointer; }
+.judgeitem .slot { width:64px; height:64px; margin:6px auto 0; border-radius:14px; border:3px dashed #c9c1b2;
+    display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:900; }
+.judgeitem.ok .slot { border-style:solid; border-color:#4caf7d; color:#4caf7d; }
+.judgeitem.no .slot { border-style:solid; border-color:#e05d5d; color:#e05d5d; }
+
+/* ================= 游戏1 实物变图形 ================= */
+.g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
+.g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s; }
+.g1item img { height:clamp(56px,9.5vh,92px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
+.g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
+.g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
+    border-radius:50%; color:#fff; font-weight:900; display:none; align-items:center; justify-content:center; font-size:16px; }
+.g1item.done .ck { display:flex; }
+.g1shape { position:absolute; transform:translate(-50%,-88%); pointer-events:none; }
+.g1lineup { display:none; gap:clamp(16px,3vw,54px); align-items:flex-end; justify-content:center; margin-top:10px; }
+.g1lu { text-align:center; }
+.g1lu .nm { margin-top:6px; font-weight:900; font-size:clamp(16px,1.8vw,22px); color:#fff; border-radius:999px; padding:4px 18px; display:inline-block; }
+
+/* ================= 游戏2 我说你猜 ================= */
+.g2wrap { display:flex; gap:clamp(14px,2vw,30px); width:min(1340px,100%); align-items:stretch; justify-content:center; flex-wrap:wrap; }
+.g2panel { flex:0 1 340px; padding:14px; display:flex; flex-direction:column; gap:10px; max-height:62vh; overflow:auto; }
+.riddle { border:2.5px solid var(--line); border-radius:14px; padding:10px 12px; cursor:pointer; background:#fffdf6; font-weight:700; font-size:15px; transition:all .15s; }
+.riddle:hover { transform:translateX(4px); }
+.riddle.on { background:#fff3d6; border-color:#e0a52e; }
+.riddle b { color:#f0831f; }
+.g2stage { flex:1 1 460px; min-height:min(56vh,470px); position:relative; border-radius:26px; overflow:hidden;
+    border:3.5px solid var(--line); box-shadow:0 10px 0 rgba(63,58,52,.1); }
+.g2floor { position:absolute; inset:auto 0 0 0; height:34%; background:linear-gradient(#e9dfc8,#dccfae); }
+.g2shapebox { position:absolute; left:50%; bottom:16%; transform:translateX(-50%); }
+.g2bubble { position:absolute; left:50%; bottom:calc(16% + 190px); transform:translateX(-50%); background:#fff; border:3px solid var(--line);
+    border-radius:16px; padding:8px 18px; font-weight:900; font-size:clamp(15px,1.7vw,20px); opacity:0; transition:all .3s; white-space:nowrap; }
+.g2bubble.show { opacity:1; }
+.curtain { position:absolute; inset:0; z-index:5; transition:transform 1s cubic-bezier(.6,0,.3,1);
+    background:repeating-linear-gradient(90deg,#e56a8c 0 44px,#d95a7e 44px 88px); border-bottom:14px solid var(--gold);
+    box-shadow:inset 0 -30px 60px rgba(0,0,0,.15); display:flex; align-items:flex-end; justify-content:center; }
+.curtain.up { transform:translateY(-104%); }
+.curtain .tassel { position:absolute; bottom:-14px; left:0; right:0; height:14px;
+    background:radial-gradient(circle at 22px -4px, var(--gold) 12px, transparent 13px); background-size:44px 14px; }
+.g2btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-content:start; }
+.g2btns button { border:3px solid var(--line); border-radius:18px; padding:12px 8px; font-weight:900; font-size:clamp(15px,1.6vw,19px);
+    color:#fff; box-shadow:0 5px 0 rgba(63,58,52,.25); transition:transform .12s; }
+.g2btns button:active { transform:translateY(4px); box-shadow:0 1px 0 rgba(63,58,52,.25); }
+.hintbox { border:2.5px dashed #c9c1b2; border-radius:12px; padding:8px 12px; min-height:60px; font-weight:800; color:#6d655a; }
+.hintbox .hl { display:block; animation:bounceIn .4s both; }
+.hintbox input { width:100%; border:none; border-bottom:2px solid #d8d0c0; background:transparent; font-weight:800; font-size:15px; padding:5px 2px; outline:none; font-family:inherit; }
+
+/* ================= 游戏3 分一分 ================= */
+.g3top { display:flex; gap:clamp(10px,1.6vw,24px); justify-content:center; width:min(1300px,100%); flex-wrap:wrap; }
+.home { flex:0 1 210px; text-align:center; padding:10px 8px 12px; position:relative; transition:transform .15s; }
+.home .hz { height:74px; border-radius:12px; border:3px dashed rgba(63,58,52,.35); display:flex; align-items:flex-end;
+    justify-content:center; gap:4px; padding:4px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
+.home.hot .hz { border-color:#f0831f; background:#fff8e8; transform:scale(1.04); }
+.home .hnm { margin-top:8px; font-weight:900; font-size:clamp(14px,1.5vw,18px); }
+.g3mid { position:relative; width:min(1300px,100%); flex:1; min-height:150px; margin-top:14px; }
+.g3chip { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .15s; z-index:2; }
+.g3chip img { width:auto; height:auto; max-height:clamp(48px,8.5vh,84px); max-width:clamp(84px,22vw,150px); display:block; filter:drop-shadow(0 5px 4px rgba(63,58,52,.2)); }
+.g3chip.drag { cursor:grabbing; z-index:50; transition:none; }
+.g3chip.drag img { transform:scale(1.15); }
+.g3chip.shake { animation:jiggle .5s; }
+.g3hud { position:fixed; top:64px; right:18px; z-index:800; display:flex; gap:10px; }
+.teamsc { background:#fff; border:3px solid var(--line); border-radius:16px; padding:8px 14px; font-weight:900; font-size:clamp(14px,1.5vw,18px);
+    display:flex; align-items:center; gap:8px; box-shadow:0 4px 0 rgba(63,58,52,.12); }
+.teamsc.turn { outline:3.5px solid var(--gold); transform:scale(1.05); }
+.star { color:var(--gold); text-shadow:0 0 2px #c99a1f; }
+.g3prog { position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:800; }
+.g3fb { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:850; background:#fff; border:3px solid var(--line);
+    border-radius:16px; padding:10px 24px; font-weight:900; font-size:clamp(16px,1.8vw,21px); opacity:0; transition:all .3s; pointer-events:none; }
+.g3fb.show { opacity:1; }
+.g3done { position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+    background:rgba(250,246,238,.94); }
+.g3done.show { display:flex; }
+
+/* ================= 数一数 ================= */
+.countstage { position:relative; width:min(1000px,100%); height:min(44vh,380px); }
+.countshape { position:absolute; transform:translate(-50%,-100%); transition:transform .2s; }
+.countshape .cno { position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:34px; height:34px; border-radius:50%;
+    background:var(--gold); border:3px solid var(--line); font-weight:900; display:none; align-items:center; justify-content:center; z-index:5; }
+.countshape.mark .cno { display:flex; animation:bounceIn .4s both; }
+.countshape.mark { animation:hop .5s; }
+.countqs { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+.cq { border:3px solid var(--line); border-radius:16px; background:#fff; padding:10px 18px; font-weight:900;
+    font-size:clamp(16px,1.8vw,21px); cursor:pointer; box-shadow:0 5px 0 rgba(63,58,52,.12); transition:transform .12s; }
+.cq:active { transform:translateY(4px); box-shadow:none; }
+.cq b { color:#f0831f; font-size:1.2em; }
+.cq.done { background:#fff3d6; }
+
+/* ================= 游戏4 小镇 ================= */
+.g4wrap { display:flex; gap:clamp(14px,2.4vw,36px); width:min(1360px,100%); align-items:stretch; justify-content:center; flex-wrap:wrap; }
+.g4panel { flex:0 1 360px; padding:18px; display:flex; flex-direction:column; gap:14px; }
+.blank { display:inline-block; min-width:96px; border-bottom:3px solid #f0831f; text-align:center; color:#f0831f; font-weight:900; padding:0 6px; }
+.wordchips { display:flex; gap:8px; flex-wrap:wrap; }
+.wordchips button { border:2.5px solid var(--line); border-radius:999px; padding:6px 14px; font-weight:900; font-size:15px; background:#fff; transition:transform .12s; }
+.wordchips button:active { transform:scale(.94); }
+.g4town { flex:1 1 560px; position:relative; min-height:min(58vh,500px); overflow:hidden; }
+.spot { position:absolute; opacity:0; transform:translateX(120%) rotate(6deg); transition:all .9s cubic-bezier(.2,1.1,.4,1); }
+.spot.in { opacity:1; transform:none; }
+.spot .snm { position:absolute; left:50%; bottom:-4px; transform:translateX(-50%); background:#fff; border:2.5px solid var(--line);
+    border-radius:999px; padding:3px 14px; font-weight:900; font-size:14px; white-space:nowrap; }
+.g4ops { display:flex; gap:12px; margin-top:4px; flex-wrap:wrap; }
+.award { position:fixed; inset:0; z-index:920; display:none; align-items:center; justify-content:center; flex-direction:column;
+    gap:20px; background:rgba(63,58,52,.45); }
+.award.show { display:flex; }
+.award .acard { padding:30px 44px; text-align:center; }
+.trophies { display:flex; gap:34px; justify-content:center; margin:12px 0 6px; }
+.trophy { text-align:center; font-weight:900; font-size:clamp(17px,2vw,23px); }
+.trophy .cup { font-size:clamp(44px,5vw,68px); animation:floaty 2.2s ease-in-out infinite; display:block; }
+.songsheet { font-family:"KaiTi","楷体","STKaiti",serif; }
+
+/* ================= 儿歌 / 作业 ================= */
+.songlines { display:flex; flex-direction:column; gap:18px; align-items:center; }
+.songlines .sl { font-size:clamp(24px,3.4vw,42px); font-weight:900; letter-spacing:4px; opacity:0; transform:translateY(24px); transition:all .6s; }
+.songlines .sl.show { opacity:1; transform:none; }
+.hwlist { display:flex; flex-direction:column; gap:14px; max-width:760px; }
+
+/* ================= 幕布彩蛋 ================= */
+#cv { position:fixed; inset:0; z-index:990; pointer-events:none; }
+
+/* ================= 手机适配（≤760px） ================= */
+@media (max-width:760px) {
+    .slide { padding:52px 14px 90px; }
+    #lessonChip { font-size:12px; padding:4px 10px; top:10px; left:10px; }
+    #fsBtn { top:10px; right:10px; width:38px; height:32px; }
+    #pageno { bottom:12px; left:10px; font-size:12px; }
+    #navbtns button { width:44px; height:38px; font-size:16px; }
+    .g2panel { max-height:none; flex-basis:auto; width:94vw; }
+    .g2stage { width:94vw; min-height:40vh; }
+    .g3chip img { max-height:44px; }
+    .home { flex-basis:44%; }
+    .g3hud { top:56px; right:8px; flex-direction:column; }
+    .featwrap { flex-direction:column; align-items:center; }
+    .featright { max-width:94vw; }
+    .lifeitem img { height:40px; }
+    .g4town { min-height:46vh; width:94vw; }
+    .g4panel { flex-basis:auto; width:94vw; }
+}
+</style>
+</head>
+<body>
+<div id="deck"></div>
+<div id="progress"></div>
+<div id="lessonChip">🧱 立体图形小镇 · 一年级数学公开课</div>
+<div id="pageno">1 / 16</div>
+<button id="fsBtn" title="全屏 (F)">⛶</button>
+<div id="navbtns">
+    <button id="prevB" title="上一页 (←)">‹</button>
+    <button id="nextB" title="下一页 (→ / PgDn)">›</button>
+</div>
+<div class="toast" id="toast"></div>
+<canvas id="cv"></canvas>
+<script>
+'use strict';
+/* ================= 素材（构建时替换为 base64） ================= */
+const A = {
+    basketball:'ASSET:basketball', beachball:'ASSET:beachball', bin:'ASSET:bin', block:'ASSET:block',
+    board:'ASSET:board', box:'ASSET:box', dice:'ASSET:dice', football:'ASSET:football', gift:'ASSET:gift',
+    glue:'ASSET:glue', greyball:'ASSET:greyball', ink:'ASSET:ink', microwave:'ASSET:microwave',
+    pingpong:'ASSET:pingpong', rubik:'ASSET:rubik', rubik_s:'ASSET:rubik_s', shoebox:'ASSET:shoebox',
+    tea:'ASSET:tea', tissue:'ASSET:tissue', toothpaste:'ASSET:toothpaste', woodcube:'ASSET:woodcube'
+};
+/* ================= 小工具 ================= */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t, ms=1900) {
+    const el = $('#toast'); el.textContent = t; el.classList.add('show');
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+/* ================= 音效（Web Audio 合成，首次点击后出声） ================= */
+const SND = {
+    ctx: null,
+    ac() { if (!this.ctx) { try { this.ctx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } 
+           if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); return this.ctx; },
+    tone(f, t0, dur, type='sine', vol=.22, slide=0) {
+        const c = this.ac(); if (!c) return;
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type; o.frequency.setValueAtTime(f, c.currentTime + t0);
+        if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,f+slide), c.currentTime + t0 + dur);
+        g.gain.setValueAtTime(0, c.currentTime + t0);
+        g.gain.linearRampToValueAtTime(vol, c.currentTime + t0 + .015);
+        g.gain.exponentialRampToValueAtTime(.001, c.currentTime + t0 + dur);
+        o.connect(g); g.connect(c.destination);
+        o.start(c.currentTime + t0); o.stop(c.currentTime + t0 + dur + .05);
+    },
+    click() { this.tone(660, 0, .07, 'triangle', .18); },
+    pop()    { this.tone(440, 0, .16, 'triangle', .25, 520); },
+    good()   { [523,659,784].forEach((f,i)=>this.tone(f, i*.09, .16, 'triangle', .22)); },
+    bad()    { this.tone(196, 0, .28, 'sawtooth', .12, -60); },
+    win()    { [523,659,784,1047,784,1047].forEach((f,i)=>this.tone(f, i*.11, .2, 'triangle', .25)); },
+    star()   { this.tone(1319, 0, .12, 'triangle', .2); this.tone(1760, .08, .18, 'triangle', .2); },
+    fanfare(){ [392,523,659,784,659,784,1047].forEach((f,i)=>this.tone(f, i*.14, .26, 'triangle', .26));
+               [392,523,659,784].forEach((f,i)=>this.tone(f/2, i*.14, .3, 'sine', .12)); }
+};
+window.addEventListener('pointerdown', () => SND.ac(), { once:true });
+/* ================= 彩纸 / 烟花 ================= */
+const CV = $('#cv'), CX = CV.getContext('2d');
+let parts = [], cvRunning = false;
+function cvSize() { CV.width = innerWidth; CV.height = innerHeight; }
+cvSize(); addEventListener('resize', cvSize);
+const PCOLORS = ['#f5a35c','#7fb2e5','#7fc8a8','#f2a6b8','#ffce4f','#8ed081'];
+function confetti(x, y, n=26, spread=1) {
+    for (let i=0; i<n; i++) parts.push({
+        x, y, vx:(Math.random()-.5)*11*spread, vy:(Math.random()*-9)-4, g:.32,
+        s:5+Math.random()*6, c:PCOLORS[i%PCOLORS.length], r:Math.random()*Math.PI, vr:(Math.random()-.5)*.3, life:90+Math.random()*40
+    });
+    cvRun();
+}
+function fireworks(n=5) {
+    for (let i=0; i<n; i++) setTimeout(() => confetti(
+        innerWidth*(.15+Math.random()*.7), innerHeight*(.12+Math.random()*.4), 34, 1.3), i*260);
+    cvRun();
+}
+function cvRun() {
+    if (cvRunning) return; cvRunning = true;
+    (function loop() {
+        CX.clearRect(0,0,CV.width,CV.height);
+        parts = parts.filter(p => p.life > 0);
+        for (const p of parts) {
+            p.x += p.vx; p.y += p.vy; p.vy += p.g; p.r += p.vr; p.life--;
+            CX.save(); CX.translate(p.x,p.y); CX.rotate(p.r);
+            CX.fillStyle = p.c; CX.globalAlpha = Math.min(1, p.life/28);
+            CX.fillRect(-p.s/2,-p.s/2,p.s,p.s*.62); CX.restore();
+        }
+        if (parts.length) requestAnimationFrame(loop); else { cvRunning = false; CX.clearRect(0,0,CV.width,CV.height); }
+    })();
+}
+/* ================= 卡通图形 SVG 生成器 ================= */
+const SHAPES = {
+    cuboid: { name:'长方体', color:'var(--cuboid)',  dark:'var(--cuboid-d)', light:'var(--cuboid-l)', tag:'t-cuboid' },
+    cube:   { name:'正方体', color:'var(--cube)',    dark:'var(--cube-d)',   light:'var(--cube-l)',   tag:'t-cube' },
+    cyl:    { name:'圆柱',   color:'var(--cyl)',     dark:'var(--cyl-d)',    light:'var(--cyl-l)',    tag:'t-cyl' },
+    ball:   { name:'球',     color:'var(--ball)',    dark:'var(--ball-d)',   light:'var(--ball-l)',   tag:'t-ball' },
+    cylTaper:{ name:'圆台',  color:'var(--cyl)',     dark:'var(--cyl-d)',    light:'var(--cyl-l)',    tag:'t-cyl' },
+    cone:   { name:'圆锥',   color:'var(--cyl)',     dark:'var(--cyl-d)',    light:'var(--cyl-l)',    tag:'t-cyl' }
+};
+function faceSVG(cx, cy, k=1) {  /* 笑脸（cx,cy 为脸中心） */
+    const e = 13*k, r = 5.2*k;
+    return `<g>
+      <circle cx="${cx-e}" cy="${cy}" r="${r}" fill="#3f3a34"/>
+      <circle cx="${cx+e}" cy="${cy}" r="${r}" fill="#3f3a34"/>
+      <circle cx="${cx-e+1.6}" cy="${cy-1.6}" r="1.7" fill="#fff"/>
+      <circle cx="${cx+e+1.6}" cy="${cy-1.6}" r="1.7" fill="#fff"/>
+      <path d="M${cx-9*k},${cy+8*k} Q${cx},${cy+(8+9)*k} ${cx+9*k},${cy+8*k}" stroke="#3f3a34" stroke-width="${3*k}" fill="none" stroke-linecap="round"/>
+      <ellipse cx="${cx-20*k}" cy="${cy+9*k}" rx="${6*k}" ry="${3.6*k}" fill="#ff8f8f" opacity=".55"/>
+      <ellipse cx="${cx+20*k}" cy="${cy+9*k}" rx="${6*k}" ry="${3.6*k}" fill="#ff8f8f" opacity=".55"/>
+    </g>`;
+}
+function shapeSVG(shape, size=150, opt={}) {
+    const S = SHAPES[shape], o = opt.face !== false;
+    const line = 'stroke="#3f3a34" stroke-width="4" stroke-linejoin="round"';
+    let body = '';
+    if (shape === 'cuboid') {
+        body = `<polygon points="38,84 82,42 190,42 146,84" fill="${S.light}" ${line}/>
+                <polygon points="146,84 190,42 190,128 146,170" fill="${S.dark}" ${line}/>
+                <rect x="38" y="84" width="108" height="86" rx="6" fill="${S.color}" ${line}/>`
+                + (o ? faceSVG(92,122) : '');
+    } else if (shape === 'cube') {
+        body = `<polygon points="46,80 78,48 186,48 154,80" fill="${S.light}" ${line}/>
+                <polygon points="154,80 186,48 186,160 154,192" fill="${S.dark}" ${line}/>
+                <rect x="46" y="80" width="108" height="112" rx="6" fill="${S.color}" ${line}/>`
+                + (o ? faceSVG(100,132) : '');
+    } else if (shape === 'cyl') {
+        body = `<path d="M46,62 L46,152 A54,17 0 0 0 154,152 L154,62" fill="${S.color}" ${line}/>
+                <ellipse cx="100" cy="62" rx="54" ry="17" fill="${S.light}" ${line}/>`
+                + (o ? faceSVG(100,112) : '');
+    } else if (shape === 'cylTaper') {           /* 圆台（两头不一样粗） */
+        body = `<path d="M52,66 L72,150 A28,10 0 0 0 128,150 L148,66" fill="${S.color}" ${line}/>
+                <ellipse cx="100" cy="66" rx="48" ry="15" fill="${S.light}" ${line}/>` + (o ? faceSVG(100,110,.9) : '');
+    } else if (shape === 'cone') {               /* 圆锥 */
+        body = `<path d="M100,42 L58,156 A42,13 0 0 0 142,156 Z" fill="${S.color}" ${line}/>
+                <ellipse cx="100" cy="156" rx="42" ry="13" fill="${S.dark}" ${line}/>` + (o ? faceSVG(100,108,.85) : '');
+    } else {  /* ball */
+        body = `<defs><radialGradient id="bg_${opt.uid||'x'}" cx="38%" cy="32%" r="75%">
+                  <stop offset="0%" stop-color="${S.light}"/><stop offset="62%" stop-color="${S.color}"/><stop offset="100%" stop-color="${S.dark}"/>
+                </radialGradient></defs>
+                <circle cx="100" cy="102" r="68" fill="url(#bg_${opt.uid||'x'})" ${line}/>
+                <ellipse cx="72" cy="66" rx="17" ry="9" fill="#fff" opacity=".55" transform="rotate(-24 72 66)"/>`
+                + (o ? faceSVG(100,112,1.02) : '');
+    }
+    return `<svg width="${size}" height="${size}" viewBox="0 0 220 210" style="display:block">${body}</svg>`;
+}
+const IMG = (k, h) => `<img src="${A[k]}" ${h?`style="height:${h}px"`:''} alt="" draggable="false">`;
+/* ================= 翻页框架 ================= */
+const SLIDES = [];
+let cur = -1;
+function regSlide(def) { SLIDES.push(def); }
+function renderDeck() {
+    $('#deck').innerHTML = SLIDES.map((s,i) =>
+        `<section class="slide ${s.cls||''}" id="sl-${s.id}">${s.html()}</section>`).join('');
+    SLIDES.forEach(s => { if (s.init) s.init($('#sl-'+s.id)); });
+}
+function go(i, back) {
+    i = Math.max(0, Math.min(SLIDES.length-1, i));
+    if (i === cur) return;
+    if (cur >= 0) {
+        const old = SLIDES[cur]; if (old.leave) old.leave();
+        $('#sl-'+old.id).classList.remove('on','rev');
+    }
+    cur = i;
+    const s = SLIDES[i], el = $('#sl-'+s.id);
+    el.classList.toggle('rev', !!back);
+    el.classList.add('on');
+    $('#pageno').textContent = `${i+1} / ${SLIDES.length}`;
+    $('#progress').style.width = ((i+1)/SLIDES.length*100) + '%';
+    try { history.replaceState(null, '', '#' + s.id); } catch(e) {}
+    if (s.enter) s.enter();
+}
+function goId(id, back) { const i = SLIDES.findIndex(s => s.id === id); if (i >= 0) go(i, back); }
+$('#nextB').onclick = () => { SND.click(); go(cur+1); };
+$('#prevB').onclick = () => { SND.click(); go(cur-1, true); };
+$('#fsBtn').onclick = () => {
+    SND.click();
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    else document.exitFullscreen && document.exitFullscreen();
+};
+addEventListener('keydown', e => {
+    if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)) { e.preventDefault(); go(cur+1); }
+    else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); go(cur-1, true); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(SLIDES.length-1);
+    else if (e.key === 'f' || e.key === 'F') $('#fsBtn').click();
+});
+addEventListener('resize', () => { if (SLIDES[cur] && SLIDES[cur].resize) SLIDES[cur].resize(); });
+/* ================= 封面 ================= */
+regSlide({
+    id:'cover', title:'封面',
+    html: () => `
+        <div style="font-size:15px;font-weight:800;color:#b3aa9c;letter-spacing:6px;margin-bottom:10px">一年级数学 · 上册 · 公开课</div>
+        <div class="htitle" style="font-size:clamp(44px,6.4vw,84px)">认识<em>立体图形</em></div>
+        <div class="hsub" style="font-size:clamp(18px,2.2vw,26px)">🧱 立体图形小镇 · 一起玩，一起学</div>
+        <div class="cover-shapes town" style="margin:12px 0 26px">
+            <div class="wob" style="animation-delay:-.4s">${shapeSVG('cuboid',150)}</div>
+            <div class="wob">${shapeSVG('cube',132)}</div>
+            <div class="wob" style="animation-delay:-1.2s">${shapeSVG('cyl',150)}</div>
+            <div class="wob" style="animation-delay:-.8s">${shapeSVG('ball',128)}</div>
+        </div>
+        <button class="bigbtn pulse" id="coverGo">开始上课 ➜</button>
+        <div style="margin-top:16px;font-size:14px;color:#b3aa9c;font-weight:700">翻页：方向键 / 空格 / 翻页笔 PgDn·PgUp　|　全屏：F</div>`,
+    init(el) {
+        el.querySelector('#coverGo').onclick = () => { SND.good(); confetti(innerWidth/2, innerHeight*.6, 40); go(1); };
+    },
+    enter() { fireworks(3); }
+});
+/* ================= 情境导入（课本 P4） ================= */
+const CTX_ITEMS = [
+    ['basketball','篮球'],['toothpaste','牙膏盒'],['glue','胶棒'],['rubik_s','魔方'],['ink','墨水盒'],
+    ['tea','茶叶筒'],['shoebox','鞋盒'],['block','积木'],['pingpong','乒乓球'],['board','砧板']
+];
+regSlide({
+    id:'context', title:'情境导入',
+    html: () => `
+        <div class="htitle">超市的小货物 <em>摆乱啦</em>！</div>
+        <div class="hsub">说一说图中有哪些物品？你能把它们分分类吗？（点一点，报出它的名字）</div>
+        <div class="gridfloor card" style="width:min(1200px,100%);padding:34px 20px 26px">
+            <div class="shelfrow" style="margin-bottom:34px">${CTX_ITEMS.slice(0,5).map(i=>`
+                <div class="shelfitem" data-nm="${i[1]}">${IMG(i[0])}<span class="nm">${i[1]}</span></div>`).join('')}
+            </div>
+            <div class="shelfrow">${CTX_ITEMS.slice(5).map(i=>`
+                <div class="shelfitem" data-nm="${i[1]}">${IMG(i[0])}<span class="nm">${i[1]}</span></div>`).join('')}
+            </div>
+        </div>`,
+    init(el) {
+        el.querySelectorAll('.shelfitem').forEach(it => it.onclick = () => {
+            SND.pop(); it.classList.remove('picked'); void it.offsetWidth; it.classList.add('picked');
+            toast('这是 ' + it.dataset.nm);
+        });
+    }
+});
+/* ================= 分一分引入（课本 P5-8） ================= */
+regSlide({
+    id:'sortintro', title:'分一分',
+    html: () => `
+        <div class="htitle">怎么分 <em>才好呢</em>？</div>
+        <div class="hsub">先说一说按照什么标准分类，再动手分一分（点卡片看分法）</div>
+        <div class="idearow">
+            <div class="ideacard card" data-t="我按<b>能否滚动</b>分类：钢笔墨水滚不动，牙膏可以滚来滚去。">
+                <div class="ic">🔄</div><h3>按 能否滚动 分</h3><p>有的滚得动，有的滚不动……</p></div>
+            <div class="ideacard card" data-t="我按<b>材质</b>分类：有些是纸做的，有些是金属做的，有些是塑料做的。">
+                <div class="ic">🧱</div><h3>按 材料 分</h3><p>纸做的、金属做的、塑料做的……</p></div>
+            <div class="ideacard card" data-t="我把<b>方方正正</b>的放在一起，把<b>圆圆的、可以滚来滚去</b>的放在一起。">
+                <div class="ic">⭐</div><h3>按 形状 分</h3><p>方方的放一起，圆圆的放一起……</p></div>
+        </div>
+        <div class="pill" style="margin-top:26px">👉 按形状分一分，就是今天的<strong style="color:#f0831f">新本领</strong>！</div>`,
+    init(el) {
+        el.querySelectorAll('.ideacard').forEach(c => c.onclick = () => { SND.click(); toast(c.dataset.t, 3200); });
+    }
+});
+/* ================= 游戏1 认识小伙伴（实物变图形） ================= */
+const G1_ITEMS = [
+    ['box','cuboid',18,30],['rubik','cube',30,30],['bin','cyl',42,30],['basketball','ball',55,30],
+    ['dice','cube',68,30],['tissue','cuboid',80,30],['tea','cyl',16,68],['football','ball',48,68]
+];
+regSlide({
+    id:'game1', title:'第1关 认识小伙伴',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.6vw,42px)">第 1 关 · 认识小伙伴</div>
+        <div class="hsub">点一下实物，它会变成图形小伙伴！（再点已变的图形，看看它是谁）</div>
+        <div class="g1stage gridfloor card" id="g1stage"></div>
+        <div class="g1lineup" id="g1lineup"></div>
+        <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
+        <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
+    init(el) {
+        const stage = el.querySelector('#g1stage');
+        const reset = () => {
+            stage.innerHTML = '';
+            el.querySelector('#g1lineup').style.display = 'none';
+            el.querySelector('#g1next').style.display = 'none';
+            el.querySelectorAll('.g1shape').forEach(x => x.remove());
+            G1_ITEMS.forEach(([img, shape, x, y], i) => {
+                const d = document.createElement('div');
+                d.className = 'g1item'; d.style.left = x+'%'; d.style.top = y+'%';
+                d.innerHTML = IMG(img) + '<span class="ck">✓</span>';
+                d.onclick = () => {
+                    if (d.classList.contains('done')) { SND.click(); toast('这是 ' + SHAPES[shape].name + ' 变的！'); return; }
+                    SND.pop(); confetti(innerWidth*x/100, innerHeight*.3, 22);
+                    d.classList.add('done');
+                    const ph = d.querySelector('img');
+                    if (ph) { ph.classList.add('flipout'); setTimeout(() => { ph.style.visibility = 'hidden'; }, 420); }
+                    const sh = document.createElement('div');
+                    sh.className = 'g1shape pop'; sh.style.left = x+'%'; sh.style.top = y+'%';
+                    sh.innerHTML = shapeSVG(shape, 96, {uid:'g1'+i});
+                    stage.appendChild(sh);
+                    g1Check(el);
+                };
+                stage.appendChild(d);
+            });
+        };
+        reset();
+        el.querySelector('#g1reset').onclick = () => { SND.click(); reset(); };
+        el.querySelector('#g1next').onclick = () => { SND.click(); goId('namecards'); };
+        this._reset = reset;
+    },
+    enter() { if (this._reset) {} }
+});
+function g1Check(el) {
+    const done = el.querySelectorAll('.g1item.done').length;
+    if (done < G1_ITEMS.length) return;
+    setTimeout(() => {
+        SND.win(); fireworks(4);
+        const lu = el.querySelector('#g1lineup');
+        lu.style.display = 'flex';
+        lu.innerHTML = ['cuboid','cube','cyl','ball'].map((s,i) => {
+            const n = G1_ITEMS.filter(it=>it[1]===s).length;
+            return `<div class="g1lu bounceIn" style="animation-delay:${i*.18}s">
+                ${shapeSVG(s,104,{uid:'lu'+i})}<br><span class="nm ${SHAPES[s].tag}">${SHAPES[s].name} ×${n}</span></div>`;
+        }).join('');
+        el.querySelector('#g1next').style.display = 'inline-block';
+        toast('🎉 实物都变成图形小伙伴啦！跟老师读一读它们的名字');
+    }, 500);
+}
+/* ================= 图形名片 ================= */
+const NAMECARDS = [
+    ['cuboid','长长方方','6 个平平的面，相对的两个面一样大'],
+    ['cube','正正方方','6 个平平的面，6 个面一样大'],
+    ['cyl','直直的','上下一样粗，两头圆圆的、平平的'],
+    ['ball','圆圆鼓鼓','没有平平的面，可以到处滚动']
+];
+regSlide({
+    id:'namecards', title:'图形名片',
+    html: () => `
+        <div class="htitle">四位图形 <em>小伙伴</em></div>
+        <div class="hsub">点一点名片，听它们自我介绍</div>
+        <div class="namegrid">${NAMECARDS.map(([s],i)=>`
+            <div class="namecard card" data-s="${s}">${shapeSVG(s,120,{uid:'nc'+i})}<div class="nm ${SHAPES[s].tag==='t-cuboid'?'':''}">${SHAPES[s].name}</div>
+            <div class="ft"></div></div>`).join('')}
+        </div>`,
+    init(el) {
+        el.querySelectorAll('.namecard').forEach(c => {
+            c.onclick = () => {
+                SND.pop(); c.querySelector('.ft').textContent = NAMECARDS.find(x=>x[0]===c.dataset.s)[2];
+                c.classList.remove('jiggle'); void c.offsetWidth; c.classList.add('jiggle');
+            };
+        });
+    }
+});
+/* ================= 特征页（通用构建） ================= */
+function featSlide(def) {
+    let step = 0;
+    regSlide({
+        id: def.id, title: def.title,
+        html: () => `
+            <div class="htitle" style="font-size:clamp(26px,3.6vw,44px)">${def.title}</div>
+            <div class="hsub">${def.question}</div>
+            <div class="featwrap">
+                <div class="featleft">
+                    <div class="featshape" id="${def.id}-shape">${shapeSVG(def.shape, 190, {uid:def.id})}</div>
+                    <div class="fan" id="${def.id}-fan"></div>
+                    <button class="minibtn" id="${def.id}-face" style="margin-top:6px">🖐 数一数有几个面</button>
+                </div>
+                <div class="featright">
+                    <div class="pill" style="margin-bottom:14px" id="${def.id}-ans">${def.question}　<b style="color:#f0831f">${def.answer}</b></div>
+                    <div id="${def.id}-lines">${def.lines.map((l,i)=>`<div class="featline"><span class="no">${i+1}</span><span>${l}</span></div>`).join('')}</div>
+                    <div class="revealbtns">
+                        <button class="minibtn" id="${def.id}-rev">✨ 揭晓一条</button>
+                        ${def.extra||''}
+                    </div>
+                    <div class="liferow">${def.life.map(([k,nm])=>`<div class="lifeitem">${IMG(k)}<div>${nm}</div></div>`).join('')}</div>
+                    <div style="margin-top:12px;font-size:14px;color:#8b8378;font-weight:700">↑ 生活中这些物体的形状，都是${SHAPES[def.shape].name}！</div>
+                </div>
+            </div>`,
+        init(el) {
+            step = 0;
+            el.querySelector('#'+def.id+'-rev').onclick = () => {
+                const lines = el.querySelectorAll('.featline');
+                if (step < lines.length) { SND.pop(); lines[step].classList.add('show'); step++; }
+                else toast('特征都出来啦！一起读一读～');
+            };
+            el.querySelector('#'+def.id+'-face').onclick = () => {
+                SND.click();
+                const fan = el.querySelector('#'+def.id+'-fan');
+                if (fan.dataset.done) { toast(def.fanTip); return; }
+                fan.dataset.done = 1;
+                fan.innerHTML = def.fanColors.map((c,i) =>
+                    `<div class="fanface" style="background:${c};animation-delay:${i*.09}s">${i+1}</div>`).join('');
+                SND.good(); toast(def.fanTip, 3000);
+            };
+            if (def.bind) def.bind(el);
+        },
+        enter() {  /* 再次进入重置已揭晓条目? 保留状态更好，不重置 */ }
+    });
+}
+/* --- 长方体（P12-13） --- */
+featSlide({
+    id:'feat-cuboid', shape:'cuboid', title:'认识长方体',
+    question:'你能给这样长长方方的物体取个名字吗？', answer:'它叫 长方体！',
+    lines:['长长方方的','有 6 个平平的面','相对的两个面一样大'],
+    fanColors:['#f5a35c','#e08b45','#ffc28e','#f5a35c','#e08b45','#ffc28e'],
+    fanTip:'1~6 号是它的 6 个面！同色的两个面是相对的面，一模一样大～',
+    life:[['box','纸箱'],['microwave','微波炉'],['tissue','抽纸盒'],['toothpaste','牙膏盒']]
+});
+/* --- 正方体（P14-15） --- */
+featSlide({
+    id:'feat-cube', shape:'cube', title:'认识正方体',
+    question:'你能给这样正正方方的物体取个名字吗？', answer:'它叫 正方体！',
+    lines:['正正方方的','有 6 个平平的面','6 个面一样大'],
+    fanColors:['#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5'],
+    fanTip:'1~6 号是它的 6 个面！你看，6 个面全都是一样大的正方形～',
+    life:[['rubik','魔方'],['dice','骰子'],['woodcube','木块'],['gift','礼物盒']]
+});
+/* --- 比一比（P16） --- */
+regSlide({
+    id:'feat-compare', title:'长方体 vs 正方体',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.6vw,44px)">它俩 <em>比一比</em></div>
+        <div class="hsub">长方体和正方体有什么相同点和不同点？</div>
+        <div style="display:flex;gap:34px;justify-content:center;align-items:center;flex-wrap:wrap">
+            <div class="card" style="padding:18px 26px;text-align:center"><div class="wob">${shapeSVG('cuboid',130,{uid:'cmp1'})}</div><b>长方体</b></div>
+            <div class="card" style="padding:18px 26px;text-align:center"><div class="wob" style="animation-delay:-1s">${shapeSVG('cube',130,{uid:'cmp2'})}</div><b>正方体</b></div>
+        </div>
+        <div class="revealbtns" style="justify-content:center;margin-top:20px">
+            <button class="minibtn" id="cmpSame">🤝 相同点</button>
+            <button class="minibtn" id="cmpDiff">⚡ 不同点</button>
+        </div>
+        <div class="revcard" id="cmpSameC" style="text-align:center">样子都是正正的，都有 6 个面，都能站稳。</div>
+        <div class="revcard" id="cmpDiffC" style="text-align:center">正方体 6 个面都一样大，长方体相对的面一样大。</div>`,
+    init(el) {
+        el.querySelector('#cmpSame').onclick = () => { SND.pop(); el.querySelector('#cmpSameC').classList.add('show'); };
+        el.querySelector('#cmpDiff').onclick  = () => { SND.pop(); el.querySelector('#cmpDiffC').classList.add('show'); };
+    }
+});
+/* --- 圆柱（P17-18） --- */
+featSlide({
+    id:'feat-cyl', shape:'cyl', title:'认识圆柱',
+    question:'它长得有什么特别？', answer:'它叫 圆柱！',
+    lines:['直直的','上下一样粗','两头都是圆圆的、平平的面'],
+    fanColors:['#7fc8a8','#7fc8a8'],   /* 圆柱只有 2 个圆面 */
+    fanTip:'圆柱两头各有一个圆圆的、平平的面，一共 2 个！侧面弯弯的，不是平面哦～',
+    life:[['bin','垃圾桶'],['tea','茶叶筒'],['glue','胶棒']],
+    extra:`<button class="minibtn" id="cylRoll">🌀 躺下滚一滚</button>
+           <button class="minibtn" id="cylJudge">🤔 判断：它们都是圆柱吗？</button>
+           <div class="judgerow" id="cylJudgeRow" style="display:none">
+              <div class="judgeitem" data-ok="no">${shapeSVG('cylTaper',86,{uid:'j1',face:false})}<div class="slot">？</div></div>
+              <div class="judgeitem" data-ok="ok">${shapeSVG('cyl',86,{uid:'j2',face:false})}<div class="slot">？</div></div>
+              <div class="judgeitem" data-ok="no">${shapeSVG('cone',86,{uid:'j3',face:false})}<div class="slot">？</div></div>
+           </div>`,
+    bind(el) {
+        const sh = el.querySelector('#feat-cyl-shape');
+        el.querySelector('#cylRoll').onclick = () => {
+            SND.good();
+            sh.style.transition = 'transform 1.1s cubic-bezier(.4,0,.4,1)';
+            sh.style.transform = 'translateX(150px) rotate(360deg)';
+            toast('躺下的圆柱可以前后滚动！轮子就是这么来的～', 2600);
+            setTimeout(() => { sh.style.transition = 'transform .5s'; sh.style.transform = 'none'; }, 1400);
+        };
+        el.querySelector('#cylJudge').onclick = () => {
+            SND.click();
+            const row = el.querySelector('#cylJudgeRow');
+            row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+        };
+        el.querySelectorAll('#cylJudgeRow .judgeitem').forEach(j => j.onclick = () => {
+            const ok = j.dataset.ok === 'ok';
+            SND[ok?'good':'bad']();
+            j.querySelector('.slot').textContent = ok ? '√' : '×';
+            j.classList.add(ok?'ok':'no');
+            toast(ok ? '对！两头一样粗，是圆柱' : '不对哦，它两头不一样粗（或尖尖的），不是圆柱', 2600);
+        });
+    }
+});
+/* --- 球（P19-20） --- */
+featSlide({
+    id:'feat-ball', shape:'ball', title:'认识球',
+    question:'这个圆鼓鼓的小家伙是谁？', answer:'它叫 球！',
+    lines:['圆圆的、鼓鼓的','没有平平的面','可以到处滚动'],
+    fanColors:['#f2a6b8'],   /* 球没有平面 */
+    fanTip:'球找不到平平的面——它只有一个弯弯的、鼓鼓的曲面，所以能到处滚动！',
+    life:[['football','足球'],['basketball','篮球'],['greyball','皮球'],['pingpong','乒乓球']],
+    bind(el) {
+        const sh = el.querySelector('#feat-ball-shape');
+        el.querySelector('#feat-ball-face').textContent = '🖐 摸一摸，找平面';
+        el.querySelector('#feat-ball-face').onclick = () => { SND.bad(); toast('找不到平平的面！球是鼓鼓的曲面，轻轻一推就滚走啦～', 2800); };
+        sh.onclick = () => {
+            SND.good();
+            sh.style.transition = 'transform 1s cubic-bezier(.3,0,.5,1)';
+            sh.style.transform = 'translate(90px,-26px) rotate(340deg)';
+            setTimeout(() => { sh.style.transition = 'transform .5s'; sh.style.transform = 'none'; }, 1200);
+        };
+    }
+});
+/* ================= 游戏2 我说你猜（幕布） ================= */
+const G2_RIDDLES = [
+    { nm:'谜语①', lines:['方方正正六面体，','每个面都一个样。'], ans:'cube' },
+    { nm:'谜语②', lines:['圆鼓鼓的小淘气，','轻轻一推就滚走。'], ans:'ball' },
+    { nm:'谜语③', lines:['两头圆圆一般大，','躺下一推就滚动。'], ans:'cyl' },
+    { nm:'谜语④', lines:['长长方方六个面，','对面模样完全同。'], ans:'cuboid' },
+    { nm:'滚动大挑战', lines:null, ans:null }   /* 动态出题 */
+];
+const G2_ROLL = {
+    cuboid:['滚不动，可以推着走。','长长方方，有 6 个平平的面。'],
+    cube:  ['滚不动，可以推着走。','正正方方，6 个面一样大。'],
+    cyl:   ['可以前后滚动。','上下一样粗，两头圆圆平平。'],
+    ball:  ['可以任意滚动。','圆圆鼓鼓，没有平平的面。']
+};
+regSlide({
+    id:'game2', title:'我说你猜',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">高光时刻 · <em>我说你猜</em></div>
+        <div class="hsub">幕布后面藏着一位图形小伙伴，听提示猜猜它是谁！</div>
+        <div class="g2wrap">
+            <div class="card g2panel">
+                <div style="font-weight:900;font-size:16px">🎫 谜语卡（点选一张）</div>
+                ${G2_RIDDLES.map((r,i)=>`<div class="riddle" data-i="${i}"><b>${r.nm}</b>　${r.lines?r.lines[0]:'滚动线索，随机出题'}</div>`).join('')}
+                <div style="font-weight:900;font-size:16px;margin-top:4px">💬 老师悄悄话（自定义提示，直接打字）</div>
+                <input id="g2in1" maxlength="24" placeholder="例：圆圆的，上下一样粗。">
+                <input id="g2in2" maxlength="24" placeholder="例：还可以滚动。">
+            </div>
+            <div class="g2stage">
+                <div class="g2floor"></div>
+                <div class="g2shapebox" id="g2shape"></div>
+                <div class="g2bubble" id="g2bub"></div>
+                <div class="curtain" id="g2cur"><div class="tassel"></div></div>
+            </div>
+            <div class="g2btns" id="g2btns" style="flex:0 1 300px">
+                ${['cuboid','cube','cyl','ball'].map(s=>`<button data-s="${s}" style="background:var(--${s})">${SHAPES[s].name}</button>`).join('')}
+                <button id="g2more" style="grid-column:1/3;background:#fff;color:var(--ink);font-size:16px">➕ 再加一条线索</button>
+                <button id="g2again" style="grid-column:1/3;background:var(--gold);color:var(--ink);font-size:17px">🎬 再来一轮</button>
+            </div>
+        </div>`,
+    init(el) {
+        const cur = { lines:[], ans:'cube', shown:0 };
+        const hint = () => el.querySelector('.hintbox') || null;
+        const setPuzzle = (lines, ans) => {
+            cur.lines = lines; cur.ans = ans; cur.shown = 0;
+            el.querySelector('#g2cur').classList.remove('up');
+            el.querySelector('#g2shape').innerHTML = '';
+            el.querySelector('#g2bub').className = 'g2bubble';
+            renderHints();
+        };
+        const renderHints = () => {
+            let box = hint();
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'hintbox'; box.id = 'g2hints';
+                el.querySelector('.g2panel').appendChild(box);
+            }
+            box.innerHTML = cur.lines.slice(0, cur.shown).map(l=>`<span class="hl">🔎 ${l}</span>`).join('')
+                + `<span class="hl" style="color:#b3aa9c">${cur.shown? '——你觉得它是谁？' : '先听老师读线索……'}</span>`;
+        };
+        const randShape = () => ['cuboid','cube','cyl','ball'][Math.floor(Math.random()*4)];
+        el.querySelectorAll('.riddle').forEach(rd => rd.onclick = () => {
+            SND.click();
+            el.querySelectorAll('.riddle').forEach(x=>x.classList.remove('on')); rd.classList.add('on');
+            const r = G2_RIDDLES[+rd.dataset.i];
+            if (r.lines) { setPuzzle(r.lines, r.ans); cur.shown = r.lines.length; renderHints(); }
+            else { const s = randShape(); setPuzzle([G2_ROLL[s][0]], s); toast('滚动大挑战！听好线索～'); }
+        });
+        const moreBtn = el.querySelector('#g2more');
+        moreBtn.onclick = () => {
+            if (cur.shown < cur.lines.length) { SND.click(); cur.shown++; renderHints(); }
+            else toast('线索都用完啦，快猜！');
+        };
+        ['g2in1','g2in2'].forEach(id => el.querySelector('#'+id).oninput = e => {
+            cur.custom = [el.querySelector('#g2in1').value, el.querySelector('#g2in2').value].filter(Boolean);
+            cur.lines = cur.custom; cur.shown = cur.custom.length; cur.ans = cur.ans || 'cube';
+            renderHints();
+        });
+        el.querySelectorAll('#g2btns button[data-s]').forEach(b => b.onclick = () => {
+            if (!cur.lines.length) { toast('先选一张谜语卡，或输入悄悄话哦'); return; }
+            SND.click();
+            const guess = b.dataset.s, ok = guess === cur.ans;
+            el.querySelector('#g2cur').classList.add('up');
+            const box = el.querySelector('#g2shape'), bub = el.querySelector('#g2bub');
+            box.innerHTML = shapeSVG(guess, 150, {uid:'g'+Date.now()});
+            box.firstElementChild.classList.add('bounceIn');
+            bub.textContent = '是它吗？';
+            bub.classList.add('show');
+            if (ok) {
+                setTimeout(() => { SND.win(); fireworks(4); bub.textContent = '🎉 说对啦！它就是' + SHAPES[guess].name + '！'; }, 700);
+            } else {
+                setTimeout(() => {
+                    SND.good();
+                    box.innerHTML = shapeSVG(cur.ans, 150, {uid:'t'+Date.now()});
+                    box.firstElementChild.classList.add('pop');
+                    bub.textContent = '其实是「' + SHAPES[cur.ans].name + '」哦～没关系，再听一遍线索！';
+                }, 1300);
+            }
+        });
+        el.querySelector('#g2again').onclick = () => {
+            SND.click();
+            const s = randShape();
+            setPuzzle([G2_ROLL[s][0]], s);
+            el.querySelectorAll('.riddle').forEach(x=>x.classList.remove('on'));
+            toast('新一轮！幕布后面换了新小伙伴');
+        };
+        /* 默认先上第一张谜语卡 */
+        el.querySelector('.riddle').click();
+        this._cleanup = () => {};
+    }
+});
+/* ================= 游戏3 按形状分一分（红蓝两队） ================= */
+const G3_ITEMS = [
+    ['box','cuboid'],['microwave','cuboid'],['tissue','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],
+    ['rubik','cube'],['dice','cube'],['woodcube','cube'],['gift','cube'],
+    ['bin','cyl'],['tea','cyl'],['glue','cyl'],
+    ['football','ball'],['greyball','ball'],['pingpong','ball'],['basketball','ball']
+];
+const G3_PRAISE = { cuboid:'对啦！长长方方，站稳啦！', cube:'对啦！方方正正，六面一样！', cyl:'对啦！圆柱躺下能滚哦！', ball:'对啦！球滚滚球～' };
+const G3 = { red:0, blue:0, team:'red', placed:0 };
+let g3Timer = null;
+regSlide({
+    id:'game3', title:'按形状分一分',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.2vw,38px)">例 1 · <em>按形状分一分</em></div>
+        <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队，轮流上台！</div>
+        <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
+            <div class="home card" data-shape="${s}">
+                <div class="hz"></div>
+                <div class="hnm"><span class="tag ${SHAPES[s].tag}">${SHAPES[s].name}的家</span></div>
+            </div>`).join('')}
+        </div>
+        <div class="g3mid" id="g3mid"></div>
+        <div class="g3hud">
+            <div class="teamsc" id="scR" style="color:#e05d5d">🔴 红队 <span class="star" id="starR">☆0</span></div>
+            <div class="teamsc" id="scB" style="color:#5f92c9">🔵 蓝队 <span class="star" id="starB">☆0</span></div>
+        </div>
+        <div class="pill g3prog" id="g3prog">0 / 16 已经分好</div>
+        <div class="g3fb" id="g3fb"></div>
+        <div class="g3done" id="g3done">
+            <div class="card" style="padding:30px 50px;text-align:center">
+                <div style="font-size:clamp(30px,4vw,50px);font-weight:900">🎉 全部送回家啦！</div>
+                <div id="g3finalSc" style="font-size:clamp(20px,2.4vw,28px);font-weight:900;margin:14px 0"></div>
+            </div>
+            <button class="bigbtn" id="g3re2">🔀 打乱再玩一轮</button>
+        </div>
+        <button class="minibtn" id="g3reset" style="position:absolute;right:26px;bottom:96px">🔀 打乱重开</button>`,
+    init(el) {
+        const mid = el.querySelector('#g3mid'), fb = el.querySelector('#g3fb');
+        const feedback = (t, ok) => {
+            fb.textContent = t; fb.style.borderColor = ok ? '#59c98b' : '#e05d5d';
+            fb.classList.add('show'); clearTimeout(g3Timer); g3Timer = setTimeout(()=>fb.classList.remove('show'), 1800);
+        };
+        const shuffle = a => { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+        const build = () => {
+            G3.red = 0; G3.blue = 0; G3.team = 'red'; G3.placed = 0;
+            el.querySelector('#starR').textContent = '☆0'; el.querySelector('#starB').textContent = '☆0';
+            el.querySelector('#scR').classList.add('turn'); el.querySelector('#scB').classList.remove('turn');
+            el.querySelector('#g3prog').textContent = '0 / 16 已经分好';
+            el.querySelector('#g3done').classList.remove('show');
+            el.querySelectorAll('.home .hz').forEach(h => h.innerHTML = '');
+            mid.innerHTML = '';
+            const order = shuffle([...G3_ITEMS.keys()]);
+            order.forEach((idx, k) => {
+                const [img, shape] = G3_ITEMS[idx];
+                const c = document.createElement('div');
+                c.className = 'g3chip'; c.dataset.shape = shape;
+                /* 网格散布：4 列 4 行抖动 */
+                const gx = k % 4, gy = Math.floor(k/4);
+                c.style.left = (23 + gx*19 + Math.random()*5) + '%';
+                c.style.top  = (16 + gy*27 + Math.random()*9) + '%';
+                c.innerHTML = IMG(img);
+                c.addEventListener('pointerdown', e => startDrag(e, c));
+                mid.appendChild(c);
+            });
+        };
+        const startDrag = (e, chip) => {
+            e.preventDefault();
+            const r = mid.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+            chip.classList.add('drag');
+            try { chip.setPointerCapture && chip.setPointerCapture(e.pointerId); } catch(err) {}
+            const ox = e.clientX - cr.left, oy = e.clientY - cr.top;
+            const move = ev => {
+                chip.style.left = (ev.clientX - r.left - ox + cr.width/2) / r.width * 100 + '%';
+                chip.style.top  = (ev.clientY - r.top  - oy + cr.height/2) / r.height * 100 + '%';
+                const hot = document.elementFromPoint(ev.clientX, ev.clientY);
+                el.querySelectorAll('.home').forEach(h => h.classList.toggle('hot', !!(hot && h.contains(hot))));
+            };
+            const up = ev => {
+                chip.classList.remove('drag');
+                chip.removeEventListener('pointermove', move);
+                chip.removeEventListener('pointerup', up);
+                const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+                const home = hit && hit.closest ? hit.closest('.home') : null;
+                el.querySelectorAll('.home').forEach(h => h.classList.remove('hot'));
+                drop(chip, home);
+            };
+            chip.addEventListener('pointermove', move);
+            chip.addEventListener('pointerup', up);
+        };
+        const drop = (chip, home) => {
+            if (!home) return;   /* 放空白处：留在原地 */
+            const ok = home.dataset.shape === chip.dataset.shape;
+            if (ok) {
+                SND.good(); SND.star();
+                const hr = home.getBoundingClientRect();
+                confetti(hr.left+hr.width/2, hr.top+hr.height/2, 18);
+                const sm = document.createElement('img');
+                sm.src = chip.querySelector('img').src; sm.style.height = '30px';
+                home.querySelector('.hz').appendChild(sm);
+                chip.remove();
+                G3.placed++;
+                G3[G3.team]++;
+                el.querySelector(G3.team==='red'?'#starR':'#starB').textContent = '★' + G3[G3.team];
+                el.querySelector('#g3prog').textContent = G3.placed + ' / 16 已经分好';
+                feedback(G3_PRAISE[chip.dataset.shape] + '（' + (G3.team==='red'?'红':'蓝') + '队 +1★）', true);
+                G3.team = G3.team === 'red' ? 'blue' : 'red';
+                el.querySelector('#scR').classList.toggle('turn', G3.team==='red');
+                el.querySelector('#scB').classList.toggle('turn', G3.team==='blue');
+                if (G3.placed >= 16) {
+                    setTimeout(() => {
+                        SND.win(); fireworks(6);
+                        el.querySelector('#g3finalSc').innerHTML =
+                            `🔴 红队 <span class="star">★${G3.red}</span>　VS　🔵 蓝队 <span class="star">★${G3.blue}</span><br>` +
+                            (G3.red === G3.blue ? '平分秋色，都是冠军！' : (G3.red > G3.blue ? '红队获胜！🏆' : '蓝队获胜！🏆'));
+                        el.querySelector('#g3done').classList.add('show');
+                    }, 700);
+                }
+            } else {
+                SND.bad();
+                chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
+                feedback('再摸一摸它的面，想一想它是谁的家？', false);
+            }
+        };
+        el.querySelector('#g3reset').onclick = () => { SND.click(); build(); };
+        el.querySelector('#g3re2').onclick = () => { SND.click(); build(); };
+        build();
+    },
+    leave() { clearTimeout(g3Timer); }
+});
+/* ================= 数一数（P29） ================= */
+const COUNT_SHAPES = [
+    ['cuboid',14,38],['cuboid',36,42],['cuboid',58,36],['cube',80,40],
+    ['cyl',26,74],['ball',55,80],['ball',74,78]
+];
+regSlide({
+    id:'count', title:'数一数',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">工地上 <em>数一数</em></div>
+        <div class="hsub">点一个图形名字，帮它数数有几个（课本 P29）</div>
+        <div class="countstage gridfloor card" id="cntStage">
+            ${COUNT_SHAPES.map(([s,x,y],i)=>`<div class="countshape" data-s="${s}" style="left:${x}%;top:${y}%">
+                <span class="cno"></span>${shapeSVG(s,86,{uid:'cs'+i})}</div>`).join('')}
+        </div>
+        <div class="countqs">${['cuboid','cube','cyl','ball'].map(s=>`
+            <div class="cq" data-s="${s}">${SHAPES[s].name}（　）个</div>`).join('')}</div>`,
+    init(el) {
+        el.querySelectorAll('.cq').forEach(q => q.onclick = () => {
+            SND.click();
+            el.querySelectorAll('.cq').forEach(x => { x.classList.remove('done'); const b=x.querySelector('b'); if(b) b.remove(); });
+            el.querySelectorAll('.countshape').forEach(c => { c.classList.remove('mark'); c.querySelector('.cno').textContent=''; });
+            const target = q.dataset.s, all = [...el.querySelectorAll('.countshape')].filter(c=>c.dataset.s===target);
+            all.forEach((c,i) => setTimeout(() => {
+                c.classList.add('mark'); SND.pop();
+                c.querySelector('.cno').textContent = i+1;
+                if (i === all.length-1) setTimeout(() => {
+                    q.classList.add('done');
+                    const b = document.createElement('b'); b.textContent = all.length;
+                    q.appendChild(b); SND.good();
+                }, 350);
+            }, i*420));
+        });
+    }
+});
+/* ================= 游戏4 小镇落成 + 颁奖 ================= */
+const G4_SPOTS = [
+    { nm:'小镇之家', x:6,  y:26, build:`<div style="position:absolute;left:0;bottom:26px">${shapeSVG('cuboid',120,{uid:'h1'})}</div>
+        <div style="position:absolute;left:96px;bottom:26px">${shapeSVG('cube',84,{uid:'h2'})}</div>
+        <div style="position:absolute;left:118px;bottom:98px">${shapeSVG('cube',52,{uid:'h3'})}</div>` },
+    { nm:'小镇广场', x:34, y:44, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('cyl',96,{uid:'p1'})}</div>
+        <div style="position:absolute;left:84px;bottom:22px">${shapeSVG('cuboid',78,{uid:'p2'})}</div>` },
+    { nm:'灯塔工坊', x:60, y:14, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('cyl',86,{uid:'l1'})}</div>
+        <div style="position:absolute;left:16px;bottom:100px">${shapeSVG('ball',56,{uid:'l2'})}</div>` },
+    { nm:'球球乐园', x:78, y:48, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('ball',72,{uid:'b1'})}</div>
+        <div style="position:absolute;left:58px;bottom:22px">${shapeSVG('ball',56,{uid:'b2'})}</div>` }
+];
+regSlide({
+    id:'game4', title:'小镇落成',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.4vw,42px)">🎉 <em>小镇落成啦</em>！</div>
+        <div class="hsub">这节课的图形积木，搭成了我们的小镇（课本 P36-38）</div>
+        <div class="g4wrap">
+            <div class="card g4panel">
+                <div style="font-weight:900;font-size:17px">📝 成长小档案</div>
+                <div style="font-size:clamp(14px,1.5vw,17px);font-weight:700;line-height:2">
+                    我发现生活中有些物体的形状是<span class="blank" id="bl1">　　</span>。<br>
+                    我会用几个相同的<span class="blank" id="bl2">　　</span>拼出新图形。
+                </div>
+                <div class="wordchips">${['cuboid','cube','cyl','ball'].map(s=>
+                    `<button data-s="${s}" data-b="1">${SHAPES[s].name}</button>`).join('')}</div>
+                <div class="wordchips">${['cuboid','cube','cyl','ball'].map(s=>
+                    `<button data-s="${s}" data-b="2">${SHAPES[s].name}</button>`).join('')}</div>
+                <div class="g4ops">
+                    <button class="bigbtn" id="g4award" style="font-size:18px;padding:10px 22px">🏆 全班颁奖</button>
+                    <button class="minibtn" id="g4replay" style="align-self:center">🔁 重放搭建</button>
+                </div>
+            </div>
+            <div class="g4town gridfloor card" id="g4town">
+                ${G4_SPOTS.map((s,i)=>`<div class="spot" id="spot${i}" style="left:${s.x}%;top:${s.y}%;width:190px;height:200px">
+                    ${s.build}<div class="snm">${s.nm}</div></div>`).join('')}
+            </div>
+        </div>
+        <div class="pill songsheet" id="g4song" style="position:absolute;bottom:86px;left:50%;transform:translateX(-50%);white-space:nowrap;overflow:hidden;max-width:92vw"></div>
+        <div class="award" id="award">
+            <div class="card acard">
+                <div style="font-size:clamp(26px,3.4vw,40px);font-weight:900">🏅 颁奖时刻</div>
+                <div class="trophies" id="trophyRow"></div>
+                <div id="awardLine" style="font-weight:800;font-size:clamp(15px,1.7vw,19px)"></div>
+            </div>
+            <button class="bigbtn" id="awardClose">继续 ➜</button>
+        </div>`,
+    init(el) {
+        const song = '儿歌时间：正正方方正方体，六面平平一样大。 上下圆圆是圆柱，身体一推就滚动。 圆圆鼓鼓是球体，滚来滚去不费力。 长长方方长方体，相对两面一个样。';
+        el.querySelector('#g4song').textContent = '🎵 ' + song;
+        const play = () => {
+            G4_SPOTS.forEach((_,i) => {
+                const sp = el.querySelector('#spot'+i);
+                sp.classList.remove('in'); sp.style.transitionDelay = '0s';
+            });
+            G4_SPOTS.forEach((_,i) => setTimeout(() => {
+                el.querySelector('#spot'+i).classList.add('in'); SND.pop();
+            }, 500 + i*850));
+            setTimeout(() => toast('小镇建成啦！说说你的收获吧～', 2600), 500 + 4*850);
+        };
+        el.querySelector('#g4replay').onclick = () => { SND.click(); play(); };
+        el.querySelectorAll('.wordchips button').forEach(b => b.onclick = () => {
+            SND.pop();
+            el.querySelector('#bl'+b.dataset.b).textContent = SHAPES[b.dataset.s].name;
+        });
+        el.querySelector('#g4award').onclick = () => {
+            SND.fanfare(); fireworks(7);
+            const t = el.querySelector('#trophyRow');
+            if (G3.red === 0 && G3.blue === 0) {
+                t.innerHTML = `<div class="trophy"><span class="cup">🏆</span>全班同学</div>`;
+                el.querySelector('#awardLine').textContent = '每个人都有一双会发现的小眼睛！';
+            } else {
+                const redWin = G3.red >= G3.blue;
+                t.innerHTML = `<div class="trophy"><span class="cup">${redWin?'🏆':'🥈'}</span>红队 ★${G3.red}</div>
+                               <div class="trophy"><span class="cup">${redWin?'🥈':'🏆'}</span>蓝队 ★${G3.blue}</div>`;
+                el.querySelector('#awardLine').textContent = G3.red === G3.blue ? '平分秋色，全班都是冠军！' : (redWin?'红队今日之星！':'蓝队今日之星！') + ' 掌声送给自己！';
+            }
+            el.querySelector('#award').classList.add('show');
+        };
+        el.querySelector('#awardClose').onclick = () => { SND.click(); el.querySelector('#award').classList.remove('show'); };
+        this._play = play;
+    },
+    enter() { if (this._play) setTimeout(() => this._play(), 350); }
+});
+/* ================= 儿歌页（P37） ================= */
+const SONG_LINES = [
+    ['cube','正正方方正方体，六面平平一样大。'],
+    ['cyl','上下圆圆是圆柱，身体一推就滚动。'],
+    ['ball','圆圆鼓鼓是球体，滚来滚去不费力。'],
+    ['cuboid','长长方方长方体，相对两面一个样。']
+];
+regSlide({
+    id:'song', title:'儿歌',
+    html: () => `
+        <div class="htitle" style="font-family:KaiTi,楷体,serif">图形 <em>顺口溜</em></div>
+        <div class="hsub">拍着手，跟老师读一遍！（课本 P37）</div>
+        <div class="card songsheet" style="padding:30px 46px">
+            <div class="songlines">${SONG_LINES.map(([s,l],i)=>`
+                <div class="sl" style="display:flex;align-items:center;gap:18px">
+                    ${shapeSVG(s,56,{uid:'sg'+i,face:false})}<span>${l}</span></div>`).join('')}
+            </div>
+        </div>
+        <button class="bigbtn" id="songGo" style="margin-top:20px">齐读完毕 ➜</button>`,
+    init(el) {
+        el.querySelector('#songGo').onclick = () => { SND.click(); goId('homework'); };
+    },
+    enter() {
+        const ls = $$('#sl-song .sl');
+        ls.forEach(x => x.classList.remove('show'));
+        ls.forEach((x,i) => setTimeout(() => { x.classList.add('show'); SND.click(); }, 400 + i*900));
+    }
+});
+/* ================= 作业与结束（P38） ================= */
+regSlide({
+    id:'homework', title:'课后小任务',
+    html: () => `
+        <div class="htitle">课后 <em>小任务</em></div>
+        <div class="hsub">用积木或者其他材料试一试（课本 P38）</div>
+        <div class="hwlist">
+            <div class="card" style="padding:16px 22px;font-weight:800;font-size:clamp(16px,1.8vw,21px)">🏗 ① 用积木拼一座你自己的「图形小镇」，明天带来介绍给大家。</div>
+            <div class="card" style="padding:16px 22px;font-weight:800;font-size:clamp(16px,1.8vw,21px)">🔍 ② 找一找家里：哪些东西是长方体？哪些是正方体？哪些是圆柱？哪些是球？</div>
+        </div>
+        <div class="cover-shapes" style="margin-top:26px">
+            <div class="wob">${shapeSVG('cuboid',86,{uid:'hw1'})}</div>
+            <div class="wob" style="animation-delay:-.7s">${shapeSVG('cube',86,{uid:'hw2'})}</div>
+            <div class="wob" style="animation-delay:-1.4s">${shapeSVG('cyl',86,{uid:'hw3'})}</div>
+            <div class="wob" style="animation-delay:-2s">${shapeSVG('ball',86,{uid:'hw4'})}</div>
+        </div>
+        <div style="margin-top:18px;font-size:clamp(20px,2.4vw,30px);font-weight:900">谢谢小朋友们！下节课见 👋</div>`,
+    enter() { fireworks(5); SND.win(); }
+});
+/* ================= 启动 ================= */
+renderDeck();
+(function boot() {
+    const h = (location.hash || '').replace('#','');
+    const i = SLIDES.findIndex(s => s.id === h);
+    go(i >= 0 ? i : 0);
+})();
+/* 支持同文档 hash 跳转（PPT 按钮/浏览器地址栏改 hash） */
+addEventListener('hashchange', () => {
+    const h = (location.hash || '').replace('#','');
+    if (h && SLIDES[cur] && SLIDES[cur].id !== h) goId(h);
+});
+window.__deck = { go, goId, SLIDES, get cur(){return cur;} };
+</script>
+</body>
+</html>
