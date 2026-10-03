@@ -139,6 +139,16 @@ button { font-family:inherit; cursor:pointer; }
 .lifeitem { text-align:center; background:#fff; border:2.5px solid var(--line); border-radius:14px; padding:8px 10px 5px; }
 .lifeitem img { height:56px; display:block; margin:0 auto; }
 .lifeitem div { font-size:13px; font-weight:800; color:#7c746a; margin-top:2px; }
+.viewer3d { position:relative; width:min(470px,92vw); height:400px; border:3px solid var(--line); border-radius:22px;
+    overflow:hidden; background:radial-gradient(ellipse at 50% 30%, #ffffff, #f3ecdc); box-shadow:0 8px 0 rgba(63,58,52,.1); }
+.viewer3d canvas { display:block; }
+.v3dnum { position:absolute; top:12px; left:12px; min-width:44px; text-align:center; background:var(--gold); border:3px solid var(--line);
+    border-radius:12px; font-weight:900; font-size:26px; padding:2px 10px; z-index:3; }
+.v3dtip { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:#fff; border:2.5px solid var(--line);
+    border-radius:999px; padding:5px 16px; font-weight:800; font-size:14px; white-space:nowrap; z-index:3; max-width:94%;
+    overflow:hidden; text-overflow:ellipsis; }
+.v3dload { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#b3aa9c; font-weight:800; z-index:2; }
+.vbtns { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
 .fan { display:flex; justify-content:center; gap:6px; margin-top:10px; height:64px; }
 .fanface { width:44px; height:52px; border:2.5px solid var(--line); border-radius:10px; display:flex; align-items:center;
     justify-content:center; font-weight:900; font-size:18px; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);
@@ -197,26 +207,32 @@ button { font-family:inherit; cursor:pointer; }
 
 /* ================= 游戏3 分一分 ================= */
 .g3top { display:flex; gap:clamp(10px,1.6vw,24px); justify-content:center; width:min(1300px,100%); flex-wrap:wrap; }
-.home { flex:0 1 210px; text-align:center; padding:10px 8px 12px; position:relative; transition:transform .15s; }
-.home .hz { height:74px; border-radius:12px; border:3px dashed rgba(63,58,52,.35); display:flex; align-items:flex-end;
-    justify-content:center; gap:4px; padding:4px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
-.home.hot .hz { border-color:#f0831f; background:#fff8e8; transform:scale(1.04); }
-.home .hnm { margin-top:8px; font-weight:900; font-size:clamp(14px,1.5vw,18px); }
+.home { flex:0 1 235px; border-radius:18px; overflow:hidden; padding:0; position:relative; transition:transform .18s, box-shadow .18s; }
+.home .hh { display:flex; align-items:center; gap:8px; padding:8px 13px; color:#fff; font-weight:900;
+    font-size:clamp(14px,1.5vw,17px); }
+.home .hh svg { width:26px; height:26px; flex:0 0 26px; }
+.home .hz { min-height:96px; border-top:2.5px dashed rgba(63,58,52,.16); display:flex; align-items:flex-end;
+    justify-content:center; gap:5px; padding:9px 6px 11px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
+.home.hot { transform:scale(1.05); box-shadow:0 12px 26px rgba(240,131,31,.35); z-index:3; }
 .g3mid { position:relative; width:min(1300px,100%); flex:1; min-height:150px; margin-top:14px; }
 .g3chip { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .15s; z-index:2; }
 .g3chip img { width:auto; height:auto; max-height:clamp(48px,8.5vh,84px); max-width:clamp(84px,22vw,150px); display:block; filter:drop-shadow(0 5px 4px rgba(63,58,52,.2)); }
 .g3chip.drag { cursor:grabbing; z-index:50; transition:none; }
 .g3chip.drag img { transform:scale(1.15); }
 .g3chip.shake { animation:jiggle .5s; }
-.g3hud { position:fixed; top:64px; right:18px; z-index:800; display:flex; gap:10px; }
-.teamsc { background:#fff; border:3px solid var(--line); border-radius:16px; padding:8px 14px; font-weight:900; font-size:clamp(14px,1.5vw,18px);
-    display:flex; align-items:center; gap:8px; box-shadow:0 4px 0 rgba(63,58,52,.12); }
-.teamsc.turn { outline:3.5px solid var(--gold); transform:scale(1.05); }
+.g3hud { position:fixed; top:64px; right:14px; z-index:800; display:flex; flex-direction:column; gap:8px; align-items:stretch; }
+.teamsc { position:relative; background:#fff; border:3px solid var(--line); border-radius:14px; padding:7px 14px; font-weight:900;
+    font-size:clamp(14px,1.5vw,17px); display:flex; align-items:center; gap:8px; box-shadow:0 4px 0 rgba(63,58,52,.12); }
+.teamsc.turn { outline:3.5px solid var(--gold); transform:scale(1.04); }
+.teamsc.prog { background:#fff3d6; justify-content:center; font-size:14px; }
 .star { color:var(--gold); text-shadow:0 0 2px #c99a1f; }
-.g3prog { position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:800; }
-.g3fb { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); z-index:850; background:#fff; border:3px solid var(--line);
-    border-radius:16px; padding:10px 24px; font-weight:900; font-size:clamp(16px,1.8vw,21px); opacity:0; transition:all .3s; pointer-events:none; }
-.g3fb.show { opacity:1; }
+.starfly { position:absolute; right:10px; top:-4px; color:var(--gold); font-weight:900; font-size:20px;
+    animation:starfly .9s ease-out forwards; text-shadow:0 1px 0 #a87b12; pointer-events:none; }
+@keyframes starfly { from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(-42px)} }
+.g3fb { position:fixed; bottom:118px; left:50%; transform:translateX(-50%) scale(.7); z-index:860; background:#fff; border:4px solid #59c98b;
+    border-radius:18px; padding:13px 34px; font-weight:900; font-size:clamp(19px,2.2vw,26px); opacity:0; transition:all .25s;
+    pointer-events:none; box-shadow:0 10px 26px rgba(63,58,52,.22); max-width:76vw; text-align:center; }
+.g3fb.show { opacity:1; transform:translateX(-50%) scale(1); }
 .g3done { position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px;
     background:rgba(250,246,238,.94); }
 .g3done.show { display:flex; }
@@ -243,10 +259,10 @@ button { font-family:inherit; cursor:pointer; }
 .wordchips button { border:2.5px solid var(--line); border-radius:999px; padding:6px 14px; font-weight:900; font-size:15px; background:#fff; transition:transform .12s; }
 .wordchips button:active { transform:scale(.94); }
 .g4town { flex:1 1 560px; position:relative; min-height:min(58vh,500px); overflow:hidden; }
-.spot { position:absolute; opacity:0; transform:translateX(120%) rotate(6deg); transition:all .9s cubic-bezier(.2,1.1,.4,1); }
-.spot.in { opacity:1; transform:none; }
-.spot .snm { position:absolute; left:50%; bottom:-4px; transform:translateX(-50%); background:#fff; border:2.5px solid var(--line);
-    border-radius:999px; padding:3px 14px; font-weight:900; font-size:14px; white-space:nowrap; }
+.townG { opacity:0; transform:translate(80px,-30px); transition:all .95s cubic-bezier(.2,1.1,.4,1); }
+.townG.in { opacity:1; transform:none; }
+.snm { position:absolute; transform:translate(-50%,-50%); background:#fff; border:2.5px solid var(--line);
+    border-radius:999px; padding:4px 16px; font-weight:900; font-size:14px; white-space:nowrap; box-shadow:0 3px 0 rgba(63,58,52,.14); }
 .g4ops { display:flex; gap:12px; margin-top:4px; flex-wrap:wrap; }
 .award { position:fixed; inset:0; z-index:920; display:none; align-items:center; justify-content:center; flex-direction:column;
     gap:20px; background:rgba(63,58,52,.45); }
@@ -281,6 +297,7 @@ button { font-family:inherit; cursor:pointer; }
     .featwrap { flex-direction:column; align-items:center; }
     .featright { max-width:94vw; }
     .lifeitem img { height:40px; }
+    .viewer3d { height:300px; }
     .g4town { min-height:46vh; width:94vw; }
     .g4panel { flex-basis:auto; width:94vw; }
 }
@@ -623,7 +640,194 @@ regSlide({
         });
     }
 });
-/* ================= 特征页（通用构建） ================= */
+/* ================= 真 3D 查看器（three.min.js 本地懒加载，失败回退 SVG） ================= */
+let __threeLoading = null;
+function loadThree(retries) {
+    if (window.THREE) return Promise.resolve(true);
+    if (__threeLoading) return __threeLoading;
+    __threeLoading = new Promise(res => {
+        const sc = document.createElement('script');
+        sc.src = 'three.min.js';
+        sc.onload = () => res(true);
+        sc.onerror = () => {
+            if (retries > 0) setTimeout(() => { __threeLoading = null; loadThree(retries - 1).then(res); }, 400);
+            else res(false);
+        };
+        document.head.appendChild(sc);
+    });
+    return __threeLoading;
+}
+function faceTexture(bg) {   /* 卡通笑脸贴图 */
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = bg; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = '#3f3a34';
+    [[96,116],[160,116]].forEach(pt => { g.beginPath(); g.arc(pt[0], pt[1], 14, 0, 7); g.fill(); });
+    g.beginPath(); g.arc(103,110,5,0,7); g.fill();
+    g.beginPath(); g.arc(167,110,5,0,7); g.fill();
+    g.strokeStyle = '#3f3a34'; g.lineWidth = 11; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(102,158); g.quadraticCurveTo(128,188,154,158); g.stroke();
+    g.fillStyle = 'rgba(255,110,110,.5)';
+    g.beginPath(); g.ellipse(62,164,18,12,0,0,7); g.fill();
+    g.beginPath(); g.ellipse(194,164,18,12,0,0,7); g.fill();
+    return new THREE.CanvasTexture(c);
+}
+class Shape3D {
+    constructor(box, shape) {
+        this.box = box; this.shape = shape;
+        this.stop = false; this.counting = false; this.rolling = false; this.dragging = false;
+        this.rotX = .2; this.rotY = .55;
+        const w = box.clientWidth || 420, ht = box.clientHeight || 380;
+        this._w = w; this._ht = ht;
+        this.renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        this.renderer.setSize(w, ht);
+        this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+        box.innerHTML = '<div class="v3dnum"></div><div class="v3dtip"></div>';
+        box.appendChild(this.renderer.domElement);
+        this.scene = new THREE.Scene();
+        this.cam = new THREE.PerspectiveCamera(38, w/ht, .1, 50);
+        this.cam.position.set(0, .95, 4.5); this.cam.lookAt(0, -.05, 0);
+        this.scene.add(new THREE.AmbientLight(0xffffff, .85));
+        const d1 = new THREE.DirectionalLight(0xfff2dd, .9); d1.position.set(3, 4, 3); this.scene.add(d1);
+        const d2 = new THREE.DirectionalLight(0xdfe8ff, .35); d2.position.set(-3, 1, -2); this.scene.add(d2);
+        this.grp = new THREE.Group(); this.scene.add(this.grp);
+        this.build(shape);
+        this.bindOrbit(box);
+        this.loop();
+    }
+    mat(hex, tex) {
+        const m = new THREE.MeshStandardMaterial(tex ? { map: tex, roughness:.6 } : { color: hex, roughness:.6 });
+        m.userData.base = tex ? 0xffffff : hex;
+        return m;
+    }
+    build(shape) {
+        if (shape === 'cuboid') {
+            const A = 0xf5a35c, B = 0xe08b45, C = 0xffc28e;
+            const mats = [ this.mat(B), this.mat(B), this.mat(C), this.mat(C),
+                           this.mat(A, faceTexture('#f5a35c')), this.mat(A) ];
+            this.mesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.0, 1.12), mats);
+            this.mats = mats;
+            this.countSteps = [
+                { i:[4], no:'1', tip:'前面 —— 一个平平的面' },
+                { i:[5], no:'2', tip:'后面' },
+                { i:[1], no:'3', tip:'左面' },
+                { i:[0], no:'4', tip:'右面' },
+                { i:[2], no:'5', tip:'上面' },
+                { i:[3], no:'6', tip:'下面 —— 一共 6 个面！' } ];
+            this.pairDefs = [[4,5,'前面和后面是一对，一模一样大！'],[1,0,'左面和右面是一对，一模一样大！'],[2,3,'上面和下面是一对，一模一样大！']];
+        } else if (shape === 'cube') {
+            const mats = []; for (let k = 0; k < 6; k++) mats.push(this.mat(0x7fb2e5));
+            mats[4] = this.mat(0, faceTexture('#7fb2e5'));
+            this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), mats);
+            this.mats = mats;
+            this.countSteps = [
+                { i:[4], no:'1', tip:'前面' }, { i:[5], no:'2', tip:'后面' }, { i:[1], no:'3', tip:'左面' },
+                { i:[0], no:'4', tip:'右面' }, { i:[2], no:'5', tip:'上面' },
+                { i:[3], no:'6', tip:'下面 —— 6 个面都一样大！' } ];
+        } else if (shape === 'cyl') {
+            const side = this.mat(0x7fc8a8, faceTexture('#7fc8a8'));
+            const cap = this.mat(0xa8dfc6);
+            this.mesh = new THREE.Mesh(new THREE.CylinderGeometry(.68, .68, 1.35, 48), [side, cap, cap]);
+            this.mats = this.mesh.material;
+            this.countSteps = [
+                { i:[1], no:'1', tip:'上面 —— 一个平平的圆面' },
+                { i:[2], no:'2', tip:'下面 —— 一个平平的圆面' },
+                { i:[0], no:'', tip:'侧面弯弯的，不是平面哦' } ];
+        } else {
+            this.mesh = new THREE.Mesh(new THREE.SphereGeometry(.95, 48, 32), this.mat(0, faceTexture('#f2a6b8')));
+            this.mats = [];
+        }
+        this.grp.add(this.mesh);
+    }
+    bindOrbit(box) {
+        box.style.cursor = 'grab'; box.style.touchAction = 'none';
+        let drag = null;
+        box.addEventListener('pointerdown', e => {
+            drag = { x: e.clientX, y: e.clientY }; this.dragging = true; box.style.cursor = 'grabbing';
+            try { box.setPointerCapture(e.pointerId); } catch(err) {}
+        });
+        box.addEventListener('pointermove', e => {
+            if (!drag || this.rolling) return;
+            this.rotY += (e.clientX - drag.x) * .011;
+            this.rotX = Math.max(-.7, Math.min(1.0, this.rotX + (e.clientY - drag.y) * .007));
+            drag = { x: e.clientX, y: e.clientY };
+        });
+        const up = () => { drag = null; this.dragging = false; box.style.cursor = 'grab'; };
+        box.addEventListener('pointerup', up);
+        box.addEventListener('pointerleave', up);
+    }
+    flash(steps) {
+        if (this.counting) return; this.counting = true;
+        const num = this.box.querySelector('.v3dnum'), tip = this.box.querySelector('.v3dtip');
+        const list = steps.slice();
+        const next = () => {
+            if (this.stop || !list.length) {
+                num.textContent = this.shape === 'cyl' ? '2 个平面' : '6 个面';
+                tip.textContent = '拖一拖，转一圈看看！';
+                setTimeout(() => { if (!this.stop) { num.textContent = ''; tip.textContent = '用鼠标拖一拖，转一圈看看'; } }, 1800);
+                this.counting = false; return;
+            }
+            const st = list.shift();
+            st.m.forEach(m => m.color.setHex(0xfff1bf));
+            num.textContent = st.no || ''; tip.textContent = st.tip; SND.pop();
+            setTimeout(() => { st.m.forEach(m => m.color.setHex(m.userData.base)); next(); }, 1050);
+        };
+        next();
+    }
+    count() {
+        if (this.counting || this.rolling) return;
+        if (this.shape === 'ball') {
+            this.counting = true;
+            const tip = this.box.querySelector('.v3dtip'), num = this.box.querySelector('.v3dnum');
+            num.textContent = '0'; tip.textContent = '摸一摸 —— 球找不到平平的面！'; SND.bad();
+            let k = 0;
+            const pulse = () => {
+                if (this.stop || k++ > 5) { num.textContent = ''; tip.textContent = '用鼠标拖一拖，转一圈看看'; this.counting = false; return; }
+                this.mesh.scale.setScalar(k % 2 ? 1.12 : 1); setTimeout(pulse, 280);
+            };
+            pulse(); return;
+        }
+        this.flash(this.countSteps.map(s => ({ m: s.i.map(i => this.mats[i]), no: s.no, tip: s.tip })));
+    }
+    pairs() {
+        if (this.counting || this.rolling || !this.pairDefs) return;
+        this.flash(this.pairDefs.map(pr => ({ m: [this.mats[pr[0]], this.mats[pr[1]]], no: '', tip: pr[2] })));
+    }
+    roll() {
+        if (this.counting || this.rolling || this.shape !== 'cyl') return;
+        this.rolling = true; SND.good();
+        const t0 = performance.now();
+        const anim = () => {
+            if (this.stop) { this.grp.rotation.z = 0; this.grp.position.x = 0; this.mesh.rotation.y = 0; this.rolling = false; return; }
+            const t = (performance.now() - t0) / 1000;
+            if (t < .5) this.grp.rotation.z = 1.45 * (t / .5);
+            else if (t < 2.4) { const k = (t - .5) / 1.9; this.grp.position.x = Math.sin(k * Math.PI) * 1.35; this.mesh.rotation.y = -k * Math.PI * 4; }
+            else if (t < 2.9) this.grp.rotation.z = 1.45 * (1 - (t - 2.4) / .5);
+            else { this.grp.rotation.z = 0; this.grp.position.x = 0; this.mesh.rotation.y = 0; this.rolling = false;
+                   this.box.querySelector('.v3dtip').textContent = '躺下的圆柱可以前后滚动！轮子就是这么来的～'; return; }
+            requestAnimationFrame(anim);
+        };
+        anim();
+    }
+    loop() {
+        if (this.stop) return;
+        requestAnimationFrame(() => this.loop());
+        try {
+            const cw = this.box.clientWidth, ch = this.box.clientHeight;
+            if (cw && ch && (cw !== this._w || ch !== this._ht)) {   /* 窗口/转向自适应 */
+                this._w = cw; this._ht = ch;
+                this.renderer.setSize(cw, ch);
+                this.cam.aspect = cw / ch; this.cam.updateProjectionMatrix();
+            }
+            if (!this.rolling && !this.dragging && !this.counting) this.rotY += .0028;
+            if (!this.rolling) { this.grp.rotation.x = this.rotX; this.grp.rotation.y = this.rotY; }
+            if (this.shape === 'ball' && !this.rolling) this.mesh.rotation.y += .004;
+            this.renderer.render(this.scene, this.cam);
+        } catch (e) {}
+    }
+    destroy() { this.stop = true; try { this.renderer.dispose(); } catch(e) {} }
+}
+/* ================= 特征页（通用构建，3D 优先 + SVG 兜底） ================= */
 function featSlide(def) {
     let step = 0;
     regSlide({
@@ -633,40 +837,68 @@ function featSlide(def) {
             <div class="hsub">${def.question}</div>
             <div class="featwrap">
                 <div class="featleft">
-                    <div class="featshape" id="${def.id}-shape">${shapeSVG(def.shape, 190, {uid:def.id})}</div>
+                    <div class="viewer3d" id="${def.id}-v3d"><div class="v3dload">3D 加载中…</div><div class="v3dnum"></div><div class="v3dtip">用鼠标拖一拖，转一圈看看</div></div>
+                    <div class="featshape" id="${def.id}-shape" style="display:none">${shapeSVG(def.shape, 190, {uid:def.id})}</div>
                     <div class="fan" id="${def.id}-fan"></div>
-                    <button class="minibtn" id="${def.id}-face" style="margin-top:6px">🖐 数一数有几个面</button>
+                    <div class="vbtns" id="${def.id}-vbtns"></div>
                 </div>
                 <div class="featright">
-                    <div class="pill" style="margin-bottom:14px" id="${def.id}-ans">${def.question}　<b style="color:#f0831f">${def.answer}</b></div>
+                    <div class="pill" style="margin-bottom:14px;font-size:clamp(17px,1.9vw,23px)"><b style="color:#f0831f">${def.answer}</b></div>
                     <div id="${def.id}-lines">${def.lines.map((l,i)=>`<div class="featline"><span class="no">${i+1}</span><span>${l}</span></div>`).join('')}</div>
                     <div class="revealbtns">
                         <button class="minibtn" id="${def.id}-rev">✨ 揭晓一条</button>
                         ${def.extra||''}
                     </div>
-                    <div class="liferow">${def.life.map(([k,nm])=>`<div class="lifeitem">${IMG(k)}<div>${nm}</div></div>`).join('')}</div>
+                    <div class="liferow">${def.life.map(lf=>`<div class="lifeitem">${IMG(lf[0])}<div>${lf[1]}</div></div>`).join('')}</div>
                     <div style="margin-top:12px;font-size:14px;color:#8b8378;font-weight:700">↑ 生活中这些物体的形状，都是${SHAPES[def.shape].name}！</div>
                 </div>
             </div>`,
         init(el) {
-            step = 0;
+            step = 0; this._el = el;
             el.querySelector('#'+def.id+'-rev').onclick = () => {
                 const lines = el.querySelectorAll('.featline');
                 if (step < lines.length) { SND.pop(); lines[step].classList.add('show'); step++; }
                 else toast('特征都出来啦！一起读一读～');
             };
-            el.querySelector('#'+def.id+'-face').onclick = () => {
-                SND.click();
-                const fan = el.querySelector('#'+def.id+'-fan');
-                if (fan.dataset.done) { toast(def.fanTip); return; }
-                fan.dataset.done = 1;
-                fan.innerHTML = def.fanColors.map((c,i) =>
-                    `<div class="fanface" style="background:${c};animation-delay:${i*.09}s">${i+1}</div>`).join('');
-                SND.good(); toast(def.fanTip, 3000);
+            const v3d = el.querySelector('#'+def.id+'-v3d');
+            el._ensureV = () => {          /* 首次进入页面才建 3D（init 时页面隐藏拿不到尺寸） */
+                if (el._V || el._v3busy || el._v3fail) return;
+                el._v3busy = true;
+                loadThree(3).then(ok => {
+                    const ld = v3d.querySelector('.v3dload'); if (ld) ld.remove();
+                    if (ok && window.THREE && !v3d.dataset.fail && v3d.clientWidth) {
+                        try {
+                            el._V = new Shape3D(v3d, def.shape);
+                            el.querySelector('#'+def.id+'-shape').style.display = 'none';
+                        } catch (e) { v3d.dataset.fail = 1; }
+                    }
+                    if (!el._V) {
+                        el._v3fail = 1;
+                        v3d.style.display = 'none';
+                        el.querySelector('#'+def.id+'-shape').style.display = 'block';
+                    }
+                });
             };
+            (def.vbtns || []).forEach(b => {
+                const bt = document.createElement('button');
+                bt.className = 'minibtn'; bt.textContent = b.t;
+                bt.onclick = () => {
+                    SND.click();
+                    el._ensureV && el._ensureV();
+                    if (el._V) { el._V[b.fn] && el._V[b.fn](); }
+                    else if (b.fb) b.fb(el);
+                };
+                el.querySelector('#'+def.id+'-vbtns').appendChild(bt);
+            });
             if (def.bind) def.bind(el);
         },
-        enter() {  /* 再次进入重置已揭晓条目? 保留状态更好，不重置 */ }
+        enter() {
+            if (!this._el) return;
+            this._el._ensureV && this._el._ensureV();
+            const V = this._el._V;
+            if (V) { V.stop = false; V.loop(); }
+        },
+        leave() { const V = this._el && this._el._V; if (V) V.stop = true; }
     });
 }
 /* --- 长方体（P12-13） --- */
@@ -674,18 +906,32 @@ featSlide({
     id:'feat-cuboid', shape:'cuboid', title:'认识长方体',
     question:'你能给这样长长方方的物体取个名字吗？', answer:'它叫 长方体！',
     lines:['长长方方的','有 6 个平平的面','相对的两个面一样大'],
-    fanColors:['#f5a35c','#e08b45','#ffc28e','#f5a35c','#e08b45','#ffc28e'],
-    fanTip:'1~6 号是它的 6 个面！同色的两个面是相对的面，一模一样大～',
-    life:[['box','纸箱'],['microwave','微波炉'],['tissue','抽纸盒'],['toothpaste','牙膏盒']]
+    life:[['box','纸箱'],['microwave','微波炉'],['tissue','抽纸盒'],['toothpaste','牙膏盒']],
+    vbtns:[
+        { t:'🖐 数一数有几个面', fn:'count',
+          fb: el => { const fan = el.querySelector('#feat-cuboid-fan');
+              if (fan.dataset.done) { toast('1~6 号是它的 6 个面！同色两个面是相对的～'); return; }
+              fan.dataset.done = 1;
+              fan.innerHTML = ['#f5a35c','#e08b45','#ffc28e','#f5a35c','#e08b45','#ffc28e'].map((c,i)=>`<div class="fanface" style="background:${c};animation-delay:${i*.09}s">${i+1}</div>`).join('');
+              SND.good(); toast('一共 6 个面！同色的两个面是相对的面，一模一样大～', 3000); } },
+        { t:'🤝 相对的面', fn:'pairs',
+          fb: () => toast('前面和后面、左面和右面、上面和下面，两两一样大！', 3000) }
+    ]
 });
 /* --- 正方体（P14-15） --- */
 featSlide({
     id:'feat-cube', shape:'cube', title:'认识正方体',
     question:'你能给这样正正方方的物体取个名字吗？', answer:'它叫 正方体！',
     lines:['正正方方的','有 6 个平平的面','6 个面一样大'],
-    fanColors:['#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5'],
-    fanTip:'1~6 号是它的 6 个面！你看，6 个面全都是一样大的正方形～',
-    life:[['rubik','魔方'],['dice','骰子'],['woodcube','木块'],['gift','礼物盒']]
+    life:[['rubik','魔方'],['dice','骰子'],['woodcube','木块'],['gift','礼物盒']],
+    vbtns:[
+        { t:'🖐 数一数有几个面', fn:'count',
+          fb: el => { const fan = el.querySelector('#feat-cube-fan');
+              if (fan.dataset.done) { toast('6 个面全都是一样大的正方形～'); return; }
+              fan.dataset.done = 1;
+              fan.innerHTML = ['#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5'].map((c,i)=>`<div class="fanface" style="background:${c};animation-delay:${i*.09}s">${i+1}</div>`).join('');
+              SND.good(); toast('一共 6 个面！你看，全都是一样大的正方形～', 3000); } }
+    ]
 });
 /* --- 比一比（P16） --- */
 regSlide({
@@ -713,9 +959,9 @@ featSlide({
     id:'feat-cyl', shape:'cyl', title:'认识圆柱',
     question:'它长得有什么特别？', answer:'它叫 圆柱！',
     lines:['直直的','上下一样粗','两头都是圆圆的、平平的面'],
-    fanColors:['#7fc8a8','#7fc8a8'],   /* 圆柱只有 2 个圆面 */
-    fanTip:'圆柱两头各有一个圆圆的、平平的面，一共 2 个！侧面弯弯的，不是平面哦～',
     life:[['tea','茶叶筒'],['glue','胶棒'],['board','砧板']],
+    vbtns:[ { t:'🖐 数一数平平的面', fn:'count',
+        fb: () => toast('圆柱两头各有一个平平的圆面，一共 2 个！侧面弯弯的～', 3000) } ],
     extra:`<button class="minibtn" id="cylRoll">🌀 躺下滚一滚</button>
            <button class="minibtn" id="cylJudge">🤔 判断：它们都是圆柱吗？</button>
            <div class="judgerow" id="cylJudgeRow" style="display:none">
@@ -724,9 +970,10 @@ featSlide({
               <div class="judgeitem" data-ok="no">${shapeSVG('cone',86,{uid:'j3',face:false})}<div class="slot">？</div></div>
            </div>`,
     bind(el) {
-        const sh = el.querySelector('#feat-cyl-shape');
         el.querySelector('#cylRoll').onclick = () => {
+            if (el._V) { el._V.roll(); toast('躺下的圆柱可以前后滚动！轮子就是这么来的～', 2600); return; }
             SND.good();
+            const sh = el.querySelector('#feat-cyl-shape');
             sh.style.transition = 'transform 1.1s cubic-bezier(.4,0,.4,1)';
             sh.style.transform = 'translateX(150px) rotate(360deg)';
             toast('躺下的圆柱可以前后滚动！轮子就是这么来的～', 2600);
@@ -751,21 +998,11 @@ featSlide({
     id:'feat-ball', shape:'ball', title:'认识球',
     question:'这个圆鼓鼓的小家伙是谁？', answer:'它叫 球！',
     lines:['圆圆的、鼓鼓的','没有平平的面','可以到处滚动'],
-    fanColors:['#f2a6b8'],   /* 球没有平面 */
-    fanTip:'球找不到平平的面——它只有一个弯弯的、鼓鼓的曲面，所以能到处滚动！',
     life:[['football','足球'],['basketball','篮球'],['greyball','皮球'],['pingpong','乒乓球']],
-    bind(el) {
-        const sh = el.querySelector('#feat-ball-shape');
-        el.querySelector('#feat-ball-face').textContent = '🖐 摸一摸，找平面';
-        el.querySelector('#feat-ball-face').onclick = () => { SND.bad(); toast('找不到平平的面！球是鼓鼓的曲面，轻轻一推就滚走啦～', 2800); };
-        sh.onclick = () => {
-            SND.good();
-            sh.style.transition = 'transform 1s cubic-bezier(.3,0,.5,1)';
-            sh.style.transform = 'translate(90px,-26px) rotate(340deg)';
-            setTimeout(() => { sh.style.transition = 'transform .5s'; sh.style.transform = 'none'; }, 1200);
-        };
-    }
+    vbtns:[ { t:'🖐 摸一摸，找平面', fn:'count',
+        fb: () => toast('找不到平平的面！球是鼓鼓的曲面，轻轻一推就滚走啦～', 2800) } ]
 });
+
 /* ================= 游戏2 我说你猜（幕布） ================= */
 const G2_RIDDLES = [
     { nm:'谜语①', lines:['方方正正六面体，','每个面都一个样。'], ans:'cube' },
@@ -893,16 +1130,16 @@ regSlide({
         <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队，轮流上台！</div>
         <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
             <div class="home card" data-shape="${s}">
-                <div class="hz"></div>
-                <div class="hnm"><span class="tag ${SHAPES[s].tag}">${SHAPES[s].name}的家</span></div>
+                <div class="hh" style="background:var(--${s})">${shapeSVG(s,26,{face:false})}<span>${SHAPES[s].name}的家</span></div>
+                <div class="hz" style="background:${{cuboid:'#fdf1e3',cube:'#eef5fd',cyl:'#eaf7f1',ball:'#fdeef2'}[s]}"></div>
             </div>`).join('')}
         </div>
         <div class="g3mid" id="g3mid"></div>
         <div class="g3hud">
             <div class="teamsc" id="scR" style="color:#e05d5d">🔴 红队 <span class="star" id="starR">☆0</span></div>
             <div class="teamsc" id="scB" style="color:#5f92c9">🔵 蓝队 <span class="star" id="starB">☆0</span></div>
+            <div class="teamsc prog" id="g3prog">0 / 16 已经分好</div>
         </div>
-        <div class="pill g3prog" id="g3prog">0 / 16 已经分好</div>
         <div class="g3fb" id="g3fb"></div>
         <div class="g3done" id="g3done">
             <div class="card" style="padding:30px 50px;text-align:center">
@@ -915,8 +1152,13 @@ regSlide({
     init(el) {
         const mid = el.querySelector('#g3mid'), fb = el.querySelector('#g3fb');
         const feedback = (t, ok) => {
-            fb.textContent = t; fb.style.borderColor = ok ? '#59c98b' : '#e05d5d';
-            fb.classList.add('show'); clearTimeout(g3Timer); g3Timer = setTimeout(()=>fb.classList.remove('show'), 1800);
+            fb.innerHTML = (ok ? '✅ ' : '💡 ') + t; fb.style.borderColor = ok ? '#59c98b' : '#e05d5d';
+            fb.classList.add('show'); clearTimeout(g3Timer); g3Timer = setTimeout(()=>fb.classList.remove('show'), 2300);
+        };
+        const starFly = teamId => {
+            const sc = el.querySelector(teamId);
+            const s = document.createElement('span'); s.className = 'starfly'; s.textContent = '+1★';
+            sc.appendChild(s); setTimeout(() => s.remove(), 950);
         };
         const shuffle = a => { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
         const build = () => {
@@ -935,7 +1177,7 @@ regSlide({
                 /* 网格散布：4 列 4 行抖动 */
                 const gx = k % 4, gy = Math.floor(k/4);
                 c.style.left = (23 + gx*19 + Math.random()*5) + '%';
-                c.style.top  = (16 + gy*27 + Math.random()*9) + '%';
+                c.style.top  = (20 + gy*23 + Math.random()*5) + '%';
                 c.innerHTML = IMG(img);
                 c.addEventListener('pointerdown', e => startDrag(e, c));
                 mid.appendChild(c);
@@ -979,6 +1221,7 @@ regSlide({
                 G3.placed++;
                 G3[G3.team]++;
                 el.querySelector(G3.team==='red'?'#starR':'#starB').textContent = '★' + G3[G3.team];
+                starFly(G3.team==='red'?'#scR':'#scB');
                 el.querySelector('#g3prog').textContent = G3.placed + ' / 16 已经分好';
                 feedback(G3_PRAISE[chip.dataset.shape] + '（' + (G3.team==='red'?'红':'蓝') + '队 +1★）', true);
                 G3.team = G3.team === 'red' ? 'blue' : 'red';
@@ -1040,17 +1283,79 @@ regSlide({
     }
 });
 /* ================= 游戏4 小镇落成 + 颁奖 ================= */
-const G4_SPOTS = [
-    { nm:'小镇之家', x:6,  y:26, build:`<div style="position:absolute;left:0;bottom:26px">${shapeSVG('cuboid',120,{uid:'h1'})}</div>
-        <div style="position:absolute;left:96px;bottom:26px">${shapeSVG('cube',84,{uid:'h2'})}</div>
-        <div style="position:absolute;left:118px;bottom:98px">${shapeSVG('cube',52,{uid:'h3'})}</div>` },
-    { nm:'小镇广场', x:34, y:44, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('cyl',96,{uid:'p1'})}</div>
-        <div style="position:absolute;left:84px;bottom:22px">${shapeSVG('cuboid',78,{uid:'p2'})}</div>` },
-    { nm:'灯塔工坊', x:60, y:14, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('cyl',86,{uid:'l1'})}</div>
-        <div style="position:absolute;left:16px;bottom:100px">${shapeSVG('ball',56,{uid:'l2'})}</div>` },
-    { nm:'球球乐园', x:78, y:48, build:`<div style="position:absolute;left:0;bottom:22px">${shapeSVG('ball',72,{uid:'b1'})}</div>
-        <div style="position:absolute;left:58px;bottom:22px">${shapeSVG('ball',56,{uid:'b2'})}</div>` }
-];
+function townSVG() {
+    const L = 'stroke="#3f3a34" stroke-width="3.5" stroke-linejoin="round"';
+    return `<svg viewBox="0 0 1000 540" style="width:100%;height:100%;display:block">
+        <g class="townG deco">
+            <circle cx="872" cy="88" r="44" fill="#ffd98a" ${L}/>
+            <g fill="#ffffff" ${L}><ellipse cx="180" cy="84" rx="54" ry="22"/><ellipse cx="242" cy="96" rx="40" ry="17"/></g>
+            <ellipse cx="500" cy="58" rx="44" ry="18" fill="#ffffff" ${L} opacity=".92"/>
+        </g>
+        <g class="townG deco">
+            <rect x="0" y="412" width="1000" height="128" fill="#ecdfc4"/>
+            <rect x="0" y="468" width="1000" height="54" fill="#d9c9a8"/>
+            <line x1="0" y1="495" x2="1000" y2="495" stroke="#fffdf5" stroke-width="5" stroke-dasharray="32 26"/>
+        </g>
+        <g class="townG deco">
+            <rect x="52" y="358" width="18" height="64" rx="7" fill="#b5834f" ${L}/>
+            <circle cx="61" cy="326" r="44" fill="#8ed081" ${L}/>
+            <rect x="944" y="366" width="16" height="56" rx="7" fill="#b5834f" ${L}/>
+            <circle cx="952" cy="338" r="36" fill="#8ed081" ${L}/>
+            <ellipse cx="470" cy="428" rx="30" ry="12" fill="#9ccf7f" ${L}/>
+        </g>
+        <g class="townG" id="tg0">
+            <rect x="150" y="308" width="190" height="112" rx="8" fill="#f5a35c" ${L}/>
+            <polygon points="126,308 245,218 364,308" fill="#e08b45" ${L}/>
+            <rect x="222" y="352" width="46" height="68" rx="6" fill="#8a5a2b" ${L}/>
+            <circle cx="258" cy="388" r="4.5" fill="#ffe9c9"/>
+            <rect x="166" y="330" width="36" height="32" rx="5" fill="#fffdf5" ${L}/>
+            <line x1="184" y1="330" x2="184" y2="362" stroke="#3f3a34" stroke-width="3"/>
+            <line x1="166" y1="346" x2="202" y2="346" stroke="#3f3a34" stroke-width="3"/>
+            <rect x="288" y="246" width="30" height="54" rx="5" fill="#7fb2e5" ${L}/>
+            <rect x="392" y="340" width="86" height="80" rx="8" fill="#7fb2e5" ${L}/>
+            <polygon points="378,340 435,292 492,340" fill="#5f92c9" ${L}/>
+            <rect x="418" y="368" width="34" height="52" rx="5" fill="#fffdf5" ${L}/>
+            <line x1="435" y1="368" x2="435" y2="420" stroke="#3f3a34" stroke-width="3"/>
+            <g fill="#d9b98c" ${L}>
+                <rect x="118" y="390" width="12" height="32" rx="4"/><rect x="144" y="390" width="12" height="32" rx="4"/>
+                <rect x="110" y="398" width="54" height="8" rx="4"/>
+            </g>
+        </g>
+        <g class="townG" id="tg1">
+            <rect x="536" y="330" width="13" height="92" rx="5" fill="#9a938a" ${L}/>
+            <circle cx="542" cy="316" r="21" fill="#ffce4f" ${L}/>
+            <path d="M524,306 A21,21 0 0 1 560,306 L560,312 L524,312 Z" fill="#e05d5d" ${L}/>
+            <rect x="598" y="380" width="98" height="24" rx="9" fill="#f5a35c" ${L}/>
+            <rect x="606" y="404" width="11" height="24" fill="#b5834f" ${L}/>
+            <rect x="677" y="404" width="11" height="24" fill="#b5834f" ${L}/>
+            <rect x="722" y="356" width="15" height="66" rx="7" fill="#b5834f" ${L}/>
+            <circle cx="729" cy="330" r="32" fill="#8ed081" ${L}/>
+        </g>
+        <g class="townG" id="tg2">
+            <rect x="754" y="250" width="70" height="170" rx="10" fill="#7fc8a8" ${L}/>
+            <rect x="757" y="292" width="64" height="27" fill="#fffdf5"/>
+            <rect x="757" y="352" width="64" height="27" fill="#fffdf5"/>
+            <line x1="757" y1="292" x2="757" y2="379" stroke="#3f3a34" stroke-width="2.5"/>
+            <line x1="821" y1="292" x2="821" y2="379" stroke="#3f3a34" stroke-width="2.5"/>
+            <polygon points="738,250 789,192 840,250" fill="#e05d5d" ${L}/>
+            <circle cx="789" cy="180" r="15" fill="#ffce4f" ${L}/>
+            <rect x="776" y="318" width="26" height="32" rx="5" fill="#fffdf5" ${L}/>
+            <circle cx="789" cy="430" r="12" fill="#f2a6b8" ${L}/>
+        </g>
+        <g class="townG" id="tg3">
+            <ellipse cx="892" cy="436" rx="88" ry="27" fill="#cfe6f7" ${L}/>
+            <circle cx="850" cy="400" r="29" fill="#f2a6b8" ${L}/>
+            <circle cx="912" cy="386" r="34" fill="#f9c6d1" ${L}/>
+            <circle cx="958" cy="412" r="23" fill="#dd8497" ${L}/>
+            <g fill="#3f3a34">
+                <circle cx="902" cy="380" r="4"/><circle cx="924" cy="380" r="4"/>
+            </g>
+            <path d="M904,394 Q913,402 922,394" stroke="#3f3a34" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <ellipse cx="912" cy="402" rx="9" ry="5" fill="#ff8f8f" opacity=".4"/>
+        </g>
+    </svg>`;
+}
+const G4_LABELS = [[245,462,'小镇之家'],[648,468,'小镇广场'],[789,448,'灯塔工坊'],[892,502,'球球乐园']];
 regSlide({
     id:'game4', title:'小镇落成',
     html: () => `
@@ -1072,9 +1377,8 @@ regSlide({
                     <button class="minibtn" id="g4replay" style="align-self:center">🔁 重放搭建</button>
                 </div>
             </div>
-            <div class="g4town gridfloor card" id="g4town">
-                ${G4_SPOTS.map((s,i)=>`<div class="spot" id="spot${i}" style="left:${s.x}%;top:${s.y}%;width:190px;height:200px">
-                    ${s.build}<div class="snm">${s.nm}</div></div>`).join('')}
+            <div class="g4town card" id="g4town">${townSVG()}
+                ${G4_LABELS.map((lb,i)=>`<div class="snm townG" data-g="${i}" style="left:${lb[0]/10}%;top:${lb[1]/5.4}%">📍 ${lb[2]}</div>`).join('')}
             </div>
         </div>
         <div class="pill songsheet" id="g4song" style="position:absolute;bottom:86px;left:50%;transform:translateX(-50%);white-space:nowrap;overflow:hidden;max-width:92vw"></div>
@@ -1090,14 +1394,13 @@ regSlide({
         const song = '儿歌时间：正正方方正方体，六面平平一样大。 上下圆圆是圆柱，身体一推就滚动。 圆圆鼓鼓是球体，滚来滚去不费力。 长长方方长方体，相对两面一个样。';
         el.querySelector('#g4song').textContent = '🎵 ' + song;
         const play = () => {
-            G4_SPOTS.forEach((_,i) => {
-                const sp = el.querySelector('#spot'+i);
-                sp.classList.remove('in'); sp.style.transitionDelay = '0s';
-            });
-            G4_SPOTS.forEach((_,i) => setTimeout(() => {
-                el.querySelector('#spot'+i).classList.add('in'); SND.pop();
-            }, 500 + i*850));
-            setTimeout(() => toast('小镇建成啦！说说你的收获吧～', 2600), 500 + 4*850);
+            const gs = [...el.querySelectorAll('#g4town .townG')];
+            gs.forEach(g => { g.classList.remove('in'); });
+            gs.forEach((g, i) => setTimeout(() => {
+                g.classList.add('in');
+                if (!g.classList.contains('deco') && i % 2 === 1) SND.pop();
+            }, 250 + i * 420));
+            setTimeout(() => toast('小镇建成啦！说说你的收获吧～', 2600), 250 + gs.length * 420);
         };
         el.querySelector('#g4replay').onclick = () => { SND.click(); play(); };
         el.querySelectorAll('.wordchips button').forEach(b => b.onclick = () => {
