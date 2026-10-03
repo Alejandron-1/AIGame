@@ -708,12 +708,12 @@ class Shape3D {
             this.mesh = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.0, 1.12), mats);
             this.mats = mats;
             this.countSteps = [
-                { i:[4], no:'1', tip:'前面 —— 一个平平的面' },
-                { i:[5], no:'2', tip:'后面' },
-                { i:[1], no:'3', tip:'左面' },
-                { i:[0], no:'4', tip:'右面' },
-                { i:[2], no:'5', tip:'上面' },
-                { i:[3], no:'6', tip:'下面 —— 一共 6 个面！' } ];
+                { i:[4], no:'1', tip:'前面 —— 一个平平的面', rx:.2,  ry:0 },
+                { i:[5], no:'2', tip:'后面',                 rx:.2,  ry:Math.PI },
+                { i:[1], no:'3', tip:'左面',                 rx:.2,  ry:Math.PI/2 },
+                { i:[0], no:'4', tip:'右面',                 rx:.2,  ry:-Math.PI/2 },
+                { i:[2], no:'5', tip:'上面',                 rx:1.18, ry:0 },
+                { i:[3], no:'6', tip:'下面 —— 一共 6 个面！', rx:-1.18, ry:0 } ];
             this.pairDefs = [[4,5,'前面和后面是一对，一模一样大！'],[1,0,'左面和右面是一对，一模一样大！'],[2,3,'上面和下面是一对，一模一样大！']];
         } else if (shape === 'cube') {
             const mats = []; for (let k = 0; k < 6; k++) mats.push(this.mat(0x7fb2e5));
@@ -721,18 +721,20 @@ class Shape3D {
             this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 1.3), mats);
             this.mats = mats;
             this.countSteps = [
-                { i:[4], no:'1', tip:'前面' }, { i:[5], no:'2', tip:'后面' }, { i:[1], no:'3', tip:'左面' },
-                { i:[0], no:'4', tip:'右面' }, { i:[2], no:'5', tip:'上面' },
-                { i:[3], no:'6', tip:'下面 —— 6 个面都一样大！' } ];
+                { i:[4], no:'1', tip:'前面', rx:.2, ry:0 }, { i:[5], no:'2', tip:'后面', rx:.2, ry:Math.PI },
+                { i:[1], no:'3', tip:'左面', rx:.2, ry:Math.PI/2 },
+                { i:[0], no:'4', tip:'右面', rx:.2, ry:-Math.PI/2 },
+                { i:[2], no:'5', tip:'上面', rx:1.18, ry:0 },
+                { i:[3], no:'6', tip:'下面 —— 6 个面都一样大！', rx:-1.18, ry:0 } ];
         } else if (shape === 'cyl') {
             const side = this.mat(0x7fc8a8, faceTexture('#7fc8a8'));
             const cap = this.mat(0xa8dfc6);
             this.mesh = new THREE.Mesh(new THREE.CylinderGeometry(.68, .68, 1.35, 48), [side, cap, cap]);
             this.mats = this.mesh.material;
             this.countSteps = [
-                { i:[1], no:'1', tip:'上面 —— 一个平平的圆面' },
-                { i:[2], no:'2', tip:'下面 —— 一个平平的圆面' },
-                { i:[0], no:'', tip:'侧面弯弯的，不是平面哦' } ];
+                { i:[1], no:'1', tip:'上面 —— 一个平平的圆面', rx:1.2, ry:0 },
+                { i:[2], no:'2', tip:'下面 —— 一个平平的圆面', rx:-1.2, ry:0 },
+                { i:[0], no:'', tip:'侧面弯弯的，不是平面哦', rx:.2, ry:.6 } ];
         } else {
             this.mesh = new THREE.Mesh(new THREE.SphereGeometry(.95, 48, 32), this.mat(0, faceTexture('#f2a6b8')));
             this.mats = [];
@@ -756,6 +758,23 @@ class Shape3D {
         box.addEventListener('pointerup', up);
         box.addEventListener('pointerleave', up);
     }
+    tweenTo(tx, ty, ms) {   /* 平滑转到目标视角（取最短Y路径） */
+        return new Promise(res => {
+            const sx = this.rotX, sy = this.rotY;
+            let dy = ty - sy;
+            dy = ((dy + Math.PI) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI) - Math.PI;
+            const t0 = performance.now();
+            const stepFn = () => {
+                if (this.stop) return res();
+                const k = Math.min(1, (performance.now() - t0) / ms);
+                const e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2) / 2;
+                this.rotX = sx + (tx - sx) * e;
+                this.rotY = sy + dy * e;
+                if (k < 1) setTimeout(stepFn, 16); else res();
+            };
+            stepFn();
+        });
+    }
     flash(steps) {
         if (this.counting) return; this.counting = true;
         const num = this.box.querySelector('.v3dnum'), tip = this.box.querySelector('.v3dtip');
@@ -764,13 +783,18 @@ class Shape3D {
             if (this.stop || !list.length) {
                 num.textContent = this.shape === 'cyl' ? '2 个平面' : '6 个面';
                 tip.textContent = '拖一拖，转一圈看看！';
-                setTimeout(() => { if (!this.stop) { num.textContent = ''; tip.textContent = '用鼠标拖一拖，转一圈看看'; } }, 1800);
+                setTimeout(() => { if (!this.stop) { num.textContent = ''; tip.textContent = '用鼠标拖一拖，转一圈看看'; } }, 2000);
                 this.counting = false; return;
             }
             const st = list.shift();
-            st.m.forEach(m => m.color.setHex(0xfff1bf));
-            num.textContent = st.no || ''; tip.textContent = st.tip; SND.pop();
-            setTimeout(() => { st.m.forEach(m => m.color.setHex(m.userData.base)); next(); }, 1050);
+            const go = () => {
+                if (this.stop) { this.counting = false; return; }
+                st.m.forEach(m => m.color.setHex(0xfff1bf));
+                num.textContent = st.no || ''; tip.textContent = st.tip; SND.pop();
+                setTimeout(() => { st.m.forEach(m => m.color.setHex(m.userData.base)); next(); }, 950);
+            };
+            if (st.rx !== undefined) this.tweenTo(st.rx, st.ry, 560).then(go);
+            else go();
         };
         next();
     }
@@ -787,7 +811,7 @@ class Shape3D {
             };
             pulse(); return;
         }
-        this.flash(this.countSteps.map(s => ({ m: s.i.map(i => this.mats[i]), no: s.no, tip: s.tip })));
+        this.flash(this.countSteps.map(s => ({ m: s.i.map(i => this.mats[i]), no: s.no, tip: s.tip, rx: s.rx, ry: s.ry })));
     }
     pairs() {
         if (this.counting || this.rolling || !this.pairDefs) return;
@@ -1127,7 +1151,7 @@ regSlide({
     id:'game3', title:'按形状分一分',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.2vw,38px)">例 1 · <em>按形状分一分</em></div>
-        <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队，轮流上台！</div>
+        <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队轮流上台，拖对 +1★ 并换对方，拖错弹回不扣分！</div>
         <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
             <div class="home card" data-shape="${s}">
                 <div class="hh" style="background:var(--${s})">${shapeSVG(s,26,{face:false})}<span>${SHAPES[s].name}的家</span></div>
@@ -1186,6 +1210,7 @@ regSlide({
         const startDrag = (e, chip) => {
             e.preventDefault();
             const r = mid.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+            chip._ox = chip.style.left; chip._oy = chip.style.top;   /* 记住原位，拖错弹回 */
             chip.classList.add('drag');
             try { chip.setPointerCapture && chip.setPointerCapture(e.pointerId); } catch(err) {}
             const ox = e.clientX - cr.left, oy = e.clientY - cr.top;
@@ -1239,7 +1264,11 @@ regSlide({
             } else {
                 SND.bad();
                 chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
-                feedback('再摸一摸它的面，想一想它是谁的家？', false);
+                /* 弹回原位（之前只抖一抖，物品会堆在别人家门口） */
+                chip.style.transition = 'left .4s cubic-bezier(.3,1.3,.4,1), top .4s cubic-bezier(.3,1.3,.4,1)';
+                chip.style.left = chip._ox; chip.style.top = chip._oy;
+                setTimeout(() => { chip.style.transition = ''; }, 430);
+                feedback('想一想：它是<b>' + SHAPES[chip.dataset.shape].name + '</b>，该回哪个家呢？（拖对 +1★，拖错不扣分）', false);
             }
         };
         el.querySelector('#g3reset').onclick = () => { SND.click(); build(); };
@@ -1248,26 +1277,52 @@ regSlide({
     },
     leave() { clearTimeout(g3Timer); }
 });
-/* ================= 数一数（P29） ================= */
-const COUNT_SHAPES = [
-    ['cuboid',14,38],['cuboid',36,42],['cuboid',58,36],['cube',80,40],
-    ['cyl',26,74],['ball',55,80],['ball',74,78]
-];
+/* ================= 数一数（P29，随机出题） ================= */
+function countGen() {
+    const plan = [['cuboid',2,4],['cube',1,3],['cyl',1,3],['ball',2,4]];
+    const items = [];
+    plan.forEach(([s, lo, hi]) => {
+        const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+        for (let k = 0; k < n; k++) items.push(s);
+    });
+    for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]];
+    }
+    /* 4 列网格抖动摆放；行数按总数自适应（最多14个→4行），避免重叠/溢出 */
+    const rows = Math.max(1, Math.ceil(items.length / 4));
+    return items.map((s, k) => {
+        const row = Math.floor(k / 4);
+        const yBase = rows === 1 ? 55 : 30 + row * (60 / (rows - 1));
+        return {
+            s,
+            x: 13 + (k % 4) * 24 + Math.random() * 7,
+            y: Math.min(90, yBase + Math.random() * 6)
+        };
+    });
+}
 regSlide({
     id:'count', title:'数一数',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">工地上 <em>数一数</em></div>
-        <div class="hsub">点一个图形名字，帮它数数有几个（课本 P29）</div>
-        <div class="countstage gridfloor card" id="cntStage">
-            ${COUNT_SHAPES.map(([s,x,y],i)=>`<div class="countshape" data-s="${s}" style="left:${x}%;top:${y}%">
-                <span class="cno"></span>${shapeSVG(s,86,{uid:'cs'+i})}</div>`).join('')}
-        </div>
-        <div class="countqs">${['cuboid','cube','cyl','ball'].map(s=>`
-            <div class="cq" data-s="${s}">${SHAPES[s].name}（　）个</div>`).join('')}</div>`,
+        <div class="hsub">点一个图形名字，帮它数数有几个（课本 P29 · 每次进场题目都不同）</div>
+        <div class="countstage gridfloor card" id="cntStage"></div>
+        <div class="countqs" id="cntQs">${['cuboid','cube','cyl','ball'].map(s=>`
+            <div class="cq" data-s="${s}">${SHAPES[s].name}（<span class="cav">　</span>）个</div>`).join('')}</div>
+        <button class="minibtn" id="cntNew" style="position:absolute;right:26px;bottom:96px">🔀 换一批</button>`,
     init(el) {
+        const build = () => {
+            const data = countGen();
+            const stage = el.querySelector('#cntStage');
+            stage.innerHTML = data.map((it,i)=>`<div class="countshape" data-s="${it.s}" style="left:${it.x}%;top:${it.y}%">
+                <span class="cno"></span>${shapeSVG(it.s,86,{uid:'cs'+i+'_'+Date.now()%9973})}</div>`).join('');
+            el.querySelectorAll('.cq').forEach(q => { q.classList.remove('done'); q.querySelector('.cav').textContent = '　'; });
+        };
+        this._build = build;
+        build();
+        el.querySelector('#cntNew').onclick = () => { SND.click(); build(); toast('新的一批来啦，再数数！'); };
         el.querySelectorAll('.cq').forEach(q => q.onclick = () => {
             SND.click();
-            el.querySelectorAll('.cq').forEach(x => { x.classList.remove('done'); const b=x.querySelector('b'); if(b) b.remove(); });
+            el.querySelectorAll('.cq').forEach(x => { x.classList.remove('done'); x.querySelector('.cav').textContent = '　'; });
             el.querySelectorAll('.countshape').forEach(c => { c.classList.remove('mark'); c.querySelector('.cno').textContent=''; });
             const target = q.dataset.s, all = [...el.querySelectorAll('.countshape')].filter(c=>c.dataset.s===target);
             all.forEach((c,i) => setTimeout(() => {
@@ -1275,12 +1330,13 @@ regSlide({
                 c.querySelector('.cno').textContent = i+1;
                 if (i === all.length-1) setTimeout(() => {
                     q.classList.add('done');
-                    const b = document.createElement('b'); b.textContent = all.length;
-                    q.appendChild(b); SND.good();
+                    q.querySelector('.cav').textContent = all.length;   /* 答案填进括号里 */
+                    SND.good();
                 }, 350);
             }, i*420));
         });
-    }
+    },
+    enter() { if (this._build) this._build(); }   /* 每次进场重新随机出题 */
 });
 /* ================= 游戏4 小镇落成 + 颁奖 ================= */
 function townSVG() {
