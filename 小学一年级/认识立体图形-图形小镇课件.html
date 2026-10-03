@@ -157,7 +157,7 @@ button { font-family:inherit; cursor:pointer; }
 /* ================= 游戏1 实物变图形 ================= */
 .g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
 .g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s; }
-.g1item img { height:clamp(56px,9.5vh,92px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
+.g1item img { width:auto; height:auto; max-height:clamp(56px,9.5vh,92px); max-width:clamp(84px,20vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
     border-radius:50%; color:#fff; font-weight:900; display:none; align-items:center; justify-content:center; font-size:16px; }
@@ -400,10 +400,10 @@ function shapeSVG(shape, size=150, opt={}) {
     const line = 'stroke="#3f3a34" stroke-width="4" stroke-linejoin="round"';
     let body = '';
     if (shape === 'cuboid') {
-        body = `<polygon points="38,84 82,42 190,42 146,84" fill="${S.light}" ${line}/>
-                <polygon points="146,84 190,42 190,128 146,170" fill="${S.dark}" ${line}/>
-                <rect x="38" y="84" width="108" height="86" rx="6" fill="${S.color}" ${line}/>`
-                + (o ? faceSVG(92,122) : '');
+        body = `<polygon points="16,78 54,42 212,42 174,78" fill="${S.light}" ${line}/>
+                <polygon points="174,78 212,42 212,112 174,148" fill="${S.dark}" ${line}/>
+                <rect x="16" y="78" width="158" height="70" rx="6" fill="${S.color}" ${line}/>`
+                + (o ? faceSVG(95,113) : '');
     } else if (shape === 'cube') {
         body = `<polygon points="46,80 78,48 186,48 154,80" fill="${S.light}" ${line}/>
                 <polygon points="154,80 186,48 186,160 154,192" fill="${S.dark}" ${line}/>
@@ -523,11 +523,11 @@ regSlide({
         <div class="htitle">怎么分 <em>才好呢</em>？</div>
         <div class="hsub">先说一说按照什么标准分类，再动手分一分（点卡片看分法）</div>
         <div class="idearow">
-            <div class="ideacard card" data-t="我按<b>能否滚动</b>分类：钢笔墨水滚不动，牙膏可以滚来滚去。">
+            <div class="ideacard card" data-t="我按「能否滚动」分类：钢笔墨水滚不动，牙膏可以滚来滚去。">
                 <div class="ic">🔄</div><h3>按 能否滚动 分</h3><p>有的滚得动，有的滚不动……</p></div>
-            <div class="ideacard card" data-t="我按<b>材质</b>分类：有些是纸做的，有些是金属做的，有些是塑料做的。">
+            <div class="ideacard card" data-t="我按「材料」分类：有些是纸做的，有些是金属做的，有些是塑料做的。">
                 <div class="ic">🧱</div><h3>按 材料 分</h3><p>纸做的、金属做的、塑料做的……</p></div>
-            <div class="ideacard card" data-t="我把<b>方方正正</b>的放在一起，把<b>圆圆的、可以滚来滚去</b>的放在一起。">
+            <div class="ideacard card" data-t="我把「方方正正」的放在一起，把「圆圆的、可以滚来滚去」的放在一起。">
                 <div class="ic">⭐</div><h3>按 形状 分</h3><p>方方的放一起，圆圆的放一起……</p></div>
         </div>
         <div class="pill" style="margin-top:26px">👉 按形状分一分，就是今天的<strong style="color:#f0831f">新本领</strong>！</div>`,
@@ -537,8 +537,8 @@ regSlide({
 });
 /* ================= 游戏1 认识小伙伴（实物变图形） ================= */
 const G1_ITEMS = [
-    ['box','cuboid',18,30],['rubik','cube',30,30],['bin','cyl',42,30],['basketball','ball',55,30],
-    ['dice','cube',68,30],['tissue','cuboid',80,30],['tea','cyl',16,68],['football','ball',48,68]
+    ['box','cuboid',15,30],['toothpaste','cuboid',29,30],['rubik','cube',43,30],['dice','cube',56,30],
+    ['tea','cyl',69,30],['glue','cyl',82,30],['basketball','ball',24,68],['football','ball',52,68]
 ];
 regSlide({
     id:'game1', title:'第1关 认识小伙伴',
@@ -715,7 +715,7 @@ featSlide({
     lines:['直直的','上下一样粗','两头都是圆圆的、平平的面'],
     fanColors:['#7fc8a8','#7fc8a8'],   /* 圆柱只有 2 个圆面 */
     fanTip:'圆柱两头各有一个圆圆的、平平的面，一共 2 个！侧面弯弯的，不是平面哦～',
-    life:[['bin','垃圾桶'],['tea','茶叶筒'],['glue','胶棒']],
+    life:[['tea','茶叶筒'],['glue','胶棒'],['board','砧板']],
     extra:`<button class="minibtn" id="cylRoll">🌀 躺下滚一滚</button>
            <button class="minibtn" id="cylJudge">🤔 判断：它们都是圆柱吗？</button>
            <div class="judgerow" id="cylJudgeRow" style="display:none">
@@ -878,9 +878,9 @@ regSlide({
 });
 /* ================= 游戏3 按形状分一分（红蓝两队） ================= */
 const G3_ITEMS = [
-    ['box','cuboid'],['microwave','cuboid'],['tissue','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],
+    ['box','cuboid'],['microwave','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],['bin','cuboid'],
     ['rubik','cube'],['dice','cube'],['woodcube','cube'],['gift','cube'],
-    ['bin','cyl'],['tea','cyl'],['glue','cyl'],
+    ['tea','cyl'],['glue','cyl'],['board','cyl'],
     ['football','ball'],['greyball','ball'],['pingpong','ball'],['basketball','ball']
 ];
 const G3_PRAISE = { cuboid:'对啦！长长方方，站稳啦！', cube:'对啦！方方正正，六面一样！', cyl:'对啦！圆柱躺下能滚哦！', ball:'对啦！球滚滚球～' };
