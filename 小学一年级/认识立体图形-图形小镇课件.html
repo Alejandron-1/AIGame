@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🧱 立体图形小镇 · 认识立体图形（一年级公开课课件）</title>
 <!-- ============================================================
      立体图形小镇 · 单文件离线课件（Block Town 同款结构 + 自家课本内容）
@@ -22,7 +22,8 @@
     --gold:#ffce4f;
 }
 html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
-body { font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif; color:var(--ink); }
+body { font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif; color:var(--ink);
+    user-select:none; -webkit-user-select:none; touch-action:manipulation; }
 button { font-family:inherit; cursor:pointer; }
 
 /* ================= 课件翻页框架 ================= */
@@ -372,6 +373,8 @@ const SND = {
                [392,523,659,784].forEach((f,i)=>this.tone(f/2, i*.14, .3, 'sine', .12)); }
 };
 window.addEventListener('pointerdown', () => SND.ac(), { once:true });
+/* 触屏加固：课件区内长按不弹系统菜单（希沃触屏拖拽防误触） */
+document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('#deck')) e.preventDefault(); });
 /* ================= 彩纸 / 烟花 ================= */
 const CV = $('#cv'), CX = CV.getContext('2d');
 let parts = [], cvRunning = false;
