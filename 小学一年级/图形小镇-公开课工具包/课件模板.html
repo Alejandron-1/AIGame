@@ -223,19 +223,36 @@ button { font-family:inherit; cursor:pointer; }
 .hintbox input { width:100%; border:none; border-bottom:2px solid #d8d0c0; background:transparent; font-weight:800; font-size:15px; padding:5px 2px; outline:none; font-family:inherit; }
 
 /* ================= 游戏3 分一分 ================= */
-.g3top { display:flex; gap:clamp(10px,1.6vw,24px); justify-content:center; width:min(1300px,100%); flex-wrap:wrap; }
-.home { flex:1 1 0; min-width:0; text-align:center; position:relative; transition:transform .18s; }
-.home > svg { width:clamp(110px,12vw,170px); height:auto; transition:transform .18s, filter .18s; }
-.home .hz { min-height:46px; display:flex; align-items:center; justify-content:center; gap:6px;
-    flex-wrap:wrap; transition:all .2s; }
-.home.hot { transform:translateY(-8px); }
-.home.hot > svg { transform:scale(1.14); filter:drop-shadow(0 0 16px rgba(255,206,79,.95)); }
-.g3mid { position:relative; width:min(1300px,100%); flex:1; min-height:150px; margin-top:14px; }
-.g3chip { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .15s; z-index:2; }
-.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
-.g3chip.drag { cursor:grabbing; z-index:50; transition:none; }
-.g3chip.drag img { transform:scale(1.15); }
+.g3field { position:relative; width:min(1300px,100%); flex:1; display:flex; flex-direction:column; margin-top:6px; }
+.g3lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+.g3items { position:relative; z-index:2; display:flex; flex-wrap:wrap; justify-content:space-around;
+    align-items:flex-end; row-gap:10px; padding:8px 4px 12px; flex:1; }
+.g3chip { position:relative; cursor:pointer; touch-action:none; }
+.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px);
+    display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
+.g3chip.locked { opacity:.55; pointer-events:none; }
+.g3chip .ck { position:absolute; top:-10px; right:-10px; width:26px; height:26px; background:#59c98b;
+    border:2.5px solid var(--line); border-radius:50%; color:#fff; font-weight:900;
+    display:flex; align-items:center; justify-content:center; font-size:14px; }
 .g3chip.shake { animation:jiggle .5s; }
+.g3targets { position:relative; z-index:2; display:flex; justify-content:space-around; align-items:flex-end; padding:0 10px 4px; }
+.ftarget { text-align:center; transition:transform .15s, filter .15s; }
+.ftarget.hot { transform:scale(1.1); filter:drop-shadow(0 0 16px rgba(255,206,79,.95)); }
+.g3field { position:relative; width:min(1300px,100%); flex:1; display:flex; flex-direction:column; margin-top:6px; }
+.g3lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+.g3items { position:relative; z-index:2; display:flex; flex-wrap:wrap; justify-content:space-around;
+    align-items:flex-end; row-gap:10px; padding:8px 4px 12px; flex:1; }
+.g3chip { position:relative; cursor:pointer; touch-action:none; }
+.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px);
+    display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
+.g3chip.locked { opacity:.55; pointer-events:none; }
+.g3chip .ck { position:absolute; top:-10px; right:-10px; width:26px; height:26px; background:#59c98b;
+    border:2.5px solid var(--line); border-radius:50%; color:#fff; font-weight:900;
+    display:flex; align-items:center; justify-content:center; font-size:14px; }
+.g3chip.shake { animation:jiggle .5s; }
+.g3targets { position:relative; z-index:2; display:flex; justify-content:space-around; align-items:flex-end; padding:0 10px 4px; }
+.ftarget { text-align:center; transition:transform .15s, filter .15s; }
+.ftarget.hot { transform:scale(1.1); filter:drop-shadow(0 0 16px rgba(255,206,79,.95)); }
 .g3score { display:flex; gap:16px; align-items:center; justify-content:center; margin:-4px 0 12px; flex-wrap:wrap; }
 .g3vs { font-weight:900; font-size:clamp(16px,1.8vw,22px); color:#b3aa9c; }
 .teamsc { position:relative; background:#fff; border:3.5px solid var(--line); border-radius:18px; padding:12px 28px; font-weight:900;
@@ -290,8 +307,9 @@ button { font-family:inherit; cursor:pointer; }
     #navbtns button { width:44px; height:38px; font-size:16px; }
     .g2panel { max-height:none; flex-basis:auto; width:94vw; }
     .g2stage { width:94vw; min-height:40vh; }
-    .g3chip img { max-height:56px; max-width:84px; }
-    .home { flex:1 1 44%; }
+    .g3chip img { max-height:52px; max-width:80px; }
+    .ftarget svg { width:86px; height:auto; }
+
     .g3score { gap:8px; } .teamsc { padding:7px 12px; font-size:15px; } .teamsc.prog { font-size:12px; padding:5px 10px; }
     .featwrap { flex-direction:column; align-items:center; }
     .featright { max-width:94vw; }
@@ -1248,7 +1266,7 @@ regSlide({
         this._cleanup = () => {};
     }
 });
-/* ================= 游戏3 按形状分一分（红蓝两队） ================= */
+/* ================= 游戏3 按形状分一分（课本"找朋友"连线式） ================= */
 const G3_ITEMS = [
     ['box','cuboid'],['microwave','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],['bin','cuboid'],
     ['rubik','cube'],['dice','cube'],['woodcube','cube'],['gift','cube'],
@@ -1258,36 +1276,36 @@ const G3_ITEMS = [
 const G3_PRAISE = { cuboid:'对啦！长长方方，站稳啦！', cube:'对啦！方方正正，六面一样！', cyl:'对啦！圆柱躺下能滚哦！', ball:'对啦！球滚滚球～' };
 const G3 = { red:0, blue:0, team:'red', placed:0 };
 let g3Timer = null;
+const SVGNS = 'http://www.w3.org/2000/svg';
 regSlide({
     id:'game3', title:'按形状分一分',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.2vw,38px)">例 1 · <em>按形状分一分</em></div>
-        <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队轮流上台，拖对 +1★ 并换对方，拖错弹回不扣分！</div>
+        <div class="hsub">上面的物品找朋友 —— 从物品拉线连到对应的图形（红蓝两队轮流上台，连对 +1★）</div>
         <div class="g3score">
             <div class="teamsc" id="scR" style="color:#e05d5d">🔴 红队 <span class="star" id="starR">☆0</span></div>
             <div class="g3vs">PK</div>
             <div class="teamsc" id="scB" style="color:#5f92c9">🔵 蓝队 <span class="star" id="starB">☆0</span></div>
-            <div class="teamsc prog" id="g3prog">0 / 16 已经分好</div>
+            <div class="teamsc prog" id="g3prog">0 / 16 已经连好</div>
         </div>
-        <div class="g3mid" id="g3mid"></div>
-        <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
-            <div class="home" data-shape="${s}">
-                ${shapeSVG(s,150,{uid:'ft'+s})}
-                <div class="hz"></div>
-            </div>`).join('')}
+        <div class="g3field" id="g3field">
+            <svg class="g3lines" id="g3lines"></svg>
+            <div class="g3items" id="g3items"></div>
+            <div class="g3targets">${['cuboid','cube','cyl','ball'].map(s=>`
+                <div class="ftarget" data-shape="${s}">${shapeSVG(s,150,{uid:'ft'+s})}</div>`).join('')}</div>
         </div>
         <div class="g3fb" id="g3fb"></div>
         <div class="g3done" id="g3done">
             <div class="card" style="padding:30px 50px;text-align:center">
-                <div style="font-size:clamp(30px,4vw,50px);font-weight:900">🎉 全部送回家啦！</div>
+                <div style="font-size:clamp(30px,4vw,50px);font-weight:900">🎉 全部连对啦！</div>
                 <div id="g3finalSc" style="font-size:clamp(20px,2.4vw,28px);font-weight:900;margin:14px 0"></div>
             </div>
-            <button class="bigbtn" id="g3re2">🔀 打乱再玩一轮</button>
+            <button class="bigbtn" id="g3re2">🔀 打乱再连一轮</button>
         </div>
-        <button class="minibtn" id="g3reset" style="position:absolute;right:26px;bottom:96px">🔀 打乱重开</button>`,
+        <button class="minibtn" id="g3reset" style="position:absolute;right:26px;bottom:96px">🔀 打乱重连</button>`,
     init(el) {
         this._el = el;
-        const mid = el.querySelector('#g3mid'), fb = el.querySelector('#g3fb');
+        const items = el.querySelector('#g3items'), linesSvg = el.querySelector('#g3lines'), fb = el.querySelector('#g3fb');
         const feedback = (t, ok) => {
             fb.innerHTML = (ok ? '✅ ' : '💡 ') + t; fb.style.borderColor = ok ? '#59c98b' : '#e05d5d';
             fb.classList.add('show'); clearTimeout(g3Timer); g3Timer = setTimeout(()=>fb.classList.remove('show'), 2300);
@@ -1298,83 +1316,83 @@ regSlide({
             sc.appendChild(s); setTimeout(() => s.remove(), 950);
         };
         const shuffle = a => { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
-        const build = () => {
+        const svgXY = (x,y) => { const r = linesSvg.getBoundingClientRect(); return [x - r.left, y - r.top]; };
+        const targetAt = (x,y) => {
+            const stack = document.elementsFromPoint ? document.elementsFromPoint(x,y) : [document.elementFromPoint(x,y)];
+            for (const e of stack) { if (e && e.closest) { const t = e.closest('.ftarget'); if (t) return t; } }
+            return null;
+        };
+        const mkLine = live => {
+            const l = document.createElementNS(SVGNS, 'line');
+            l.setAttribute('stroke', G3.team === 'red' ? '#e05d5d' : '#5f92c9');
+            l.setAttribute('stroke-width', '6'); l.setAttribute('stroke-linecap', 'round');
+            if (live) { l.setAttribute('opacity', '.55'); l.setAttribute('stroke-dasharray', '10 8'); }
+            else l.setAttribute('opacity', '.8');
+            return l;
+        };
+        const reset = () => {
             G3.red = 0; G3.blue = 0; G3.team = 'red'; G3.placed = 0;
             el.querySelector('#starR').textContent = '☆0'; el.querySelector('#starB').textContent = '☆0';
             el.querySelector('#scR').classList.add('turn'); el.querySelector('#scB').classList.remove('turn');
-            el.querySelector('#g3prog').textContent = '0 / 16 已经分好';
+            el.querySelector('#g3prog').textContent = '0 / 16 已经连好';
             el.querySelector('#g3done').classList.remove('show');
-            el.querySelectorAll('.home .hz').forEach(h => h.innerHTML = '');
-            mid.innerHTML = '';
+            linesSvg.innerHTML = '';
+            items.innerHTML = '';
             const order = shuffle([...G3_ITEMS.keys()]);
-            order.forEach((idx) => {
+            order.forEach(idx => {
                 const [img, shape] = G3_ITEMS[idx];
                 const c = document.createElement('div');
                 c.className = 'g3chip'; c.dataset.shape = shape;
                 c.innerHTML = IMG(img);
-                c.addEventListener('pointerdown', e => startDrag(e, c));
-                mid.appendChild(c);
-            });
-            layoutChips();
-        };
-        const layoutChips = () => {   /* 按可用空间自适应网格：宽屏8列×2行，窄屏4列×4行 */
-            const chips = [...mid.querySelectorAll('.g3chip')];
-            if (!chips.length) return;
-            const cols = mid.clientWidth > 1000 ? 8 : 4;
-            const rows = Math.ceil(chips.length / cols);
-            chips.forEach((c, k) => {
-                const col = k % cols, row = Math.floor(k / cols);
-                c.style.left = Math.min(94, Math.max(6, (col + 0.5) * 100/cols + (Math.random()*3 - 1.5))) + '%';
-                c.style.top  = Math.min(92, Math.max(8, (row + 0.55) * 100/rows + (Math.random()*3 - 1.5))) + '%';
+                c.addEventListener('pointerdown', e => startDraw(e, c));
+                items.appendChild(c);
             });
         };
-        const homeAt = (x, y) => {
-            const stack = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [document.elementFromPoint(x, y)];
-            for (const e of stack) {
-                if (e && e.closest) { const hm = e.closest('.home'); if (hm) return hm; }
-            }
-            return null;
-        };
-        const startDrag = (e, chip) => {
+        const startDraw = (e, chip) => {
+            if (chip.classList.contains('locked') || G3.placed >= 16) return;
             e.preventDefault();
-            const r = mid.getBoundingClientRect(), cr = chip.getBoundingClientRect();
-            chip._ox = chip.style.left; chip._oy = chip.style.top;   /* 记住原位，拖错弹回 */
-            chip.classList.add('drag');
             try { chip.setPointerCapture && chip.setPointerCapture(e.pointerId); } catch(err) {}
-            const ox = e.clientX - cr.left, oy = e.clientY - cr.top;
+            const cr = chip.getBoundingClientRect();
+            const [sx, sy] = svgXY(cr.left + cr.width/2, cr.top + cr.height/2);
+            const line = mkLine(true);
+            line.setAttribute('x1', sx); line.setAttribute('y1', sy);
+            linesSvg.appendChild(line);
             const move = ev => {
-                chip.style.left = (ev.clientX - r.left - ox + cr.width/2) / r.width * 100 + '%';
-                chip.style.top  = (ev.clientY - r.top  - oy + cr.height/2) / r.height * 100 + '%';
-                const hot = homeAt(ev.clientX, ev.clientY);   /* 拖着的物品挡在指针下，须用多点栈探测 */
-                el.querySelectorAll('.home').forEach(h => h.classList.toggle('hot', h === hot));
+                const [x, y] = svgXY(ev.clientX, ev.clientY);
+                line.setAttribute('x2', x); line.setAttribute('y2', y);
+                const t = targetAt(ev.clientX, ev.clientY);
+                el.querySelectorAll('.ftarget').forEach(f => f.classList.toggle('hot', f === t));
             };
             const up = ev => {
-                chip.classList.remove('drag');
-                chip.removeEventListener('pointermove', move);
-                chip.removeEventListener('pointerup', up);
-                const home = homeAt(ev.clientX, ev.clientY);
-                el.querySelectorAll('.home').forEach(h => h.classList.remove('hot'));
-                drop(chip, home);
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                const t = targetAt(ev.clientX, ev.clientY);
+                el.querySelectorAll('.ftarget').forEach(f => f.classList.remove('hot'));
+                line.remove();
+                judge(chip, t);
             };
-            chip.addEventListener('pointermove', move);
-            chip.addEventListener('pointerup', up);
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
         };
-        const drop = (chip, home) => {
-            if (!home) return;   /* 放空白处：留在原地 */
-            const ok = home.dataset.shape === chip.dataset.shape;
+        const judge = (chip, t) => {
+            if (!t) return;   /* 松手时不在图形上：线收回，物品原地不动 */
+            const cr = chip.getBoundingClientRect(), tr = t.getBoundingClientRect(), fr = linesSvg.getBoundingClientRect();
+            const ok = t.dataset.shape === chip.dataset.shape;
             if (ok) {
                 SND.good(); SND.star();
-                const hr = home.getBoundingClientRect();
-                confetti(hr.left+hr.width/2, hr.top+hr.height/2, 18);
-                const sm = document.createElement('img');
-                sm.src = chip.querySelector('img').src; sm.style.height = '42px';
-                home.querySelector('.hz').appendChild(sm);
-                chip.remove();
-                G3.placed++;
-                G3[G3.team]++;
+                const line = mkLine(false);
+                line.setAttribute('x1', cr.left + cr.width/2 - fr.left);
+                line.setAttribute('y1', cr.top + cr.height/2 - fr.top);
+                line.setAttribute('x2', tr.left + tr.width/2 - fr.left);
+                line.setAttribute('y2', tr.top + tr.height*0.72 - fr.top);
+                linesSvg.appendChild(line);
+                chip.classList.add('locked');
+                const ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓'; chip.appendChild(ck);
+                G3.placed++; G3[G3.team]++;
                 el.querySelector(G3.team==='red'?'#starR':'#starB').textContent = '★' + G3[G3.team];
                 starFly(G3.team==='red'?'#scR':'#scB');
-                el.querySelector('#g3prog').textContent = G3.placed + ' / 16 已经分好';
+                el.querySelector('#g3prog').textContent = G3.placed + ' / 16 已经连好';
+                confetti(tr.left + tr.width/2, tr.top + tr.height/2, 18);
                 feedback(G3_PRAISE[chip.dataset.shape] + '（' + (G3.team==='red'?'红':'蓝') + '队 +1★）', true);
                 G3.team = G3.team === 'red' ? 'blue' : 'red';
                 el.querySelector('#scR').classList.toggle('turn', G3.team==='red');
@@ -1391,19 +1409,24 @@ regSlide({
             } else {
                 SND.bad();
                 chip.classList.remove('shake'); void chip.offsetWidth; chip.classList.add('shake');
-                /* 弹回原位（之前只抖一抖，物品会堆在别人家门口） */
-                chip.style.transition = 'left .4s cubic-bezier(.3,1.3,.4,1), top .4s cubic-bezier(.3,1.3,.4,1)';
-                chip.style.left = chip._ox; chip.style.top = chip._oy;
-                setTimeout(() => { chip.style.transition = ''; }, 430);
-                feedback('想一想：它是<b>' + SHAPES[chip.dataset.shape].name + '</b>，该回哪个家呢？（拖对 +1★，拖错不扣分）', false);
+                /* 错误线闪一下就消失 */
+                const line = mkLine(true);
+                line.setAttribute('stroke', '#e05d5d');
+                line.setAttribute('x1', cr.left + cr.width/2 - fr.left);
+                line.setAttribute('y1', cr.top + cr.height/2 - fr.top);
+                line.setAttribute('x2', tr.left + tr.width/2 - fr.left);
+                line.setAttribute('y2', tr.top + tr.height*0.72 - fr.top);
+                linesSvg.appendChild(line);
+                setTimeout(() => line.remove(), 420);
+                feedback('想一想：它是<b>' + SHAPES[chip.dataset.shape].name + '</b>，该连给谁呢？（连对 +1★，连错不扣分）', false);
             }
         };
-        el._relayout = layoutChips;
-        el.querySelector('#g3reset').onclick = () => { SND.click(); build(); };
-        el.querySelector('#g3re2').onclick = () => { SND.click(); build(); };
-        build();
+        el._g3reset = reset;
+        el.querySelector('#g3reset').onclick = () => { SND.click(); reset(); };
+        el.querySelector('#g3re2').onclick = () => { SND.click(); reset(); };
+        reset();
     },
-    enter() { if (this._el && this._el._relayout) this._el._relayout(); },
+    enter() {},
     leave() { clearTimeout(g3Timer); }
 });
 /* ================= 数一数（P29，随机出题） ================= */
