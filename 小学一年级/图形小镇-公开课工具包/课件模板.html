@@ -225,25 +225,10 @@ button { font-family:inherit; cursor:pointer; }
 /* ================= 游戏3 分一分 ================= */
 .g3field { position:relative; width:min(1300px,100%); flex:1; display:flex; flex-direction:column; margin-top:6px; }
 .g3lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
-.g3items { position:relative; z-index:2; display:flex; flex-wrap:wrap; justify-content:space-around;
-    align-items:flex-end; row-gap:10px; padding:8px 4px 12px; flex:1; }
+.g3items { position:relative; z-index:2; display:flex; flex-wrap:nowrap; justify-content:space-around;
+    align-items:flex-end; padding:10px 4px 12px; flex:0 0 auto; }
 .g3chip { position:relative; cursor:pointer; touch-action:none; }
-.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px);
-    display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
-.g3chip.locked { opacity:.55; pointer-events:none; }
-.g3chip .ck { position:absolute; top:-10px; right:-10px; width:26px; height:26px; background:#59c98b;
-    border:2.5px solid var(--line); border-radius:50%; color:#fff; font-weight:900;
-    display:flex; align-items:center; justify-content:center; font-size:14px; }
-.g3chip.shake { animation:jiggle .5s; }
-.g3targets { position:relative; z-index:2; display:flex; justify-content:space-around; align-items:flex-end; padding:0 10px 4px; }
-.ftarget { text-align:center; transition:transform .15s, filter .15s; }
-.ftarget.hot { transform:scale(1.1); filter:drop-shadow(0 0 16px rgba(255,206,79,.95)); }
-.g3field { position:relative; width:min(1300px,100%); flex:1; display:flex; flex-direction:column; margin-top:6px; }
-.g3lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
-.g3items { position:relative; z-index:2; display:flex; flex-wrap:wrap; justify-content:space-around;
-    align-items:flex-end; row-gap:10px; padding:8px 4px 12px; flex:1; }
-.g3chip { position:relative; cursor:pointer; touch-action:none; }
-.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px);
+.g3chip img { width:auto; height:auto; max-height:clamp(54px,10vh,84px); max-width:clamp(64px,7.5vw,104px);
     display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
 .g3chip.locked { opacity:.55; pointer-events:none; }
 .g3chip .ck { position:absolute; top:-10px; right:-10px; width:26px; height:26px; background:#59c98b;
@@ -307,7 +292,8 @@ button { font-family:inherit; cursor:pointer; }
     #navbtns button { width:44px; height:38px; font-size:16px; }
     .g2panel { max-height:none; flex-basis:auto; width:94vw; }
     .g2stage { width:94vw; min-height:40vh; }
-    .g3chip img { max-height:52px; max-width:80px; }
+    .g3chip img { max-height:42px; max-width:60px; }
+    .g3items { flex-wrap:wrap; row-gap:8px; }
     .ftarget svg { width:86px; height:auto; }
 
     .g3score { gap:8px; } .teamsc { padding:7px 12px; font-size:15px; } .teamsc.prog { font-size:12px; padding:5px 10px; }
@@ -1267,11 +1253,11 @@ regSlide({
     }
 });
 /* ================= 游戏3 按形状分一分（课本"找朋友"连线式） ================= */
-const G3_ITEMS = [
-    ['box','cuboid'],['microwave','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],['bin','cuboid'],
-    ['rubik','cube'],['dice','cube'],['woodcube','cube'],['gift','cube'],
-    ['tea','cyl'],['glue','cyl'],['board','cyl'],
-    ['football','ball'],['greyball','ball'],['pingpong','ball'],['basketball','ball']
+const G3_ITEMS = [   /* 10 件排一行：长方体3 正方体3 圆柱2 球2 */
+    ['box','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],
+    ['rubik','cube'],['dice','cube'],['gift','cube'],
+    ['tea','cyl'],['glue','cyl'],
+    ['football','ball'],['basketball','ball']
 ];
 const G3_PRAISE = { cuboid:'对啦！长长方方，站稳啦！', cube:'对啦！方方正正，六面一样！', cyl:'对啦！圆柱躺下能滚哦！', ball:'对啦！球滚滚球～' };
 const G3 = { red:0, blue:0, team:'red', placed:0 };
@@ -1334,7 +1320,7 @@ regSlide({
             G3.red = 0; G3.blue = 0; G3.team = 'red'; G3.placed = 0;
             el.querySelector('#starR').textContent = '☆0'; el.querySelector('#starB').textContent = '☆0';
             el.querySelector('#scR').classList.add('turn'); el.querySelector('#scB').classList.remove('turn');
-            el.querySelector('#g3prog').textContent = '0 / 16 已经连好';
+            el.querySelector('#g3prog').textContent = '0 / ' + G3_ITEMS.length + ' 已经连好';
             el.querySelector('#g3done').classList.remove('show');
             linesSvg.innerHTML = '';
             items.innerHTML = '';
@@ -1349,7 +1335,7 @@ regSlide({
             });
         };
         const startDraw = (e, chip) => {
-            if (chip.classList.contains('locked') || G3.placed >= 16) return;
+            if (chip.classList.contains('locked') || G3.placed >= G3_ITEMS.length) return;
             e.preventDefault();
             try { chip.setPointerCapture && chip.setPointerCapture(e.pointerId); } catch(err) {}
             const cr = chip.getBoundingClientRect();
@@ -1391,13 +1377,13 @@ regSlide({
                 G3.placed++; G3[G3.team]++;
                 el.querySelector(G3.team==='red'?'#starR':'#starB').textContent = '★' + G3[G3.team];
                 starFly(G3.team==='red'?'#scR':'#scB');
-                el.querySelector('#g3prog').textContent = G3.placed + ' / 16 已经连好';
+                el.querySelector('#g3prog').textContent = G3.placed + ' / ' + G3_ITEMS.length + ' 已经连好';
                 confetti(tr.left + tr.width/2, tr.top + tr.height/2, 18);
                 feedback(G3_PRAISE[chip.dataset.shape] + '（' + (G3.team==='red'?'红':'蓝') + '队 +1★）', true);
                 G3.team = G3.team === 'red' ? 'blue' : 'red';
                 el.querySelector('#scR').classList.toggle('turn', G3.team==='red');
                 el.querySelector('#scB').classList.toggle('turn', G3.team==='blue');
-                if (G3.placed >= 16) {
+                if (G3.placed >= G3_ITEMS.length) {
                     setTimeout(() => {
                         SND.win(); fireworks(6);
                         el.querySelector('#g3finalSc').innerHTML =
@@ -1426,7 +1412,7 @@ regSlide({
         el.querySelector('#g3re2').onclick = () => { SND.click(); reset(); };
         reset();
     },
-    enter() {},
+    enter() { if (this._el && this._el._g3reset) this._el._g3reset(); },   /* 重新进入 = 新的一局 */
     leave() { clearTimeout(g3Timer); }
 });
 /* ================= 数一数（P29，随机出题） ================= */
