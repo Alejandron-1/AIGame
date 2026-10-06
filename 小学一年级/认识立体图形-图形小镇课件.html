@@ -220,13 +220,12 @@ button { font-family:inherit; cursor:pointer; }
 
 /* ================= 游戏3 分一分 ================= */
 .g3top { display:flex; gap:clamp(10px,1.6vw,24px); justify-content:center; width:min(1300px,100%); flex-wrap:wrap; }
-.home { flex:1 1 0; min-width:0; border-radius:20px; overflow:hidden; padding:0; position:relative; transition:transform .18s, box-shadow .18s; }
-.home .hh { display:flex; align-items:center; gap:10px; padding:11px 16px; color:#fff; font-weight:900;
-    font-size:clamp(17px,2vw,23px); }
-.home .hh svg { width:34px; height:34px; flex:0 0 34px; }
-.home .hz { min-height:118px; border-top:2.5px dashed rgba(63,58,52,.16); display:flex; align-items:flex-end;
-    justify-content:center; gap:6px; padding:10px 8px 12px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
-.home.hot { transform:scale(1.05); box-shadow:0 12px 26px rgba(240,131,31,.35); z-index:3; }
+.home { flex:1 1 0; min-width:0; text-align:center; position:relative; transition:transform .18s; }
+.home > svg { width:clamp(110px,12vw,170px); height:auto; transition:transform .18s, filter .18s; }
+.home .hz { min-height:46px; display:flex; align-items:center; justify-content:center; gap:6px;
+    flex-wrap:wrap; transition:all .2s; }
+.home.hot { transform:translateY(-8px); }
+.home.hot > svg { transform:scale(1.14); filter:drop-shadow(0 0 16px rgba(255,206,79,.95)); }
 .g3mid { position:relative; width:min(1300px,100%); flex:1; min-height:150px; margin-top:14px; }
 .g3chip { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .15s; z-index:2; }
 .g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
@@ -252,40 +251,22 @@ button { font-family:inherit; cursor:pointer; }
 .g3done.show { display:flex; }
 
 /* ================= 数一数 ================= */
-.countstage { position:relative; width:min(1000px,100%); height:min(44vh,380px); }
+.countwrap { display:flex; gap:clamp(16px,2.5vw,40px); align-items:center; justify-content:center; width:min(1300px,100%); }
+.countbox { flex:1 1 auto; position:relative; height:min(48vh,420px); border:4.5px dashed #e05d5d; border-radius:30px; background:#fffdf6; }
+.cqlist { flex:0 0 clamp(250px,25vw,340px); display:flex; flex-direction:column; gap:14px; }
 .countshape { position:absolute; transform:translate(-50%,-100%); transition:transform .2s; }
 .countshape .cno { position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:34px; height:34px; border-radius:50%;
     background:var(--gold); border:3px solid var(--line); font-weight:900; display:none; align-items:center; justify-content:center; z-index:5; }
 .countshape.mark .cno { display:flex; animation:bounceIn .4s both; }
 .countshape.mark { animation:hop .5s; }
-.countqs { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
-.cq { border:3px solid var(--line); border-radius:16px; background:#fff; padding:10px 18px; font-weight:900;
-    font-size:clamp(16px,1.8vw,21px); cursor:pointer; box-shadow:0 5px 0 rgba(63,58,52,.12); transition:transform .12s; }
+.cq { display:flex; align-items:center; gap:12px; background:#fff; border:3px solid var(--line); border-radius:16px;
+    padding:8px 14px; font-weight:900; font-size:clamp(16px,1.8vw,22px); cursor:pointer;
+    box-shadow:0 4px 0 rgba(63,58,52,.12); transition:transform .12s; }
+.cq svg { width:64px; height:auto; flex:0 0 64px; }
+.cq .cav { color:#e05d5d; font-size:1.15em; }
 .cq:active { transform:translateY(4px); box-shadow:none; }
 .cq b { color:#f0831f; font-size:1.2em; }
 .cq.done { background:#fff3d6; }
-
-/* ================= 游戏4 小镇 ================= */
-.g4wrap { display:flex; gap:clamp(14px,2.4vw,36px); width:min(1360px,100%); align-items:stretch; justify-content:center; flex-wrap:wrap; }
-.g4panel { flex:0 1 360px; padding:18px; display:flex; flex-direction:column; gap:14px; }
-.blank { display:inline-block; min-width:96px; border-bottom:3px solid #f0831f; text-align:center; color:#f0831f; font-weight:900; padding:0 6px; }
-.wordchips { display:flex; gap:8px; flex-wrap:wrap; }
-.wordchips button { border:2.5px solid var(--line); border-radius:999px; padding:6px 14px; font-weight:900; font-size:15px; background:#fff; transition:transform .12s; }
-.wordchips button:active { transform:scale(.94); }
-.g4town { flex:1 1 560px; position:relative; min-height:min(58vh,500px); overflow:hidden; }
-.townG { opacity:0; transform:translate(80px,-30px); transition:all .95s cubic-bezier(.2,1.1,.4,1); }
-.townG.in { opacity:1; transform:none; }
-.snm { position:absolute; transform:translate(-50%,-50%); background:#fff; border:2.5px solid var(--line);
-    border-radius:999px; padding:4px 16px; font-weight:900; font-size:14px; white-space:nowrap; box-shadow:0 3px 0 rgba(63,58,52,.14); }
-.g4ops { display:flex; gap:12px; margin-top:4px; flex-wrap:wrap; }
-.award { position:fixed; inset:0; z-index:920; display:none; align-items:center; justify-content:center; flex-direction:column;
-    gap:20px; background:rgba(63,58,52,.45); }
-.award.show { display:flex; }
-.award .acard { padding:30px 44px; text-align:center; }
-.trophies { display:flex; gap:34px; justify-content:center; margin:12px 0 6px; }
-.trophy { text-align:center; font-weight:900; font-size:clamp(17px,2vw,23px); }
-.trophy .cup { font-size:clamp(44px,5vw,68px); animation:floaty 2.2s ease-in-out infinite; display:block; }
-.songsheet { font-family:"KaiTi","楷体","STKaiti",serif; }
 
 /* ================= 儿歌 / 作业 ================= */
 .songlines { display:flex; flex-direction:column; gap:18px; align-items:center; }
@@ -312,6 +293,7 @@ button { font-family:inherit; cursor:pointer; }
     .featright { max-width:94vw; }
     .lifeitem img { height:40px; }
     .viewer3d { height:300px; }
+    .countwrap { flex-direction:column; } .countbox { height:34vh; } .cqlist { flex-basis:auto; }
     .g4town { min-height:46vh; width:94vw; }
     .g4panel { flex-basis:auto; width:94vw; }
 }
@@ -633,13 +615,11 @@ regSlide({
                     if (d.classList.contains('done')) { SND.click(); toast('这是 ' + SHAPES[shape].name + ' 变的！'); return; }
                     transformOne(i);
                     /* 连锁：同类的其他实物依次自动跳出变身，随后合体 */
-                    let k = 0;
                     G1_ITEMS.forEach(([img2, s2], j) => {
                         if (s2 !== shape || j === i) return;
                         const mate = itemEls[j];
                         if (mate.classList.contains('done')) return;
-                        setTimeout(() => transformOne(j), 460 + k*380);
-                        k++;
+                        setTimeout(() => transformOne(j), 430);   /* 同类一齐变身 */
                     });
                 };
                 stage.appendChild(d);
@@ -798,7 +778,7 @@ class Shape3D {
                 { i:[0], no:'4', tip:'右面',                 rx:.2,  ry:-Math.PI/2 },
                 { i:[2], no:'5', tip:'上面',                 rx:1.18, ry:0 },
                 { i:[3], no:'6', tip:'下面 —— 一共 6 个面！', rx:-1.18, ry:0 } ];
-            this.pairDefs = [[4,5,'前面和后面是一对，一模一样大！'],[1,0,'左面和右面是一对，一模一样大！'],[2,3,'上面和下面是一对，一模一样大！']];
+            this.pairDefs = [[4,5,'前面和后面是一对，一模一样大！',0xff5252],[1,0,'左面和右面是一对，一模一样大！',0xffd600],[2,3,'上面和下面是一对，一模一样大！',0x9c6ade]];
         } else if (shape === 'cube') {
             const mats = []; for (let k = 0; k < 6; k++) mats.push(this.mat(0x7fb2e5));
             mats[4] = this.mat(0, faceTexture('#7fb2e5'));
@@ -810,6 +790,7 @@ class Shape3D {
                 { i:[0], no:'4', tip:'右面', rx:.2, ry:-Math.PI/2 },
                 { i:[2], no:'5', tip:'上面', rx:1.18, ry:0 },
                 { i:[3], no:'6', tip:'下面 —— 6 个面都一样大！', rx:-1.18, ry:0 } ];
+            this.pairDefs = [[4,5,'前面和后面是一对（一样大）！',0xff5252],[1,0,'左面和右面是一对（一样大）！',0xffd600],[2,3,'上面和下面是一对（一样大）！',0x9c6ade]];
         } else if (shape === 'cyl') {
             const side = this.mat(0x7fc8a8, faceTexture('#7fc8a8'));
             const cap = this.mat(0xa8dfc6);
@@ -819,6 +800,7 @@ class Shape3D {
                 { i:[1], no:'1', tip:'上面 —— 一个平平的圆面', rx:1.2, ry:0 },
                 { i:[2], no:'2', tip:'下面 —— 一个平平的圆面', rx:-1.2, ry:0 },
                 { i:[0], no:'', tip:'侧面弯弯的，不是平面哦', rx:.2, ry:.6 } ];
+            this.pairDefs = [[1,2,'上面和下面是一对，一样大！',0xff5252]];
         } else {
             this.mesh = new THREE.Mesh(new THREE.SphereGeometry(.95, 48, 32), this.mat(0, faceTexture('#f2a6b8')));
             this.mats = [];
@@ -901,7 +883,24 @@ class Shape3D {
         if (this.counting || this.rolling || !this.pairDefs) return;
         this.still = true;   /* 看相对的面时要停稳 */
         this.rotX = .2; this.rotY = .55;
-        this.flash(this.pairDefs.map(pr => ({ m: [this.mats[pr[0]], this.mats[pr[1]]], no: '', tip: pr[2] })));
+        const num = this.box.querySelector('.v3dnum'), tip = this.box.querySelector('.v3dtip');
+        if (this.pairStep === undefined) this.pairStep = 0;
+        if (this.pairStep >= this.pairDefs.length) {   /* 涂满一轮后再点 → 复位重来 */
+            this.mats.forEach(m => m.color.setHex(m.userData.base));
+            this.pairStep = 0; num.textContent = ''; tip.textContent = '再点一次，重新涂一对';
+            SND.click(); return;
+        }
+        const pr = this.pairDefs[this.pairStep];
+        [this.mats[pr[0]], this.mats[pr[1]]].forEach(m => m.color.setHex(pr[3]));
+        num.textContent = this.shape === 'cyl' ? '1 对' : (this.pairStep + 1) + ' 对';
+        tip.textContent = pr[2]; SND.good();
+        this.pairStep++;
+        if (this.pairStep >= this.pairDefs.length) {
+            setTimeout(() => { if (!this.stop) {
+                num.textContent = this.shape === 'cyl' ? '' : '6 个面';
+                tip.textContent = this.shape === 'cyl' ? '圆柱这一对相对的面，一样大！' : '6 个面正好配成 3 对，相对的面一样大！';
+            } }, 1500);
+        }
     }
     roll() {
         if (this.counting || this.rolling || this.shape !== 'cyl') return;
@@ -1040,7 +1039,9 @@ featSlide({
               if (fan.dataset.done) { toast('6 个面全都是一样大的正方形～'); return; }
               fan.dataset.done = 1;
               fan.innerHTML = ['#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5','#7fb2e5'].map((c,i)=>`<div class="fanface" style="background:${c};animation-delay:${i*.09}s">${i+1}</div>`).join('');
-              SND.good(); toast('一共 6 个面！你看，全都是一样大的正方形～', 3000); } }
+              SND.good(); toast('一共 6 个面！你看，全都是一样大的正方形～', 3000); } },
+        { t:'🤝 相对的面', fn:'pairs',
+          fb: () => toast('正方体：前面和后面、左面和右面、上面和下面，三对相对的面！', 3000) }
     ]
 });
 /* --- 比一比（P16） --- */
@@ -1071,7 +1072,9 @@ featSlide({
     lines:['直直的','上下一样粗','两头都是圆圆的、平平的面'],
     life:[['tea','茶叶筒'],['glue','胶棒'],['board','砧板']],
     vbtns:[ { t:'🖐 数一数平平的面', fn:'count',
-        fb: () => toast('圆柱两头各有一个平平的圆面，一共 2 个！侧面弯弯的～', 3000) } ],
+        fb: () => toast('圆柱两头各有一个平平的圆面，一共 2 个！侧面弯弯的～', 3000) },
+        { t:'🤝 相对的面', fn:'pairs',
+          fb: () => toast('圆柱上面和下面是一对相对的面，一样大！', 3000) } ],
     extra:`<button class="minibtn" id="cylRoll">🌀 躺下滚一滚</button>
            <button class="minibtn" id="cylJudge">🤔 判断：它们都是圆柱吗？</button>
            <div class="judgerow" id="cylJudgeRow" style="display:none">
@@ -1283,9 +1286,9 @@ regSlide({
         </div>
         <div class="g3mid" id="g3mid"></div>
         <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
-            <div class="home card" data-shape="${s}">
-                <div class="hh" style="background:var(--${s})">${shapeSVG(s,26,{face:false})}<span>${SHAPES[s].name}的家</span></div>
-                <div class="hz" style="background:${{cuboid:'#fdf1e3',cube:'#eef5fd',cyl:'#eaf7f1',ball:'#fdeef2'}[s]}"></div>
+            <div class="home" data-shape="${s}">
+                ${shapeSVG(s,150,{uid:'ft'+s})}
+                <div class="hz"></div>
             </div>`).join('')}
         </div>
         <div class="g3fb" id="g3fb"></div>
@@ -1444,11 +1447,13 @@ function countGen() {
 regSlide({
     id:'count', title:'数一数',
     html: () => `
-        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">工地上 <em>数一数</em></div>
-        <div class="hsub">点一个图形名字，帮它数数有几个（课本 P29 · 每次进场题目都不同）</div>
-        <div class="countstage gridfloor card" id="cntStage"></div>
-        <div class="countqs" id="cntQs">${['cuboid','cube','cyl','ball'].map(s=>`
-            <div class="cq" data-s="${s}">${SHAPES[s].name}（<span class="cav">　</span>）个</div>`).join('')}</div>
+        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)"><em>数一数</em></div>
+        <div class="hsub">点右边的图形，帮它数数有几个（课本 P29 · 每次进场题目都不同）</div>
+        <div class="countwrap">
+            <div class="countbox" id="cntStage"></div>
+            <div class="cqlist" id="cntQs">${['cuboid','cube','cyl','ball'].map(s=>`
+                <div class="cq" data-s="${s}">${shapeSVG(s,84,{uid:'cq'+s,face:false})}<span class="cqt">${SHAPES[s].name}（<span class="cav">　</span>）个</span></div>`).join('')}</div>
+        </div>
         <button class="minibtn" id="cntNew" style="position:absolute;right:26px;bottom:96px">🔀 换一批</button>`,
     init(el) {
         const build = () => {
@@ -1478,150 +1483,6 @@ regSlide({
         });
     },
     enter() { if (this._build) this._build(); }   /* 每次进场重新随机出题 */
-});
-/* ================= 游戏4 小镇落成 + 颁奖 ================= */
-function townSVG() {
-    const L = 'stroke="#3f3a34" stroke-width="3.5" stroke-linejoin="round"';
-    return `<svg viewBox="0 0 1000 540" style="width:100%;height:100%;display:block">
-        <g class="townG deco">
-            <circle cx="872" cy="88" r="44" fill="#ffd98a" ${L}/>
-            <g fill="#ffffff" ${L}><ellipse cx="180" cy="84" rx="54" ry="22"/><ellipse cx="242" cy="96" rx="40" ry="17"/></g>
-            <ellipse cx="500" cy="58" rx="44" ry="18" fill="#ffffff" ${L} opacity=".92"/>
-        </g>
-        <g class="townG deco">
-            <rect x="0" y="412" width="1000" height="128" fill="#ecdfc4"/>
-            <rect x="0" y="468" width="1000" height="54" fill="#d9c9a8"/>
-            <line x1="0" y1="495" x2="1000" y2="495" stroke="#fffdf5" stroke-width="5" stroke-dasharray="32 26"/>
-        </g>
-        <g class="townG deco">
-            <rect x="52" y="358" width="18" height="64" rx="7" fill="#b5834f" ${L}/>
-            <circle cx="61" cy="326" r="44" fill="#8ed081" ${L}/>
-            <rect x="944" y="366" width="16" height="56" rx="7" fill="#b5834f" ${L}/>
-            <circle cx="952" cy="338" r="36" fill="#8ed081" ${L}/>
-            <ellipse cx="470" cy="428" rx="30" ry="12" fill="#9ccf7f" ${L}/>
-        </g>
-        <g class="townG" id="tg0">
-            <rect x="150" y="308" width="190" height="112" rx="8" fill="#f5a35c" ${L}/>
-            <polygon points="126,308 245,218 364,308" fill="#e08b45" ${L}/>
-            <rect x="222" y="352" width="46" height="68" rx="6" fill="#8a5a2b" ${L}/>
-            <circle cx="258" cy="388" r="4.5" fill="#ffe9c9"/>
-            <rect x="166" y="330" width="36" height="32" rx="5" fill="#fffdf5" ${L}/>
-            <line x1="184" y1="330" x2="184" y2="362" stroke="#3f3a34" stroke-width="3"/>
-            <line x1="166" y1="346" x2="202" y2="346" stroke="#3f3a34" stroke-width="3"/>
-            <rect x="288" y="246" width="30" height="54" rx="5" fill="#7fb2e5" ${L}/>
-            <rect x="392" y="340" width="86" height="80" rx="8" fill="#7fb2e5" ${L}/>
-            <polygon points="378,340 435,292 492,340" fill="#5f92c9" ${L}/>
-            <rect x="418" y="368" width="34" height="52" rx="5" fill="#fffdf5" ${L}/>
-            <line x1="435" y1="368" x2="435" y2="420" stroke="#3f3a34" stroke-width="3"/>
-            <g fill="#d9b98c" ${L}>
-                <rect x="118" y="390" width="12" height="32" rx="4"/><rect x="144" y="390" width="12" height="32" rx="4"/>
-                <rect x="110" y="398" width="54" height="8" rx="4"/>
-            </g>
-        </g>
-        <g class="townG" id="tg1">
-            <rect x="536" y="330" width="13" height="92" rx="5" fill="#9a938a" ${L}/>
-            <circle cx="542" cy="316" r="21" fill="#ffce4f" ${L}/>
-            <path d="M524,306 A21,21 0 0 1 560,306 L560,312 L524,312 Z" fill="#e05d5d" ${L}/>
-            <rect x="598" y="380" width="98" height="24" rx="9" fill="#f5a35c" ${L}/>
-            <rect x="606" y="404" width="11" height="24" fill="#b5834f" ${L}/>
-            <rect x="677" y="404" width="11" height="24" fill="#b5834f" ${L}/>
-            <rect x="722" y="356" width="15" height="66" rx="7" fill="#b5834f" ${L}/>
-            <circle cx="729" cy="330" r="32" fill="#8ed081" ${L}/>
-        </g>
-        <g class="townG" id="tg2">
-            <rect x="754" y="250" width="70" height="170" rx="10" fill="#7fc8a8" ${L}/>
-            <rect x="757" y="292" width="64" height="27" fill="#fffdf5"/>
-            <rect x="757" y="352" width="64" height="27" fill="#fffdf5"/>
-            <line x1="757" y1="292" x2="757" y2="379" stroke="#3f3a34" stroke-width="2.5"/>
-            <line x1="821" y1="292" x2="821" y2="379" stroke="#3f3a34" stroke-width="2.5"/>
-            <polygon points="738,250 789,192 840,250" fill="#e05d5d" ${L}/>
-            <circle cx="789" cy="180" r="15" fill="#ffce4f" ${L}/>
-            <rect x="776" y="318" width="26" height="32" rx="5" fill="#fffdf5" ${L}/>
-            <circle cx="789" cy="430" r="12" fill="#f2a6b8" ${L}/>
-        </g>
-        <g class="townG" id="tg3">
-            <ellipse cx="892" cy="436" rx="88" ry="27" fill="#cfe6f7" ${L}/>
-            <circle cx="850" cy="400" r="29" fill="#f2a6b8" ${L}/>
-            <circle cx="912" cy="386" r="34" fill="#f9c6d1" ${L}/>
-            <circle cx="958" cy="412" r="23" fill="#dd8497" ${L}/>
-            <g fill="#3f3a34">
-                <circle cx="902" cy="380" r="4"/><circle cx="924" cy="380" r="4"/>
-            </g>
-            <path d="M904,394 Q913,402 922,394" stroke="#3f3a34" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <ellipse cx="912" cy="402" rx="9" ry="5" fill="#ff8f8f" opacity=".4"/>
-        </g>
-    </svg>`;
-}
-const G4_LABELS = [[245,462,'小镇之家'],[648,468,'小镇广场'],[789,448,'灯塔工坊'],[892,502,'球球乐园']];
-regSlide({
-    id:'game4', title:'小镇落成',
-    html: () => `
-        <div class="htitle" style="font-size:clamp(26px,3.4vw,42px)">🎉 <em>小镇落成啦</em>！</div>
-        <div class="hsub">这节课的图形积木，搭成了我们的小镇（课本 P36-38）</div>
-        <div class="g4wrap">
-            <div class="card g4panel">
-                <div style="font-weight:900;font-size:17px">📝 成长小档案</div>
-                <div style="font-size:clamp(14px,1.5vw,17px);font-weight:700;line-height:2">
-                    我发现生活中有些物体的形状是<span class="blank" id="bl1">　　</span>。<br>
-                    我会用几个相同的<span class="blank" id="bl2">　　</span>拼出新图形。
-                </div>
-                <div class="wordchips">${['cuboid','cube','cyl','ball'].map(s=>
-                    `<button data-s="${s}" data-b="1">${SHAPES[s].name}</button>`).join('')}</div>
-                <div class="wordchips">${['cuboid','cube','cyl','ball'].map(s=>
-                    `<button data-s="${s}" data-b="2">${SHAPES[s].name}</button>`).join('')}</div>
-                <div class="g4ops">
-                    <button class="bigbtn" id="g4award" style="font-size:18px;padding:10px 22px">🏆 全班颁奖</button>
-                    <button class="minibtn" id="g4replay" style="align-self:center">🔁 重放搭建</button>
-                </div>
-            </div>
-            <div class="g4town card" id="g4town">${townSVG()}
-                ${G4_LABELS.map((lb,i)=>`<div class="snm townG" data-g="${i}" style="left:${lb[0]/10}%;top:${lb[1]/5.4}%">📍 ${lb[2]}</div>`).join('')}
-            </div>
-        </div>
-        <div class="pill songsheet" id="g4song" style="position:absolute;bottom:86px;left:50%;transform:translateX(-50%);white-space:nowrap;overflow:hidden;max-width:92vw"></div>
-        <div class="award" id="award">
-            <div class="card acard">
-                <div style="font-size:clamp(26px,3.4vw,40px);font-weight:900">🏅 颁奖时刻</div>
-                <div class="trophies" id="trophyRow"></div>
-                <div id="awardLine" style="font-weight:800;font-size:clamp(15px,1.7vw,19px)"></div>
-            </div>
-            <button class="bigbtn" id="awardClose">继续 ➜</button>
-        </div>`,
-    init(el) {
-        const song = '儿歌时间：正正方方正方体，六面平平一样大。 上下圆圆是圆柱，身体一推就滚动。 圆圆鼓鼓是球体，滚来滚去不费力。 长长方方长方体，相对两面一个样。';
-        el.querySelector('#g4song').textContent = '🎵 ' + song;
-        const play = () => {
-            const gs = [...el.querySelectorAll('#g4town .townG')];
-            gs.forEach(g => { g.classList.remove('in'); });
-            gs.forEach((g, i) => setTimeout(() => {
-                g.classList.add('in');
-                if (!g.classList.contains('deco') && i % 2 === 1) SND.pop();
-            }, 250 + i * 420));
-            setTimeout(() => toast('小镇建成啦！说说你的收获吧～', 2600), 250 + gs.length * 420);
-        };
-        el.querySelector('#g4replay').onclick = () => { SND.click(); play(); };
-        el.querySelectorAll('.wordchips button').forEach(b => b.onclick = () => {
-            SND.pop();
-            el.querySelector('#bl'+b.dataset.b).textContent = SHAPES[b.dataset.s].name;
-        });
-        el.querySelector('#g4award').onclick = () => {
-            SND.fanfare(); fireworks(7);
-            const t = el.querySelector('#trophyRow');
-            if (G3.red === 0 && G3.blue === 0) {
-                t.innerHTML = `<div class="trophy"><span class="cup">🏆</span>全班同学</div>`;
-                el.querySelector('#awardLine').textContent = '每个人都有一双会发现的小眼睛！';
-            } else {
-                const redWin = G3.red >= G3.blue;
-                t.innerHTML = `<div class="trophy"><span class="cup">${redWin?'🏆':'🥈'}</span>红队 ★${G3.red}</div>
-                               <div class="trophy"><span class="cup">${redWin?'🥈':'🏆'}</span>蓝队 ★${G3.blue}</div>`;
-                el.querySelector('#awardLine').textContent = G3.red === G3.blue ? '平分秋色，全班都是冠军！' : (redWin?'红队今日之星！':'蓝队今日之星！') + ' 掌声送给自己！';
-            }
-            el.querySelector('#award').classList.add('show');
-        };
-        el.querySelector('#awardClose').onclick = () => { SND.click(); el.querySelector('#award').classList.remove('show'); };
-        this._play = play;
-    },
-    enter() { if (this._play) setTimeout(() => this._play(), 350); }
 });
 /* ================= 儿歌页（P37） ================= */
 const SONG_LINES = [
