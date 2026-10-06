@@ -166,7 +166,8 @@ button { font-family:inherit; cursor:pointer; }
 
 /* ================= 游戏1 实物变图形 ================= */
 .g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
-.g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s; }
+.g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s, opacity .45s; }
+.g1item.gone { opacity:0; pointer-events:none; }
 .g1item img { width:auto; height:auto; max-height:clamp(56px,9.5vh,92px); max-width:clamp(84px,20vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
@@ -637,6 +638,10 @@ regSlide({
                 big.onclick = () => { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); };
                 stage.appendChild(big);
                 shapesBy[shape] = [big];
+                /* 该组合体完成：原实物位置（含绿勾）淡出消失 */
+                G1_ITEMS.forEach((it, i) => {
+                    if (it[1] === shape) itemEls[i].classList.add('gone');
+                });
                 const r = stage.getBoundingClientRect();
                 confetti(r.left + r.width*tx/100, r.top + r.height*ty/100, 30);
                 SND.win();
