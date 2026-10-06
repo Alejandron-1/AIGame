@@ -557,7 +557,7 @@ regSlide({
         el.querySelectorAll('.ideacard').forEach(c => c.onclick = () => { SND.click(); toast(c.dataset.t, 3200); });
     }
 });
-/* ================= 游戏1 认识小伙伴（实物变图形 → 同类合体变大） ================= */
+/* ================= 游戏1 认识小伙伴（点一个 → 同类全出 → 合体变大） ================= */
 const G1_ITEMS = [
     ['box','cuboid',15,30],['toothpaste','cuboid',29,30],['rubik','cube',43,30],['dice','cube',56,30],
     ['tea','cyl',69,30],['glue','cyl',82,30],['basketball','ball',24,68],['football','ball',52,68]
@@ -566,43 +566,60 @@ regSlide({
     id:'game1', title:'第1关 认识小伙伴',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.6vw,42px)">第 1 关 · 认识小伙伴</div>
-        <div class="hsub">点一下实物，它会变成图形小伙伴！<span style="color:#f0831f">同类的凑齐后，会合体成一个大的！</span></div>
+        <div class="hsub">点一个实物，它的<span style="color:#f0831f">同类小伙伴都会跳出来</span>，一起合体成一个大图形！</div>
         <div class="g1stage gridfloor card" id="g1stage"></div>
         <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
         <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
     init(el) {
         const stage = el.querySelector('#g1stage');
-        let shapesBy, mergedBy;
+        let shapesBy, mergedBy, itemEls;
+        const transformOne = (i) => {
+            const [img, shape, x, y] = G1_ITEMS[i];
+            const d = itemEls[i];
+            if (d.classList.contains('done')) return;          /* 幂等：连锁定时器与手点不重复 */
+            SND.pop(); confetti(innerWidth*x/100, innerHeight*.3, 22);
+            d.classList.add('done');
+            const ph = d.querySelector('img');
+            if (ph) { ph.classList.add('flipout'); setTimeout(() => { ph.style.visibility = 'hidden'; }, 420); }
+            const sh = document.createElement('div');
+            sh.className = 'g1shape pop'; sh.style.left = x+'%'; sh.style.top = y+'%';
+            sh.innerHTML = shapeSVG(shape, 96, {uid:'g1'+i+'_'+Date.now()%9973});
+            stage.appendChild(sh);
+            shapesBy[shape].push(sh);
+            tryMerge(shape);
+        };
         const reset = () => {
             stage.innerHTML = '';
             el.querySelector('#g1next').style.display = 'none';
             shapesBy = { cuboid:[], cube:[], cyl:[], ball:[] };
             mergedBy = {};
+            itemEls = [];
             G1_ITEMS.forEach(([img, shape, x, y], i) => {
                 const d = document.createElement('div');
                 d.className = 'g1item'; d.style.left = x+'%'; d.style.top = y+'%';
                 d.innerHTML = IMG(img) + '<span class="ck">✓</span>';
                 d.onclick = () => {
                     if (d.classList.contains('done')) { SND.click(); toast('这是 ' + SHAPES[shape].name + ' 变的！'); return; }
-                    SND.pop(); confetti(innerWidth*x/100, innerHeight*.3, 22);
-                    d.classList.add('done');
-                    const ph = d.querySelector('img');
-                    if (ph) { ph.classList.add('flipout'); setTimeout(() => { ph.style.visibility = 'hidden'; }, 420); }
-                    const sh = document.createElement('div');
-                    sh.className = 'g1shape pop'; sh.style.left = x+'%'; sh.style.top = y+'%';
-                    sh.innerHTML = shapeSVG(shape, 96, {uid:'g1'+i+'_'+Date.now()%9973});
-                    stage.appendChild(sh);
-                    shapesBy[shape].push(sh);
-                    tryMerge(shape);
+                    transformOne(i);
+                    /* 连锁：同类的其他实物依次自动跳出变身，随后合体 */
+                    let k = 0;
+                    G1_ITEMS.forEach(([img2, s2], j) => {
+                        if (s2 !== shape || j === i) return;
+                        const mate = itemEls[j];
+                        if (mate.classList.contains('done')) return;
+                        setTimeout(() => transformOne(j), 460 + k*420);
+                        k++;
+                    });
                 };
                 stage.appendChild(d);
+                itemEls.push(d);
             });
         };
         const tryMerge = (shape) => {
             const total = G1_ITEMS.filter(it => it[1] === shape).length;
             if (shapesBy[shape].length < total || mergedBy[shape]) return;
             mergedBy[shape] = true;
-            setTimeout(() => mergeGroup(shape), 520);
+            setTimeout(() => mergeGroup(shape), 480);
         };
         const mergeGroup = (shape) => {
             const els = shapesBy[shape];
