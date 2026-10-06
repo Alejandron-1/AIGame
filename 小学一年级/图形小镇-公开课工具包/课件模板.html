@@ -102,7 +102,7 @@ button { font-family:inherit; cursor:pointer; }
 /* ================= 情境导入（课本P4） ================= */
 .shelfrow { display:flex; gap:clamp(10px,1.8vw,26px); justify-content:center; align-items:flex-end; flex-wrap:wrap; }
 .shelfitem { display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .15s; }
-.shelfitem img { height:clamp(64px,10vh,110px); filter:drop-shadow(0 5px 6px rgba(63,58,52,.18)); }
+.shelfitem img { height:clamp(64px,10vh,110px); max-width:180px; filter:drop-shadow(0 5px 6px rgba(63,58,52,.18)); }
 .shelfitem:hover { transform:translateY(-8px) scale(1.05); }
 .shelfitem .nm { font-size:15px; font-weight:800; background:#fff; border:2px solid var(--line); border-radius:999px; padding:2px 12px; opacity:0; transform:translateY(6px); transition:all .25s; }
 .shelfitem.picked .nm { opacity:1; transform:none; }
@@ -168,7 +168,7 @@ button { font-family:inherit; cursor:pointer; }
 .g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
 .g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s, opacity .45s; }
 .g1item.gone { opacity:0; pointer-events:none; }
-.g1item img { width:auto; height:auto; max-height:clamp(56px,9.5vh,92px); max-width:clamp(84px,20vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
+.g1item img { width:auto; height:auto; max-height:clamp(44px,8vh,76px); max-width:clamp(60px,9.5vw,122px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
     border-radius:50%; color:#fff; font-weight:900; display:none; align-items:center; justify-content:center; font-size:16px; }
@@ -560,9 +560,11 @@ regSlide({
     }
 });
 /* ================= 游戏1 认识小伙伴（点一个 → 同类全出 → 合体变大） ================= */
-const G1_ITEMS = [
-    ['box','cuboid',15,30],['toothpaste','cuboid',29,30],['rubik','cube',43,30],['dice','cube',56,30],
-    ['tea','cyl',69,30],['glue','cyl',82,30],['basketball','ball',24,68],['football','ball',52,68]
+const G1_ITEMS = [   /* 与「按形状分一分」同一套 16 件：长方体5 正方体4 圆柱3 球4 */
+    ['box','cuboid'],['rubik','cube'],['tea','cyl'],['football','ball'],
+    ['microwave','cuboid'],['dice','cube'],['glue','cyl'],['greyball','ball'],
+    ['toothpaste','cuboid'],['woodcube','cube'],['board','cyl'],['pingpong','ball'],
+    ['bin','cuboid'],['gift','cube'],['ink','cuboid'],['basketball','ball']
 ];
 regSlide({
     id:'game1', title:'第1关 认识小伙伴',
@@ -575,16 +577,27 @@ regSlide({
     init(el) {
         const stage = el.querySelector('#g1stage');
         let shapesBy, mergedBy, itemEls;
+        const g1layout = () => {   /* 自适应网格：宽屏 8×2，窄屏 4×4 */
+            if (!stage.clientWidth) return;
+            const cols = stage.clientWidth > 700 ? 8 : 4;
+            const rows = Math.ceil(G1_ITEMS.length / cols);
+            itemEls.forEach((d, i) => {
+                const col = i % cols, row = Math.floor(i / cols);
+                d.style.left = ((col + 0.5) * 100/cols) + '%';
+                d.style.top  = ((row + 0.52) * 100/rows) + '%';
+            });
+        };
         const transformOne = (i) => {
-            const [img, shape, x, y] = G1_ITEMS[i];
+            const [img, shape] = G1_ITEMS[i];
             const d = itemEls[i];
             if (d.classList.contains('done')) return;          /* 幂等：连锁定时器与手点不重复 */
-            SND.pop(); confetti(innerWidth*x/100, innerHeight*.3, 22);
+            const dr = d.getBoundingClientRect();
+            SND.pop(); confetti(dr.left + dr.width/2, dr.top + dr.height/2, 20);
             d.classList.add('done');
             const ph = d.querySelector('img');
             if (ph) { ph.classList.add('flipout'); setTimeout(() => { ph.style.visibility = 'hidden'; }, 420); }
             const sh = document.createElement('div');
-            sh.className = 'g1shape pop'; sh.style.left = x+'%'; sh.style.top = y+'%';
+            sh.className = 'g1shape pop'; sh.style.left = d.style.left; sh.style.top = d.style.top;
             sh.innerHTML = shapeSVG(shape, 96, {uid:'g1'+i+'_'+Date.now()%9973});
             stage.appendChild(sh);
             shapesBy[shape].push(sh);
@@ -596,9 +609,9 @@ regSlide({
             shapesBy = { cuboid:[], cube:[], cyl:[], ball:[] };
             mergedBy = {};
             itemEls = [];
-            G1_ITEMS.forEach(([img, shape, x, y], i) => {
+            G1_ITEMS.forEach(([img, shape], i) => {
                 const d = document.createElement('div');
-                d.className = 'g1item'; d.style.left = x+'%'; d.style.top = y+'%';
+                d.className = 'g1item';
                 d.innerHTML = IMG(img) + '<span class="ck">✓</span>';
                 d.onclick = () => {
                     if (d.classList.contains('done')) { SND.click(); toast('这是 ' + SHAPES[shape].name + ' 变的！'); return; }
@@ -609,13 +622,14 @@ regSlide({
                         if (s2 !== shape || j === i) return;
                         const mate = itemEls[j];
                         if (mate.classList.contains('done')) return;
-                        setTimeout(() => transformOne(j), 460 + k*420);
+                        setTimeout(() => transformOne(j), 460 + k*380);
                         k++;
                     });
                 };
                 stage.appendChild(d);
                 itemEls.push(d);
             });
+            g1layout();
         };
         const tryMerge = (shape) => {
             const total = G1_ITEMS.filter(it => it[1] === shape).length;
@@ -665,9 +679,11 @@ regSlide({
             }, 4*280 + 500);
         };
         reset();
+        el._g1layout = g1layout;
         el.querySelector('#g1reset').onclick = () => { SND.click(); reset(); };
         el.querySelector('#g1next').onclick = () => { SND.click(); goId('namecards'); };
-    }
+    },
+    enter() { if (this._el && this._el._g1layout) this._el._g1layout(); }
 });
 /* ================= 图形名片 ================= */
 const NAMECARDS = [

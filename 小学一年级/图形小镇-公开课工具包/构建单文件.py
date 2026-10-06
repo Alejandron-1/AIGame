@@ -11,7 +11,7 @@ html = io.open(TPL, encoding='utf-8').read()
 tokens = set(re.findall(r'ASSET:([a-z_]+)', html))
 print('需要素材:', len(tokens), '张')
 total = 0
-for name in sorted(tokens):
+for name in sorted(tokens, key=len, reverse=True):   # 长 token 先替换，避免 rubik 吃掉 rubik_s 前缀
     p = os.path.join(LIB, name + '.png')
     if not os.path.exists(p):
         print('!! 缺少素材:', name); sys.exit(1)
