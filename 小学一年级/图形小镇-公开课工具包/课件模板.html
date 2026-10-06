@@ -213,29 +213,30 @@ button { font-family:inherit; cursor:pointer; }
 
 /* ================= 游戏3 分一分 ================= */
 .g3top { display:flex; gap:clamp(10px,1.6vw,24px); justify-content:center; width:min(1300px,100%); flex-wrap:wrap; }
-.home { flex:0 1 235px; border-radius:18px; overflow:hidden; padding:0; position:relative; transition:transform .18s, box-shadow .18s; }
-.home .hh { display:flex; align-items:center; gap:8px; padding:8px 13px; color:#fff; font-weight:900;
-    font-size:clamp(14px,1.5vw,17px); }
-.home .hh svg { width:26px; height:26px; flex:0 0 26px; }
-.home .hz { min-height:96px; border-top:2.5px dashed rgba(63,58,52,.16); display:flex; align-items:flex-end;
-    justify-content:center; gap:5px; padding:9px 6px 11px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
+.home { flex:1 1 0; min-width:0; border-radius:20px; overflow:hidden; padding:0; position:relative; transition:transform .18s, box-shadow .18s; }
+.home .hh { display:flex; align-items:center; gap:10px; padding:11px 16px; color:#fff; font-weight:900;
+    font-size:clamp(17px,2vw,23px); }
+.home .hh svg { width:34px; height:34px; flex:0 0 34px; }
+.home .hz { min-height:118px; border-top:2.5px dashed rgba(63,58,52,.16); display:flex; align-items:flex-end;
+    justify-content:center; gap:6px; padding:10px 8px 12px; overflow:hidden; flex-wrap:wrap; transition:all .2s; }
 .home.hot { transform:scale(1.05); box-shadow:0 12px 26px rgba(240,131,31,.35); z-index:3; }
 .g3mid { position:relative; width:min(1300px,100%); flex:1; min-height:150px; margin-top:14px; }
 .g3chip { position:absolute; transform:translate(-50%,-50%); cursor:grab; touch-action:none; transition:filter .15s; z-index:2; }
-.g3chip img { width:auto; height:auto; max-height:clamp(48px,8.5vh,84px); max-width:clamp(84px,22vw,150px); display:block; filter:drop-shadow(0 5px 4px rgba(63,58,52,.2)); }
+.g3chip img { width:auto; height:auto; max-height:clamp(64px,12vh,100px); max-width:clamp(96px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.2)); }
 .g3chip.drag { cursor:grabbing; z-index:50; transition:none; }
 .g3chip.drag img { transform:scale(1.15); }
 .g3chip.shake { animation:jiggle .5s; }
-.g3hud { position:fixed; top:64px; right:14px; z-index:800; display:flex; flex-direction:column; gap:8px; align-items:stretch; }
-.teamsc { position:relative; background:#fff; border:3px solid var(--line); border-radius:14px; padding:7px 14px; font-weight:900;
-    font-size:clamp(14px,1.5vw,17px); display:flex; align-items:center; gap:8px; box-shadow:0 4px 0 rgba(63,58,52,.12); }
-.teamsc.turn { outline:3.5px solid var(--gold); transform:scale(1.04); }
-.teamsc.prog { background:#fff3d6; justify-content:center; font-size:14px; }
+.g3score { display:flex; gap:16px; align-items:center; justify-content:center; margin:-4px 0 12px; flex-wrap:wrap; }
+.g3vs { font-weight:900; font-size:clamp(16px,1.8vw,22px); color:#b3aa9c; }
+.teamsc { position:relative; background:#fff; border:3.5px solid var(--line); border-radius:18px; padding:12px 28px; font-weight:900;
+    font-size:clamp(19px,2.3vw,28px); display:flex; align-items:center; gap:10px; box-shadow:0 6px 0 rgba(63,58,52,.14); transition:transform .2s; }
+.teamsc.turn { outline:4.5px solid var(--gold); transform:scale(1.08); box-shadow:0 10px 24px rgba(240,131,31,.4); z-index:2; }
+.teamsc.prog { background:#fff3d6; font-size:clamp(15px,1.8vw,20px); padding:10px 20px; }
 .star { color:var(--gold); text-shadow:0 0 2px #c99a1f; }
 .starfly { position:absolute; right:10px; top:-4px; color:var(--gold); font-weight:900; font-size:20px;
     animation:starfly .9s ease-out forwards; text-shadow:0 1px 0 #a87b12; pointer-events:none; }
 @keyframes starfly { from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(-42px)} }
-.g3fb { position:fixed; bottom:118px; left:50%; transform:translateX(-50%) scale(.7); z-index:860; background:#fff; border:4px solid #59c98b;
+.g3fb { position:fixed; top:42%; left:50%; transform:translateX(-50%) scale(.7); z-index:860; background:#fff; border:4px solid #59c98b;
     border-radius:18px; padding:13px 34px; font-weight:900; font-size:clamp(19px,2.2vw,26px); opacity:0; transition:all .25s;
     pointer-events:none; box-shadow:0 10px 26px rgba(63,58,52,.22); max-width:76vw; text-align:center; }
 .g3fb.show { opacity:1; transform:translateX(-50%) scale(1); }
@@ -297,9 +298,9 @@ button { font-family:inherit; cursor:pointer; }
     #navbtns button { width:44px; height:38px; font-size:16px; }
     .g2panel { max-height:none; flex-basis:auto; width:94vw; }
     .g2stage { width:94vw; min-height:40vh; }
-    .g3chip img { max-height:44px; }
-    .home { flex-basis:44%; }
-    .g3hud { top:56px; right:8px; flex-direction:column; }
+    .g3chip img { max-height:56px; max-width:84px; }
+    .home { flex:1 1 44%; }
+    .g3score { gap:8px; } .teamsc { padding:7px 12px; font-size:15px; } .teamsc.prog { font-size:12px; padding:5px 10px; }
     .featwrap { flex-direction:column; align-items:center; }
     .featright { max-width:94vw; }
     .lifeitem img { height:40px; }
@@ -1205,17 +1206,18 @@ regSlide({
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.2vw,38px)">例 1 · <em>按形状分一分</em></div>
         <div class="hsub">把物品送回小伙伴的家 —— 红蓝两队轮流上台，拖对 +1★ 并换对方，拖错弹回不扣分！</div>
+        <div class="g3score">
+            <div class="teamsc" id="scR" style="color:#e05d5d">🔴 红队 <span class="star" id="starR">☆0</span></div>
+            <div class="g3vs">PK</div>
+            <div class="teamsc" id="scB" style="color:#5f92c9">🔵 蓝队 <span class="star" id="starB">☆0</span></div>
+            <div class="teamsc prog" id="g3prog">0 / 16 已经分好</div>
+        </div>
+        <div class="g3mid" id="g3mid"></div>
         <div class="g3top">${['cuboid','cube','cyl','ball'].map(s=>`
             <div class="home card" data-shape="${s}">
                 <div class="hh" style="background:var(--${s})">${shapeSVG(s,26,{face:false})}<span>${SHAPES[s].name}的家</span></div>
                 <div class="hz" style="background:${{cuboid:'#fdf1e3',cube:'#eef5fd',cyl:'#eaf7f1',ball:'#fdeef2'}[s]}"></div>
             </div>`).join('')}
-        </div>
-        <div class="g3mid" id="g3mid"></div>
-        <div class="g3hud">
-            <div class="teamsc" id="scR" style="color:#e05d5d">🔴 红队 <span class="star" id="starR">☆0</span></div>
-            <div class="teamsc" id="scB" style="color:#5f92c9">🔵 蓝队 <span class="star" id="starB">☆0</span></div>
-            <div class="teamsc prog" id="g3prog">0 / 16 已经分好</div>
         </div>
         <div class="g3fb" id="g3fb"></div>
         <div class="g3done" id="g3done">
@@ -1227,6 +1229,7 @@ regSlide({
         </div>
         <button class="minibtn" id="g3reset" style="position:absolute;right:26px;bottom:96px">🔀 打乱重开</button>`,
     init(el) {
+        this._el = el;
         const mid = el.querySelector('#g3mid'), fb = el.querySelector('#g3fb');
         const feedback = (t, ok) => {
             fb.innerHTML = (ok ? '✅ ' : '💡 ') + t; fb.style.borderColor = ok ? '#59c98b' : '#e05d5d';
@@ -1247,18 +1250,33 @@ regSlide({
             el.querySelectorAll('.home .hz').forEach(h => h.innerHTML = '');
             mid.innerHTML = '';
             const order = shuffle([...G3_ITEMS.keys()]);
-            order.forEach((idx, k) => {
+            order.forEach((idx) => {
                 const [img, shape] = G3_ITEMS[idx];
                 const c = document.createElement('div');
                 c.className = 'g3chip'; c.dataset.shape = shape;
-                /* 网格散布：4 列 4 行抖动 */
-                const gx = k % 4, gy = Math.floor(k/4);
-                c.style.left = (23 + gx*19 + Math.random()*5) + '%';
-                c.style.top  = (20 + gy*23 + Math.random()*5) + '%';
                 c.innerHTML = IMG(img);
                 c.addEventListener('pointerdown', e => startDrag(e, c));
                 mid.appendChild(c);
             });
+            layoutChips();
+        };
+        const layoutChips = () => {   /* 按可用空间自适应网格：宽屏8列×2行，窄屏4列×4行 */
+            const chips = [...mid.querySelectorAll('.g3chip')];
+            if (!chips.length) return;
+            const cols = mid.clientWidth > 1000 ? 8 : 4;
+            const rows = Math.ceil(chips.length / cols);
+            chips.forEach((c, k) => {
+                const col = k % cols, row = Math.floor(k / cols);
+                c.style.left = Math.min(94, Math.max(6, (col + 0.5) * 100/cols + (Math.random()*3 - 1.5))) + '%';
+                c.style.top  = Math.min(92, Math.max(8, (row + 0.55) * 100/rows + (Math.random()*3 - 1.5))) + '%';
+            });
+        };
+        const homeAt = (x, y) => {
+            const stack = document.elementsFromPoint ? document.elementsFromPoint(x, y) : [document.elementFromPoint(x, y)];
+            for (const e of stack) {
+                if (e && e.closest) { const hm = e.closest('.home'); if (hm) return hm; }
+            }
+            return null;
         };
         const startDrag = (e, chip) => {
             e.preventDefault();
@@ -1270,15 +1288,14 @@ regSlide({
             const move = ev => {
                 chip.style.left = (ev.clientX - r.left - ox + cr.width/2) / r.width * 100 + '%';
                 chip.style.top  = (ev.clientY - r.top  - oy + cr.height/2) / r.height * 100 + '%';
-                const hot = document.elementFromPoint(ev.clientX, ev.clientY);
-                el.querySelectorAll('.home').forEach(h => h.classList.toggle('hot', !!(hot && h.contains(hot))));
+                const hot = homeAt(ev.clientX, ev.clientY);   /* 拖着的物品挡在指针下，须用多点栈探测 */
+                el.querySelectorAll('.home').forEach(h => h.classList.toggle('hot', h === hot));
             };
             const up = ev => {
                 chip.classList.remove('drag');
                 chip.removeEventListener('pointermove', move);
                 chip.removeEventListener('pointerup', up);
-                const hit = document.elementFromPoint(ev.clientX, ev.clientY);
-                const home = hit && hit.closest ? hit.closest('.home') : null;
+                const home = homeAt(ev.clientX, ev.clientY);
                 el.querySelectorAll('.home').forEach(h => h.classList.remove('hot'));
                 drop(chip, home);
             };
@@ -1293,7 +1310,7 @@ regSlide({
                 const hr = home.getBoundingClientRect();
                 confetti(hr.left+hr.width/2, hr.top+hr.height/2, 18);
                 const sm = document.createElement('img');
-                sm.src = chip.querySelector('img').src; sm.style.height = '30px';
+                sm.src = chip.querySelector('img').src; sm.style.height = '42px';
                 home.querySelector('.hz').appendChild(sm);
                 chip.remove();
                 G3.placed++;
@@ -1324,10 +1341,12 @@ regSlide({
                 feedback('想一想：它是<b>' + SHAPES[chip.dataset.shape].name + '</b>，该回哪个家呢？（拖对 +1★，拖错不扣分）', false);
             }
         };
+        el._relayout = layoutChips;
         el.querySelector('#g3reset').onclick = () => { SND.click(); build(); };
         el.querySelector('#g3re2').onclick = () => { SND.click(); build(); };
         build();
     },
+    enter() { if (this._el && this._el._relayout) this._el._relayout(); },
     leave() { clearTimeout(g3Timer); }
 });
 /* ================= 数一数（P29，随机出题） ================= */
