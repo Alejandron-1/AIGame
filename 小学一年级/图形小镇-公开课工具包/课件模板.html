@@ -170,6 +170,9 @@ button { font-family:inherit; cursor:pointer; }
 .g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
 .g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s, opacity .45s; }
 .g1item.gone { opacity:0; pointer-events:none; }
+.g1item.converging { transition:left .95s cubic-bezier(.55,0,.25,1), top .95s cubic-bezier(.55,0,.25,1); z-index:8; }
+.g1item.blurring { filter:blur(9px); opacity:.12; transform:translate(-50%,-100%) scale(.45);
+    transition:filter .7s ease, opacity .7s ease, transform .7s ease; }
 .g1zone { position:absolute; top:8px; bottom:8px; border:2.5px dashed; border-radius:16px; }
 .g1zone .zn { position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
     font-size:14px; font-weight:900; background:#fff; border:2.5px solid var(--line);
@@ -543,7 +546,7 @@ regSlide({
         });
     }
 });
-/* ================= 游戏1 认识小伙伴（点一个 → 同类全出 → 合体变大） ================= */
+/* ================= 游戏1 认识小伙伴（点一个 → 同类照片向中间靠拢 → 虚化变成图形） ================= */
 const G1_ITEMS = [   /* 与「按形状分一分」同一套 16 件：长方体5 正方体4 圆柱3 球4 */
     ['box','cuboid'],['rubik','cube'],['tea','cyl'],['football','ball'],
     ['microwave','cuboid'],['dice','cube'],['glue','cyl'],['greyball','ball'],
@@ -554,18 +557,18 @@ regSlide({
     id:'game1', title:'第1关 认识小伙伴',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.6vw,42px)">第 1 关 · 认识小伙伴</div>
-        <div class="hsub">点一个实物，它的<span style="color:#f0831f">同类小伙伴都会跳出来</span>，一起合体成一个大图形！</div>
+        <div class="hsub">点一个实物，它的<span style="color:#f0831f">同类小伙伴都会向中间靠拢</span>，一起变成一个大图形！</div>
         <div class="g1stage gridfloor card" id="g1stage"></div>
         <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
         <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
     init(el) {
         this._el = el;
         const stage = el.querySelector('#g1stage');
-        let shapesBy, mergedBy, itemEls;
+        const ORDER = ['cuboid','cube','cyl','ball'];
+        let itemEls, mergedBy, morphing;
         const g1layout = () => {   /* 每个形状住自己的分区：区内小网格 */
             if (!stage.clientWidth) return;
-            const order = ['cuboid','cube','cyl','ball'];
-            order.forEach((s, z) => {
+            ORDER.forEach((s, z) => {
                 const els = itemEls.map((d, i) => ({ d, s: G1_ITEMS[i][1] }))
                     .filter(o => o.s === s && !o.d.classList.contains('gone'));
                 const n = els.length; if (!n) return;
@@ -577,27 +580,10 @@ regSlide({
                 });
             });
         };
-        const transformOne = (i) => {
-            const [img, shape] = G1_ITEMS[i];
-            const d = itemEls[i];
-            if (d.classList.contains('done')) return;          /* 幂等：连锁定时器与手点不重复 */
-            const dr = d.getBoundingClientRect();
-            SND.pop(); confetti(dr.left + dr.width/2, dr.top + dr.height/2, 20);
-            d.classList.add('done');
-            const ph = d.querySelector('img');
-            if (ph) { ph.classList.add('flipout'); setTimeout(() => { ph.style.visibility = 'hidden'; }, 420); }
-            const sh = document.createElement('div');
-            sh.className = 'g1shape pop'; sh.style.left = d.style.left; sh.style.top = d.style.top;
-            sh.innerHTML = shapeSVG(shape, 96, {uid:'g1'+i+'_'+Date.now()%9973});
-            stage.appendChild(sh);
-            shapesBy[shape].push(sh);
-            tryMerge(shape);
-        };
         const reset = () => {
             stage.innerHTML = '';
             el.querySelector('#g1next').style.display = 'none';
-            shapesBy = { cuboid:[], cube:[], cyl:[], ball:[] };
-            mergedBy = {};
+            mergedBy = {}; morphing = {};
             itemEls = [];
             /* 底层四分区（有边框），各住一种图形 */
             const zones = document.createElement('div');
@@ -610,72 +596,68 @@ regSlide({
             G1_ITEMS.forEach(([img, shape], i) => {
                 const d = document.createElement('div');
                 d.className = 'g1item';
-                d.innerHTML = IMG(img) + '<span class="ck">✓</span>';
+                d.innerHTML = IMG(img);
                 d.onclick = () => {
-                    if (d.classList.contains('done')) { SND.click(); toast('这是 ' + SHAPES[shape].name + ' 变的！'); return; }
-                    transformOne(i);
-                    /* 连锁：同类的其他实物依次自动跳出变身，随后合体 */
-                    G1_ITEMS.forEach(([img2, s2], j) => {
-                        if (s2 !== shape || j === i) return;
-                        const mate = itemEls[j];
-                        if (mate.classList.contains('done')) return;
-                        setTimeout(() => transformOne(j), 430);   /* 同类一齐变身 */
-                    });
+                    if (mergedBy[shape]) { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); return; }
+                    if (morphing[shape]) return;   /* 正在聚拢变身的组不可再点 */
+                    morphing[shape] = true;
+                    converge(shape);
                 };
                 stage.appendChild(d);
                 itemEls.push(d);
             });
             g1layout();
         };
-        const tryMerge = (shape) => {
-            const total = G1_ITEMS.filter(it => it[1] === shape).length;
-            if (shapesBy[shape].length < total || mergedBy[shape]) return;
-            mergedBy[shape] = true;
-            setTimeout(() => mergeGroup(shape), 480);
-        };
-        const mergeGroup = (shape) => {
-            const els = shapesBy[shape];
-            const xs = els.map(e => parseFloat(e.style.left)), ys = els.map(e => parseFloat(e.style.top));
-            const tx = xs.reduce((a,b)=>a+b,0)/xs.length, ty = ys.reduce((a,b)=>a+b,0)/ys.length;
+        const converge = (shape) => {
+            const z = ORDER.indexOf(shape), zc = (z + 0.5) * 25;
             SND.good();
-            els.forEach(e => { e.classList.add('merging'); e.style.left = tx+'%'; e.style.top = ty+'%'; });
+            /* 全组实物照片（仍是照片）一起向分区中心靠拢 */
+            itemEls.forEach((d, i) => {
+                if (G1_ITEMS[i][1] !== shape || d.classList.contains('gone')) return;
+                d.classList.add('converging');
+                d.style.left = zc + '%';
+                d.style.top = '48%';
+            });
+            /* 靠拢完成后逐渐虚化 */
             setTimeout(() => {
-                els.forEach(e => e.remove());
+                SND.tone(620, 0, .6, 'sine', .14, 260);
+                itemEls.forEach((d, i) => {
+                    if (G1_ITEMS[i][1] === shape && !d.classList.contains('gone')) d.classList.add('blurring');
+                });
+            }, 1000);
+            /* 虚化完 → 原地变成一个大图形 */
+            setTimeout(() => {
+                itemEls.forEach((d, i) => { if (G1_ITEMS[i][1] === shape) d.classList.add('gone'); });
                 const big = document.createElement('div');
                 big.className = 'g1shape merged';
-                big.style.left = tx+'%'; big.style.top = ty+'%';
+                big.dataset.shape = shape;
+                big.style.left = zc + '%'; big.style.top = '48%';
                 big.innerHTML = `<div class="pop">${shapeSVG(shape, 150, {uid:'big'+shape+'_'+Date.now()%9973})}</div>
                     <div class="mtag" style="background:var(--${shape})">${SHAPES[shape].name}</div>`;
                 big.onclick = () => { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); };
                 stage.appendChild(big);
-                shapesBy[shape] = [big];
-                /* 该组合体完成：原实物位置（含绿勾）淡出消失；分区标记形状名 */
-                G1_ITEMS.forEach((it, i) => {
-                    if (it[1] === shape) itemEls[i].classList.add('gone');
-                });
+                const r = stage.getBoundingClientRect();
+                confetti(r.left + r.width*zc/100, r.top + r.height*.48, 30);
+                SND.win();
+                mergedBy[shape] = true;
                 const zn = document.querySelector('#g1z' + shape + ' .zn');
                 if (zn) { zn.textContent = SHAPES[shape].name; document.querySelector('#g1z' + shape).classList.add('named'); }
-                const r = stage.getBoundingClientRect();
-                confetti(r.left + r.width*tx/100, r.top + r.height*ty/100, 30);
-                SND.win();
-                toast('🎉 ' + SHAPES[shape].name + '小伙伴合体，变成一个大的' + SHAPES[shape].name + '啦！');
+                toast('🎉 同类小伙伴聚在一起，变成了一个大' + SHAPES[shape].name + '！');
                 if (Object.keys(mergedBy).length === 4) setTimeout(finale, 1000);
-            }, 840);
+            }, 1800);
         };
         const finale = () => {
             SND.win(); fireworks(4);
-            ['cuboid','cube','cyl','ball'].forEach((s, i) => {
-                const e = shapesBy[s][0];
-                setTimeout(() => {
-                    e.style.left = ((i + 0.5) * 25) + '%';
-                    e.style.top = '46%';
-                }, i*280);
+            ORDER.forEach((s, i) => {
+                const e = shapesBig(s);
+                setTimeout(() => { e.style.top = '46%'; }, i*220);
             });
             setTimeout(() => {
                 el.querySelector('#g1next').style.display = 'inline-block';
                 toast('🎉 四个图形小伙伴集合完毕！跟老师大声读出它们的名字');
-            }, 4*280 + 500);
+            }, 4*220 + 500);
         };
+        const shapesBig = (s) => [...stage.querySelectorAll('.g1shape.merged')].find(e => e.dataset.shape === s);
         reset();
         el._g1layout = g1layout;
         el.querySelector('#g1reset').onclick = () => { SND.click(); reset(); };
