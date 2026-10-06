@@ -119,7 +119,9 @@ button { font-family:inherit; cursor:pointer; }
 
 /* ================= 图形名片 ================= */
 .namegrid { display:flex; gap:clamp(12px,2vw,30px); flex-wrap:wrap; justify-content:center; }
-.namecard { width:clamp(150px,17vw,230px); padding:18px 12px 14px; text-align:center; cursor:pointer; transition:transform .18s; }
+.namecard { width:clamp(170px,19vw,260px); padding:20px 12px 16px; text-align:center; cursor:pointer; transition:transform .18s; }
+.namecard svg { width:clamp(120px,13vw,175px); height:auto; }
+.namecard .nm { min-height:48px; display:flex; align-items:center; justify-content:center; }
 .namecard:hover { transform:translateY(-8px) rotate(-1.5deg); }
 .namecard .nm { font-size:clamp(19px,2vw,26px); font-weight:900; margin-top:8px; }
 .namecard .ft { font-size:14px; color:#8b8378; font-weight:700; margin-top:5px; line-height:1.5; min-height:2.8em; }
@@ -142,8 +144,8 @@ button { font-family:inherit; cursor:pointer; }
 .viewer3d { position:relative; width:min(470px,92vw); height:400px; border:3px solid var(--line); border-radius:22px;
     overflow:hidden; background:radial-gradient(ellipse at 50% 30%, #ffffff, #f3ecdc); box-shadow:0 8px 0 rgba(63,58,52,.1); }
 .viewer3d canvas { display:block; }
-.v3dnum { position:absolute; top:12px; left:12px; min-width:44px; text-align:center; background:var(--gold); border:3px solid var(--line);
-    border-radius:12px; font-weight:900; font-size:26px; padding:2px 10px; z-index:3; }
+.v3dnum { position:absolute; top:12px; left:12px; min-width:64px; text-align:center; background:var(--gold); border:3.5px solid var(--line);
+    border-radius:16px; font-weight:900; font-size:44px; padding:4px 16px; z-index:3; }
 .v3dtip { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:#fff; border:2.5px solid var(--line);
     border-radius:999px; padding:5px 16px; font-weight:800; font-size:14px; white-space:nowrap; z-index:3; max-width:94%;
     overflow:hidden; text-overflow:ellipsis; }
@@ -168,6 +170,11 @@ button { font-family:inherit; cursor:pointer; }
 .g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
 .g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s, opacity .45s; }
 .g1item.gone { opacity:0; pointer-events:none; }
+.g1zone { position:absolute; top:8px; bottom:8px; border:2.5px dashed; border-radius:16px; }
+.g1zone .zn { position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+    font-size:14px; font-weight:900; background:#fff; border:2.5px solid var(--line);
+    border-radius:999px; padding:2px 14px; opacity:0; transition:opacity .4s; }
+.g1zone.named .zn { opacity:1; }
 .g1item img { width:auto; height:auto; max-height:clamp(44px,8vh,76px); max-width:clamp(60px,9.5vw,122px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
@@ -308,6 +315,20 @@ button { font-family:inherit; cursor:pointer; }
     .g4town { min-height:46vh; width:94vw; }
     .g4panel { flex-basis:auto; width:94vw; }
 }
+/* ================= 玩一玩说一说（课本 P21） ================= */
+.ptwrap { display:flex; gap:clamp(14px,2.4vw,34px); align-items:center; justify-content:center;
+    width:min(1240px,100%); flex-wrap:wrap; }
+.ptbag { width:min(330px,78vw); padding:12px; flex:0 0 auto; }
+.ptbag svg { width:100%; height:auto; display:block; }
+.ptfade { opacity:0; transform:translateY(26px); transition:all .6s cubic-bezier(.2,1.2,.4,1); }
+.ptfade.show { opacity:1; transform:none; }
+.ptbubble { background:#fff8e1; border:3px solid var(--line); border-radius:18px; padding:16px 20px;
+    font-weight:800; font-size:clamp(16px,1.9vw,23px); max-width:360px; display:flex; align-items:center; gap:12px; line-height:1.7; }
+.ptbubble svg { flex:0 0 auto; }
+.ptrule { margin-top:24px; max-width:min(1060px,94vw); font-size:clamp(15px,1.7vw,20px) !important; line-height:2 !important; }
+
+/* ================= 玩一玩 · 说一说（课本 P21，摸袋子猜图形） ================= */
+
 </style>
 </head>
 <body>
@@ -540,25 +561,6 @@ regSlide({
         });
     }
 });
-/* ================= 分一分引入（课本 P5-8） ================= */
-regSlide({
-    id:'sortintro', title:'分一分',
-    html: () => `
-        <div class="htitle">怎么分 <em>才好呢</em>？</div>
-        <div class="hsub">先说一说按照什么标准分类，再动手分一分（点卡片看分法）</div>
-        <div class="idearow">
-            <div class="ideacard card" data-t="我按「能否滚动」分类：钢笔墨水滚不动，牙膏可以滚来滚去。">
-                <div class="ic">🔄</div><h3>按 能否滚动 分</h3><p>有的滚得动，有的滚不动……</p></div>
-            <div class="ideacard card" data-t="我按「材料」分类：有些是纸做的，有些是金属做的，有些是塑料做的。">
-                <div class="ic">🧱</div><h3>按 材料 分</h3><p>纸做的、金属做的、塑料做的……</p></div>
-            <div class="ideacard card" data-t="我把「方方正正」的放在一起，把「圆圆的、可以滚来滚去」的放在一起。">
-                <div class="ic">⭐</div><h3>按 形状 分</h3><p>方方的放一起，圆圆的放一起……</p></div>
-        </div>
-        <div class="pill" style="margin-top:26px">👉 按形状分一分，就是今天的<strong style="color:#f0831f">新本领</strong>！</div>`,
-    init(el) {
-        el.querySelectorAll('.ideacard').forEach(c => c.onclick = () => { SND.click(); toast(c.dataset.t, 3200); });
-    }
-});
 /* ================= 游戏1 认识小伙伴（点一个 → 同类全出 → 合体变大） ================= */
 const G1_ITEMS = [   /* 与「按形状分一分」同一套 16 件：长方体5 正方体4 圆柱3 球4 */
     ['box','cuboid'],['rubik','cube'],['tea','cyl'],['football','ball'],
@@ -575,16 +577,22 @@ regSlide({
         <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
         <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
     init(el) {
+        this._el = el;
         const stage = el.querySelector('#g1stage');
         let shapesBy, mergedBy, itemEls;
-        const g1layout = () => {   /* 自适应网格：宽屏 8×2，窄屏 4×4 */
+        const g1layout = () => {   /* 每个形状住自己的分区：区内小网格 */
             if (!stage.clientWidth) return;
-            const cols = stage.clientWidth > 700 ? 8 : 4;
-            const rows = Math.ceil(G1_ITEMS.length / cols);
-            itemEls.forEach((d, i) => {
-                const col = i % cols, row = Math.floor(i / cols);
-                d.style.left = ((col + 0.5) * 100/cols) + '%';
-                d.style.top  = ((row + 0.52) * 100/rows) + '%';
+            const order = ['cuboid','cube','cyl','ball'];
+            order.forEach((s, z) => {
+                const els = itemEls.map((d, i) => ({ d, s: G1_ITEMS[i][1] }))
+                    .filter(o => o.s === s && !o.d.classList.contains('gone'));
+                const n = els.length; if (!n) return;
+                const cols = n <= 4 ? 2 : 3, rows = Math.ceil(n / cols);
+                els.forEach((o, k) => {
+                    const col = k % cols, row = Math.floor(k / cols);
+                    o.d.style.left = ((z + (col + 0.5)/cols) * 25) + '%';
+                    o.d.style.top  = ((row + 0.5) * 100/rows) + '%';
+                });
             });
         };
         const transformOne = (i) => {
@@ -609,6 +617,14 @@ regSlide({
             shapesBy = { cuboid:[], cube:[], cyl:[], ball:[] };
             mergedBy = {};
             itemEls = [];
+            /* 底层四分区（有边框），各住一种图形 */
+            const zones = document.createElement('div');
+            zones.id = 'g1zones'; zones.style.cssText = 'position:absolute;inset:0';
+            stage.appendChild(zones);
+            zones.innerHTML = [['cuboid','#fdf1e3','#f0c9a0'],['cube','#eef5fd','#b7d4f0'],
+                ['cyl','#eaf7f1','#a8dcbf'],['ball','#fdeef2','#f3c3d0']].map(([s, bg, bd], z) =>
+                `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${bg};border-color:${bd}">
+                    <span class="zn"></span></div>`).join('');
             G1_ITEMS.forEach(([img, shape], i) => {
                 const d = document.createElement('div');
                 d.className = 'g1item';
@@ -653,10 +669,12 @@ regSlide({
                 big.onclick = () => { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); };
                 stage.appendChild(big);
                 shapesBy[shape] = [big];
-                /* 该组合体完成：原实物位置（含绿勾）淡出消失 */
+                /* 该组合体完成：原实物位置（含绿勾）淡出消失；分区标记形状名 */
                 G1_ITEMS.forEach((it, i) => {
                     if (it[1] === shape) itemEls[i].classList.add('gone');
                 });
+                const zn = document.querySelector('#g1z' + shape + ' .zn');
+                if (zn) { zn.textContent = SHAPES[shape].name; document.querySelector('#g1z' + shape).classList.add('named'); }
                 const r = stage.getBoundingClientRect();
                 confetti(r.left + r.width*tx/100, r.top + r.height*ty/100, 30);
                 SND.win();
@@ -669,7 +687,7 @@ regSlide({
             ['cuboid','cube','cyl','ball'].forEach((s, i) => {
                 const e = shapesBy[s][0];
                 setTimeout(() => {
-                    e.style.left = (17 + i*22) + '%';
+                    e.style.left = ((i + 0.5) * 25) + '%';
                     e.style.top = '46%';
                 }, i*280);
             });
@@ -686,25 +704,21 @@ regSlide({
     enter() { if (this._el && this._el._g1layout) this._el._g1layout(); }
 });
 /* ================= 图形名片 ================= */
-const NAMECARDS = [
-    ['cuboid','长长方方','6 个平平的面，相对的两个面一样大'],
-    ['cube','正正方方','6 个平平的面，6 个面一样大'],
-    ['cyl','直直的','上下一样粗，两头圆圆的、平平的'],
-    ['ball','圆圆鼓鼓','没有平平的面，可以到处滚动']
-];
 regSlide({
     id:'namecards', title:'图形名片',
     html: () => `
         <div class="htitle">四位图形 <em>小伙伴</em></div>
-        <div class="hsub">点一点名片，听它们自我介绍</div>
-        <div class="namegrid">${NAMECARDS.map(([s],i)=>`
-            <div class="namecard card" data-s="${s}">${shapeSVG(s,120,{uid:'nc'+i})}<div class="nm ${SHAPES[s].tag==='t-cuboid'?'':''}">${SHAPES[s].name}</div>
-            <div class="ft"></div></div>`).join('')}
+        <div class="hsub">点一点名片，看看它是谁</div>
+        <div class="namegrid">${['cuboid','cube','cyl','ball'].map((s,i)=>`
+            <div class="namecard card" data-s="${s}">${shapeSVG(s,150,{uid:'nc'+i})}<div class="nm"></div></div>`).join('')}
         </div>`,
     init(el) {
         el.querySelectorAll('.namecard').forEach(c => {
             c.onclick = () => {
-                SND.pop(); c.querySelector('.ft').textContent = NAMECARDS.find(x=>x[0]===c.dataset.s)[2];
+                const nm = c.querySelector('.nm');
+                if (nm.textContent) { SND.click(); return; }
+                SND.pop();
+                nm.innerHTML = `<span class="pill" style="background:var(--${c.dataset.s});color:#fff">${SHAPES[c.dataset.s].name}</span>`;
                 c.classList.remove('jiggle'); void c.offsetWidth; c.classList.add('jiggle');
             };
         });
@@ -859,7 +873,7 @@ class Shape3D {
             const st = list.shift();
             const go = () => {
                 if (this.stop) { this.counting = false; return; }
-                st.m.forEach(m => m.color.setHex(0xfff1bf));
+                st.m.forEach(m => m.color.setHex(0xff5252));   /* 当前面对比强烈 */
                 num.textContent = st.no || ''; tip.textContent = st.tip; SND.pop();
                 setTimeout(() => { st.m.forEach(m => m.color.setHex(m.userData.base)); next(); }, 950);
             };
@@ -885,6 +899,8 @@ class Shape3D {
     }
     pairs() {
         if (this.counting || this.rolling || !this.pairDefs) return;
+        this.still = true;   /* 看相对的面时要停稳 */
+        this.rotX = .2; this.rotY = .55;
         this.flash(this.pairDefs.map(pr => ({ m: [this.mats[pr[0]], this.mats[pr[1]]], no: '', tip: pr[2] })));
     }
     roll() {
@@ -913,7 +929,7 @@ class Shape3D {
                 this.renderer.setSize(cw, ch);
                 this.cam.aspect = cw / ch; this.cam.updateProjectionMatrix();
             }
-            if (!this.rolling && !this.dragging && !this.counting) this.rotY += .0028;
+            if (!this.still && !this.rolling && !this.dragging && !this.counting) this.rotY += .0012;   /* 自转变慢 */
             if (!this.rolling) { this.grp.rotation.x = this.rotX; this.grp.rotation.y = this.rotY; }
             if (this.shape === 'ball' && !this.rolling) this.mesh.rotation.y += .004;
             this.renderer.render(this.scene, this.cam);
@@ -943,8 +959,7 @@ function featSlide(def) {
                         <button class="minibtn" id="${def.id}-rev">✨ 揭晓一条</button>
                         ${def.extra||''}
                     </div>
-                    <div class="liferow">${def.life.map(lf=>`<div class="lifeitem">${IMG(lf[0])}<div>${lf[1]}</div></div>`).join('')}</div>
-                    <div style="margin-top:12px;font-size:14px;color:#8b8378;font-weight:700">↑ 生活中这些物体的形状，都是${SHAPES[def.shape].name}！</div>
+                    <div class="pill" style="margin-top:6px;opacity:.75">🏠 生活中的${SHAPES[def.shape].name}，下节课再找一找～</div>
                 </div>
             </div>`,
         init(el) {
@@ -964,6 +979,7 @@ function featSlide(def) {
                         try {
                             el._V = new Shape3D(v3d, def.shape);
                             el.querySelector('#'+def.id+'-shape').style.display = 'none';
+                            el.querySelector('#'+def.id+'-fan').style.display = 'none';
                         } catch (e) { v3d.dataset.fail = 1; }
                     }
                     if (!el._V) {
@@ -1097,6 +1113,43 @@ featSlide({
         fb: () => toast('找不到平平的面！球是鼓鼓的曲面，轻轻一推就滚走啦～', 2800) } ]
 });
 
+function sackSVG() {
+    const L = 'stroke="#3f3a34" stroke-width="4" stroke-linejoin="round"';
+    return `<svg viewBox="0 0 320 290" style="width:100%;height:auto;display:block">
+        <ellipse cx="160" cy="266" rx="116" ry="13" fill="#e8dfc8"/>
+        <ellipse cx="96" cy="58" rx="20" ry="9" fill="#a8dfc6" ${L}/>
+        <rect x="86" y="58" width="20" height="34" rx="4" fill="#7fc8a8" ${L}/>
+        <rect x="150" y="30" width="44" height="58" rx="6" fill="#7fb2e5" ${L}/>
+        <circle cx="236" cy="62" r="25" fill="#f2a6b8" ${L}/>
+        <ellipse cx="228" cy="52" rx="8" ry="4.5" fill="#fff" opacity=".6" transform="rotate(-24 228 52)"/>
+        <path d="M66,262 C44,166 96,102 160,98 C224,102 276,166 254,262 Z" fill="#7fb2e5" ${L}/>
+        <g fill="#fff" opacity=".92">
+            <path d="M120,178 l6,14 14,6 -14,6 -6,14 -6,-14 -14,-6 14,-6 Z"/>
+            <path d="M200,158 l5,12 12,5 -12,5 -5,12 -5,-12 -12,-5 12,-5 Z"/>
+            <path d="M158,214 l5,12 12,5 -12,5 -5,12 -5,-12 -12,-5 12,-5 Z"/>
+        </g>
+        <path d="M104,98 C120,108 200,108 216,98" fill="none" ${L}/>
+        <ellipse cx="160" cy="98" rx="56" ry="15" fill="#5f92c9" ${L}/>
+    </svg>`;
+}
+regSlide({
+    id:'playtalk', title:'玩一玩说一说',
+    html: () => `
+        <div class="htitle" style="font-size:clamp(26px,3.6vw,44px)">玩一玩 · <em>说一说</em></div>
+        <div class="hsub">照样子，小组合作，摸一摸、猜一猜（课本 P21）</div>
+        <div class="ptwrap">
+            <div class="ptbag card ptfade">${sackSVG()}</div>
+            <div class="ptbubble ptfade">✋ <span>摸一摸的同学：<br>「圆圆的，上下一样粗。」</span></div>
+            <div class="ptbubble ptfade">😀 <span>猜一猜的同学：<br>「嘻嘻，我知道了，是圆柱！」</span>${shapeSVG('cyl',52,{uid:'ptc'})}</div>
+        </div>
+        <div class="pill ptrule ptfade">🎯 游戏规则：① 一人闭眼，从袋里摸出一个图形，说说它的特征；② 同伴听特征，猜出名字；③ 猜对啦，换下一轮！</div>`,
+    init(el) {},
+    enter() {
+        const els = $$('#sl-playtalk .ptfade');
+        els.forEach(x => x.classList.remove('show'));
+        els.forEach((x, i) => setTimeout(() => { x.classList.add('show'); if (i) SND.pop(); }, 350 + i * 750));
+    }
+});
 /* ================= 游戏2 我说你猜（幕布） ================= */
 const G2_RIDDLES = [
     { nm:'谜语①', lines:['方方正正六面体，','每个面都一个样。'], ans:'cube' },
