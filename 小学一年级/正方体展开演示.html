@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正方体的展开 · 认识立体图形</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+    background:linear-gradient(180deg,#ffffff 0%,#f5f7fb 100%);
+    user-select:none;-webkit-user-select:none;}
+  #stage{position:absolute;inset:0;}
+  #stage canvas{touch-action:none;cursor:grab;}
+  #stage canvas:active{cursor:grabbing;}
+
+  .title{position:absolute;top:2.2%;left:50%;transform:translateX(-50%);
+    color:#3a3f5c;font-size:clamp(20px,3.2vw,34px);font-weight:900;letter-spacing:2px;
+    white-space:nowrap;text-align:center;z-index:5;}
+  .title small{display:block;font-size:.52em;color:#9aa1b5;font-weight:400;letter-spacing:4px;margin-top:4px;}
+
+  #counter{position:absolute;top:2.6%;right:2.2%;background:rgba(255,255,255,.85);
+    border:2px solid #e3e7f2;color:#3a3f5c;border-radius:999px;
+    padding:8px 18px;font-size:clamp(14px,1.6vw,20px);font-weight:700;
+    box-shadow:0 8px 24px rgba(90,100,140,.10);}
+  #counter b{color:#e84545;font-size:1.2em;}
+
+  #caption{position:absolute;left:50%;bottom:15.5%;transform:translateX(-50%);
+    background:rgba(255,255,255,.92);border:2px solid #e3e7f2;color:#3a3f5c;
+    border-radius:16px;padding:10px 22px;font-size:clamp(14px,1.9vw,22px);font-weight:700;
+    opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:94vw;
+    box-shadow:0 8px 24px rgba(90,100,140,.12);}
+  #caption.show{opacity:1;}
+
+  #bar{position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);display:flex;gap:14px;}
+  .btn{border:none;cursor:pointer;border-radius:999px;padding:14px 30px;
+    font-size:clamp(16px,2vw,24px);font-weight:900;
+    transition:transform .12s,box-shadow .12s;white-space:nowrap;}
+  .btn:active{transform:translateY(4px);}
+  .btn.main{background:linear-gradient(180deg,#eaf2ff,#cfe0fa);color:#2b5aa0;
+    box-shadow:0 5px 0 #b3c9e8,0 10px 22px rgba(90,120,180,.18);}
+  .btn.main:active{box-shadow:0 1px 0 #b3c9e8,0 5px 12px rgba(90,120,180,.18);}
+  .btn.alt{background:linear-gradient(180deg,#f4f6fa,#e2e8f2);color:#4a5568;
+    box-shadow:0 5px 0 #c4cede,0 10px 22px rgba(90,100,140,.14);}
+  .btn.alt:active{box-shadow:0 1px 0 #c4cede,0 5px 12px rgba(90,100,140,.14);}
+
+  #banner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:9;}
+  #banner.show{display:flex;}
+  #banner .card{background:rgba(255,255,255,.97);border:2px solid #e3e7f2;border-radius:26px;padding:4vh 5vw;text-align:center;
+    box-shadow:0 20px 60px rgba(90,100,140,.25);animation:pop .5s cubic-bezier(.2,1.6,.4,1);}
+  #banner .card h1{margin:0;color:#e84545;font-size:clamp(24px,4.5vw,52px);}
+  #banner .card p{margin:10px 0 0;color:#4b5568;font-size:clamp(15px,2.2vw,26px);font-weight:700;}
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+  .confetti{position:absolute;width:12px;height:18px;border-radius:3px;top:-24px;
+    animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.85}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="title">正方体的展开<small>拖一拖转一转 · 点一点数一数</small></div>
+<div id="counter">数一数：<b id="cnt">0</b> / 6 个面</div>
+<div id="caption"></div>
+<div id="bar">
+  <button class="btn main" id="btnMain">展开它</button>
+  <button class="btn alt" id="btnSpin">停一停</button>
+  <button class="btn alt" id="btnReset">重新数</button>
+</div>
+<div id="banner"><div class="card"><h1>正方体有 6 个面！</h1><p>每个面都一样大，相对的两个面完全相同哦～</p></div></div>
+
+<script src="three.min.js"></script>
+<script>
+window.__errs=[];
+window.onerror=function(m,s,l){window.__errs.push(m+' @line '+l);};
+(function(){
+'use strict';
+/* ================= 布局 =================
+   展开图 1-4-1：中排 4 面，上下面挂在 2 号面上下
+   课本风格：淡青透明面 + 深色粗棱 + 折叠时被挡的棱显示虚线（随视角实时切换）
+============================================ */
+var S=2, T=0.08, E=0.10;
+var EDGE_COLOR=0x2b3850, FACE_COLOR=0xbfeef0;
+var FACE_DEFS=[
+  {key:'m2',fk:'F', pos:[0,0,0],  parent:null,  axis:'y',angle:0},
+  {key:'m3',fk:'R', pos:[ 1,0,0], parent:'m2h', axis:'y',angle: Math.PI/2},
+  {key:'m4',fk:'B', pos:[ 3,0,0], parent:'m3h', axis:'y',angle: Math.PI/2},
+  {key:'m1',fk:'L', pos:[-1,0,0], parent:'m2h', axis:'y',angle:-Math.PI/2},
+  {key:'t', fk:'T', pos:[0, 1,0], parent:'m2h', axis:'x',angle:-Math.PI/2},
+  {key:'b', fk:'Bo',pos:[0,-1,0], parent:'m2h', axis:'x',angle: Math.PI/2}
+];
+var ORDER=['m2','m3','m4','m1','t','b'];
+var DELAY={t:0,b:0,m1:0.12,m3:0.12,m4:0.24}, MAXD=0.24;
+var NRM={F:[0,0,1],B:[0,0,-1],R:[1,0,0],L:[-1,0,0],T:[0,1,0],Bo:[0,-1,0]};
+// 12 条真实棱：键名 = 两个相邻面的键按字符串序拼接（与面板棱归属、虚线棱共用同一套键）
+function EK(a,b){ return a<b ? a+b : b+a; }
+var EDGES={};
+[['F','R'],['F','L'],['F','T'],['F','Bo'],
+ ['B','R'],['B','L'],['B','T'],['B','Bo'],
+ ['R','T'],['R','Bo'],['L','T'],['L','Bo']].forEach(function(p){
+  EDGES[EK(p[0],p[1])]={n1:NRM[p[0]],n2:NRM[p[1]]};
+});
+
+/* ================= 场景 ================= */
+var stage=document.getElementById('stage');
+var renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.setClearColor(0x000000,0);
+if(THREE.sRGBEncoding) renderer.outputEncoding=THREE.sRGBEncoding;
+stage.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(42,16/9,0.1,100);
+
+/* 白底上的柔和投影 */
+var shC=document.createElement('canvas'); shC.width=shC.height=256;
+var sg=shC.getContext('2d');
+var grd=sg.createRadialGradient(128,128,20,128,128,124);
+grd.addColorStop(0,'rgba(90,105,150,0.30)');
+grd.addColorStop(1,'rgba(90,105,150,0)');
+sg.fillStyle=grd; sg.fillRect(0,0,256,256);
+var shadow=new THREE.Mesh(new THREE.PlaneGeometry(16,13),
+  new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,depthWrite:false}));
+shadow.position.z=-2.6; scene.add(shadow);
+
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+/* ---------- 面板 + 面上的棱线 ---------- */
+var faceMatBase=new THREE.MeshBasicMaterial({color:FACE_COLOR,transparent:true,opacity:0.42,depthWrite:false});
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE_COLOR});
+var hinges={},panels={};
+var boxGeo=new THREE.BoxGeometry(S,S,T);
+var hStick=new THREE.BoxGeometry(S+E,E,E);
+var vStick=new THREE.BoxGeometry(E,S+E,E);
+var sticksByEdge={}; Object.keys(EDGES).forEach(function(k){sticksByEdge[k]=[];});
+
+// 折叠成立方体后，每个面的四条边分别贴合哪个面（local边方向→相邻面）
+var BORDER_MAP={
+  F :{T:'T', Bo:'Bo', L:'L', R:'R'},
+  B :{T:'T', Bo:'Bo', L:'R', R:'L'},
+  R :{T:'T', Bo:'Bo', L:'F', R:'B'},
+  L :{T:'T', Bo:'Bo', L:'B', R:'F'},
+  T :{T:'B', Bo:'F', L:'L', R:'R'},
+  Bo:{T:'F', Bo:'B', L:'L', R:'R'}
+};
+
+function addStick(panel, x,y, geo, edgeKey){
+  var st=new THREE.Mesh(geo,edgeMat);
+  st.position.set(x,y,0);
+  st.userData.edgeKey=edgeKey;
+  panel.add(st); sticksByEdge[edgeKey].push(st);
+}
+ORDER.forEach(function(key){
+  var d=FACE_DEFS.find(function(f){return f.key===key;});
+  var fm=faceMatBase.clone();
+  var ms=[edgeMat,edgeMat,edgeMat,edgeMat,fm,fm.clone()];
+  var panel=new THREE.Mesh(boxGeo,ms);
+  panel.userData.faceKey=key; panel.userData.faceMats=[fm,ms[5]];
+  var borders=[[0, S/2,0,hStick,'T'],[0,-S/2,0,hStick,'Bo'],
+               [-S/2,0,0,vStick,'L'],[ S/2,0,0,vStick,'R']];
+  borders.forEach(function(bd){
+    var ek=EK(d.fk, BORDER_MAP[d.fk][bd[4]]);
+    addStick(panel,bd[0],bd[1],bd[3],ek);
+  });
+  if(!d.parent){
+    panel.position.set(d.pos[0],d.pos[1],d.pos[2]);
+    root.add(panel); panels[key]=panel; return;
+  }
+  var h=new THREE.Group();
+  h.userData.axis=d.axis; h.userData.angle=d.angle; h.userData.delay=DELAY[key]||0;
+  panel.position.set(d.axis==='y'?Math.sign(d.pos[0]):0, d.axis==='x'?Math.sign(d.pos[1]):0,0);
+  h.add(panel);
+  if(d.parent==='m2h'){ h.position.set(d.pos[0],d.pos[1],d.pos[2]); root.add(h); }
+  else { h.position.set(2,0,0); hinges[d.parent].add(h); }
+  hinges[key+'h']=h; panels[key]=panel;
+});
+
+/* ---------- 12 条虚线棱（折叠且被挡时显示） ---------- */
+var dashByEdge={};
+function dashLine(ek,a,b){
+  var g=new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(a[0],a[1],a[2]),new THREE.Vector3(b[0],b[1],b[2])]);
+  var m=new THREE.LineDashedMaterial({color:EDGE_COLOR,dashSize:0.14,gapSize:0.09,transparent:true,opacity:0.9});
+  var l=new THREE.Line(g,m); l.computeLineDistances(); l.visible=false;
+  root.add(l); dashByEdge[ek]=l;
+}
+dashLine(EK('F','R'),[ 1,-1,0],[ 1, 1,0]);  dashLine(EK('F','L'),[-1,-1,0],[-1, 1,0]);
+dashLine(EK('F','T'),[-1, 1,0],[ 1, 1,0]);  dashLine(EK('F','Bo'),[-1,-1,0],[ 1,-1,0]);
+dashLine(EK('B','R'),[ 1,-1,-2],[ 1, 1,-2]);dashLine(EK('B','L'),[-1,-1,-2],[-1, 1,-2]);
+dashLine(EK('B','T'),[-1, 1,-2],[ 1, 1,-2]);dashLine(EK('B','Bo'),[-1,-1,-2],[ 1,-1,-2]);
+dashLine(EK('R','T'),[ 1, 1,0],[ 1, 1,-2]); dashLine(EK('R','Bo'),[ 1,-1,0],[ 1,-1,-2]);
+dashLine(EK('L','T'),[-1, 1,0],[-1, 1,-2]); dashLine(EK('L','Bo'),[-1,-1,0],[-1,-1,-2]);
+
+/* ---------- 展开驱动 ---------- */
+var u=0,uTarget=0;
+function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function applyUnfold(){
+  var f=smooth(u);
+  root.position.set(-f,0,1-f);
+  for(var k in hinges){
+    var h=hinges[k];
+    var q=smooth((u-h.userData.delay)/(1-MAXD));
+    var a=h.userData.angle*(1-q);
+    if(h.userData.axis==='y') h.rotation.y=a; else h.rotation.x=a;
+  }
+  return f;
+}
+
+/* ---------- 隐藏棱判定（折叠时，两面都背对相机 → 虚线） ---------- */
+var _v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_view=new THREE.Vector3();
+function updateEdges(){
+  var folded=(u<0.02);
+  _view.copy(camera.position).normalize();
+  for(var ek in EDGES){
+    var e=EDGES[ek];
+    var hidden=true;
+    if(folded){
+      _v1.set(e.n1[0],e.n1[1],e.n1[2]).applyQuaternion(rig.quaternion);
+      _v2.set(e.n2[0],e.n2[1],e.n2[2]).applyQuaternion(rig.quaternion);
+      hidden=(_v1.dot(_view)<0)&&(_v2.dot(_view)<0);
+    }
+    var dl=dashByEdge[ek];
+    var ss=sticksByEdge[ek];
+    if(!dl||!ss) continue;
+    dl.visible=folded&&hidden;
+    for(var i=0;i<ss.length;i++) ss[i].visible=!folded||!hidden;
+  }
+}
+
+/* ---------- 交互 ---------- */
+var counted={},captionTimer=null;
+var caption=document.getElementById('caption');
+var cntEl=document.getElementById('cnt');
+var banner=document.getElementById('banner');
+function say(msg,ms){
+  caption.textContent=msg;caption.classList.add('show');
+  clearTimeout(captionTimer);
+  if(ms!==0) captionTimer=setTimeout(function(){caption.classList.remove('show');},ms||2200);
+}
+function checkTexture(){
+  var c=document.createElement('canvas');c.width=c.height=128;
+  var g=c.getContext('2d');
+  g.fillStyle='#2eb872';g.beginPath();g.arc(64,64,52,0,Math.PI*2);g.fill();
+  g.strokeStyle='#fff';g.lineWidth=14;g.lineCap='round';g.lineJoin='round';
+  g.beginPath();g.moveTo(38,66);g.lineTo(58,86);g.lineTo(92,44);g.stroke();
+  var tex=new THREE.CanvasTexture(c);
+  if(THREE.SRGBColorSpace) tex.colorSpace=THREE.SRGBColorSpace;
+  return tex;
+}
+var checkGeo=new THREE.PlaneGeometry(0.9,0.9);
+var checkTex=checkTexture();
+ORDER.forEach(function(key){
+  var bg=new THREE.Mesh(checkGeo,new THREE.MeshBasicMaterial({map:checkTex,transparent:true}));
+  bg.position.z=T/2+0.03;bg.visible=false;bg.raycast=function(){};
+  panels[key].add(bg);
+});
+function updateCount(){
+  var n=Object.keys(counted).length;
+  cntEl.textContent=n;
+  if(n===6){
+    banner.classList.add('show');confetti();
+    say('太棒了！一个正方体有 6 个面！',0);
+    setTimeout(function(){banner.classList.remove('show');},4200);
+  }
+}
+function confetti(){
+  var cs=['#e84545','#f5a623','#8e5bd6','#2eb872','#3aa0ff','#ff7ab8'];
+  for(var i=0;i<36;i++){
+    var p=document.createElement('div');p.className='confetti';
+    p.style.left=(Math.random()*100)+'vw';p.style.background=cs[i%cs.length];
+    p.style.animationDuration=(1.6+Math.random()*1.4)+'s';
+    p.style.animationDelay=(Math.random()*0.5)+'s';
+    document.body.appendChild(p);
+    setTimeout(function(el){return function(){el.remove();};}(p),3800);
+  }
+}
+
+var dragging=false,moved=false,px=0,py=0,yaw=-0.5,pitch=0.16,spin=true,spinVel=0.005;
+var dom=renderer.domElement;
+dom.addEventListener('pointerdown',function(e){
+  dragging=true;moved=false;px=e.clientX;py=e.clientY;reorient=null;
+  dom.setPointerCapture(e.pointerId);
+});
+dom.addEventListener('pointermove',function(e){
+  if(!dragging)return;
+  var dx=e.clientX-px,dy=e.clientY-py;
+  if(Math.abs(dx)+Math.abs(dy)>6)moved=true;
+  yaw+=dx*0.006;pitch=Math.max(-0.9,Math.min(0.9,pitch+dy*0.006));
+  px=e.clientX;py=e.clientY;
+});
+dom.addEventListener('pointerup',function(e){
+  dragging=false;
+  if(!moved)pick(e);
+});
+function pick(e){
+  var r=dom.getBoundingClientRect();
+  var m=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  var rc=new THREE.Raycaster();rc.setFromCamera(m,camera);
+  var hits=rc.intersectObjects(root.children,true);
+  for(var i=0;i<hits.length;i++){
+    var o=hits[i].object;
+    if(o.userData.faceKey)hitFace(o.userData.faceKey);
+  }
+}
+var flashes=[];
+function hitFace(key){
+  var p=panels[key];
+  p.userData.flash=1;
+  if(!counted[key]){
+    counted[key]=true;
+    p.children[0].visible=true;
+    updateCount();
+    if(Object.keys(counted).length<6) say('找到一个面啦！继续找找还有哪几个～');
+  }
+}
+
+/* ---------- 按钮 ---------- */
+var btnMain=document.getElementById('btnMain');
+var reorient=null;
+btnMain.addEventListener('click',function(){
+  uTarget=uTarget?0:1;
+  btnMain.textContent=uTarget?'合上它':'展开它';
+  if(uTarget===1){
+    var twoPi=Math.PI*2;
+    reorient={t:0,yawFrom:yaw,yawTo:Math.round(yaw/twoPi)*twoPi,pitchFrom:pitch,pitchTo:0.1};
+    spinVel=0;
+    say('变！正方体展开啦，点一点每个面数一数！',2600);
+  } else say('唰——又变回正方体啦！',1800);
+});
+var btnSpin=document.getElementById('btnSpin');
+btnSpin.addEventListener('click',function(){
+  spin=!spin;btnSpin.textContent=spin?'停一停':'转一转';
+});
+document.getElementById('btnReset').addEventListener('click',function(){
+  counted={};
+  ORDER.forEach(function(k){panels[k].children[0].visible=false;});
+  cntEl.textContent='0';banner.classList.remove('show');
+  say('好，我们再数一遍！',1500);
+});
+
+/* ---------- 自适应 ---------- */
+function resize(){
+  var w=stage.clientWidth,h=stage.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);resize();
+camera.position.set(0,1.4,8.6);camera.lookAt(0,0,0);
+
+/* ---------- 主循环 ---------- */
+var last=performance.now();
+(function loop(now){
+  requestAnimationFrame(loop);
+  var dt=Math.min(0.05,(now-last)/1000);last=now;
+  u+=(uTarget-u)*Math.min(1,dt*4.2);
+  if(Math.abs(uTarget-u)<0.001)u=uTarget;
+  if(reorient){
+    reorient.t=Math.min(1,reorient.t+dt/1.1);
+    var e=smooth(reorient.t);
+    yaw=reorient.yawFrom+(reorient.yawTo-reorient.yawFrom)*e;
+    pitch=reorient.pitchFrom+(reorient.pitchTo-reorient.pitchFrom)*e;
+    if(reorient.t>=1)reorient=null;
+  }
+  var f=applyUnfold();
+  camera.position.set(0,1.4-0.55*f,8.6+1.6*f);
+  camera.lookAt(0,0,0);
+  var want=(spin&&u<0.03&&!dragging)?0.005:0;
+  spinVel+=(want-spinVel)*Math.min(1,dt*3);
+  yaw+=spinVel;
+  rig.rotation.y=yaw;rig.rotation.x=pitch;
+  updateEdges();
+  for(var k in panels){
+    var p=panels[k];
+    if(p.userData.flash>0){
+      p.userData.flash=Math.max(0,p.userData.flash-dt);
+      var o=0.42+0.35*p.userData.flash;
+      p.userData.faceMats.forEach(function(mm){mm.opacity=o;});
+    }
+  }
+  renderer.render(scene,camera);
+})(last);
+})();
+</script>
+</body>
+</html>

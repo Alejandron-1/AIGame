@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>正方体展开 · 希沃小视频拍片页</title>
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+    background:linear-gradient(180deg,#ffffff 0%,#f7f9fc 100%);
+    user-select:none;-webkit-user-select:none;}
+  #scene{position:absolute;left:0;top:0;width:1230px;height:1080px;}
+  .title{position:absolute;top:34px;left:615px;transform:translateX(-50%);
+    color:#3a3f5c;font-size:46px;font-weight:900;letter-spacing:3px;white-space:nowrap;z-index:5;}
+  .title small{display:block;text-align:center;font-size:24px;color:#9aa1b5;font-weight:400;letter-spacing:8px;margin-top:8px;}
+
+  /* 右侧控制台 */
+  #panel{position:absolute;left:1280px;top:190px;width:590px;height:700px;
+    background:rgba(255,255,255,.72);border:2px solid #e3e7f2;border-radius:36px;
+    box-shadow:0 12px 40px rgba(90,100,140,.12);backdrop-filter:blur(4px);}
+  #panel h2{margin:44px 0 0;text-align:center;color:#3a3f5c;font-size:38px;font-weight:900;letter-spacing:6px;}
+  .btn{position:absolute;left:75px;width:440px;height:120px;border:none;cursor:default;
+    border-radius:60px;font-size:44px;font-weight:900;
+    transition:none;will-change:transform;}
+  #btnOpen{top:170px;background:linear-gradient(180deg,#eaf2ff,#cfe0fa);color:#2b5aa0;
+    box-shadow:0 8px 0 #b3c9e8,0 14px 28px rgba(90,120,180,.18);}
+  #btnClose{top:330px;background:linear-gradient(180deg,#f4f6fa,#e2e8f2);color:#4a5568;
+    box-shadow:0 8px 0 #c4cede,0 14px 28px rgba(90,100,140,.14);}
+  #chip{position:absolute;left:55px;top:455px;width:480px;text-align:center;
+    background:rgba(255,255,255,.85);border:2px solid #e3e7f2;color:#3a3f5c;
+    border-radius:24px;padding:18px 10px;font-size:33px;font-weight:900;line-height:1.5;
+    box-shadow:0 8px 24px rgba(90,100,140,.10);
+    transform:scale(0);transform-origin:center;}
+  #chip small{display:block;font-size:24px;color:#6b7280;font-weight:700;margin-top:6px;}
+  #hint{position:absolute;left:0;right:0;bottom:36px;text-align:center;color:#9aa1b5;font-size:26px;letter-spacing:2px;}
+
+  /* 字幕 */
+  #cap{position:absolute;left:0px;top:930px;width:1230px;text-align:center;
+    color:#3a3f5c;font-size:40px;font-weight:900;letter-spacing:2px;
+    opacity:0;z-index:6;}
+
+  /* 模拟鼠标 */
+  #cursor{position:absolute;left:0;top:0;width:60px;height:60px;z-index:20;will-change:transform;
+    filter:drop-shadow(0 4px 8px rgba(60,70,100,.30));}
+  #ripple{position:absolute;left:0;top:0;width:110px;height:110px;border-radius:50%;
+    border:6px solid rgba(110,150,230,.55);z-index:19;opacity:0;will-change:transform,opacity;}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div class="title">正方体的展开<small>点一点按钮，看看正方体的秘密</small></div>
+
+<div id="panel">
+  <h2>魔法控制台</h2>
+  <button class="btn" id="btnOpen">展开它</button>
+  <button class="btn" id="btnClose">合上它</button>
+  <div id="chip">正方体有 <span style="font-size:44px;color:#e84545">6</span> 个面<small>相对的两个面，完全相同哦～</small></div>
+  <div id="hint">展开图形状：1-4-1 十字形</div>
+</div>
+
+<div id="cap"></div>
+<div id="ripple"></div>
+<div id="cursor"><svg width="60" height="60" viewBox="0 0 24 24"><path d="M4 2 L20 12.5 L12.5 13.8 L16.5 21.5 L13.6 22.8 L9.8 15 L4 19.5 Z" fill="#3a3f5c" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+
+<script src="three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ================= 时间轴（秒） ================= */
+var T_IDLE=1.0, T_ARRIVE=2.0, T_PRESS1=2.35;
+var T_UNFOLD0=2.15, T_UNFOLD1=4.35, T_HOLDEND=6.9;
+var T_ARRIVE2=7.9, T_PRESS2=8.25;
+var T_FOLD0=8.05, T_FOLD1=10.25, T_END=11.8;
+var BTN1=[1555,470], BTN2=[1555,630], REST=[1730,940], SPAWN=[1880,1150], EXIT=[1880,1150];
+
+/* ================= 三维部分 ================= */
+var S=2, T=0.08;
+var COLORS={gold:0xf5a623, red:0xe84545, purple:0x8e5bd6};
+var FACE_DEFS=[
+  {key:'m2',num:2,color:COLORS.red,   pos:[0,0,0],  parent:null,  axis:'y',angle:0},
+  {key:'m3',num:3,color:COLORS.gold,  pos:[1,0,0],  parent:'m2h', axis:'y',angle:Math.PI/2},
+  {key:'m4',num:4,color:COLORS.red,   pos:[3,0,0],  parent:'m3h', axis:'y',angle:Math.PI/2},
+  {key:'m1',num:1,color:COLORS.gold,  pos:[-1,0,0], parent:'m2h', axis:'y',angle:-Math.PI/2},
+  {key:'t', num:5,color:COLORS.purple,pos:[0,1,0],  parent:'m2h', axis:'x',angle:-Math.PI/2},
+  {key:'b', num:6,color:COLORS.purple,pos:[0,-1,0], parent:'m2h', axis:'x',angle:Math.PI/2}
+];
+var ORDER=['m2','m3','m4','m1','t','b'];
+var DELAY={t:0,b:0,m1:0.12,m3:0.12,m4:0.24}, MAXD=0.24;
+
+var sceneDiv=document.getElementById('scene');
+var renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(1);
+renderer.setClearColor(0x000000,0);
+renderer.setSize(1230,1080);
+sceneDiv.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(42,1230/1080,0.1,100);
+scene.add(new THREE.AmbientLight(0xffffff,0.82));
+var sun=new THREE.DirectionalLight(0xfff2d0,0.75); sun.position.set(4,6,5); scene.add(sun);
+var fill=new THREE.DirectionalLight(0xc9a8ff,0.3); fill.position.set(-5,-2,-4); scene.add(fill);
+
+/* 白底上的柔和投影 */
+var shC=document.createElement('canvas'); shC.width=shC.height=256;
+var sg=shC.getContext('2d');
+var grd=sg.createRadialGradient(128,128,20,128,128,124);
+grd.addColorStop(0,'rgba(90,105,150,0.30)');
+grd.addColorStop(1,'rgba(90,105,150,0)');
+sg.fillStyle=grd; sg.fillRect(0,0,256,256);
+var shadow=new THREE.Mesh(new THREE.PlaneGeometry(16,13),
+  new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,depthWrite:false}));
+shadow.position.z=-2.6; scene.add(shadow);
+
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+/* ---------- 课本风格：透明淡青面 + 深色粗棱 + 隐藏棱虚线 ---------- */
+var EDGE_COLOR=0x2b3850, FACE_COLOR=0xbfeef0;
+var faceMat=new THREE.MeshBasicMaterial({color:FACE_COLOR,transparent:true,opacity:0.42,depthWrite:false});
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE_COLOR});
+var hinges={},panels={};
+var boxGeo=new THREE.BoxGeometry(S,S,T);
+var E=0.10;                                    // 棱线粗细
+var hStick=new THREE.BoxGeometry(S+E,E,E);     // 面内水平棱
+var vStick=new THREE.BoxGeometry(E,S+E,E);     // 面内竖直棱
+ORDER.forEach(function(key){
+  var d=FACE_DEFS.find(function(f){return f.key===key;});
+  var ms=[edgeMat,edgeMat,edgeMat,edgeMat,faceMat,faceMat];
+  var panel=new THREE.Mesh(boxGeo,ms);
+  panel.userData.faceKey=key;
+  [[0, S/2,0,hStick],[0,-S/2,0,hStick],[-S/2,0,0,vStick],[S/2,0,0,vStick]].forEach(function(ea){
+    var st=new THREE.Mesh(ea[3],edgeMat);
+    st.position.set(ea[0],ea[1],ea[2]);
+    panel.add(st);
+  });
+  if(!d.parent){                          // 中心面 m2：直接放进根组
+    panel.position.set(d.pos[0],d.pos[1],d.pos[2]);
+    root.add(panel); panels[key]=panel; return;
+  }
+  var h=new THREE.Group();                // 铰链组：位于棱上，面板偏移半格
+  h.userData.axis=d.axis; h.userData.angle=d.angle; h.userData.delay=DELAY[key]||0;
+  panel.position.set(d.axis==='y'?Math.sign(d.pos[0]):0, d.axis==='x'?Math.sign(d.pos[1]):0,0);
+  h.add(panel);
+  if(d.parent==='m2h'){ h.position.set(d.pos[0],d.pos[1],d.pos[2]); root.add(h); }
+  else { h.position.set(2,0,0); hinges[d.parent].add(h); }   // m4：棱在 m3 远端
+  hinges[key+'h']=h; panels[key]=panel;
+});
+
+/* 折叠态下被挡住的三条棱 → 虚线（展开时淡出） */
+var dashMats=[];
+function dashedLine(a,b){
+  var g=new THREE.BufferGeometry().setFromPoints(
+    [new THREE.Vector3(a[0],a[1],a[2]), new THREE.Vector3(b[0],b[1],b[2])]);
+  var m=new THREE.LineDashedMaterial({color:EDGE_COLOR,dashSize:0.14,gapSize:0.09,transparent:true,opacity:0.9});
+  var l=new THREE.Line(g,m); l.computeLineDistances();
+  root.add(l); dashMats.push(m);
+}
+dashedLine([-1,-1,-2],[ 1,-1,-2]);   // 后下横棱
+dashedLine([-1,-1,-2],[-1,-1, 0]);   // 左下纵棱
+dashedLine([-1,-1,-2],[-1, 1,-2]);   // 后左竖棱
+
+function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function easeIO(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;}
+function lerp(a,b,t){return a+(b-a)*t;}
+function applyUnfold(u){
+  var f=smooth(u);
+  root.position.set(-f,0,1-f);
+  for(var k in hinges){
+    var h=hinges[k];
+    var q=smooth((u-h.userData.delay)/(1-MAXD));
+    var a=h.userData.angle*(1-q);
+    if(h.userData.axis==='y') h.rotation.y=a; else h.rotation.x=a;
+  }
+  for(var i=0;i<dashMats.length;i++){
+    dashMats[i].opacity=0.9*(1-f);
+    dashMats[i].visible=(f<0.98);
+  }
+  return f;
+}
+
+/* ================= DOM 引用 ================= */
+var cursorEl=document.getElementById('cursor');
+var rippleEl=document.getElementById('ripple');
+var capEl=document.getElementById('cap');
+var btnOpen=document.getElementById('btnOpen');
+var btnClose=document.getElementById('btnClose');
+var chip=document.getElementById('chip');
+
+function setBtnPress(btn,p){                 // p: 按压进度0~1，非按压传-1
+  if(p<0){ btn.style.transform='scale(1)'; return; }
+  var s=1-0.09*Math.sin(Math.PI*p);
+  btn.style.transform='scale('+s.toFixed(3)+')';
+}
+function setRipple(x,y,p){                   // p: 扩散进度0~1，不显示传-1
+  if(p<0){ rippleEl.style.opacity='0'; return; }
+  var s=0.35+2.1*p;
+  rippleEl.style.opacity=String(1-p);
+  rippleEl.style.transform='translate('+(x-55)+'px,'+(y-55)+'px) scale('+s.toFixed(3)+')';
+}
+function setCap(text,op){
+  capEl.textContent=text; capEl.style.opacity=String(op);
+}
+function cursorAt(x,y){
+  cursorEl.style.transform='translate('+x+'px,'+y+'px)';
+}
+function seg(t,t0,t1){ return easeIO((t-t0)/(t1-t0)); }   // 段内插值因子
+
+/* ================= 主时间轴 ================= */
+window.setT=function(t){
+  /* --- 展开进度 u --- */
+  var u=0;
+  if(t>=T_UNFOLD0&&t<T_FOLD0) u=easeIO((t-T_UNFOLD0)/(T_UNFOLD1-T_UNFOLD0));
+  else if(t>=T_FOLD0&&t<T_FOLD1) u=1-easeIO((t-T_FOLD0)/(T_FOLD1-T_FOLD0));
+  else if(t>=T_FOLD1) u=0;
+  var f=applyUnfold(u);
+
+  /* --- 相机/朝向 --- */
+  var yaw;
+  if(t<T_UNFOLD0) yaw=-0.55+0.18*Math.min(t,T_UNFOLD0);
+  else if(t<T_FOLD0) yaw=lerp(-0.55+0.18*T_UNFOLD0,0,easeIO((t-T_UNFOLD0)/1.6));
+  else if(t<T_FOLD1) yaw=0;
+  else yaw=0.18*(t-T_FOLD1);
+  rig.rotation.y=yaw; rig.rotation.x=0.14-0.05*f;
+  camera.position.set(0,1.4-0.55*f,8.9+2.4*f);
+  camera.lookAt(0,-0.12*f,0);
+
+  /* --- 按钮状态 --- */
+  var pOpen=(t>=T_ARRIVE&&t<=T_PRESS1)?(t-T_ARRIVE)/(T_PRESS1-T_ARRIVE):-1;
+  var pClose=(t>=T_ARRIVE2&&t<=T_PRESS2)?(t-T_ARRIVE2)/(T_PRESS2-T_ARRIVE2):-1;
+  setBtnPress(btnOpen,pOpen);
+  setBtnPress(btnClose,pClose);
+  btnOpen.style.opacity=(u>0.5)?'0.55':'1';
+  btnClose.style.opacity=(u>0.5)?'1':'0.55';
+  setRipple(BTN1[0],BTN1[1], pOpen>=0?Math.min(1,pOpen*1.6):-1);
+  var rp=pClose>=0?Math.min(1,pClose*1.6):-1;
+  if(rp>=0) setRipple(BTN2[0],BTN2[1],rp);
+  else if(pOpen<0) setRipple(0,0,-1);
+
+  /* --- 光标路径 --- */
+  var cx,cy;
+  if(t<T_IDLE){ cx=SPAWN[0]; cy=SPAWN[1]; }
+  else if(t<T_ARRIVE){ var s1=seg(t,T_IDLE,T_ARRIVE);
+    cx=lerp(SPAWN[0],BTN1[0],s1); cy=lerp(SPAWN[1],BTN1[1],s1); }
+  else if(t<T_HOLDEND){ var s2=seg(t,T_PRESS1,T_PRESS1+0.9);
+    cx=lerp(BTN1[0],REST[0],s2); cy=lerp(BTN1[1],REST[1],s2); }
+  else if(t<T_ARRIVE2){ var s3=seg(t,T_HOLDEND,T_ARRIVE2);
+    cx=lerp(REST[0],BTN2[0],s3); cy=lerp(REST[1],BTN2[1],s3); }
+  else if(t<T_FOLD1){ var s4=seg(t,T_PRESS2,T_PRESS2+0.9);
+    cx=lerp(BTN2[0],EXIT[0],s4); cy=lerp(BTN2[1],EXIT[1],s4); }
+  else { cx=EXIT[0]; cy=EXIT[1]; }
+  cursorAt(cx,cy);
+
+  /* --- 字幕 --- */
+  if(t>=T_UNFOLD0&&t<T_UNFOLD1-0.1) setCap('变！正方体展开啦——',1);
+  else if(t>=T_UNFOLD1&&t<T_HOLDEND) setCap('数一数，一共 6 个面！',1);
+  else if(t>=T_FOLD0&&t<T_FOLD1) setCap('唰——又变回正方体啦！',1);
+  else if(t>=T_FOLD1) setCap('这就是正方体的展开图！',t<T_FOLD1+0.5?(t-T_FOLD1)/0.5:1);
+  else setCap('',0);
+
+  /* --- 汇总卡片 --- */
+  var cp=0;
+  if(t>=T_UNFOLD1&&t<T_UNFOLD1+0.45) cp=(t-T_UNFOLD1)/0.45;
+  else if(t>=T_UNFOLD1+0.45&&t<T_FOLD0) cp=1+0.015*Math.sin((t-T_UNFOLD1-0.45)*3);
+  else if(t>=T_FOLD0&&t<T_FOLD0+0.3) cp=1-(t-T_FOLD0)/0.3;
+  chip.style.transform='scale('+Math.max(0,cp).toFixed(3)+')';
+
+  renderer.render(scene,camera);
+};
+setT(0);
+/* 无头拍帧模式：?frame=N → 渲染第 N 帧（t=N/30 秒）后保持静止 */
+if (location.search.indexOf('frame=')>=0){
+  var mFrame=parseInt(location.search.match(/frame=(\d+)/)[1],10);
+  setT(mFrame/30);
+}
+/* 录制模式：?play=1 时由外部 __start() 启动；?auto=1 时加载后立即自动播放
+   （前 1.2 秒停在 t=0 作为片头定格，时间轴整体后移） */
+if (location.search.indexOf('frame=')<0 &&
+    (location.search.indexOf('play')>=0 || location.search.indexOf('auto')>=0)){
+  window.__started=false;
+  window.__start=function(){
+    if(window.__started) return; window.__started=true;
+    var t0=performance.now();
+    (function loop(now){
+      var t=(now-t0)/1000-1.2;                 // 1.2 秒片头定格
+      setT(Math.max(0,Math.min(t,T_END)));
+      if(t<T_END) requestAnimationFrame(loop);
+    })(t0);
+  };
+  if (location.search.indexOf('auto')>=0) window.__start();
+}
+})();
+</script>
+</body>
+</html>

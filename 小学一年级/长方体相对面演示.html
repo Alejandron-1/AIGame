@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>长方体相对面的秘密 · 认识立体图形</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+    background:
+      radial-gradient(2px 2px at 12% 22%, rgba(255,255,255,.9) 50%, transparent 51%),
+      radial-gradient(2px 2px at 78% 14%, rgba(255,255,255,.8) 50%, transparent 51%),
+      radial-gradient(2px 2px at 32% 78%, rgba(255,255,255,.7) 50%, transparent 51%),
+      radial-gradient(3px 3px at 88% 62%, rgba(255,236,170,.9) 50%, transparent 51%),
+      radial-gradient(2px 2px at 55% 38%, rgba(255,255,255,.6) 50%, transparent 51%),
+      radial-gradient(2px 2px at 8% 70%, rgba(255,255,255,.7) 50%, transparent 51%),
+      linear-gradient(160deg,#2b1a5e 0%,#4a2a8a 45%,#7b3fb8 100%);
+    user-select:none;-webkit-user-select:none;}
+  #stage{position:absolute;inset:0;}
+  #stage canvas{touch-action:none;cursor:grab;}
+  #stage canvas:active{cursor:grabbing;}
+
+  .title{position:absolute;top:2.2%;left:50%;transform:translateX(-50%);
+    color:#ffe9a8;font-size:clamp(20px,3.2vw,34px);font-weight:900;letter-spacing:2px;
+    text-shadow:0 2px 0 #5a2e9e,0 4px 14px rgba(0,0,0,.45);white-space:nowrap;text-align:center;}
+  .title small{display:block;font-size:.52em;color:#e8d5ff;font-weight:400;letter-spacing:4px;margin-top:4px;}
+
+  #counter{position:absolute;top:2.6%;right:2.2%;background:rgba(255,255,255,.16);
+    border:2px solid rgba(255,233,168,.65);color:#ffe9a8;border-radius:999px;
+    padding:8px 18px;font-size:clamp(14px,1.6vw,20px);font-weight:700;backdrop-filter:blur(4px);}
+  #counter b{color:#fff;font-size:1.2em;}
+
+  #caption{position:absolute;left:50%;bottom:15.5%;transform:translateX(-50%);
+    background:rgba(30,12,64,.78);border:2px solid rgba(255,233,168,.5);color:#fff;
+    border-radius:16px;padding:10px 22px;font-size:clamp(14px,1.9vw,22px);font-weight:700;
+    opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:94vw;}
+  #caption.show{opacity:1;}
+
+  #bar{position:absolute;left:50%;bottom:4.5%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .btn{border:none;cursor:pointer;border-radius:999px;padding:13px 26px;
+    font-size:clamp(15px,1.9vw,22px);font-weight:900;
+    box-shadow:0 5px 0 rgba(0,0,0,.35),0 10px 22px rgba(0,0,0,.4);transition:transform .12s,box-shadow .12s;white-space:nowrap;}
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.35),0 5px 12px rgba(0,0,0,.4);}
+  .btn.fb{background:linear-gradient(180deg,#ffb3b3,#ff8a8a);color:#7a1f1f;}
+  .btn.lr{background:linear-gradient(180deg,#ffe1a3,#ffd166);color:#7a5210;}
+  .btn.tb{background:linear-gradient(180deg,#dcc5ff,#c3a1f5);color:#4a2a86;}
+  .btn.ghost{background:rgba(255,255,255,.14);color:#ffe9a8;border:2px solid rgba(255,233,168,.55);box-shadow:none;
+    font-size:clamp(13px,1.5vw,18px);padding:12px 20px;}
+  .btn:disabled{opacity:.45;cursor:default;transform:none;}
+  .btn.done::after{content:" ✓";}
+
+  #banner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;}
+  #banner.show{display:flex;}
+  #banner .card{background:rgba(255,251,235,.97);border-radius:26px;padding:4vh 5vw;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .5s cubic-bezier(.2,1.6,.4,1);}
+  #banner .card h1{margin:0;color:#e84545;font-size:clamp(24px,4.5vw,52px);}
+  #banner .card p{margin:10px 0 0;color:#4b2a86;font-size:clamp(15px,2.2vw,26px);font-weight:700;}
+  @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+  .confetti{position:absolute;width:12px;height:18px;border-radius:3px;top:-24px;
+    animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.85}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="title">🧙‍♂️ 魔法学院 · 长方体相对面的秘密<small>点一点面，看看相对的面是不是一模一样</small></div>
+<div id="counter">配对进度：<b id="cnt">0</b> / 3 对</div>
+<div id="caption"></div>
+<div id="bar">
+  <button class="btn fb" id="btn-fb">前 ⇄ 后</button>
+  <button class="btn lr" id="btn-lr">左 ⇄ 右</button>
+  <button class="btn tb" id="btn-tb">上 ⇄ 下</button>
+  <button class="btn ghost" id="btnReset">🔁 重置</button>
+</div>
+<div id="banner"><div class="card"><h1>🎉 相对的面，一模一样！</h1><p>前对后 · 左对右 · 上对下 —— 长方体的 6 个面正好 3 对哦～</p></div></div>
+
+<script src="three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ================= 设计 =================
+   长方体 6 个薄面板拼成，字面朝外：前/后(红) 左/右(金) 上/下(紫)
+   点击一对 → ①两面高亮 ②"起点面"脱离、翻过头顶飞到对面、完全重合(镜头跟转到对面)
+             ③飞回原位，这对面留发光记号
+   全部 3 对完成 → 庆祝
+============================================ */
+var W=2.4, H=1.3, D=1.7, T=0.08;           // 长(左右) 高(上下) 深(前后)
+var COLORS = { red:0xe84545, gold:0xf5a623, purple:0x8e5bd6 };
+var GLOW_LAND = 0x8a6d2a, GLOW_DONE = 0x3a2a14;   // 重合闪光 / 完成后常亮
+
+// 面板定义：key 字 / 尺寸 / 位置 / 旋转 / 颜色
+var DEFS = {
+  f : {ch:'前', w:W, h:H,   pos:[0,0, D/2], rot:['y',0]      , color:COLORS.red   },
+  b : {ch:'后', w:W, h:H,   pos:[0,0,-D/2], rot:['y',Math.PI], color:COLORS.red   },
+  r : {ch:'右', w:D, h:H,   pos:[ W/2,0,0], rot:['y',Math.PI/2],color:COLORS.gold  },
+  l : {ch:'左', w:D, h:H,   pos:[-W/2,0,0], rot:['y',-Math.PI/2],color:COLORS.gold },
+  t : {ch:'上', w:W, h:D,   pos:[0, H/2,0], rot:['x',-Math.PI/2],color:COLORS.purple},
+  bo: {ch:'下', w:W, h:D,   pos:[0,-H/2,0], rot:['x', Math.PI/2],color:COLORS.purple}
+};
+// 三个配对演示：from面飞到to面；落点=对面外侧齐平；翻滚轴与相机落点
+var PAIRS = {
+  fb:{ from:'f', to:'b', an:'前', bn:'后', btn:'btn-fb',
+       land:{yaw:Math.PI  , rigX:0.16, camY:1.0 , camZ:8.6},
+       landPos:[0,0,-D/2-T], flipAxis:'y', C:[0, 2.1, 0.35] },
+  lr:{ from:'r', to:'l', an:'右', bn:'左', btn:'btn-lr',
+       land:{yaw:Math.PI/2, rigX:0.16, camY:1.0 , camZ:8.6},
+       landPos:[-W/2-T,0,0], flipAxis:'y', C:[0, 2.1, 0.35] },
+  tb:{ from:'t', to:'bo', an:'上', bn:'下', btn:'btn-tb',
+       land:{yaw:0, rigX:0, camY:-2.6, camZ:7.4},
+       landPos:[0,-H/2-T,0], flipAxis:'x', C:[0, 1.9, 2.2] }
+};
+var FRONT = {yaw:0, rigX:0.16, camY:1.0, camZ:8.6};
+
+/* ================= 场景 ================= */
+var stage = document.getElementById('stage');
+var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+renderer.setClearColor(0x000000, 0);
+if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+stage.appendChild(renderer.domElement);
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(42, 16/9, 0.1, 100);
+camera.position.set(0, FRONT.camY, FRONT.camZ); camera.lookAt(0,0,0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.82));
+var sun = new THREE.DirectionalLight(0xfff2d0, 0.75); sun.position.set(4,6,5); scene.add(sun);
+var fill = new THREE.DirectionalLight(0xc9a8ff, 0.3); fill.position.set(-5,-2,-4); scene.add(fill);
+
+var rig = new THREE.Group(); scene.add(rig);
+var root = new THREE.Group(); rig.add(root);
+
+/* ---------- 贴图 ---------- */
+function faceTexture(ch, colorHex, w, h){
+  var cw=256, chh=Math.max(96, Math.round(256*h/w));
+  var c=document.createElement('canvas'); c.width=cw; c.height=chh;
+  var g=c.getContext('2d');
+  g.fillStyle='#'+colorHex.toString(16).padStart(6,'0'); g.fillRect(0,0,cw,chh);
+  g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=11;
+  g.beginPath();
+  var m=12, r=22;
+  if (g.roundRect) g.roundRect(m,m,cw-2*m,chh-2*m,r); else g.rect(m,m,cw-2*m,chh-2*m);
+  g.stroke();
+  g.fillStyle='#fff';
+  g.font='900 '+Math.round(chh*0.52)+'px "Microsoft YaHei",sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.shadowColor='rgba(0,0,0,.28)'; g.shadowBlur=8; g.shadowOffsetY=5;
+  g.fillText(ch, cw/2, chh/2+chh*0.04);
+  var tex=new THREE.CanvasTexture(c);
+  if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/* ---------- 搭 6 个面板 + 暗色内衬 ---------- */
+var panels={}, mats={};
+Object.keys(DEFS).forEach(function(k){
+  var d=DEFS[k];
+  var geo=new THREE.BoxGeometry(d.w, d.h, T);
+  var side=new THREE.MeshLambertMaterial({color:d.color});
+  var front=new THREE.MeshLambertMaterial({map:faceTexture(d.ch,d.color,d.w,d.h)});
+  var back=new THREE.MeshLambertMaterial({color:d.color});
+  var ms=[side,side.clone(),side.clone(),side.clone(),front,back];
+  var p=new THREE.Mesh(geo, ms);
+  p.position.set(d.pos[0],d.pos[1],d.pos[2]);
+  if (d.rot[0]==='y') p.rotation.y=d.rot[1]; else p.rotation.x=d.rot[1];
+  p.userData.faceKey=k;
+  root.add(p); panels[k]=p; mats[k]=ms;
+});
+// 内衬：从前/右/上面板被取走时，盒子里看进去是深色，不会"穿帮"
+var liner=new THREE.Mesh(new THREE.BoxGeometry(W-0.06,H-0.06,D-0.06),
+  new THREE.MeshBasicMaterial({color:0x241539, side:THREE.BackSide}));
+root.add(liner);
+
+function setEmissive(keys, hex){
+  keys.forEach(function(k){
+    mats[k].forEach(function(m){ if(m.emissive) m.emissive.setHex(hex); });
+  });
+}
+
+/* ---------- 状态机 ---------- */
+var PHASE_DUR=[0.9, 1.5, 1.8, 1.5];   // 高亮 / 飞行 / 重合 / 返回
+var demo=null, demoPair=null, phase=0, phaseT=0;
+var done={}, busy=false;
+var yaw=-0.42, pitch=FRONT.rigX, spin=true, spinVel=0.12, everDemo=false;
+
+var captionEl=document.getElementById('caption');
+var cntEl=document.getElementById('cnt');
+var banner=document.getElementById('banner');
+var captionTimer=null;
+function say(msg,ms){
+  captionEl.textContent=msg; captionEl.classList.add('show');
+  clearTimeout(captionTimer);
+  if (ms!==0) captionTimer=setTimeout(function(){captionEl.classList.remove('show');}, ms||2400);
+}
+function updateCnt(){
+  cntEl.textContent=Object.keys(done).length;
+  if (Object.keys(done).length===3){
+    banner.classList.add('show'); confetti();
+    say('长方体相对的面，全都一模一样！',0);
+    setTimeout(function(){banner.classList.remove('show');},4600);
+  }
+}
+function confetti(){
+  var cs=['#e84545','#f5a623','#8e5bd6','#2eb872','#3aa0ff','#ff7ab8'];
+  for (var i=0;i<40;i++){
+    var p=document.createElement('div');
+    p.className='confetti';
+    p.style.left=(Math.random()*100)+'vw';
+    p.style.background=cs[i%cs.length];
+    p.style.animationDuration=(1.6+Math.random()*1.4)+'s';
+    p.style.animationDelay=(Math.random()*0.5)+'s';
+    document.body.appendChild(p);
+    setTimeout(function(el){return function(){el.remove();};}(p),3800);
+  }
+}
+
+function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function easeIO(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;}
+function bez(p0,c,p2,t){
+  var a=(1-t)*(1-t), b=2*t*(1-t), cc=t*t;
+  return [a*p0[0]+b*c[0]+cc*p2[0], a*p0[1]+b*c[1]+cc*p2[1], a*p0[2]+b*c[2]+cc*p2[2]];
+}
+
+var camState={yaw:FRONT.yaw, rigX:FRONT.rigX, camY:FRONT.camY, camZ:FRONT.camZ};
+var camFrom=null;
+function camLerpTo(target,dur){ camFrom={}; for(var k in camState) camFrom[k]=camState[k]; camTo=target; camT=0; camDur=dur; }
+var camTo=null, camT=0, camDur=1;
+
+function startPair(id){
+  if (busy) return;
+  busy=true; everDemo=true; spin=false;
+  demoPair=PAIRS[id]; demoId=id; phase=0; phaseT=0;
+  camLerpTo(FRONT, 0.5);
+  setEmissive([demoPair.from, demoPair.to], 0x6a5620);
+  say('看一看：「'+demoPair.an+'」和「'+demoPair.bn+'」是一对相对的面！', PHASE_DUR[0]*1000);
+}
+var demoId=null;
+
+function stepDemo(dt){
+  phaseT+=dt/PHASE_DUR[phase];
+  var P=demoPair, fp=panels[P.from], d=DEFS[P.from];
+  var baseRot=(d.rot[0]==='y')?d.rot[1]:d.rot[1];
+  var p;
+  if (phaseT>=1){                       // 进入下一阶段
+    phaseT=0; phase++;
+    if (phase===1){
+      camLerpTo(P.land, PHASE_DUR[1]);
+      say('「'+P.an+'」面飞过去喽——', PHASE_DUR[1]*1000);
+    } else if (phase===2){
+      setEmissive([P.from,P.to], GLOW_LAND);
+      say('看！和「'+P.bn+'」面完全重合——一模一样！', 2000);
+    } else if (phase===3){
+      camLerpTo(FRONT, PHASE_DUR[3]);
+      say('「'+P.an+'」面回到原位：'+P.an+'、'+P.bn+'完全相同 ✓', PHASE_DUR[3]*1000+800);
+    } else {                            // 结束
+      fp.position.set(d.pos[0],d.pos[1],d.pos[2]);
+      if (d.rot[0]==='y') fp.rotation.y=d.rot[1]; else fp.rotation.x=d.rot[1];
+      setEmissive([P.from,P.to], GLOW_DONE);
+      done[demoId]=true;
+      document.getElementById(P.btn).classList.add('done');
+      updateCnt();
+      busy=false; demoPair=null; demoId=null; phase=0; phaseT=0;
+      if (Math.abs(camState.yaw)>Math.PI*1.5) yaw=0;   // 归一化
+      pitch=camState.rigX;
+      return;
+    }
+  }
+  if (phase===0){                       // 高亮脉动
+    var k=0.5+0.5*Math.sin(phaseT*Math.PI*4);
+    var hex=new THREE.Color(0x6a5620).multiplyScalar(0.4+0.9*k);
+    setEmissive([P.from,P.to], hex.getHex());
+  } else if (phase===1){                // 飞行
+    p=easeIO(phaseT);
+    var pos=bez(d.pos, P.C, P.landPos, p);
+    fp.position.set(pos[0],pos[1],pos[2]);
+    var extra=Math.PI*p;
+    if (P.flipAxis==='y') fp.rotation.y=baseRot+extra; else fp.rotation.x=baseRot+extra;
+    var s=1+0.08*Math.sin(Math.PI*p);
+    fp.scale.set(s,s,s);
+  } else if (phase===2){                // 重合停留：闪光衰减到常亮
+    p=phaseT;
+    var c=new THREE.Color(GLOW_LAND).lerp(new THREE.Color(GLOW_DONE), p);
+    setEmissive([P.from,P.to], c.getHex());
+  } else if (phase===3){                // 返回
+    p=easeIO(phaseT);
+    var pos2=bez(P.landPos, P.C, d.pos, p);
+    fp.position.set(pos2[0],pos2[1],pos2[2]);
+    var extra2=Math.PI*(1-p);
+    if (P.flipAxis==='y') fp.rotation.y=baseRot+extra2; else fp.rotation.x=baseRot+extra2;
+    var s2=1+0.08*Math.sin(Math.PI*p);
+    fp.scale.set(s2,s2,s2);
+  }
+}
+
+/* ---------- 指针：拖拽 + 点面 ---------- */
+var dragging=false, moved=false, px=0, py=0;
+var dom=renderer.domElement;
+dom.addEventListener('pointerdown', function(e){
+  if (busy) return;
+  dragging=true; moved=false; px=e.clientX; py=e.clientY;
+  dom.setPointerCapture(e.pointerId);
+});
+dom.addEventListener('pointermove', function(e){
+  if(!dragging) return;
+  var dx=e.clientX-px, dy=e.clientY-py;
+  if (Math.abs(dx)+Math.abs(dy)>6) moved=true;
+  yaw+=dx*0.006; pitch=Math.max(-0.9,Math.min(0.9,pitch+dy*0.006));
+  px=e.clientX; py=e.clientY;
+});
+dom.addEventListener('pointerup', function(e){
+  dragging=false;
+  if (!moved && !busy) pick(e);
+});
+function pick(e){
+  var r=dom.getBoundingClientRect();
+  var m=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+  var rc=new THREE.Raycaster(); rc.setFromCamera(m,camera);
+  var hits=rc.intersectObjects(root.children,true);
+  for (var i=0;i<hits.length;i++){
+    var k=hits[i].object.userData.faceKey;
+    if (!k) continue;
+    var id=Object.keys(PAIRS).find(function(p){return PAIRS[p].from===k||PAIRS[p].to===k;});
+    if (id && !done[id]) startPair(id);
+    else if (id) say('这一对已经看过啦，看看别的面吧！',1800);
+    return;
+  }
+}
+
+/* ---------- 按钮 ---------- */
+Object.keys(PAIRS).forEach(function(id){
+  document.getElementById(PAIRS[id].btn).addEventListener('click', function(){ startPair(id); });
+});
+document.getElementById('btnReset').addEventListener('click', function(){
+  if (busy) return;
+  done={};
+  Object.keys(PAIRS).forEach(function(id){ document.getElementById(PAIRS[id].btn).classList.remove('done'); });
+  Object.keys(DEFS).forEach(function(k){ setEmissive([k],0x000000); });
+  cntEl.textContent='0'; banner.classList.remove('show');
+  camLerpTo(FRONT,0.6);
+  say('好，我们再来一遍！',1500);
+});
+
+/* ---------- 自适应 ---------- */
+function resize(){
+  var w=stage.clientWidth, h=stage.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize); resize();
+
+/* ---------- 主循环 ---------- */
+var last=performance.now();
+(function loop(now){
+  requestAnimationFrame(loop);
+  var dt=Math.min(0.05,(now-last)/1000); last=now;
+
+  if (demoPair){
+    stepDemo(dt);
+    if (camTo){
+      camT+=dt/camDur;
+      var e=easeIO(Math.min(1,camT));
+      for (var k in camTo) camState[k]=camFrom[k]+(camTo[k]-camFrom[k])*e;
+      if (camT>=1) camTo=null;
+    }
+    yaw=camState.yaw; pitch=camState.rigX;
+  } else {
+    if (spin && !dragging){ yaw-=spinVel*dt; }
+    camState.yaw=yaw; camState.rigX=pitch;
+    if (camTo){                          // 重置等场合的相机回位
+      camT+=dt/camDur;
+      var e2=easeIO(Math.min(1,camT));
+      for (var k2 in camTo) camState[k2]=camFrom[k2]+(camTo[k2]-camFrom[k2])*e2;
+      if (camT>=1) camTo=null;
+      yaw=camState.yaw; pitch=camState.rigX;
+    }
+  }
+  rig.rotation.y=yaw; rig.rotation.x=pitch;
+  camera.position.set(0,camState.camY,camState.camZ);
+  camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+})(last);
+})();
+</script>
+</body>
+</html>
