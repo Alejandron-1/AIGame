@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>正方体展开 · 纯净版拍片页</title>
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#ffffff;}
+  #scene{position:absolute;left:0;top:0;width:1920px;height:1080px;}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<script src="three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ================= 时间轴（秒） =================
+   0.0–0.7 折叠正方体定格（隐藏棱=灰虚线）
+   0.7–3.1 沿棱展开：上下两面 → 左右两面 → 背面（真实展开顺序）
+   3.1–5.0 十字展开图定格
+   ?frame=N → 渲染第 N 帧（30fps）
+============================================ */
+var FPS=30, T_HOLD=0.7, T_UNF0=0.7, T_UNF1=3.1, T_END=5.0;
+var S=2, T=0.10, E=0.12;
+var EDGE=0x17181c, DASHC=0x70757e;
+
+var FACE_DEFS=[
+  {key:'m2',fk:'F', pos:[0,0,0],  parent:null,  axis:'y',angle:0},
+  {key:'m3',fk:'R', pos:[ 1,0,0], parent:'m2h', axis:'y',angle: Math.PI/2},
+  {key:'m4',fk:'B', pos:[ 3,0,0], parent:'m3h', axis:'y',angle: Math.PI/2},
+  {key:'m1',fk:'L', pos:[-1,0,0], parent:'m2h', axis:'y',angle:-Math.PI/2},
+  {key:'t', fk:'T', pos:[0, 1,0], parent:'m2h', axis:'x',angle:-Math.PI/2},
+  {key:'b', fk:'Bo',pos:[0,-1,0], parent:'m2h', axis:'x',angle: Math.PI/2}
+];
+var ORDER=['m2','m3','m4','m1','t','b'];
+var DELAY={t:0,b:0.04,m1:0.16,m3:0.16,m4:0.34}, MAXD=0.34;
+var NRM={F:[0,0,1],B:[0,0,-1],R:[1,0,0],L:[-1,0,0],T:[0,1,0],Bo:[0,-1,0]};
+function EK(a,b){ return a<b ? a+b : b+a; }
+var EDGES={};
+[['F','R'],['F','L'],['F','T'],['F','Bo'],
+ ['B','R'],['B','L'],['B','T'],['B','Bo'],
+ ['R','T'],['R','Bo'],['L','T'],['L','Bo']].forEach(function(p){
+  EDGES[EK(p[0],p[1])]={n1:NRM[p[0]],n2:NRM[p[1]]};
+});
+var BORDER_MAP={
+  F :{T:'T', Bo:'Bo', L:'L', R:'R'},
+  B :{T:'T', Bo:'Bo', L:'R', R:'L'},
+  R :{T:'T', Bo:'Bo', L:'F', R:'B'},
+  L :{T:'T', Bo:'Bo', L:'B', R:'F'},
+  T :{T:'B', Bo:'F', L:'L', R:'R'},
+  Bo:{T:'F', Bo:'B', L:'L', R:'R'}
+};
+
+/* ================= 场景 ================= */
+var renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(1);
+renderer.setClearColor(0xffffff,1);
+renderer.setSize(1920,1080);
+document.getElementById('scene').appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(40,1920/1080,0.1,100);
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+/* 白底淡影 */
+var shC=document.createElement('canvas'); shC.width=shC.height=256;
+var sg=shC.getContext('2d');
+var grd=sg.createRadialGradient(128,128,20,128,128,124);
+grd.addColorStop(0,'rgba(70,80,105,0.18)');
+grd.addColorStop(1,'rgba(70,80,105,0)');
+sg.fillStyle=grd; sg.fillRect(0,0,256,256);
+var shadow=new THREE.Mesh(new THREE.PlaneGeometry(17,14),
+  new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,depthWrite:false}));
+shadow.position.z=-2.8; scene.add(shadow);
+
+/* ---------- 面板：只有四条棱线，无面 ---------- */
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE});
+var hinges={},panels={};
+var hStick=new THREE.BoxGeometry(S+E,E,E);
+var vStick=new THREE.BoxGeometry(E,S+E,E);
+var sticksByEdge={}; Object.keys(EDGES).forEach(function(k){sticksByEdge[k]=[];});
+function addStick(panel,x,y,geo,ek){
+  var st=new THREE.Mesh(geo,edgeMat);
+  st.position.set(x,y,0);
+  panel.add(st); sticksByEdge[ek].push(st);
+}
+ORDER.forEach(function(key){
+  var d=FACE_DEFS.find(function(f){return f.key===key;});
+  var panel=new THREE.Group();
+  var borders=[[0, S/2,0,hStick,'T'],[0,-S/2,0,hStick,'Bo'],
+               [-S/2,0,0,vStick,'L'],[ S/2,0,0,vStick,'R']];
+  borders.forEach(function(bd){
+    addStick(panel,bd[0],bd[1],bd[3],EK(d.fk,BORDER_MAP[d.fk][bd[4]]));
+  });
+  if(!d.parent){
+    panel.position.set(d.pos[0],d.pos[1],d.pos[2]);
+    root.add(panel); panels[key]=panel; return;
+  }
+  var h=new THREE.Group();
+  h.userData.axis=d.axis; h.userData.angle=d.angle; h.userData.delay=DELAY[key]||0;
+  panel.position.set(d.axis==='y'?Math.sign(d.pos[0]):0, d.axis==='x'?Math.sign(d.pos[1]):0,0);
+  h.add(panel);
+  if(d.parent==='m2h'){ h.position.set(d.pos[0],d.pos[1],d.pos[2]); root.add(h); }
+  else { h.position.set(2,0,0); hinges[d.parent].add(h); }
+  hinges[key+'h']=h; panels[key]=panel;
+});
+
+/* ---------- 12 条虚线棱：一节节小方段拼成（粗虚线） ---------- */
+var dashGroups={};
+var dashMat=new THREE.MeshBasicMaterial({color:DASHC});
+function dashedEdge(ek,a,b){
+  var A=new THREE.Vector3(a[0],a[1],a[2]), B=new THREE.Vector3(b[0],b[1],b[2]);
+  var dir=B.clone().sub(A), len=dir.length(); dir.normalize();
+  var dash=0.22, gap=0.13;
+  var g=new THREE.Group();
+  var geo=new THREE.BoxGeometry(dash,E,E);
+  var q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  var n=Math.floor((len-dash)/(dash+gap))+1;
+  for(var i=0;i<n;i++){
+    var m=new THREE.Mesh(geo,dashMat);
+    m.position.copy(A).addScaledVector(dir, dash/2 + i*(dash+gap));
+    m.quaternion.copy(q);
+    g.add(m);
+  }
+  g.visible=false;
+  root.add(g); dashGroups[ek]=g;
+}
+dashedEdge(EK('F','R'),[ 1,-1,0],[ 1, 1,0]);  dashedEdge(EK('F','L'),[-1,-1,0],[-1, 1,0]);
+dashedEdge(EK('F','T'),[-1, 1,0],[ 1, 1,0]);  dashedEdge(EK('F','Bo'),[-1,-1,0],[ 1,-1,0]);
+dashedEdge(EK('B','R'),[ 1,-1,-2],[ 1, 1,-2]);dashedEdge(EK('B','L'),[-1,-1,-2],[-1, 1,-2]);
+dashedEdge(EK('B','T'),[-1, 1,-2],[ 1, 1,-2]);dashedEdge(EK('B','Bo'),[-1,-1,-2],[ 1,-1,-2]);
+dashedEdge(EK('R','T'),[ 1, 1,0],[ 1, 1,-2]); dashedEdge(EK('R','Bo'),[ 1,-1,0],[ 1,-1,-2]);
+dashedEdge(EK('L','T'),[-1, 1,0],[-1, 1,-2]); dashedEdge(EK('L','Bo'),[-1,-1,0],[-1,-1,-2]);
+
+/* ================= 姿态驱动 ================= */
+function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function easeIO(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+var _v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_view=new THREE.Vector3();
+function setT(t){
+  /* 展开进度 */
+  var u=0;
+  if(t>=T_UNF0&&t<T_UNF1) u=easeIO((t-T_UNF0)/(T_UNF1-T_UNF0));
+  else if(t>=T_UNF1) u=1;
+  var f=smooth(u);
+  root.position.set(-f,0,1-f);
+  for(var k in hinges){
+    var h=hinges[k];
+    var q=smooth((u-h.userData.delay)/(1-MAXD));
+    var a=h.userData.angle*(1-q);
+    if(h.userData.axis==='y') h.rotation.y=a; else h.rotation.x=a;
+  }
+  /* 相机：立体视角 → 正对展开图 */
+  var e=(t<=T_UNF0)?0:(t>=T_UNF1?1:easeIO((t-T_UNF0)/(T_UNF1-T_UNF0)));
+  rig.rotation.y=lerp(-0.52,0,e);
+  rig.rotation.x=lerp(0.30,0.10,e);
+  camera.position.set(0,lerp(0,0.2,e),lerp(8.8,11.6,e));
+  camera.lookAt(0,0,0);
+  /* 隐藏棱判定：折叠且两面都背对相机 → 实线换成虚线 */
+  var folded=(u<0.02);
+  _view.copy(camera.position).normalize();
+  for(var ek in EDGES){
+    var ed=EDGES[ek];
+    var hidden=true;
+    if(folded){
+      _v1.set(ed.n1[0],ed.n1[1],ed.n1[2]).applyQuaternion(rig.quaternion);
+      _v2.set(ed.n2[0],ed.n2[1],ed.n2[2]).applyQuaternion(rig.quaternion);
+      hidden=(_v1.dot(_view)<0)&&(_v2.dot(_view)<0);
+    }
+    var dl=dashGroups[ek], ss=sticksByEdge[ek];
+    if(!dl||!ss) continue;
+    dl.visible=folded&&hidden;
+    for(var i=0;i<ss.length;i++) ss[i].visible=!folded||!hidden;
+  }
+  renderer.render(scene,camera);
+}
+var mF=location.search.match(/frame=(\d+)/);
+setT(mF?parseInt(mF[1],10)/FPS:0);
+})();
+</script>
+</body>
+</html>

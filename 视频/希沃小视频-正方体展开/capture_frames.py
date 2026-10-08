@@ -13,9 +13,11 @@ EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 HERE = os.path.dirname(os.path.abspath(__file__))
 FRAMES = os.path.join(HERE, 'frames')
 TMP = r"C:\Users\aa109\AppData\Local\Temp"
-URL = "http://127.0.0.1:8643/render_page.html?frame=%d"
+URL = "http://127.0.0.1:8643/render_net.html?frame=%d"
 TOTAL = 354
 BUDGET = int(sys.argv[1]) if len(sys.argv) > 1 else 520   # 秒，时间预算
+if len(sys.argv) > 2: TOTAL = int(sys.argv[2])
+if len(sys.argv) > 3: URL = "http://127.0.0.1:8643/" + sys.argv[3] + "&frame=%d"
 
 def capture(i, tag):
     f = os.path.join(FRAMES, 'frame_%04d.png' % i)
