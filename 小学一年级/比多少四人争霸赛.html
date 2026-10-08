@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>比多少 · 四人争霸赛</title>
+<style>
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+    background:linear-gradient(180deg,#fdfefe 0%,#eef3fa 100%);
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+
+  /* ===== 顶部标题与工具 ===== */
+  #top{position:absolute;top:0;left:0;right:0;height:7vh;display:flex;align-items:center;justify-content:center;gap:18px;z-index:5;}
+  #top .t{font-size:clamp(18px,2.6vh,28px);font-weight:900;color:#3a3f5c;letter-spacing:2px;}
+  #top .btn{border:none;background:#fff;border:2px solid #dfe5f0;color:#6b7280;border-radius:999px;
+    padding:4px 14px;font-size:clamp(12px,1.8vh,18px);font-weight:700;cursor:pointer;}
+  #roundTag{position:absolute;top:1.4vh;right:2vw;color:#3a3f5c;font-size:clamp(14px,2.2vh,24px);
+    font-weight:900;background:#fff;border:2px solid #dfe5f0;border-radius:999px;padding:4px 18px;z-index:5;}
+
+  /* ===== 题目区 ===== */
+  #qwrap{position:absolute;top:7vh;left:0;right:0;height:50vh;display:flex;align-items:center;justify-content:center;}
+  #qcard{width:min(88vw,132vh);background:#fff;border:4px solid #3a3f5c;border-radius:18px;
+    padding:2.2vh 1.6vw 1.4vh;box-shadow:0 10px 30px rgba(90,100,140,.14);text-align:center;}
+  .row{display:flex;justify-content:flex-start;gap:1.1vw;min-height:8vh;align-items:center;
+    margin:1vh 0 1vh 1vw;flex-wrap:wrap;}
+  .row svg,.row .fm{flex:0 0 auto;}
+  .row .fm{font-size:7.4vh;line-height:1;transform:translateY(.4vh);}
+  #qline{display:flex;align-items:center;justify-content:center;gap:.9vw;
+    font-size:clamp(20px,4.4vh,42px);font-weight:900;color:#3a3f5c;margin-top:1vh;}
+  #qline svg{transform:translateY(4px);}
+  #qline .fm{font-size:5.2vh;line-height:1;}
+  #qmeta{display:flex;align-items:center;justify-content:space-between;margin-top:1.2vh;}
+  #qno{color:#9aa1b5;font-weight:700;font-size:clamp(12px,1.9vh,18px);}
+  #timerBar{flex:1;height:1.4vh;background:#eef1f7;border-radius:99px;margin:0 1vw;overflow:hidden;}
+  #timerFill{height:100%;width:100%;background:linear-gradient(90deg,#7ee0a3,#f7c948);border-radius:99px;}
+  #timerFill.hurry{background:linear-gradient(90deg,#ffb199,#ff6b6b);}
+  #feedback{position:absolute;top:12vh;left:50%;transform:translateX(-50%);z-index:8;
+    background:#fff;border:3px solid #3a3f5c;border-radius:16px;padding:1vh 3vw;
+    font-size:clamp(18px,3.4vh,32px);font-weight:900;display:none;box-shadow:0 10px 30px rgba(90,100,140,.2);}
+  #feedback.ok{color:#1f9d55;border-color:#1f9d55;}
+  #feedback.no{color:#e84545;border-color:#e84545;}
+
+  /* ===== 四个选手区 ===== */
+  #zones{position:absolute;left:0;right:0;bottom:0;height:43vh;display:grid;
+    grid-template-columns:1fr 1fr 1fr 1fr;gap:1vw;padding:1vh 1vw 1.2vh;}
+  .zone{background:#fff;border-radius:18px;border-top:1vh solid var(--c);
+    box-shadow:0 8px 24px rgba(90,100,140,.12);display:flex;flex-direction:column;
+    padding:1vh .8vw 1vh;gap:1vh;position:relative;overflow:hidden;}
+  .zone.locked::after{content:"✗ 本题已作答";position:absolute;inset:0;background:rgba(240,243,248,.82);
+    color:#9aa1b5;font-size:clamp(16px,3vh,28px);font-weight:900;display:flex;
+    align-items:center;justify-content:center;border-radius:18px;}
+  .zhead{display:flex;align-items:center;justify-content:center;gap:.6vw;}
+  .zhead .ava{font-size:clamp(20px,4vh,36px);}
+  .zhead .nm{font-weight:900;color:var(--c);font-size:clamp(14px,2.6vh,24px);}
+  .zhead .sc{margin-left:auto;background:var(--c);color:#fff;border-radius:999px;
+    padding:.5vh 1.2vw;font-weight:900;font-size:clamp(16px,3vh,26px);min-width:8vh;text-align:center;}
+  .sc.pop{animation:pop .4s;}
+  @keyframes pop{50%{transform:scale(1.35)}}
+  .opts{display:flex;flex-direction:column;gap:1vh;flex:1;}
+  .opt{flex:1;border:none;border-radius:14px;font-weight:900;cursor:pointer;
+    font-size:clamp(16px,3.4vh,30px);color:#fff;
+    box-shadow:0 4px 0 rgba(0,0,0,.18);transition:transform .08s, filter .15s;}
+  .opt:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
+  .opt.same{background:linear-gradient(180deg,#ffc94d,#f5a623);}
+  .opt.more{background:linear-gradient(180deg,#ff8f8f,#e84545);}
+  .opt.less{background:linear-gradient(180deg,#7ec8ff,#3a8fd9);}
+  .opt.right{animation:blink .35s 2;filter:brightness(1.15);}
+  @keyframes blink{50%{outline:5px solid #1f9d55;outline-offset:2px}}
+  .opt.wrong{animation:shake .3s;}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .keyhint{position:absolute;right:.6vw;bottom:.4vh;color:#c3c9d6;font-size:clamp(9px,1.5vh,13px);font-weight:700;}
+
+  /* ===== 遮罩层：开始/倒计时/结算 ===== */
+  #overlay{position:absolute;inset:0;background:rgba(250,252,255,.96);z-index:20;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3vh;}
+  #ovTitle{font-size:clamp(30px,7vh,64px);font-weight:900;color:#3a3f5c;letter-spacing:4px;}
+  #ovBig{font-size:clamp(50px,16vh,150px);font-weight:900;color:#e84545;min-height:20vh;}
+  #ovSub{font-size:clamp(14px,2.4vh,22px);color:#6b7280;font-weight:700;}
+  #rank{display:flex;gap:2vw;}
+  .rk{background:#fff;border:3px solid var(--c);border-radius:18px;padding:2vh 2vw;text-align:center;
+    box-shadow:0 8px 24px rgba(90,100,140,.14);min-width:14vw;}
+  .rk .medal{font-size:clamp(24px,5vh,44px);}
+  .rk .nm{font-weight:900;color:var(--c);font-size:clamp(15px,2.8vh,24px);margin:.6vh 0;}
+  .rk .pts{font-weight:900;color:#3a3f5c;font-size:clamp(22px,5vh,44px);}
+  .rk .st{color:#f5a623;font-size:clamp(12px,2.2vh,18px);min-height:2.6vh;}
+  #btnStart{border:none;cursor:pointer;border-radius:999px;padding:2.4vh 6vw;
+    font-size:clamp(20px,4vh,36px);font-weight:900;color:#fff;
+    background:linear-gradient(180deg,#ff9a9a,#e84545);box-shadow:0 6px 0 #b73838,0 12px 26px rgba(232,69,69,.35);}
+  #btnStart:active{transform:translateY(4px);box-shadow:0 2px 0 #b73838;}
+</style>
+</head>
+<body>
+<div id="top"><span class="t">比多少 · 四人争霸赛</span>
+  <button class="btn" id="btnSound">🔊 声音</button>
+  <button class="btn" id="btnFull">⛶ 全屏</button>
+</div>
+<div id="roundTag">第 1 轮</div>
+
+<div id="qwrap">
+  <div id="qcard">
+    <div class="row" id="rowTop"></div>
+    <div class="row" id="rowBot"></div>
+    <div id="qline"></div>
+    <div id="qmeta">
+      <span id="qno">第 1 题 / 共 3 题</span>
+      <div id="timerBar"><div id="timerFill"></div></div>
+    </div>
+  </div>
+</div>
+<div id="feedback"></div>
+
+<div id="zones"></div>
+
+<div id="overlay">
+  <div id="ovTitle">比多少 · 四人争霸赛</div>
+  <div id="ovBig" style="display:none"></div>
+  <div id="rank" style="display:none"></div>
+  <div id="ovSub">每人守一列 · 听"开始"后抢答 · 最快答对 +2 分，其他答对 +1 分<br>答案只有三个：<b style="color:#f5a623">一样多</b>　<b style="color:#e84545">多</b>　<b style="color:#3a8fd9">少</b></div>
+  <button id="btnStart">开始比赛</button>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* ================= 基础数据 ================= */
+var SHAPES={
+  star :{name:'星星',fill:'#a8c4e8',svg:'M50 6 L61 38 L95 38 L67 58 L78 92 L50 71 L22 92 L33 58 L5 38 L39 38 Z'},
+  circle:{name:'圆形',fill:'#8f8fe8',svg:'M50 8 A42 42 0 1 1 49.9 8 Z'},
+  square:{name:'正方形',fill:'#8dc63f',svg:'M14 14 H86 V86 H14 Z'},
+  heart:{name:'爱心',fill:'#e84545',svg:'M50 88 C20 62 8 44 8 30 C8 16 20 8 31 8 C40 8 47 13 50 21 C53 13 60 8 69 8 C80 8 92 16 92 30 C92 44 80 62 50 88 Z'},
+  tri  :{name:'三角形',fill:'#f5e042',svg:'M50 8 L94 88 H6 Z'}
+};
+/* 水果素材（来自《水果分配·余数教学》） */
+var FRUITS={
+  apple:{name:'苹果',emo:'🍎'},
+  orange:{name:'橙子',emo:'🍊'},
+  berry:{name:'草莓',emo:'🍓'},
+  grape:{name:'葡萄',emo:'🍇'},
+  peach:{name:'桃子',emo:'🍑'},
+  lemon:{name:'柠檬',emo:'🍋'}
+};
+var KEYS=['star','circle','square','heart','tri','apple','orange','berry','grape','peach','lemon'];
+var ANSWERS=['same','more','less'];
+var ANAME={same:'一样多',more:'多',less:'少'};
+
+var PLAYERS=[
+  {nm:'1号 小猴',ava:'🐵',c:'#e84545',keys:{KeyA:'same',KeyS:'more',KeyD:'less'},kh:'A S D'},
+  {nm:'2号 小兔',ava:'🐰',c:'#3a8fd9',keys:{KeyJ:'same',KeyK:'more',KeyL:'less'},kh:'J K L'},
+  {nm:'3号 小熊',ava:'🐻',c:'#8dc63f',keys:{Digit1:'same',Digit2:'more',Digit3:'less'},kh:'1 2 3'},
+  {nm:'4号 小猫',ava:'🐱',c:'#8e5bd6',keys:{Digit7:'same',Digit8:'more',Digit9:'less'},kh:'7 8 9'}
+];
+
+/* ================= 状态 ================= */
+var state='idle';          // idle countdown question feedback roundEnd
+var round=0, qIdx=0;
+var curQ=null, firstCorrect=null;
+var answered=[], scores=[0,0,0,0], stars=[0,0,0,0];
+var Q_TIME=12, tRemain=0, tTimer=null;
+var soundOn=true;
+
+/* ================= DOM ================= */
+function $(id){return document.getElementById(id);}
+var zonesEl=$('zones'), ovEl=$('overlay'), fbEl=$('feedback');
+
+/* ================= 音效 ================= */
+var AC=null;
+function tone(f,dur,type,vol,when){
+  if(!soundOn) return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    var o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.value=vol||0.18; o.connect(g); g.connect(AC.destination);
+    var t=AC.currentTime+(when||0);
+    o.start(t); g.gain.setValueAtTime(vol||0.18,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function sndOK(){tone(880,0.16);tone(1320,0.2,'sine',0.15,0.09);}
+function sndNo(){tone(180,0.22,'square',0.12);}
+function sndTick(){tone(1200,0.05,'sine',0.06);}
+function sndWin(){[523,659,784,1046].forEach(function(f,i){tone(f,0.22,'sine',0.16,i*0.13);});}
+
+/* ================= 图标（形状=SVG，水果=emoji） ================= */
+function icon(item,size){
+  var it=SHAPES[item]||FRUITS[item];
+  if(it.emo) return '<span class="fm">'+it.emo+'</span>';
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100">'+
+    '<path d="'+it.svg+'" fill="'+it.fill+'" stroke="#2b3850" stroke-width="4" stroke-linejoin="round"/></svg>';
+}
+
+/* ================= 出题 ================= */
+function pickCount(){ return 1+Math.floor(Math.random()* (round===0?5:round===1?6:9)); }
+function makeQ(){
+  var ka=KEYS[Math.floor(Math.random()*KEYS.length)];
+  var kb=ka; while(kb===ka) kb=KEYS[Math.floor(Math.random()*KEYS.length)];
+  var a=pickCount(), b=pickCount();
+  if(round>=1&&a===b&&Math.random()<0.6) b=(a%(round===1?6:9))+1;   // 适度降低相同率
+  var aTop=Math.random()<0.5;
+  return {ka:ka,kb:kb,a:a,b:b,aTop:aTop,
+    ans: a>b?'more':(a<b?'less':'same')};
+}
+function makeRound(){
+  var qs=[];
+  for(var i=0;i<3;i++){
+    var q=makeQ();
+    if(i===2&&qs.length===2&&qs[0].ans===qs[1].ans&&qs[1].ans===q.ans){
+      while(q.ans===qs[0].ans){ q=makeQ(); }   // 避免一轮三题答案全同
+    }
+    qs.push(q);
+  }
+  return qs;
+}
+var roundQs=[];
+
+/* ================= 渲染选手区 ================= */
+PLAYERS.forEach(function(p,i){
+  var z=document.createElement('div');
+  z.className='zone'; z.style.setProperty('--c',p.c); z.id='zone'+i;
+  z.innerHTML=
+    '<div class="zhead"><span class="ava">'+p.ava+'</span><span class="nm">'+p.nm+'</span>'+
+    '<span class="sc" id="sc'+i+'">0</span></div>'+
+    '<div class="opts">'+
+      '<button class="opt same" data-p="'+i+'" data-a="same">一样多</button>'+
+      '<button class="opt more" data-p="'+i+'" data-a="more">多</button>'+
+      '<button class="opt less" data-p="'+i+'" data-a="less">少</button>'+
+    '</div>'+
+    '<span class="keyhint">'+p.kh+'</span>';
+  zonesEl.appendChild(z);
+});
+zonesEl.addEventListener('pointerdown',function(ev){
+  var b=ev.target.closest('.opt');
+  if(!b) return;
+  ev.preventDefault();
+  answer(+b.dataset.p, b.dataset.a, b);
+});
+window.addEventListener('keydown',function(ev){
+  if(ev.repeat) return;
+  PLAYERS.forEach(function(p,i){
+    var a=p.keys[ev.code];
+    if(a&&state==='question'){
+      var btn=document.querySelector('#zone'+i+' .opt.'+a);
+      answer(i,a,btn);
+    }
+  });
+});
+
+/* ================= 流程 ================= */
+function showOverlay(title,big,rank){
+  ovEl.style.display='flex';
+  $('ovTitle').textContent=title;
+  $('ovBig').style.display=big!==null?'block':'none';
+  $('ovBig').textContent=big||'';
+  var rk=$('rank');
+  if(rank){
+    rk.style.display='flex'; rk.innerHTML='';
+    var order=PLAYERS.map(function(p,i){return i;})
+      .sort(function(x,y){return scores[y]-scores[x]||x-y;});
+    var medals=['🥇','🥈','🥉','4th'];
+    order.forEach(function(pi,pos){
+      var p=PLAYERS[pi];
+      rk.innerHTML+='<div class="rk" style="--c:'+p.c+'">'+
+        '<div class="medal">'+(pos<3?medals[pos]:medals[3])+'</div>'+
+        '<div class="nm">'+p.ava+' '+p.nm+'</div>'+
+        '<div class="pts">'+scores[pi]+' 分</div>'+
+        '<div class="st">'+(stars[pi]? '⚡最快 ×'+stars[pi] :'&nbsp;')+'</div></div>';
+    });
+  } else rk.style.display='none';
+}
+function hideOverlay(){ ovEl.style.display='none'; }
+
+function countdown(cb){
+  state='countdown';
+  showOverlay('第 '+(round+1)+' 轮','3');
+  var n=3;
+  var t=setInterval(function(){
+    n--;
+    if(n>0){ $('ovBig').textContent=n; sndTick(); }
+    else{
+      clearInterval(t); hideOverlay(); cb();
+    }
+  },800);
+  sndTick();
+}
+
+function startRound(){
+  roundQs=makeRound(); qIdx=0;
+  $('roundTag').textContent='第 '+(round+1)+' 轮';
+  countdown(nextQuestion);
+}
+
+function nextQuestion(){
+  curQ=roundQs[qIdx];
+  firstCorrect=null; answered=[false,false,false,false];
+  // 题面
+  var top=curQ.aTop?{s:curQ.ka,n:curQ.a}:{s:curQ.kb,n:curQ.b};
+  var bot=curQ.aTop?{s:curQ.kb,n:curQ.b}:{s:curQ.ka,n:curQ.a};
+  var sz=curQ.a>6||curQ.b>6?'4.6vh':'6vh';
+  $('rowTop').innerHTML=Array(top.n).join('x').split('x').map(function(){return icon(top.s,'7vh');}).join('');
+  $('rowBot').innerHTML=Array(bot.n).join('x').split('x').map(function(){return icon(bot.s,'7vh');}).join('');
+  $('qline').innerHTML=icon(curQ.ka,'5vh')+'<span>比</span>'+icon(curQ.kb,'5vh')+'<span>（　　）</span>';
+  $('qno').textContent='第 '+(qIdx+1)+' 题 / 共 3 题';
+  // 解锁按钮
+  PLAYERS.forEach(function(p,i){ $('zone'+i).classList.remove('locked'); });
+  fbEl.style.display='none';
+  // 计时
+  state='question'; tRemain=Q_TIME;
+  $('timerFill').style.width='100%'; $('timerFill').classList.remove('hurry');
+  clearInterval(tTimer);
+  tTimer=setInterval(function(){
+    tRemain-=0.1;
+    var pct=Math.max(0,tRemain/Q_TIME*100);
+    $('timerFill').style.width=pct+'%';
+    if(tRemain<=4) $('timerFill').classList.add('hurry');
+    if(tRemain<=0){ clearInterval(tTimer); endQuestion(); }
+  },100);
+}
+
+function answer(pi,a,btn){
+  if(state!=='question'||answered[pi]) return;
+  answered[pi]=true;
+  if(a===curQ.ans){
+    var gain=(firstCorrect===null)?2:1;
+    if(firstCorrect===null) firstCorrect=pi;
+    scores[pi]+=gain;
+    if(gain===2) stars[pi]++;
+    var sc=$('sc'+pi); sc.textContent=scores[pi];
+    sc.classList.remove('pop'); void sc.offsetWidth; sc.classList.add('pop');
+    if(btn){btn.classList.remove('wrong');btn.classList.add('right');}
+    sndOK();
+  }else{
+    if(btn){btn.classList.add('wrong'); setTimeout(function(){btn.classList.remove('wrong');},450);}
+    sndNo();
+  }
+  $('zone'+pi).classList.add('locked');
+  var allDone=answered.every(function(x){return x;});
+  if(allDone){ clearInterval(tTimer); setTimeout(endQuestion,550); }
+}
+
+function endQuestion(){
+  if(state!=='question') return;
+  state='feedback';
+  fbEl.style.display='block';
+  fbEl.className= firstCorrect!==null?'ok':'no';
+  var msg='正确答案：'+ANAME[curQ.ans];
+  if(firstCorrect!==null){
+    msg+='　⚡ '+PLAYERS[firstCorrect].ava+' 最快 +2';
+  }
+  fbEl.textContent=msg;
+  tone(curQ.ans?880:880,0.1);
+  setTimeout(function(){
+    btnResetOpts();
+    qIdx++;
+    if(qIdx<3) nextQuestion();
+    else endRound();
+  },1600);
+}
+function btnResetOpts(){
+  document.querySelectorAll('.opt').forEach(function(b){b.classList.remove('right');});
+}
+
+function endRound(){
+  state='roundEnd';
+  fbEl.style.display='none';
+  sndWin();
+  showOverlay('第 '+(round+1)+' 轮结束',null,true);
+  $('ovSub').innerHTML='比分累计到下一轮 · 准备好了就继续！';
+  var bs=$('btnStart'); bs.textContent='下一轮 ▶';
+  round++;
+}
+
+/* ================= 遮罩按钮 ================= */
+$('btnStart').addEventListener('click',function(){
+  if(state==='idle'||state==='roundEnd'){ hideOverlay(); startRound(); }
+});
+$('btnSound').addEventListener('click',function(){
+  soundOn=!soundOn;
+  this.textContent=soundOn?'🔊 声音':'🔇 静音';
+});
+$('btnFull').addEventListener('click',function(){
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+});
+
+/* 初始遮罩 */
+showOverlay('比多少 · 四人争霸赛',null,null);
+/* 调试口：自动化测试读取当前题（不影响游戏） */
+window.__peek=function(){ return curQ?{a:curQ.a,b:curQ.b,ans:curQ.ans}:null; };
+window.__state=function(){ return state; };
+})();
+</script>
+</body>
+</html>

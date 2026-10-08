@@ -1,0 +1,1 @@
+{"error":{"message":"JSON parse error: Invalid UTF-8 middle byte 0xf3; nested exception is com.fasterxml.jackson.databind.JsonMappingException: Invalid UTF-8 middle byte 0xf3\n at [Source: (org.springframework.util.StreamUtils$NonClosingInputStream); line: 1, column: 32] (through reference chain: com.wd.paas.api.domain.v4.audio.AudioSpeechRequest[\"input\"])","code":"400"}}
