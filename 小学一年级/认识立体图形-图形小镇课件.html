@@ -283,6 +283,9 @@ button { font-family:inherit; cursor:pointer; }
 /* ================= 幕布彩蛋 ================= */
 #cv { position:fixed; inset:0; z-index:990; pointer-events:none; }
 
+/* ================= 嵌入模式（URL 加 ?embed=1：隐藏壳层，纯游戏画面，供希沃网页组件内嵌） ================= */
+body.embed #lessonChip, body.embed #pageno, body.embed #navbtns, body.embed #fsBtn, body.embed #progress { display:none !important; }
+
 /* ================= 手机适配（≤760px） ================= */
 @media (max-width:760px) {
     .slide { padding:52px 14px 90px; }
@@ -1528,6 +1531,9 @@ regSlide({
 /* ================= 启动 ================= */
 renderDeck();
 (function boot() {
+    if (new URLSearchParams(location.search).get('embed') === '1') {
+        document.body.classList.add('embed');   /* 嵌入模式：隐藏壳层 */
+    }
     const h = (location.hash || '').replace('#','');
     const i = SLIDES.findIndex(s => s.id === h);
     go(i >= 0 ? i : 0);

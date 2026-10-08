@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>立体图形图片 · 拍摄页</title>
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#ffffff;}
+  #scene{position:absolute;left:0;top:0;width:1920px;height:1080px;}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<script src="three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* 四种立体：?shape=cube|cuboid|cylinder|ball
+   统一风格：白底 + 半透明彩色面 + 黑色粗边框 + 灰色粗虚线（隐藏棱） */
+var E=0.12, TH=0.10, EDGE=0x111111;
+var COLORS={cube:0x3fa3ef, cuboid:0xe8463f, cylinder:0x47c167, ball:0xf0923f};
+var qm=location.search.match(/shape=(\w+)/);
+var SHAPE=qm?qm[1]:'cube';
+var COLOR=COLORS[SHAPE];
+
+var renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(1);
+renderer.setClearColor(0xffffff,1);
+renderer.setSize(1920,1080);
+document.getElementById('scene').appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(40,1920/1080,0.1,100);
+scene.add(new THREE.AmbientLight(0xffffff,0.85));
+var sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(4,6,5); scene.add(sun);
+
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+var shC=document.createElement('canvas'); shC.width=shC.height=256;
+var sg=shC.getContext('2d');
+var grd=sg.createRadialGradient(128,128,20,128,128,124);
+grd.addColorStop(0,'rgba(70,80,105,0.20)');
+grd.addColorStop(1,'rgba(70,80,105,0)');
+sg.fillStyle=grd; sg.fillRect(0,0,256,256);
+var shadow=new THREE.Mesh(new THREE.PlaneGeometry(17,14),
+  new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shC),transparent:true,depthWrite:false}));
+shadow.position.z=-2.8; scene.add(shadow);
+
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE});
+var dashMat=new THREE.MeshBasicMaterial({color:0x565b66,depthTest:false,transparent:true});
+
+function EK(a,b){ return a<b ? a+b : b+a; }
+var NRM={F:[0,0,1],B:[0,0,-1],R:[1,0,0],L:[-1,0,0],T:[0,1,0],Bo:[0,-1,0]};
+var EDGES={};
+[['F','R'],['F','L'],['F','T'],['F','Bo'],
+ ['B','R'],['B','L'],['B','T'],['B','Bo'],
+ ['R','T'],['R','Bo'],['L','T'],['L','Bo']].forEach(function(p){
+  EDGES[EK(p[0],p[1])]={n1:NRM[p[0]],n2:NRM[p[1]]};
+});
+var BORDER_MAP={
+  F :{T:'T', Bo:'Bo', L:'L', R:'R'},
+  B :{T:'T', Bo:'Bo', L:'R', R:'L'},
+  R :{T:'T', Bo:'Bo', L:'F', R:'B'},
+  L :{T:'T', Bo:'Bo', L:'B', R:'F'},
+  T :{T:'B', Bo:'F', L:'L', R:'R'},
+  Bo:{T:'F', Bo:'B', L:'L', R:'R'}
+};
+var sticksByEdge={}; Object.keys(EDGES).forEach(function(k){sticksByEdge[k]=[];});
+var dashGroups={};
+var dashMat2=new THREE.MeshBasicMaterial({color:0x565b66,depthTest:false,transparent:true});
+function dashedSeg(parent,a,b){
+  var A=new THREE.Vector3(a[0],a[1],a[2]), B=new THREE.Vector3(b[0],b[1],b[2]);
+  var dir=B.clone().sub(A), len=dir.length(); dir.normalize();
+  var dash=0.22, gap=0.13;
+  var geo=new THREE.BoxGeometry(dash,E,E);
+  var q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  var n=Math.floor((len-dash)/(dash+gap))+1;
+  for(var i=0;i<n;i++){
+    var m=new THREE.Mesh(geo,dashMat2);
+    m.position.copy(A).addScaledVector(dir, dash/2 + i*(dash+gap));
+    m.quaternion.copy(q);
+    parent.add(m);
+  }
+}
+
+var sticks=[];
+if (SHAPE==='cube'||SHAPE==='cuboid'){
+  var W,H,D;
+  if (SHAPE==='cuboid'){ W=2.8; H=1.7; D=1.4; } else { W=2; H=2; D=2; }
+  var FACE_DEFS=[
+    {key:'m2',fk:'F', w:W, h:H, pos:[0,0,0],        off:[0,0],    parent:null,  hx:0,  axis:'y',angle:0},
+    {key:'m3',fk:'R', w:D, h:H, pos:[W/2,0,0],      off:[D/2,0],  parent:'m2h', hx:0,  axis:'y',angle: Math.PI/2},
+    {key:'m4',fk:'B', w:W, h:H, pos:[W/2+D,0,0],    off:[W/2,0],  parent:'m3h', hx:D,  axis:'y',angle: Math.PI/2},
+    {key:'m1',fk:'L', w:D, h:H, pos:[-W/2,0,0],     off:[-D/2,0], parent:'m2h', hx:0,  axis:'y',angle:-Math.PI/2},
+    {key:'t', fk:'T', w:W, h:D, pos:[0, H/2,0],     off:[0,D/2],  parent:'m2h', hx:0,  axis:'x',angle:-Math.PI/2},
+    {key:'b', fk:'Bo',w:W, h:D, pos:[0,-H/2,0],     off:[0,-D/2], parent:'m2h', hx:0,  axis:'x',angle: Math.PI/2}
+  ];
+  var faceMat=new THREE.MeshLambertMaterial({color:COLOR,transparent:true,opacity:0.72,depthWrite:false});
+  FACE_DEFS.forEach(function(d){
+    var g=new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(d.w,d.h,TH),faceMat));
+    [[0, d.h/2,0, d.w+E, false,'T'],[0,-d.h/2,0, d.w+E, false,'Bo'],
+     [-d.w/2,0,0, d.h+E, true,'L'],[ d.w/2,0,0, d.h+E, true,'R']].forEach(function(bd){
+      var geo=bd[4]?new THREE.BoxGeometry(E,bd[3],E):new THREE.BoxGeometry(bd[3],E,E);
+      var st=new THREE.Mesh(geo,edgeMat);
+      st.position.set(bd[0],bd[1],0);
+      var ek=EK(d.fk,BORDER_MAP[d.fk][bd[5]]);
+      st.userData.edgeKey=ek;
+      sticksByEdge[ek].push(st);
+      g.add(st); sticks.push(st);
+    });
+    g.position.set(d.pos[0],d.pos[1],d.pos[2]);
+    root.add(g);
+  });
+  /* 内部虚线（折叠态被挡的三条棱） */
+  var X=W/2, Y=H/2, ZB=-D;
+  var DG={};
+  var mk=function(ek,a,b){ var g=new THREE.Group(); g.renderOrder=5; dashedSeg(g,a,b); g.visible=false; root.add(g); DG[ek]=g; };
+  mk(EK('F','R'),[ X,-Y,0],[ X, Y,0]);  mk(EK('F','L'),[-X,-Y,0],[-X, Y,0]);
+  mk(EK('F','T'),[-X, Y,0],[ X, Y,0]);  mk(EK('F','Bo'),[-X,-Y,0],[ X,-Y,0]);
+  mk(EK('B','R'),[ X,-Y,ZB],[ X, Y,ZB]);mk(EK('B','L'),[-X,-Y,ZB],[-X, Y,ZB]);
+  mk(EK('B','T'),[-X, Y,ZB],[ X, Y,ZB]);mk(EK('B','Bo'),[-X,-Y,ZB],[ X,-Y,ZB]);
+  mk(EK('R','T'),[ X, Y,0],[ X, Y,ZB]); mk(EK('R','Bo'),[ X,-Y,0],[ X,-Y,ZB]);
+  mk(EK('L','T'),[-X, Y,0],[-X, Y,ZB]); mk(EK('L','Bo'),[-X,-Y,0],[-X,-Y,ZB]);
+  root.position.z=D/2;
+} else {
+  var R;
+  if (SHAPE==='cylinder'){
+    R=0.95; var CH=2.3;
+    var lat=new THREE.Mesh(new THREE.CylinderGeometry(R,R,CH,48,1,true),
+      new THREE.MeshLambertMaterial({color:COLOR,transparent:true,opacity:0.72,depthWrite:false,side:THREE.DoubleSide}));
+    var capT=new THREE.Mesh(new THREE.CircleGeometry(R,48),
+      new THREE.MeshLambertMaterial({color:COLOR,transparent:true,opacity:0.78,depthWrite:false,side:THREE.DoubleSide}));
+    capT.rotation.x=-Math.PI/2; capT.position.y=CH/2;
+    var capB=capT.clone(); capB.position.y=-CH/2;
+    root.add(lat,capT,capB);
+  } else {
+    R=1.15;
+    var sph=new THREE.Mesh(new THREE.SphereGeometry(R,48,32),
+      new THREE.MeshLambertMaterial({color:COLOR,transparent:true,opacity:0.85,depthWrite:false}));
+    root.add(sph);
+  }
+}
+rig.add(camera?null:null);
+scene.add(camera);
+
+/* 相机位（与 GIF 一致的视角） */
+rig.rotation.y=-0.52; rig.rotation.x=0.30;
+camera.position.set(0,0.2,9.2);
+camera.lookAt(0,0,0);
+
+/* 曲面形的轮廓与虚线（在 rig 局部坐标里按相机方向计算） */
+if (SHAPE==='cylinder'||SHAPE==='ball'){
+  var v=camera.position.clone();
+  var inv=new THREE.Quaternion().copy(rig.quaternion).invert();
+  v.applyQuaternion(inv);
+  var phi=Math.atan2(v.z,v.x);
+  var tube=E/2;
+  if (SHAPE==='cylinder'){
+    var CH2=2.3;
+    /* 顶部整圈实线 */
+    var rimT=new THREE.Mesh(new THREE.TorusGeometry(R,tube,10,72),edgeMat);
+    rimT.rotation.x=-Math.PI/2; rimT.position.y=CH2/2; root.add(rimT);
+    /* 底部前半圈实线（朝向相机的一半） */
+    var rimF=new THREE.Mesh(new THREE.TorusGeometry(R,tube,10,48,Math.PI),edgeMat);
+    rimF.rotation.x=-Math.PI/2; rimF.rotation.z=phi-Math.PI/2; rimF.position.y=-CH2/2; root.add(rimF);
+    /* 两侧竖轮廓线 */
+    [phi+Math.PI/2, phi-Math.PI/2].forEach(function(th){
+      var line=new THREE.Mesh(new THREE.BoxGeometry(E,CH2+E,E),edgeMat);
+      line.position.set(R*Math.cos(th),0,R*Math.sin(th));
+      root.add(line);
+    });
+    /* 底部后半圈虚线（被挡） */
+    var steps=10;
+    for(var i=0;i<steps;i++){
+      var a0=phi+Math.PI/2 + (i+0.15)*(Math.PI/steps);
+      var a1=phi+Math.PI/2 + (i+0.85)*(Math.PI/steps);
+      var A=[R*Math.cos(a0),-CH2/2,R*Math.sin(a0)], B=[R*Math.cos(a1),-CH2/2,R*Math.sin(a1)];
+      var grp=new THREE.Group(); grp.renderOrder=5; dashedSeg(grp,A,B); root.add(grp);
+    }
+  } else {
+    /* 球：正对相机的轮廓圆 + 倾斜的虚线大圆 */
+    var dir=v.clone().normalize();
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(R*0.985,tube,10,72),edgeMat);
+    ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir);
+    root.add(ring);
+    var eq=new THREE.Group(); eq.renderOrder=5;
+    eq.rotation.x=0.38; eq.rotation.z=-0.14;
+    var rr=R*0.99, n=Math.floor((2*Math.PI*rr)/0.35);
+    var g0=new THREE.BoxGeometry(0.20,E,E);
+    var qe=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,1));
+    for(var k=0;k<n;k++){
+      var th=k/n*2*Math.PI;
+      var m=new THREE.Mesh(g0,dashMat2);
+      m.position.set(rr*Math.cos(th),rr*Math.sin(th),0);
+      m.quaternion.copy(qe);
+      m.rotation.z=th;
+      eq.add(m);
+    }
+    root.add(eq);
+  }
+}
+renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>
