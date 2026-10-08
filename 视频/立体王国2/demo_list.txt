@@ -1,0 +1,2 @@
+file 'C:/Users/aa109/Desktop/AIGame/视频/立体王国2/demo_seg1.mp4'
+file 'C:/Users/aa109/Desktop/AIGame/视频/立体王国2/demo_seg2.mp4'
