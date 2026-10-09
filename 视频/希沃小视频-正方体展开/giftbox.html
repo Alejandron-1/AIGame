@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>魔法学院 · 礼物盒生成</title>
+<style>
+  html,body{margin:0;padding:0;width:1200px;height:1200px;overflow:hidden;background:transparent;}
+  #stage{position:absolute;inset:0;}
+  svg{width:1200px;height:1200px;display:block;}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(function(){
+'use strict';
+/* ?c=blue|red|green|orange|purple|gold  →  一只卡通礼物盒（透明底 PNG 用） */
+var qm=location.search.match(/c=(\w+)/);
+var KEY=qm?qm[1]:'gold';
+var C={
+  blue:  {main:'#4aa3ef', pale:'#d9ecff', dark:'#2f7fc4', ribbon:'#e84545'},
+  red:   {main:'#e8463f', pale:'#ffdad6', dark:'#c23330', ribbon:'#f5c542'},
+  green: {main:'#47c167', pale:'#daf4e3', dark:'#339e50', ribbon:'#f5c542'},
+  orange:{main:'#f0923f', pale:'#ffe7cd', dark:'#c97426', ribbon:'#e84545'},
+  purple:{main:'#8e5bd6', pale:'#e9defc', dark:'#6f42ad', ribbon:'#f5c542'},
+  gold:  {main:'#f5c542', pale:'#fff4c9', dark:'#d9a420', ribbon:'#e84545'}
+}[KEY];
+var OUT='#2a2a4a', SW=13;
+
+function star(x,y,r,fill,op){
+  return '<path d="M'+x+' '+(y-r)+' L'+(x+r*0.28)+' '+(y-r*0.28)+' L'+(x+r)+' '+y+
+    ' L'+(x+r*0.28)+' '+(y+r*0.28)+' L'+x+' '+(y+r)+' L'+(x-r*0.28)+' '+(y+r*0.28)+
+    ' L'+(x-r)+' '+y+' L'+(x-r*0.28)+' '+(y-r*0.28)+' Z" fill="'+fill+'" opacity="'+(op||1)+'"/>';
+}
+function dot(x,y,r){
+  return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#ffffff" opacity="0.92"/>';
+}
+
+var s='';
+s+='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1200" height="1200">';
+
+/* ---- 盒身（大留白面板，中间不放丝带） ---- */
+s+='<rect x="130" y="330" width="740" height="600" rx="42" fill="'+C.pale+'" stroke="'+OUT+'" stroke-width="'+SW+'"/>';
+s+='<rect x="158" y="820" width="684" height="82" rx="34" fill="'+C.dark+'" opacity="0.20"/>';
+s+='<rect x="158" y="360" width="684" height="26" rx="13" fill="#ffffff" opacity="0.5"/>';
+
+/* ---- 盖子 ---- */
+s+='<rect x="92" y="196" width="816" height="158" rx="34" fill="'+C.main+'" stroke="'+OUT+'" stroke-width="'+SW+'"/>';
+s+='<rect x="120" y="218" width="760" height="30" rx="15" fill="#ffffff" opacity="0.38"/>';
+s+='<rect x="430" y="203" width="140" height="144" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="10"/>';
+s+='<rect x="452" y="203" width="26" height="144" fill="#ffffff" opacity="0.35"/>';
+
+/* ---- 蝴蝶结：左右环 + 结 + 两条飘带 ---- */
+s+='<path d="M500 168 C 430 40, 240 58, 252 168 C 258 250, 388 238, 500 168 Z" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="12" stroke-linejoin="round"/>';
+s+='<path d="M500 168 C 570 40, 760 58, 748 168 C 742 250, 612 238, 500 168 Z" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="12" stroke-linejoin="round"/>';
+/* 环内折痕 */
+s+='<path d="M500 168 C 440 130, 380 118, 320 140" fill="none" stroke="'+OUT+'" stroke-width="8" stroke-linecap="round" opacity="0.55"/>';
+s+='<path d="M500 168 C 560 130, 620 118, 680 140" fill="none" stroke="'+OUT+'" stroke-width="8" stroke-linecap="round" opacity="0.55"/>';
+/* 两条飘带（末端 V 形缺口） */
+s+='<path d="M478 226 C 440 306, 402 352, 344 396 L 404 390 L 372 448 C 448 386, 482 300, 502 240 Z" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="11" stroke-linejoin="round"/>';
+s+='<path d="M522 226 C 560 306, 598 352, 656 396 L 596 390 L 628 448 C 552 386, 518 300, 498 240 Z" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="11" stroke-linejoin="round"/>';
+/* 结 */
+s+='<rect x="452" y="118" width="96" height="112" rx="26" fill="'+C.ribbon+'" stroke="'+OUT+'" stroke-width="12"/>';
+s+='<rect x="470" y="136" width="24" height="76" rx="12" fill="#ffffff" opacity="0.4"/>';
+
+/* ---- 蝴蝶结白点（参考图同款波点） ---- */
+s+=dot(330,104,13)+dot(292,152,10)+dot(386,84,10)+dot(352,178,9);
+s+=dot(670,104,13)+dot(708,152,10)+dot(614,84,10)+dot(648,178,9);
+s+=dot(398,330,9)+dot(352,382,7)+dot(602,330,9)+dot(648,382,7);
+s+=dot(500,140,0.1);
+
+/* ---- 魔法星星点缀 ---- */
+s+=star(118,96,30,'#f5c542');
+s+=star(892,70,22,'#f5c542');
+s+=star(936,268,16,'#ff9fb0',0.95);
+s+=star(64,268,16,'#7ec8ff',0.95);
+s+=star(830,486,18,'#f5c542',0.9);
+s+=star(150,486,14,'#ff9fb0',0.85);
+s+=dot(210,80,7)+dot(806,150,6)+dot(66,410,6)+dot(940,420,7);
+
+s+='</svg>';
+document.getElementById('stage').innerHTML=s;
+})();
+</script>
+</body>
+</html>

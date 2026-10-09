@@ -557,24 +557,23 @@ regSlide({
     }
 });
 /* ================= 游戏1 认识小伙伴（点一个 → 同类照片向中间靠拢 → 虚化变成图形） ================= */
-const G1_ITEMS = [   /* 与「按形状分一分」同一套 16 件：长方体5 正方体4 圆柱3 球4 */
-    ['box','cuboid'],['rubik','cube'],['tea','cyl'],['football','ball'],
-    ['microwave','cuboid'],['dice','cube'],['glue','cyl'],['greyball','ball'],
-    ['toothpaste','cuboid'],['woodcube','cube'],['board','cyl'],['pingpong','ball'],
-    ['bin','cuboid'],['gift','cube'],['ink','cuboid'],['basketball','ball']
+const G1_ITEMS = [   /* 课本 P4 原始 10 件：正方体2 长方体3 圆柱3 球2 */
+    ['rubik','cube'],['block','cube'],
+    ['toothpaste','cuboid'],['ink','cuboid'],['shoebox','cuboid'],
+    ['tea','cyl'],['glue','cyl'],['board','cyl'],
+    ['basketball','ball'],['pingpong','ball']
 ];
 regSlide({
     id:'game1', title:'第1关 认识小伙伴',
     html: () => `
         <div class="htitle" style="font-size:clamp(26px,3.6vw,42px)">第 1 关 · 认识小伙伴</div>
-        <div class="hsub">点一个实物，它的<span style="color:#f0831f">同类小伙伴都会向中间靠拢</span>，一起变成一个大图形！</div>
         <div class="g1stage gridfloor card" id="g1stage"></div>
         <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
         <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
     init(el) {
         this._el = el;
         const stage = el.querySelector('#g1stage');
-        const ORDER = ['cuboid','cube','cyl','ball'];
+        const ORDER = ['cube','cuboid','cyl','ball'];
         let itemEls, mergedBy, morphing;
         const g1layout = () => {   /* 每个形状住自己的分区：区内小网格 */
             if (!stage.clientWidth) return;
@@ -599,7 +598,7 @@ regSlide({
             const zones = document.createElement('div');
             zones.id = 'g1zones'; zones.style.cssText = 'position:absolute;inset:0';
             stage.appendChild(zones);
-            zones.innerHTML = [['cuboid','#fdecea','#f5c1bd'],['cube','#eaf3fd','#b9d7f2'],
+            zones.innerHTML = [['cube','#eaf3fd','#b9d7f2'],['cuboid','#fdecea','#f5c1bd'],
                 ['cyl','#eaf7ee','#b4e2ba'],['ball','#fff3e6','#f5d2a8']].map(([s, bg, bd], z) =>
                 `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${bg};border-color:${bd}">
                     <span class="zn"></span></div>`).join('');
