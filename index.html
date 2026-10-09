@@ -3,383 +3,246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>小学数学游戏总目录 - 按年级分类</title>
+<title>小学数学游戏目录 - 按年级分类</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
         font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(180deg, #FFFDF6 0%, #FFF3DC 100%);
         min-height: 100vh;
         padding: 30px 20px 60px;
         user-select: none;
         -webkit-user-select: none;
     }
-    .wrap { max-width: 1060px; margin: 0 auto; }
-    .hero {
-        text-align: center; color: #fff; margin-bottom: 28px;
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .hero { text-align: center; color: #5A4632; margin-bottom: 30px; }
+    .hero h1 { font-size: 38px; letter-spacing: 4px; }
+    .hero p { margin-top: 10px; font-size: 15px; color: #A08B6C; font-weight: bold; }
+
+    /* ===== 第一屏：年级导航 ===== */
+    #gradeView { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
+    .gcard {
+        position: relative; background: #FFFFFF; border-radius: 28px; cursor: pointer;
+        border: 4px solid var(--c); box-shadow: 0 10px 0 rgba(90,70,50,.08);
+        padding: 24px 24px 20px; transition: transform .15s, box-shadow .15s; overflow: hidden;
     }
-    .hero h1 { font-size: 34px; letter-spacing: 2px; text-shadow: 0 3px 10px rgba(0,0,0,0.3); }
-    .hero p { margin-top: 10px; font-size: 15px; opacity: 0.92; }
-    .hero .tips { margin-top: 8px; font-size: 13px; opacity: 0.75; }
-    section.grade {
-        background: rgba(255,255,255,0.95);
-        border-radius: 20px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-        padding: 20px 24px 24px;
-        margin-bottom: 24px;
-    }
-    .grade-head {
-        display: flex; align-items: center; gap: 12px;
-        border-bottom: 2px dashed #ddd; padding-bottom: 12px; margin-bottom: 16px;
-    }
-    .grade-badge {
-        width: 46px; height: 46px; border-radius: 14px;
+    .gcard:hover { transform: translateY(-6px); box-shadow: 0 16px 30px rgba(90,70,50,.18); }
+    .gcard .ghead { display: flex; align-items: center; gap: 14px; }
+    .gcard .gava {
+        width: 64px; height: 64px; border-radius: 20px; background: var(--c); color: #fff;
         display: flex; align-items: center; justify-content: center;
-        font-size: 24px; color: #fff; flex-shrink: 0;
+        font-size: 32px; font-weight: bold; flex-shrink: 0;
     }
-    .grade-head h2 { font-size: 21px; color: #333; }
-    .grade-head .tag { font-size: 13px; color: #888; font-weight: normal; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+    .gcard .gt { font-size: 26px; font-weight: bold; color: #5A4632; }
+    .gcard .gn { font-size: 14px; color: var(--c); font-weight: bold; margin-top: 4px; }
+    .minis { display: flex; margin-top: 18px; padding-left: 4px; }
+    .minis .m {
+        width: 92px; height: 56px; border-radius: 12px; border: 3px solid #FFF;
+        background: linear-gradient(135deg,#F6E7C8,#F2DFB9) center/cover no-repeat;
+        box-shadow: 0 3px 8px rgba(90,70,50,.18); margin-left: -14px;
+    }
+    .minis .m:first-child { margin-left: 0; }
+    .minis .m.more {
+        display: flex; align-items: center; justify-content: center;
+        color: #A08B6C; font-size: 13px; font-weight: bold;
+    }
+    .gcard .go { position: absolute; right: 20px; bottom: 18px; color: var(--c);
+        font-size: 30px; font-weight: bold; opacity: .35; }
+    .gcard:hover .go { opacity: 1; }
+
+    /* ===== 第二屏：年级内游戏卡片 ===== */
+    #gameView { display: none; }
+    #backBtn {
+        display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+        border: 3px solid #F2DFB9; background: #fff; color: #A08B6C;
+        font-size: 18px; font-weight: bold; padding: 10px 24px; border-radius: 999px;
+        margin-bottom: 18px; font-family: inherit;
+    }
+    #backBtn:hover { color: #5A4632; border-color: #E8D5B5; }
+    #gvTitle { font-size: 30px; font-weight: bold; color: #5A4632; margin-bottom: 20px; letter-spacing: 2px; }
+    #gvTitle b { color: var(--c, #E8623C); }
+    #gameGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; }
     .card {
-        background: #f7f8ff; border-radius: 14px; padding: 14px 16px;
-        border: 2px solid transparent; text-decoration: none; color: inherit;
-        display: block; transition: all .2s;
+        background: #FFFFFF; border-radius: 20px; overflow: hidden; text-decoration: none;
+        display: block; color: inherit; border: 3px solid #F2DFB9;
+        transition: transform .15s, box-shadow .15s, border-color .15s;
+        box-shadow: 0 6px 18px rgba(90,70,50,.10);
     }
-    .card:hover { border-color: #764ba2; transform: translateY(-3px); box-shadow: 0 6px 18px rgba(118,75,162,0.25); }
-    .card.dim { opacity: 0.55; pointer-events: none; }
-    .card .row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .card .name { font-size: 16px; font-weight: bold; color: #2c3e50; }
-    .card .unit { font-size: 12.5px; color: #7f8c8d; margin-top: 6px; line-height: 1.5; }
-    .card .path { font-size: 11.5px; color: #a0a9b8; margin-top: 4px; font-family: Consolas, monospace; }
-    .badge {
-        font-size: 11.5px; font-weight: bold; padding: 3px 10px; border-radius: 12px; white-space: nowrap;
+    .card:hover { transform: translateY(-5px); border-color: var(--c); box-shadow: 0 12px 26px rgba(90,70,50,.20); }
+    .thumb {
+        height: 196px; position: relative;
+        background: linear-gradient(135deg,#FDF3E0 0%,#F6E7C8 100%) center/cover no-repeat;
     }
-    .badge.ok { background: #d5f5e3; color: #1e8449; }
-    .badge.wip { background: #fdebd0; color: #b9770e; }
-    .badge.dev { background: #d6eaf8; color: #21618c; }
-    .badge.tool { background: #e8daef; color: #6c3483; }
-    .badge.doc { background: #fdebd0; color: #b9770e; }
-    footer { text-align: center; color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 10px; }
+    .thumb .bgimg { position: absolute; inset: 0; background-size: cover; background-position: center top; }
+    .thumb .fa { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 64px; }
+    .chip {
+        position: absolute; top: 10px; right: 10px; font-size: 12px; font-weight: bold;
+        padding: 3px 10px; border-radius: 999px; color: #fff; background: #4CAF50; opacity: .92;
+    }
+    .chip.wip { background: #F2A93B; }
+    .chip.tool { background: #3E8CBF; }
+    .cbody { padding: 12px 16px 14px; }
+    .cname { font-size: 17.5px; font-weight: bold; color: #5A4632; }
+    .cdesc { font-size: 13px; color: #A08B6C; margin-top: 5px; line-height: 1.55; }
+    footer { text-align: center; color: #C9B89A; font-size: 13px; margin-top: 34px; font-weight: bold; }
 </style>
 </head>
 <body>
 <div class="wrap">
     <div class="hero">
-        <h1>🎮 小学数学游戏总目录</h1>
-        <p>按年级 / 学期 / 单元分类，点卡片直接打开游戏（游戏文件已归档到各年级文件夹）</p>
-        <p class="tips">教材版本：人教版（2022新课标）· 当前重点：小学一年级</p>
+        <h1>🎮 小学数学游戏目录</h1>
+        <p>先选年级 → 每个游戏的卡片就是它的打开画面 · 教材版本：人教版（2022新课标）</p>
     </div>
 
-    <!-- 一年级 -->
-    <section class="grade">
-        <div class="grade-head">
-            <div class="grade-badge" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">一</div>
-            <div><h2>小学一年级 <span class="tag">文件夹：小学一年级/ · 当前重点年级</span></h2></div>
-        </div>
-        <div class="grid">
-            <a class="card" href="小学一年级/数学拔河.html">
-                <div class="row1"><span class="name">🤼 数学拔河</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">课堂口算竞技 · 两队对战<br>难度可调：20以内/100以内/1000以内（含1-2年级档）</div>
-                <div class="path">小学一年级/数学拔河.html</div>
-            </a>
-            <a class="card" href="小学一年级/数学赛车.html">
-                <div class="row1"><span class="name">🏁 数学赛车</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">课堂口算竞速 · 无限出题先冲线者胜<br>自动出题三档难度（10/20以内·两位数）/CSV自定义题库 · 单人VS AI · 双人对战 · 自定义BGM</div>
-                <div class="path">小学一年级/数学赛车.html</div>
-            </a>
-            <a class="card" href="小学一年级/排队找第几.html">
-                <div class="row1"><span class="name">🧑‍🤝‍🧑 排队找第几</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">基数（几个）/序数（第几）· 左右方位专项<br>5个卡通小朋友排队交互 · 语音读题 · 混合/锁定模式 · 音效反馈</div>
-                <div class="path">小学一年级/排队找第几.html</div>
-            </a>
-            <a class="card" href="小学一年级/认识钟表.html">
-                <div class="row1"><span class="name">🕐 认识钟表</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">整时/半时课堂口述教具 · 纯SVG绘制表盘<br>随机时间模式（可只练整时或半时）+ 情景模式「淘气的一天」6站循环</div>
-                <div class="path">小学一年级/认识钟表.html</div>
-            </a>
-            <a class="card" href="小学一年级/飞驰人生口算.html">
-                <div class="row1"><span class="name">🏎️ 飞驰人生口算</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">智能出题（年级/知识点/难度任选）· 三人同台竞速PK<br>连击机制 · 先答对10题冲线获胜 · 深色星空大屏适配</div>
-                <div class="path">小学一年级/飞驰人生口算.html</div>
-            </a>
-            <a class="card" href="小学一年级/凑十对对碰.html">
-                <div class="row1"><span class="name">🫧 凑十对对碰</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">凑十法专项 · 见8想2 自动化<br>泡泡碰碰 / 翻牌配对 / 闪电连击三模式 · 糖果海洋风</div>
-                <div class="path">小学一年级/凑十对对碰.html</div>
-            </a>
-            <a class="card" href="小学一年级/欢乐购物街.html">
-                <div class="row1"><span class="name">🛒 欢乐购物街</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">认识人民币 · 元角进率 · 付钱找零<br>认一认 / 换零钱 / 去购物 / 小收银员四模式 · 卡通钱币</div>
-                <div class="path">小学一年级/欢乐购物街.html</div>
-            </a>
-            <a class="card" href="小学一年级/图形特工队.html">
-                <div class="row1"><span class="name">🕵️ 图形特工队</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">认识图形（立体+平面）· 分类整理 · 上下左右方位<br>打地鼠 / 分拣快递 / 猜猜是谁 / 方位寻宝四模式</div>
-                <div class="path">小学一年级/图形特工队.html</div>
-            </a>
-            <a class="card" href="小学一年级/数字天平.html">
-                <div class="row1"><span class="name">⚖️ 数字天平</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">比多少 · 比大小 · 100以内数位<br>物块天平 / 数字天平 / 数位揭秘（57vs75拆十位看）三模式</div>
-                <div class="path">小学一年级/数字天平.html</div>
-            </a>
-            <a class="card" href="小学一年级/规律串珠师.html">
-                <div class="row1"><span class="name">📿 规律串珠师</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">找规律 · AB/ABC/AAB模式识别与创造<br>接龙猜珠 / 考考同桌（双人出题）两模式</div>
-                <div class="path">小学一年级/规律串珠师.html</div>
-            </a>
-            <a class="card" href="小学一年级/破十训练营.html">
-                <div class="row1"><span class="name">🔥 破十训练营</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">20以内退位减法策略专项（下册重点）<br>认识十几 / 破十法 / 平十法 / 限时速算 · 小棒拆解三步互动</div>
-                <div class="path">小学一年级/破十训练营.html</div>
-            </a>
-            <a class="card" href="小学一年级/飞行棋.html">
-                <div class="row1"><span class="name">🎲 飞行棋</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">积分兑换掷骰子、逐格走棋、落格事件（奖品/特权/惩罚/终点）、库存管理<br>地图编辑器：S形/Z形/环形等预设自动连路 · 背景图压缩保存 · 自动保存+导入导出</div>
-                <div class="path">小学一年级/飞行棋.html</div>
-            </a>
-            <a class="card" href="小学一年级/地图编辑器.html">
-                <div class="row1"><span class="name">🗺️ 飞行棋地图编辑器</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">自定义棋盘地图<br>预设直线/S形/Z形/环形/螺旋，8种格子形状，上传背景、拖动/缩放格子，保存后直接「进入飞行棋」</div>
-                <div class="path">小学一年级/地图编辑器.html</div>
-            </a>
-            <a class="card" href="小学一年级/数字转盘小游戏.html">
-                <div class="row1"><span class="name">🍭 数字转盘小游戏</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">一年级~二年级 · 数的认识与比大小<br>转盘组数、比大小对战</div>
-                <div class="path">小学一年级/数字转盘小游戏.html</div>
-            </a>
-            <a class="card" href="小学一年级/数字转盘小游戏 每轮转动一次.html">
-                <div class="row1"><span class="name">🍭 数字转盘·同数对决版</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">一年级~二年级 · 数的认识与比大小<br>每轮转动一次的对决玩法</div>
-                <div class="path">小学一年级/数字转盘小游戏 每轮转动一次.html</div>
-            </a>
-            <a class="card" href="小学一年级/看图说数字.html">
-                <div class="row1"><span class="name">🍭 看图说数字</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">一年级~二年级 · 数的认识与比大小<br>转盘组数、比大小对战</div>
-                <div class="path">小学一年级/看图说数字.html</div>
-            </a>
-            <a class="card" href="小学一年级/数字识图闯关.html">
-                <div class="row1"><span class="name">🔢 数字识图闯关</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">10以内数数（含0）· 左右两队PK · 数字键盘输入<br>水果/蔬菜/动物图案 · 答对放烟花 · 题量可设置 · 先通关者胜</div>
-                <div class="path">小学一年级/数字识图闯关.html</div>
-            </a>
-            <a class="card" href="小学一年级/立体图形认识.html">
-                <div class="row1"><span class="name">🧊 立体图形认识</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">球/正方体/长方体/圆柱 · 生活物品版 📱手机可用<br>学一学示例 · 教师上传自己拍的物品并标注 · 考一考四选一</div>
-                <div class="path">小学一年级/立体图形认识.html</div>
-            </a>
-            <a class="card" href="小学一年级/认识立体图形-互动课件.html">
-                <div class="row1"><span class="name">🎓 认识立体图形·互动课件</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">公开课四环节课件 📱手机可用<br>①观察发现(真3D舞台·Three.js本地库·可拖拽旋转15件立体物品) ②分类命名(拖拽+另类桶) ③动手拼搭(圆柱小凳/会滚的平板车) ④PK双人对战</div>
-                <div class="path">小学一年级/认识立体图形-互动课件.html</div>
-            </a>
-            <a class="card" href="小学一年级/认识立体图形-图形小镇课件.html">
-                <div class="row1"><span class="name">🧱 立体图形小镇·整课课件</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">一节课全流程翻页课件 📱手机可用（老师实拍素材）<br>16页：情境导入→实物变图形→特征探索(数面/滚动/判断)→幕布我说你猜→红蓝分一分(16件)→数一数→小镇落成+全班颁奖→儿歌/作业 · 翻页笔PgDn可用 · 支持嵌入PPT(Web Viewer/按钮跳转，见工具包)</div>
-                <div class="path">小学一年级/认识立体图形-图形小镇课件.html · 附：图形小镇-公开课工具包/</div>
-            </a>
-            <a class="card" href="小学一年级/数字列车.html">
-                <div class="row1"><span class="name">🚂 数字列车 6~10</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">6~10 数概念三合一：数量对应 / 尺子上的数序 / 第几节车厢（基数与序数）<br>点子点数不泄题 + 三级支架提示 · 火车挂车厢进度 · 语音播报 · 空格/R/A/Esc 教师快捷键</div>
-                <div class="path">小学一年级/数字列车.html</div>
-            </a>
-            <a class="card" href="小学一年级/分与合.html">
-                <div class="row1"><span class="name">🟠 分与合</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">2~10 的分与合：动手把小球分进两个房间，把这个数的分法一种不漏地找齐<br>⚙数字范围可设置（5以内 / 6~10 / 10以内）· 记录区只显示已找到的（不泄题）· 分合式正反两句 · 语音播报</div>
-                <div class="path">小学一年级/分与合.html</div>
-            </a>
-            <a class="card" href="小学一年级/连续变化剧场.html">
-                <div class="row1"><span class="name">🎭 连续变化剧场</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">6~10 两步加减法：看两段变化动画 → 填"第一次后/最后"只数 → 选出完整算式<br>连加 / 连减 / 加减混合三档 · ⚙档位与数字范围可设置 · 答错按类型给不同提示（只算第一步 / 得数算错）· 语音播报</div>
-                <div class="path">小学一年级/连续变化剧场.html</div>
-            </a>
-            <a class="card" href="小学一年级/一图四式算式工厂.html">
-                <div class="row1"><span class="name">🏭 一图四式算式工厂</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">一幅图写出两道加法、两道减法：7 张算式卡里挑出 4 张能表示这幅图的<br>点对变黄、找齐全绿庆祝、选错划线并告诉错在哪一类（部分当总数 / 得数差1 / 总数当部分）· ⚙总数范围可设置 · 语音读题</div>
-                <div class="path">小学一年级/一图四式算式工厂.html</div>
-            </a>
-            <a class="card" href="小学一年级/比大小.html">
-                <div class="row1"><span class="name">⚖️ 比大小</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">数一数 比一比：左右两组图案（各 1~10 个）谁多谁少？<br>大于 / 等于 / 小于 三选一 · 答对亮数字和符号、自动下一题 · 答错可重选不惩罚 · 语音播报</div>
-                <div class="path">小学一年级/比大小.html</div>
-            </a>
-            <a class="card dim">
-                <div class="row1"><span class="name">📄 一年级需求文档</span><span class="badge doc">文档</span></div>
-                <div class="unit">数学拔河 ✅ 已开发 · 数学赛车 ✅ 已开发 · 数学飞行棋 ✅ 已实现（自定义地图版）· 数字列车 ✅ 已开发（含需求分析报告与优化定稿）· 分与合 ✅ 已开发 · 连续变化剧场 ✅ 已开发 · 一图四式算式工厂 ✅ 已开发 · 比大小 ✅ 已开发<br>见：小学一年级需求文档文件夹/</div>
-            </a>
-        </div>
-    </section>
+    <div id="gradeView"></div>
 
-    <!-- 二年级 -->
-    <section class="grade">
-        <div class="grade-head">
-            <div class="grade-badge" style="background:linear-gradient(135deg,#f39c12,#d68910)">二</div>
-            <div><h2>二年级 <span class="tag">文件夹：二年级/</span></h2></div>
-        </div>
-        <div class="grid">
-            <a class="card" href="二年级/认识时间.html">
-                <div class="row1"><span class="name">⏰ 认识时间教学工具</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">二年级 · 认识时间<br>钟面认读、整时半时（一年级下册可作启蒙）</div>
-                <div class="path">二年级/认识时间.html</div>
-            </a>
-            <a class="card" href="二年级/时间认读PK赛.html">
-                <div class="row1"><span class="name">⚔️ 时间认读PK赛</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">二年级 · 认识时间（进阶）<br>几时几分 PK 对战、排行榜导出</div>
-                <div class="path">二年级/时间认读PK赛.html</div>
-            </a>
-            <a class="card" href="二年级/水果分配 余数教学.html">
-                <div class="row1"><span class="name">🍎 水果分一分（余数）</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">二年级下册 · 有余数的除法<br>拖拽分水果认识余数</div>
-                <div class="path">二年级/水果分配 余数教学.html</div>
-            </a>
-            <a class="card" href="二年级/认识数字-多位数.html">
-                <div class="row1"><span class="name">🔎 数位探秘 · 摆一摆</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">二年级~三年级 · 万以内数的认识<br>可调位数的数位学习</div>
-                <div class="path">二年级/认识数字-多位数.html</div>
-            </a>
-        </div>
-    </section>
+    <div id="gameView">
+        <button id="backBtn">← 返回年级选择</button>
+        <div id="gvTitle"></div>
+        <div id="gameGrid"></div>
+    </div>
 
-    <!-- 三年级 -->
-    <section class="grade">
-        <div class="grade-head">
-            <div class="grade-badge" style="background:linear-gradient(135deg,#27ae60,#1e8449)">三</div>
-            <div><h2>三年级 <span class="tag">文件夹：三年级/ · 上册7款 + 下册8款 = 15款全覆盖</span></h2></div>
-        </div>
-        <div class="grid">
-            <a class="card" href="三年级/测量大冒险.html">
-                <div class="row1"><span class="name">📏 测量大冒险</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第3单元 · 测量<br>毫米/分米/千米/吨 单位换算与选择</div>
-            </a>
-            <a class="card" href="三年级/加减法运算岛.html">
-                <div class="row1"><span class="name">🏝️ 加减法运算岛</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第2/4单元 · 万以内的加法和减法<br>口算岛 → 竖式岛 → 估算岛</div>
-            </a>
-            <a class="card" href="三年级/倍的认识小农场.html">
-                <div class="row1"><span class="name">🌻 倍的认识小农场</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第5单元 · 倍的认识<br>圈一圈感受倍 → 算一算 → 农场应用题</div>
-            </a>
-            <a class="card" href="三年级/乘法城堡闯关.html">
-                <div class="row1"><span class="name">🏰 乘法城堡闯关</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第6单元 · 多位数乘一位数<br>口算 → 竖式 → 估算三关闯关</div>
-            </a>
-            <a class="card" href="三年级/周长设计师.html">
-                <div class="row1"><span class="name">🌻 周长设计师</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第7单元 · 长方形和正方形<br>围栅栏数周长、公式计算、等周变形</div>
-            </a>
-            <a class="card" href="三年级/分数披萨屋.html">
-                <div class="row1"><span class="name">🍕 分数披萨屋</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三上 第8单元 · 分数的初步认识<br>切披萨、涂奶油、比大小</div>
-            </a>
-            <a class="card" href="三年级/大数读法闯关 - 多位数.html">
-                <div class="row1"><span class="name">🔢 大数读法闯关（多位数）</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">万以内数的认识（二年级下~三年级衔接）<br>三/四/五位数读法闯关</div>
-            </a>
-            <a class="card" href="三年级/方向导航员.html">
-                <div class="row1"><span class="name">🧭 方向导航员</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第1单元 · 位置与方向（一）<br>认方向 → 看地图 → 走路线</div>
-            </a>
-            <a class="card" href="三年级/除法登山队.html">
-                <div class="row1"><span class="name">⛰️ 除法登山队</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第2单元 · 除数是一位数的除法<br>口算 → 竖式（商中间/末尾有0）→ 估算验算</div>
-            </a>
-            <a class="card" href="三年级/班级统计站.html">
-                <div class="row1"><span class="name">📊 班级统计站</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第3单元 · 复式统计表<br>读表 → 填表 → 两班对比分析</div>
-            </a>
-            <a class="card" href="三年级/两位数乘乘乐.html">
-                <div class="row1"><span class="name">✖️ 两位数乘乘乐</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第4单元 · 两位数乘两位数<br>口算 → 竖式 → 估算与应用</div>
-            </a>
-            <a class="card" href="三年级/面积粉刷匠.html">
-                <div class="row1"><span class="name">🎨 面积粉刷匠</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第5单元 · 面积<br>数格子 → 算面积 → 周长面积对比（含易错题）</div>
-            </a>
-            <a class="card" href="三年级/日历大转盘.html">
-                <div class="row1"><span class="name">📅 日历大转盘</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第6单元 · 年、月、日<br>大月小月 → 平年闰年 → 日子计算</div>
-            </a>
-            <a class="card" href="三年级/小数超市.html">
-                <div class="row1"><span class="name">🛒 小数超市</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第7单元 · 小数的初步认识<br>认识小数 → 比价格 → 购物算账</div>
-            </a>
-            <a class="card" href="三年级/搭配魔法衣橱.html">
-                <div class="row1"><span class="name">👗 搭配魔法衣橱</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">三下 第8单元 · 数学广角——搭配（二）<br>穿衣搭配 → 数字排列 → 握手连线</div>
-            </a>
-        </div>
-    </section>
-
-    <!-- 四年级 -->
-    <section class="grade">
-        <div class="grade-head">
-            <div class="grade-badge" style="background:linear-gradient(135deg,#3498db,#2471a3)">四</div>
-            <div><h2>四年级 <span class="tag">文件夹：四年级/</span></h2></div>
-        </div>
-        <div class="grid">
-            <a class="card" href="四年级/大数读法闯关.html">
-                <div class="row1"><span class="name">🌏 大数读法闯关</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">四年级上册 · 大数的认识<br>亿以内大数读法（含国家面积等真实数据）</div>
-                <div class="path">四年级/大数读法闯关.html</div>
-            </a>
-            <a class="card" href="四年级/探索星球-大数读法.html">
-                <div class="row1"><span class="name">🚀 探索星球 · 大数读法</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">四年级上册 · 大数的认识<br>星球探索式大数读法练习</div>
-                <div class="path">四年级/探索星球-大数读法.html</div>
-            </a>
-        </div>
-    </section>
-
-    <!-- 通用工具 -->
-    <section class="grade">
-        <div class="grade-head">
-            <div class="grade-badge" style="background:linear-gradient(135deg,#8e44ad,#6c3483)">通用</div>
-            <div><h2>通用能力 &amp; 课堂工具 <span class="tag">文件夹：通用工具/ · 不限定年级</span></h2></div>
-        </div>
-        <div class="grid">
-            <a class="card" href="通用工具/消消乐(待改进).html">
-                <div class="row1"><span class="name">🟢 口算消消乐</span><span class="badge wip">⚠️ 待改进</span></div>
-                <div class="unit">二~三年级通用 · 口算练习<br>加法/减法/乘法/除法四版本，未完成打磨</div>
-                <div class="path">通用工具/消消乐(待改进).html</div>
-            </a>
-            <a class="card" href="通用工具/百变七巧板.html">
-                <div class="row1"><span class="name">🧩 百变七巧板</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">图形与几何 · 空间观念<br>自由拼摆、旋转拖拽（一年级认识图形可用）</div>
-                <div class="path">通用工具/百变七巧板.html</div>
-            </a>
-            <a class="card" href="通用工具/小天才空间积木盒 - 三视图挑战.html">
-                <div class="row1"><span class="name">🧱 三视图挑战</span><span class="badge ok">✅ 可玩</span></div>
-                <div class="unit">空间想象 · 三年级~四年级<br>根据三视图拼搭积木</div>
-                <div class="path">通用工具/小天才空间积木盒 - 三视图挑战.html</div>
-            </a>
-            <a class="card" href="通用工具/答题闯关游戏/classroom_quiz_game.html">
-                <div class="row1"><span class="name">❓ 课堂答题闯关</span><span class="badge tool">🛠 工具</span></div>
-                <div class="unit">课堂互动工具<br>通用题库答题闯关</div>
-                <div class="path">通用工具/答题闯关游戏/</div>
-            </a>
-            <a class="card" href="通用工具/答题闯关游戏/千问ai小游戏1.html">
-                <div class="row1"><span class="name">🎯 趣味数学闯关</span><span class="badge tool">🛠 工具</span></div>
-                <div class="unit">课堂互动工具<br>增强版答题闯关</div>
-                <div class="path">通用工具/答题闯关游戏/</div>
-            </a>
-            <a class="card" href="通用工具/zhuomianchongwu/index.html">
-                <div class="row1"><span class="name">🐹 课堂宠物 ClassPet</span><span class="badge tool">🛠 工具</span></div>
-                <div class="unit">课堂激励系统（非教学游戏）<br>加分升级、展示屏、管理后台（含服务端）</div>
-                <div class="path">通用工具/zhuomianchongwu/</div>
-            </a>
-            <a class="card" href="图片转文档工具/使用说明.md">
-                <div class="row1"><span class="name">📄 图片转文档工具</span><span class="badge tool">🛠 工具</span></div>
-                <div class="unit">练习卷/教案截图 → 可编辑Word + 一比一版式预览<br>本地离线OCR · 图片拖到 bat 上即可 · 首次先跑「一键安装依赖」</div>
-                <div class="path">图片转文档工具/</div>
-            </a>
-            <a class="card" href="ai宠物/使用说明.md">
-                <div class="row1"><span class="name">🐱 AI宠物乐园</span><span class="badge tool">🛠 系统</span></div>
-                <div class="unit">课堂宠物养成激励系统（本地服务端+管理后台）<br>投喂升级进化全屏动画 · 4套主题一键切换工厂 · 多班级 · 行为标签统计</div>
-                <div class="path">ai宠物/（双击 启动.bat）</div>
-            </a>
-        </div>
-    </section>
-
-    <footer>📌 文件已按年级归档：小学一年级/ · 二年级/ · 三年级/ · 四年级/ · 通用工具/ · 新增游戏请放入对应年级文件夹</footer>
+    <footer>📌 游戏按年级归档：小学一年级/ · 二年级/ · 三年级/ · 四年级/ · 通用工具/ · 卡片背景为游戏初始画面截图（thumbs/）</footer>
 </div>
+
+<script>
+'use strict';
+/* 年级与游戏数据：新增游戏时往对应年级的 games 里加一条即可
+   s = 预览图文件名（thumbs/<s>.png，没有预览图就不写 s，卡片自动用渐变+图标兜底） */
+var GRADES = [
+{ id:'g1', name:'小学一年级', short:'一', c:'#E8623C', tag:'当前重点年级', games:[
+  { n:'🤼 数学拔河', f:'小学一年级/数学拔河.html', d:'课堂口算竞技 · 两队对战拉锯，难度可调（20以内/100以内/1000以内）', s:'tuohe', b:'可玩' },
+  { n:'🏁 数学赛车', f:'小学一年级/数学赛车.html', d:'口算竞速无限出题 · 单人VS AI / 双人对战 · 可自定义题库与BGM', s:'saiche', b:'可玩' },
+  { n:'🧑‍🤝‍🧑 排队找第几', f:'小学一年级/排队找第几.html', d:'基数（几个）与序数（第几）· 左右方位专项 · 语音读题', s:'paidui', b:'可玩' },
+  { n:'🕐 认识钟表', f:'小学一年级/认识钟表.html', d:'整时/半时口述教具 · 随机时间 + 情景模式「淘气的一天」', s:'zhongbiao', b:'可玩' },
+  { n:'🏎️ 飞驰人生口算', f:'小学一年级/飞驰人生口算.html', d:'智能出题（年级/知识点/难度）· 三人同台竞速PK · 连击冲线', s:'feichi', b:'可玩' },
+  { n:'🫧 凑十对对碰', f:'小学一年级/凑十对对碰.html', d:'凑十法专项（见8想2）· 泡泡碰碰 / 翻牌配对 / 闪电连击', s:'coudui', b:'可玩' },
+  { n:'🛒 欢乐购物街', f:'小学一年级/欢乐购物街.html', d:'认识人民币 · 元角进率 · 付钱找零 · 认一认/换零钱/去购物/小收银员', s:'gouwu', b:'可玩' },
+  { n:'🕵️ 图形特工队', f:'小学一年级/图形特工队.html', d:'认识图形（立体+平面）· 打地鼠/分拣快递/猜猜是谁/方位寻宝', s:'tegong', b:'可玩' },
+  { n:'⚖️ 数字天平', f:'小学一年级/数字天平.html', d:'比多少 · 比大小 · 100以内数位（57 vs 75 拆数位看）三模式', s:'tianping', b:'可玩' },
+  { n:'📿 规律串珠师', f:'小学一年级/规律串珠师.html', d:'找规律 · AB/ABC/AAB 模式识别与创造 · 接龙猜珠/考考同桌', s:'chuanzhu', b:'可玩' },
+  { n:'🔥 破十训练营', f:'小学一年级/破十训练营.html', d:'20以内退位减法（下册重点）· 破十法/平十法 · 小棒拆解三步互动', s:'poshi', b:'可玩' },
+  { n:'🎲 飞行棋', f:'小学一年级/飞行棋.html', d:'积分兑换掷骰子走棋 · 落格事件（奖品/特权/惩罚）· 库存管理', s:'feixingqi', b:'可玩' },
+  { n:'🗺️ 飞行棋地图编辑器', f:'小学一年级/地图编辑器.html', d:'自定义棋盘地图 · S形/Z形/环形预设 · 保存后直接进入飞行棋', s:'ditu', b:'可玩' },
+  { n:'🍭 数字转盘小游戏', f:'小学一年级/数字转盘小游戏.html', d:'转盘组数 · 数的认识与比大小对战', s:'zhuanpan', b:'可玩' },
+  { n:'🍭 数字转盘 · 同数对决版', f:'小学一年级/数字转盘小游戏 每轮转动一次.html', d:'每轮转动一次的对决玩法', s:'zhuanpan2', b:'可玩' },
+  { n:'👀 看图说数字', f:'小学一年级/看图说数字.html', d:'看图说数 · 数的认识与比大小', s:'kantu', b:'可玩' },
+  { n:'🔢 数字识图闯关', f:'小学一年级/数字识图闯关.html', d:'10以内数数（含0）· 左右两队PK · 答对放烟花 · 题量可设置', s:'shitu', b:'可玩' },
+  { n:'🧊 立体图形认识', f:'小学一年级/立体图形认识.html', d:'球/正方体/长方体/圆柱 · 生活物品版 · 老师可上传实拍照片', s:'lifang', b:'可玩' },
+  { n:'🎓 认识立体图形 · 互动课件', f:'小学一年级/认识立体图形-互动课件.html', d:'公开课四环节课件 · 真3D舞台可拖拽旋转15件物品', s:'hudong', b:'可玩' },
+  { n:'🧱 立体图形小镇 · 整课课件', f:'小学一年级/认识立体图形-图形小镇课件.html', d:'16页整课翻页课件（情境→特征→连线→颁奖）· 公开课主力 · 支持嵌入PPT', s:'xiaozhen', b:'可玩' },
+  { n:'🚂 数字列车 6~10', f:'小学一年级/数字列车.html', d:'数量对应 / 尺子数序 / 第几节车厢 · 三级支架提示 · 语音播报', s:'lieshi', b:'可玩' },
+  { n:'🟠 分与合', f:'小学一年级/分与合.html', d:'2~10 的分与合 · 小球分房间找齐全部分法 · 范围可设置', s:'fenhe', b:'可玩' },
+  { n:'🎭 连续变化剧场', f:'小学一年级/连续变化剧场.html', d:'两步加减法动画 · 连加/连减/加减混合 · 答错按类型提示', s:'juchang', b:'可玩' },
+  { n:'🏭 一图四式算式工厂', f:'小学一年级/一图四式算式工厂.html', d:'一幅图写出两加两减 · 7张算式卡挑4张 · 错题告诉错在哪类', s:'yitu', b:'可玩' },
+  { n:'⚖️ 比大小', f:'小学一年级/比大小.html', d:'数一数比一比：左右两组图案谁多谁少 · 大于/等于/小于 · 答对亮数字', s:'bidxiao', b:'可玩' },
+  { n:'🏆 比多少 · 四人争霸赛', f:'小学一年级/比多少四人争霸赛.html', d:'四人键盘抢答比多少（A S D / J K L / 1 2 3 / 7 8 9）· 最先+2 其他+1 · 轮末结算', s:'biduoshao', b:'可玩' }
+]},
+{ id:'g2', name:'二年级', short:'二', c:'#F2A93B', tag:'时间 · 余数 · 数位', games:[
+  { n:'⏰ 认识时间教学工具', f:'二年级/认识时间.html', d:'钟面认读 · 整时半时（一年级下册可作启蒙）', s:'shijian', b:'可玩' },
+  { n:'⚔️ 时间认读PK赛', f:'二年级/时间认读PK赛.html', d:'几时几分 PK 对战 · 排行榜导出', s:'pk', b:'可玩' },
+  { n:'🍎 水果分一分（余数）', f:'二年级/水果分配 余数教学.html', d:'有余数的除法 · 拖拽分水果认识余数', s:'yushu', b:'可玩' },
+  { n:'🔎 数位探秘 · 摆一摆', f:'二年级/认识数字-多位数.html', d:'万以内数的认识 · 可调位数的数位学习', s:'shuwei', b:'可玩' }
+]},
+{ id:'g3', name:'三年级', short:'三', c:'#58A85C', tag:'上册 7 款 + 下册 8 款 = 15 款全覆盖', games:[
+  { n:'📏 测量大冒险', f:'三年级/测量大冒险.html', d:'三上·测量：毫米/分米/千米/吨', s:'celiang', b:'可玩' },
+  { n:'🏝️ 加减法运算岛', f:'三年级/加减法运算岛.html', d:'三上·万以内加减法：口算→竖式→估算', s:'yunsuan', b:'可玩' },
+  { n:'🌻 倍的认识小农场', f:'三年级/倍的认识小农场.html', d:'三上·倍的认识：圈一圈→算一算→应用题', s:'bei', b:'可玩' },
+  { n:'🏰 乘法城堡闯关', f:'三年级/乘法城堡闯关.html', d:'三上·多位数乘一位数：口算→竖式→估算', s:'chengfa', b:'可玩' },
+  { n:'🌻 周长设计师', f:'三年级/周长设计师.html', d:'三上·长方形和正方形：围栅栏数周长', s:'zhouchang', b:'可玩' },
+  { n:'🍕 分数披萨屋', f:'三年级/分数披萨屋.html', d:'三上·分数初步认识：切披萨涂奶油比大小', s:'pizza', b:'可玩' },
+  { n:'🔢 大数读法闯关（多位数）', f:'三年级/大数读法闯关 - 多位数.html', d:'万以内数（二下~三上衔接）：三四五位数读法', s:'dashu3', b:'可玩' },
+  { n:'🧭 方向导航员', f:'三年级/方向导航员.html', d:'三下·位置与方向：认方向→看地图→走路线', s:'fangxiang', b:'可玩' },
+  { n:'⛰️ 除法登山队', f:'三年级/除法登山队.html', d:'三下·除数是一位数：口算→竖式→估算验算', s:'chufa', b:'可玩' },
+  { n:'📊 班级统计站', f:'三年级/班级统计站.html', d:'三下·复式统计表：读表→填表→对比分析', s:'tongji', b:'可玩' },
+  { n:'✖️ 两位数乘乘乐', f:'三年级/两位数乘乘乐.html', d:'三下·两位数乘两位数：口算→竖式→估算应用', s:'chengcheng', b:'可玩' },
+  { n:'🎨 面积粉刷匠', f:'三年级/面积粉刷匠.html', d:'三下·面积：数格子→算面积→周长面积对比', s:'mianji', b:'可玩' },
+  { n:'📅 日历大转盘', f:'三年级/日历大转盘.html', d:'三下·年月日：大月小月→平年闰年', s:'rili', b:'可玩' },
+  { n:'🛒 小数超市', f:'三年级/小数超市.html', d:'三下·小数初步认识：认小数→比价格→购物算账', s:'xiaoshu', b:'可玩' },
+  { n:'👗 搭配魔法衣橱', f:'三年级/搭配魔法衣橱.html', d:'三下·搭配（二）：穿衣搭配→数字排列→握手连线', s:'dapei', b:'可玩' }
+]},
+{ id:'g4', name:'四年级', short:'四', c:'#3E8CBF', tag:'大数的认识', games:[
+  { n:'🌏 大数读法闯关', f:'四年级/大数读法闯关.html', d:'四上·大数的认识：亿以内大数读法（真实数据）', s:'dashu4', b:'可玩' },
+  { n:'🚀 探索星球 · 大数读法', f:'四年级/探索星球-大数读法.html', d:'四上·大数的认识：星球探索式练习', s:'xingqiu', b:'可玩' }
+]},
+{ id:'gt', name:'通用工具', short:'通', c:'#9B6BD8', tag:'能力 & 课堂工具 · 不限年级', games:[
+  { n:'🟢 口算消消乐', f:'通用工具/消消乐(待改进).html', d:'二~三年级 · 加减乘除四版本（打磨中）', s:'xiaoxiaole', b:'待改进', bc:'wip' },
+  { n:'🧩 百变七巧板', f:'通用工具/百变七巧板.html', d:'图形与几何 · 自由拼摆、旋转拖拽', s:'qiqiao', b:'可玩' },
+  { n:'🧱 三视图挑战', f:'通用工具/小天才空间积木盒 - 三视图挑战.html', d:'空间想象 · 根据三视图拼搭积木', s:'santu', b:'可玩' },
+  { n:'❓ 课堂答题闯关', f:'通用工具/答题闯关游戏/classroom_quiz_game.html', d:'通用题库课堂答题闯关', s:'quiz', b:'工具', bc:'tool' },
+  { n:'🎯 趣味数学闯关', f:'通用工具/答题闯关游戏/千问ai小游戏1.html', d:'增强版答题闯关', s:'quiz2', b:'工具', bc:'tool' },
+  { n:'🐹 课堂宠物 ClassPet', f:'通用工具/zhuomianchongwu/index.html', d:'课堂激励系统 · 加分升级展示屏（需先启动本地服务端）', b:'工具', bc:'tool', fa:'🐹' },
+  { n:'📄 图片转文档工具', f:'图片转文档工具/使用说明.md', d:'练习卷截图 → 可编辑Word · 本地离线OCR', b:'工具', bc:'tool', fa:'📄' },
+  { n:'🐱 AI宠物乐园', f:'ai宠物/使用说明.md', d:'课堂宠物养成激励系统 · 需先启动 启动.bat', b:'系统', bc:'tool', fa:'🐱' }
+]}
+];
+
+/* ================= 渲染 ================= */
+function $(id){ return document.getElementById(id); }
+
+function miniThumb(g){
+  if(!g.s) return '<div class="m more">'+g.n.charAt(0)+'</div>';
+  return '<div class="m" style="background-image:url(\'thumbs/'+g.s+'.png\')"></div>';
+}
+
+function renderGrades(){
+  var html='';
+  GRADES.forEach(function(g){
+    var picks=g.games.filter(function(x){return x.s;}).slice(0,3);
+    var minis='';
+    picks.forEach(function(x){ minis+=miniThumb(x); });
+    var moreN=g.games.length-picks.length;
+    if(moreN>0) minis+='<div class="m more">+'+moreN+'</div>';
+    html+='<div class="gcard" style="--c:'+g.c+'" data-g="'+g.id+'">'+
+      '<div class="ghead"><div class="gava">'+g.short+'</div>'+
+      '<div><div class="gt">'+g.name+'</div><div class="gn">'+g.games.length+' 个 · '+g.tag+'</div></div></div>'+
+      '<div class="minis">'+minis+'</div>'+
+      '<div class="go">›</div></div>';
+  });
+  $('gradeView').innerHTML=html;
+  Array.from(document.querySelectorAll('.gcard')).forEach(function(el){
+    el.addEventListener('click', function(){ location.hash=el.getAttribute('data-g'); });
+  });
+}
+
+function renderGames(gid){
+  var g=null;
+  GRADES.forEach(function(x){ if(x.id===gid) g=x; });
+  if(!g){ showGrades(); return; }
+  document.getElementById('gameView').style.setProperty('--c', g.c);
+  $('gvTitle').innerHTML='<b>'+g.name+'</b>　'+g.games.length+' 个游戏 · 点卡片直接打开';
+  var html='';
+  g.games.forEach(function(x){
+    var chip=x.b?'<span class="chip '+(x.bc||'')+'">'+x.b+'</span>':'';
+    var face=x.s
+      ? '<div class="bgimg" style="background-image:url(\'thumbs/'+x.s+'.png\')"></div>'+(x.fa?'<div class="fa">'+x.fa+'</div>':'')
+      : '<div class="fa">'+(x.fa||'🎮')+'</div>';
+    html+='<a class="card" style="--c:'+g.c+'" href="'+x.f+'">'+
+      '<div class="thumb">'+face+chip+'</div>'+
+      '<div class="cbody"><div class="cname">'+x.n+'</div><div class="cdesc">'+x.d+'</div></div></a>';
+  });
+  $('gameGrid').innerHTML=html;
+  $('gradeView').style.display='none';
+  $('gameView').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function showGrades(){
+  $('gameView').style.display='none';
+  $('gradeView').style.display='grid';
+  window.scrollTo(0,0);
+}
+
+function route(){
+  var h=location.hash.replace('#','');
+  if(h) renderGames(h); else showGrades();
+}
+
+$('backBtn').addEventListener('click', function(){ location.hash=''; showGrades(); });
+window.addEventListener('hashchange', route);
+renderGrades();
+route();
+</script>
 </body>
 </html>
