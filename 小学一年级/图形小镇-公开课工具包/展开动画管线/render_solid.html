@@ -51,7 +51,16 @@ renderer.setSize(1920,1080);
 document.getElementById('scene').appendChild(renderer.domElement);
 
 var scene=new THREE.Scene();
-var camera=new THREE.PerspectiveCamera(40,1920/1080,0.1,100);
+var CAM_H0 = SHAPE==='cuboid' ? 3.0 : 3.4;    /* 折叠态视高 */
+var CAM_H1 = SHAPE==='cuboid' ? 5.8 : 5.6;    /* 展开态视高 */
+var camH=CAM_H0;
+var camera=new THREE.OrthographicCamera(-9.6, 9.6, 5.4, -5.4, 0.1, 50);
+function setCamFrustum(){
+  var a=1920/1080;
+  camera.left=-camH*a/2; camera.right=camH*a/2;
+  camera.top=camH/2; camera.bottom=-camH/2;
+  camera.updateProjectionMatrix();
+}
 scene.add(new THREE.AmbientLight(0xffffff,0.85));
 var sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(4,6,5); scene.add(sun);
 
@@ -172,7 +181,9 @@ function setT(t){
   var e=(t<=T_UNF0)?0:(t>=T_UNF1?1:easeIO((t-T_UNF0)/(T_UNF1-T_UNF0)));
   rig.rotation.y=lerp(-0.52,0,e);
   rig.rotation.x=lerp(0.30,0.10,e);
-  camera.position.set(0,lerp(0,0.2,e),lerp(8.8,CAM_END,e));
+  camH=lerp(CAM_H0,CAM_H1,e);
+  setCamFrustum();
+  camera.position.set(0,0.2,10);
   camera.lookAt(0,0,0);
   /* 折叠时被挡的棱：实线隐藏、换粗虚线（半透明面下可见） */
   var folded=(u<0.02);

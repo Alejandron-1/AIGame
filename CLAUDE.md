@@ -10,15 +10,17 @@ A collection of standalone HTML-based educational mini-games for Chinese element
 
 ## Directory Structure (按年级归档)
 
-- `游戏目录.html` — 根目录导航页，按年级分类列出所有游戏（新增游戏请同步更新）
-- `小学一年级/` — Grade 1 games (数学拔河、飞行棋、地图编辑器、数字转盘×2)
+- `index.html` — 根目录导航页，按年级分类列出所有游戏（新增游戏请同步更新）
+- `小学一年级/` — Grade 1 games (数学拔河、飞行棋、地图编辑器、立体图形系列……)
+  - `图形小镇-公开课工具包/` — 《认识立体图形》公开课全套资产：课件模板+构建脚本、素材库(实物PNG)、渲染素材(形状PNG/展开GIF/MP4)、演示页、展开动画管线(帧截图生产线)、一键启动.lnk、按钮页、入口PPT、各指南。课件成品的路径 `小学一年级/认识立体图形-图形小镇课件.html` 被 .lnk/PS1/PPT链接/GitHub Pages 硬编码，**不可移动或改名**；素材制作流程见工具包内 `素材制作流程.md`
 - `二年级/` — Grade 2 games (认识时间、时间认读PK赛、水果分配余数教学、认识数字-多位数)
 - `三年级/` — Grade 3 games (15 games covering 上册7 + 下册8 units)
 - `四年级/` — Grade 4 games (大数读法×2)
 - `通用工具/` — Cross-grade tools (消消乐、七巧板、三视图、答题闯关游戏/、zhuomianchongwu/ 课堂宠物系统含 server)
+- `视频/` — 视频生产线：ffmpeg.exe(勿挪，脚本按相对路径引用)、立体王国2(魔法师导入视频)、课本插图转视频等
 - `小学一年级需求文档文件夹/` — Grade 1 requirement docs (.md)
 
-New games go into the matching grade folder and get registered in `游戏目录.html`.
+New games go into the matching grade folder and get registered in `index.html`. 公开课/课件素材进 `图形小镇-公开课工具包/` 对应子文件夹，别散落在年级目录根部。
 
 ## Tech Stack & Conventions
 
