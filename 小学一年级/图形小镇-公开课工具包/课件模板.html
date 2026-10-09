@@ -195,13 +195,15 @@ button { font-family:inherit; cursor:pointer; }
 .g1lu .nm { margin-top:6px; font-weight:900; font-size:clamp(16px,1.8vw,22px); color:#fff; border-radius:999px; padding:4px 18px; display:inline-block; }
 
 /* ================= 游戏2 我说你猜 ================= */
-.g2wrap { display:flex; gap:clamp(14px,2vw,30px); width:min(1340px,100%); align-items:stretch; justify-content:center; flex-wrap:wrap; }
-.g2panel { flex:0 1 340px; padding:14px; display:flex; flex-direction:column; gap:10px; max-height:62vh; overflow:auto; }
-.riddle { border:2.5px solid var(--line); border-radius:14px; padding:10px 12px; cursor:pointer; background:#fffdf6; font-weight:700; font-size:15px; transition:all .15s; }
-.riddle:hover { transform:translateX(4px); }
-.riddle.on { background:#fff3d6; border-color:#e0a52e; }
-.riddle b { color:#f0831f; }
-.g2stage { flex:1 1 460px; min-height:min(56vh,470px); position:relative; border-radius:26px; overflow:hidden;
+.g2wrap { display:flex; gap:clamp(16px,2.4vw,36px); align-items:center; justify-content:center;
+    width:min(1500px,100%); }
+.g2panel { flex:0 0 clamp(260px,26vw,340px); padding:22px; display:flex; flex-direction:column;
+    gap:18px; }
+.rpill { text-align:center; font-weight:900; font-size:clamp(16px,1.8vw,22px);
+    background:#fff3d6; border:3px solid var(--line); border-radius:999px; padding:8px 0; }
+.g2lines { min-height:170px; display:flex; flex-direction:column; gap:14px; justify-content:center; }
+.g2lines div { font-size:clamp(20px,2.4vw,30px); font-weight:900; letter-spacing:2px; line-height:1.7; }
+.g2stage { flex:1 1 auto; min-height:min(74vh,640px); position:relative; border-radius:26px; overflow:hidden;
     border:3.5px solid var(--line); box-shadow:0 10px 0 rgba(63,58,52,.1); }
 .g2floor { position:absolute; inset:auto 0 0 0; height:34%; background:linear-gradient(#e9dfc8,#dccfae); }
 .g2shapebox { position:absolute; left:50%; bottom:16%; transform:translateX(-50%); }
@@ -293,8 +295,9 @@ body.embed #lessonChip, body.embed #pageno, body.embed #navbtns, body.embed #fsB
     #fsBtn { top:10px; right:10px; width:38px; height:32px; }
     #pageno { bottom:12px; left:10px; font-size:12px; }
     #navbtns button { width:44px; height:38px; font-size:16px; }
-    .g2panel { max-height:none; flex-basis:auto; width:94vw; }
-    .g2stage { width:94vw; min-height:40vh; }
+    .g2wrap { flex-direction:column; }
+    .g2panel { flex-basis:auto; width:94vw; }
+    .g2stage { width:94vw; min-height:44vh; }
     .g3chip img { max-height:42px; max-width:60px; }
     .g3items { flex-wrap:wrap; row-gap:8px; }
     .ftarget svg { width:86px; height:auto; }
@@ -1140,32 +1143,22 @@ regSlide({
         els.forEach((x, i) => setTimeout(() => { x.classList.add('show'); if (i) SND.pop(); }, 350 + i * 750));
     }
 });
-/* ================= 游戏2 我说你猜（幕布） ================= */
+/* ================= 游戏2 猜谜语（幕布，一次一题） ================= */
 const G2_RIDDLES = [
-    { nm:'谜语①', lines:['方方正正六面体，','每个面都一个样。'], ans:'cube' },
-    { nm:'谜语②', lines:['圆鼓鼓的小淘气，','轻轻一推就滚走。'], ans:'ball' },
-    { nm:'谜语③', lines:['两头圆圆一般大，','躺下一推就滚动。'], ans:'cyl' },
-    { nm:'谜语④', lines:['长长方方六个面，','对面模样完全同。'], ans:'cuboid' },
-    { nm:'滚动大挑战', lines:null, ans:null }   /* 动态出题 */
+    { lines:['方方正正六面体，','每个面都一个样。'], ans:'cube' },
+    { lines:['圆鼓鼓的小淘气，','轻轻一推就滚走。'], ans:'ball' },
+    { lines:['两头圆圆一般大，','躺下一推就滚动。'], ans:'cyl' },
+    { lines:['长长方方六个面，','对面模样完全同。'], ans:'cuboid' },
 ];
-const G2_ROLL = {
-    cuboid:['滚不动，可以推着走。','长长方方，有 6 个平平的面。'],
-    cube:  ['滚不动，可以推着走。','正正方方，6 个面一样大。'],
-    cyl:   ['可以前后滚动。','上下一样粗，两头圆圆平平。'],
-    ball:  ['可以任意滚动。','圆圆鼓鼓，没有平平的面。']
-};
 regSlide({
-    id:'game2', title:'我说你猜',
+    id:'game2', title:'猜谜语',
     html: () => `
-        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">高光时刻 · <em>我说你猜</em></div>
-        <div class="hsub">幕布后面藏着一位图形小伙伴，听提示猜猜它是谁！</div>
+        <div class="htitle" style="font-size:clamp(26px,3.4vw,40px)">猜谜语</div>
         <div class="g2wrap">
             <div class="card g2panel">
-                <div style="font-weight:900;font-size:16px">🎫 谜语卡（点选一张）</div>
-                ${G2_RIDDLES.map((r,i)=>`<div class="riddle" data-i="${i}"><b>${r.nm}</b>　${r.lines?r.lines[0]:'滚动线索，随机出题'}</div>`).join('')}
-                <div style="font-weight:900;font-size:16px;margin-top:4px">💬 老师悄悄话（自定义提示，直接打字）</div>
-                <input id="g2in1" maxlength="24" placeholder="例：圆圆的，上下一样粗。">
-                <input id="g2in2" maxlength="24" placeholder="例：还可以滚动。">
+                <div class="rpill">谜语 <b id="g2no">1</b> / ${G2_RIDDLES.length}</div>
+                <div class="g2lines" id="g2lines"></div>
+                <button class="bigbtn" id="g2btn">揭晓答案</button>
             </div>
             <div class="g2stage">
                 <div class="g2floor"></div>
@@ -1173,81 +1166,41 @@ regSlide({
                 <div class="g2bubble" id="g2bub"></div>
                 <div class="curtain" id="g2cur"><div class="tassel"></div></div>
             </div>
-            <div class="g2btns" id="g2btns" style="flex:0 1 300px">
-                ${['cuboid','cube','cyl','ball'].map(s=>`<button data-s="${s}" style="background:var(--${s})">${SHAPES[s].name}</button>`).join('')}
-                <button id="g2more" style="grid-column:1/3;background:#fff;color:var(--ink);font-size:16px">➕ 再加一条线索</button>
-                <button id="g2again" style="grid-column:1/3;background:var(--gold);color:var(--ink);font-size:17px">🎬 再来一轮</button>
-            </div>
         </div>`,
     init(el) {
-        const cur = { lines:[], ans:'cube', shown:0 };
-        const hint = () => el.querySelector('.hintbox') || null;
-        const setPuzzle = (lines, ans) => {
-            cur.lines = lines; cur.ans = ans; cur.shown = 0;
-            el.querySelector('#g2cur').classList.remove('up');
-            el.querySelector('#g2shape').innerHTML = '';
-            el.querySelector('#g2bub').className = 'g2bubble';
-            renderHints();
+        this._el = el;
+        let idx = 0, revealed = false;
+        const curtain = el.querySelector('#g2cur'), shape = el.querySelector('#g2shape'),
+              bub = el.querySelector('#g2bub'), btn = el.querySelector('#g2btn');
+        const setPuzzle = () => {
+            revealed = false;
+            const r = G2_RIDDLES[idx];
+            el.querySelector('#g2no').textContent = idx + 1;
+            el.querySelector('#g2lines').innerHTML = r.lines.map(l => `<div>${l}</div>`).join('');
+            curtain.classList.remove('up');
+            shape.innerHTML = '';
+            bub.className = 'g2bubble';
+            btn.textContent = '🎭 揭晓答案';
         };
-        const renderHints = () => {
-            let box = hint();
-            if (!box) {
-                box = document.createElement('div');
-                box.className = 'hintbox'; box.id = 'g2hints';
-                el.querySelector('.g2panel').appendChild(box);
-            }
-            box.innerHTML = cur.lines.slice(0, cur.shown).map(l=>`<span class="hl">🔎 ${l}</span>`).join('')
-                + `<span class="hl" style="color:#b3aa9c">${cur.shown? '——你觉得它是谁？' : '先听老师读线索……'}</span>`;
-        };
-        const randShape = () => ['cuboid','cube','cyl','ball'][Math.floor(Math.random()*4)];
-        el.querySelectorAll('.riddle').forEach(rd => rd.onclick = () => {
+        btn.onclick = () => {
             SND.click();
-            el.querySelectorAll('.riddle').forEach(x=>x.classList.remove('on')); rd.classList.add('on');
-            const r = G2_RIDDLES[+rd.dataset.i];
-            if (r.lines) { setPuzzle(r.lines, r.ans); cur.shown = r.lines.length; renderHints(); }
-            else { const s = randShape(); setPuzzle([G2_ROLL[s][0]], s); toast('滚动大挑战！听好线索～'); }
-        });
-        const moreBtn = el.querySelector('#g2more');
-        moreBtn.onclick = () => {
-            if (cur.shown < cur.lines.length) { SND.click(); cur.shown++; renderHints(); }
-            else toast('线索都用完啦，快猜！');
-        };
-        ['g2in1','g2in2'].forEach(id => el.querySelector('#'+id).oninput = e => {
-            cur.custom = [el.querySelector('#g2in1').value, el.querySelector('#g2in2').value].filter(Boolean);
-            cur.lines = cur.custom; cur.shown = cur.custom.length; cur.ans = cur.ans || 'cube';
-            renderHints();
-        });
-        el.querySelectorAll('#g2btns button[data-s]').forEach(b => b.onclick = () => {
-            if (!cur.lines.length) { toast('先选一张谜语卡，或输入悄悄话哦'); return; }
-            SND.click();
-            const guess = b.dataset.s, ok = guess === cur.ans;
-            el.querySelector('#g2cur').classList.add('up');
-            const box = el.querySelector('#g2shape'), bub = el.querySelector('#g2bub');
-            box.innerHTML = shapeSVG(guess, 150, {uid:'g'+Date.now()});
-            box.firstElementChild.classList.add('bounceIn');
-            bub.textContent = '是它吗？';
-            bub.classList.add('show');
-            if (ok) {
-                setTimeout(() => { SND.win(); fireworks(4); bub.textContent = '🎉 说对啦！它就是' + SHAPES[guess].name + '！'; }, 700);
+            if (!revealed) {
+                revealed = true;
+                curtain.classList.add('up');
+                const r = G2_RIDDLES[idx];
+                shape.innerHTML = shapeSVG(r.ans, 200, {uid:'g2'+idx});
+                shape.firstElementChild.classList.add('bounceIn');
+                bub.textContent = '是' + SHAPES[r.ans].name + '！你猜对了吗？';
+                bub.classList.add('show');
+                SND.win(); fireworks(3);
+                btn.textContent = '下一题 →';
             } else {
-                setTimeout(() => {
-                    SND.good();
-                    box.innerHTML = shapeSVG(cur.ans, 150, {uid:'t'+Date.now()});
-                    box.firstElementChild.classList.add('pop');
-                    bub.textContent = '其实是「' + SHAPES[cur.ans].name + '」哦～没关系，再听一遍线索！';
-                }, 1300);
+                idx = (idx + 1) % G2_RIDDLES.length;
+                setPuzzle();
+                SND.pop();
             }
-        });
-        el.querySelector('#g2again').onclick = () => {
-            SND.click();
-            const s = randShape();
-            setPuzzle([G2_ROLL[s][0]], s);
-            el.querySelectorAll('.riddle').forEach(x=>x.classList.remove('on'));
-            toast('新一轮！幕布后面换了新小伙伴');
         };
-        /* 默认先上第一张谜语卡 */
-        el.querySelector('.riddle').click();
-        this._cleanup = () => {};
+        setPuzzle();
     }
 });
 /* ================= 游戏3 按形状分一分（课本"找朋友"连线式） ================= */

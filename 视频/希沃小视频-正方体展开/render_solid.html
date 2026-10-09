@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>正方体/长方体展开 · 彩色版拍片页</title>
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#ffffff;}
+  #scene{position:absolute;left:0;top:0;width:1920px;height:1080px;}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<script src="three.min.js"></script>
+<script>
+window.__errs=[];
+window.onerror=function(m,s,l){window.__errs.push(m+' @'+l);return false;};
+(function(){
+'use strict';
+/* ================= 时间轴（秒） =================
+   0.0–0.7 折叠立体定格
+   0.7–3.1 沿棱展开：上下两面 → 左右两面 → 背面
+   3.1–5.0 展开图定格
+   ?frame=N&shape=cube|cuboid
+============================================ */
+var FPS=30, T_UNF0=0.7, T_UNF1=3.1, T_END=5.0;
+var E=0.085, TH=0.10;
+var EDGE=0x111111;
+var COLORS={cube:0x3fa3ef, cuboid:0xe8463f};
+
+var qm=location.search.match(/shape=(\w+)/);
+var SHAPE=qm?qm[1]:'cube';
+var COLOR=COLORS[SHAPE];
+
+var W,H,D;
+if (SHAPE==='cuboid'){ W=2.8; H=1.7; D=1.4; }
+else                { W=2.0; H=2.0; D=2.0; }
+
+var renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(1);
+renderer.setClearColor(0xffffff,1);
+renderer.setSize(1920,1080);
+document.getElementById('scene').appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+/* 正交相机：课本画法，展开图四周留足余地 */
+var CAM_H0 = SHAPE==='cuboid' ? 3.0 : 3.4;    /* 折叠态视高 */
+var CAM_H1 = SHAPE==='cuboid' ? 5.8 : 7.5;    /* 展开态视高（正方体展开图高6，留余地带） */
+var camH=CAM_H0;
+var camera=new THREE.OrthographicCamera(-9.6, 9.6, 5.4, -5.4, 0.1, 50);
+function setCamFrustum(){
+  var a=1920/1080;
+  camera.left=-camH*a/2; camera.right=camH*a/2;
+  camera.top=camH/2; camera.bottom=-camH/2;
+  camera.updateProjectionMatrix();
+}
+scene.add(new THREE.AmbientLight(0xffffff,0.85));
+var sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(4,6,5); scene.add(sun);
+
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+/* ---------- 半透明彩色面板 + 黑色边框 ---------- */
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE});
+var faceMat=new THREE.MeshLambertMaterial({color:COLOR,transparent:true,opacity:0.72,depthWrite:false});
+
+function EK(a,b){ return a<b ? a+b : b+a; }
+var NRM={F:[0,0,1],B:[0,0,-1],R:[1,0,0],L:[-1,0,0],T:[0,1,0],Bo:[0,-1,0]};
+var EDGES={};
+[['F','R'],['F','L'],['F','T'],['F','Bo'],
+ ['B','R'],['B','L'],['B','T'],['B','Bo'],
+ ['R','T'],['R','Bo'],['L','T'],['L','Bo']].forEach(function(p){
+  EDGES[EK(p[0],p[1])]={n1:NRM[p[0]],n2:NRM[p[1]]};
+});
+var BORDER_MAP={
+  F :{T:'T', Bo:'Bo', L:'L', R:'R'},
+  B :{T:'T', Bo:'Bo', L:'R', R:'L'},
+  R :{T:'T', Bo:'Bo', L:'F', R:'B'},
+  L :{T:'T', Bo:'Bo', L:'B', R:'F'},
+  T :{T:'B', Bo:'F', L:'L', R:'R'},
+  Bo:{T:'F', Bo:'B', L:'L', R:'R'}
+};
+var sticksByEdge={}; Object.keys(EDGES).forEach(function(k){sticksByEdge[k]=[];});
+var MAXD=0.34;
+
+var hinges={},panels={};
+FACE_DEFS_BUILD();
+function FACE_DEFS_BUILD(){
+  var DEFS=[
+    {key:'m2',fk:'F', w:W, h:H, pos:[0,0,0],        off:[0,0],    parent:null,  hx:0,  axis:'y',angle:0},
+    {key:'m3',fk:'R', w:D, h:H, pos:[W/2,0,0],      off:[D/2,0],  parent:'m2h', hx:0,  axis:'y',angle: Math.PI/2},
+    {key:'m4',fk:'B', w:W, h:H, pos:[W/2+D,0,0],    off:[W/2,0],  parent:'m3h', hx:D,  axis:'y',angle: Math.PI/2},
+    {key:'m1',fk:'L', w:D, h:H, pos:[-W/2,0,0],     off:[-D/2,0], parent:'m2h', hx:0,  axis:'y',angle:-Math.PI/2},
+    {key:'t', fk:'T', w:W, h:D, pos:[0, H/2,0],     off:[0,D/2],  parent:'m2h', hx:0,  axis:'x',angle:-Math.PI/2},
+    {key:'b', fk:'Bo',w:W, h:D, pos:[0,-H/2,0],     off:[0,-D/2], parent:'m2h', hx:0,  axis:'x',angle: Math.PI/2}
+  ];
+  DEFS.forEach(function(d){
+    var g=new THREE.Group();
+    var face=new THREE.Mesh(new THREE.BoxGeometry(d.w,d.h,TH),faceMat);
+    g.add(face);
+    [[0, d.h/2,0, d.w+E, false,'T'],[0,-d.h/2,0, d.w+E, false,'Bo'],
+     [-d.w/2,0,0, d.h+E, true,'L'],[ d.w/2,0,0, d.h+E, true,'R']].forEach(function(bd){
+      var geo=bd[4]?new THREE.BoxGeometry(E,bd[3],E):new THREE.BoxGeometry(bd[3],E,E);
+      var st=new THREE.Mesh(geo,edgeMat);
+      st.position.set(bd[0],bd[1],0);
+      st.userData.edgeKey=EK(d.fk,BORDER_MAP[d.fk][bd[5]]);
+      sticksByEdge[st.userData.edgeKey].push(st);
+      g.add(st);
+    });
+    if(!d.parent){
+      g.position.set(d.pos[0],d.pos[1],d.pos[2]);
+      root.add(g); panels[d.key]=g; return;
+    }
+    var h=new THREE.Group();
+    h.userData.axis=d.axis; h.userData.angle=d.angle; h.userData.delay=
+      ({t:0,b:0.04,m1:0.16,m3:0.16,m4:0.34})[d.key]||0;
+    g.position.set(d.off[0],d.off[1],0);
+    h.add(g);
+    if(d.parent==='m2h'){ h.position.set(d.pos[0],d.pos[1],d.pos[2]); root.add(h); }
+    else { h.position.set(d.hx,0,0); hinges[d.parent].add(h); }
+    hinges[d.key+'h']=h; panels[d.key]=g;
+  });
+}
+
+/* ---------- 折叠态内部虚线棱：粗虚线段 ---------- */
+var dashGroups={};
+var dashMat=new THREE.MeshBasicMaterial({color:0x565b66,depthTest:false,transparent:true});
+function dashedEdge(ek,a,b){
+  var A=new THREE.Vector3(a[0],a[1],a[2]), B=new THREE.Vector3(b[0],b[1],b[2]);
+  var dir=B.clone().sub(A), len=dir.length(); dir.normalize();
+  var dash=0.22, gap=0.13;
+  var g=new THREE.Group(); g.renderOrder=5;
+  var geo=new THREE.BoxGeometry(dash,E,E);
+  var q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  var n=Math.floor((len-dash)/(dash+gap))+1;
+  for(var i=0;i<n;i++){
+    var m=new THREE.Mesh(geo,dashMat);
+    m.position.copy(A).addScaledVector(dir, dash/2 + i*(dash+gap));
+    m.quaternion.copy(q);
+    g.add(m);
+  }
+  g.visible=false;
+  root.add(g); dashGroups[ek]=g;
+}
+var X=W/2, Y=H/2, ZB=-D/2;
+dashedEdge(EK('F','R'),[ X,-Y,0],[ X, Y,0]);
+dashedEdge(EK('F','L'),[-X,-Y,0],[-X, Y,0]);
+dashedEdge(EK('F','T'),[-X, Y,0],[ X, Y,0]);
+dashedEdge(EK('F','Bo'),[-X,-Y,0],[ X,-Y,0]);
+dashedEdge(EK('B','R'),[ X,-Y,ZB],[ X, Y,ZB]);
+dashedEdge(EK('B','L'),[-X,-Y,ZB],[-X, Y,ZB]);
+dashedEdge(EK('B','T'),[-X, Y,ZB],[ X, Y,ZB]);
+dashedEdge(EK('B','Bo'),[-X,-Y,ZB],[ X,-Y,ZB]);
+dashedEdge(EK('R','T'),[ X, Y,0],[ X, Y,ZB]);
+dashedEdge(EK('R','Bo'),[ X,-Y,0],[ X,-Y,ZB]);
+dashedEdge(EK('L','T'),[-X, Y,0],[-X, Y,ZB]);
+dashedEdge(EK('L','Bo'),[-X,-Y,0],[-X,-Y,ZB]);
+
+/* ================= 姿态驱动 ================= */
+function smooth(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function easeIO(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+var _v1=new THREE.Vector3(),_v2=new THREE.Vector3(),_view=new THREE.Vector3();
+function setT(t){
+  var u=0;
+  if(t>=T_UNF0&&t<T_UNF1) u=easeIO((t-T_UNF0)/(T_UNF1-T_UNF0));
+  else if(t>=T_UNF1) u=1;
+  var f=smooth(u);
+  root.position.set(-f*W/2,0,(D/2)*(1-f));
+  for(var k in hinges){
+    var h=hinges[k];
+    var q=smooth((u-h.userData.delay)/(1-MAXD));
+    var a=h.userData.angle*(1-q);
+    if(h.userData.axis==='y') h.rotation.y=a; else h.rotation.x=a;
+  }
+  var e=(t<=T_UNF0)?0:(t>=T_UNF1?1:easeIO((t-T_UNF0)/(T_UNF1-T_UNF0)));
+  rig.rotation.y=lerp(-0.52,0,e);
+  rig.rotation.x=lerp(0.30,0.10,e);
+  camH=lerp(CAM_H0,CAM_H1,e);
+  setCamFrustum();
+  camera.position.set(0,0.2,10);
+  camera.lookAt(0,0,0);
+  /* 折叠时被挡的棱：实线隐藏、换粗虚线 */
+  var folded=(u<0.02);
+  _view.copy(camera.position).normalize();
+  for(var ek in EDGES){
+    var ed=EDGES[ek], hidden=true;
+    if(folded){
+      _v1.set(ed.n1[0],ed.n1[1],ed.n1[2]).applyQuaternion(rig.quaternion);
+      _v2.set(ed.n2[0],ed.n2[1],ed.n2[2]).applyQuaternion(rig.quaternion);
+      hidden=(_v1.dot(_view)<0)&&(_v2.dot(_view)<0);
+    }
+    var dl=dashGroups[ek], ss=sticksByEdge[ek];
+    if(!dl||!ss) continue;
+    dl.visible=folded&&hidden;
+    for(var i=0;i<ss.length;i++) ss[i].visible=!folded||!hidden;
+  }
+  renderer.render(scene,camera);
+}
+var mF=location.search.match(/frame=(\d+)/);
+setT(mF?parseInt(mF[1],10)/FPS:0);
+window.setT=setT;
+})();
+</script>
+</body>
+</html>
