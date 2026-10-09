@@ -7,7 +7,7 @@
   /* ============ 基础：全屏自适应，无滚动条（同《比大小》1920×1080 舞台） ============ */
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#FFF7E8;
-    font-family:"Microsoft YaHei","PingFang SC",sans-serif; user-select:none;
+    font-family:"Microsoft YaHei","PingFang SC","Segoe UI Emoji","Segoe UI Symbol",sans-serif; user-select:none;
     -webkit-user-select:none; touch-action:manipulation; }
   #stage { position:absolute; left:50%; top:50%; width:1920px; height:1080px;
     transform-origin:center center; overflow:hidden;
@@ -65,7 +65,9 @@
     gap:10px; transition:opacity .25s; }
   .zone.dim { opacity:.55; }
   .zhead { display:flex; align-items:center; justify-content:center; gap:10px; height:56px; }
-  .zhead .ava { font-size:42px; line-height:1; }
+  .zhead .ava { width:46px; height:46px; border-radius:14px; background:var(--c);
+    color:#fff; font-size:26px; font-weight:bold; display:flex; align-items:center;
+    justify-content:center; flex-shrink:0; }
   .zhead .nm { font-size:30px; font-weight:bold; color:var(--c); }
   .zhead .sc { margin-left:auto; background:var(--c); color:#fff; border-radius:999px;
     padding:2px 22px; font-size:32px; font-weight:bold; min-width:72px; text-align:center; }
@@ -104,7 +106,13 @@
   #rank { display:flex; gap:24px; }
   .rk { width:300px; background:#FFFFFF; border:6px solid var(--c); border-radius:36px;
     padding:18px 10px; text-align:center; }
-  .rk .medal { font-size:50px; line-height:1.2; }
+  .rk .medal { width:56px; height:56px; border-radius:50%; margin:0 auto;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; font-weight:bold; color:#fff; }
+  .medal.m1 { background:#F2C94C; box-shadow:0 4px 0 #D9A93B; }
+  .medal.m2 { background:#B9C1D2; box-shadow:0 4px 0 #96A0B5; }
+  .medal.m3 { background:#E8A06A; box-shadow:0 4px 0 #C97F4A; }
+  .medal.m4 { background:#D5CBB8; box-shadow:0 4px 0 #B0A68F; }
   .rk .nm { font-size:28px; font-weight:bold; color:var(--c); margin:6px 0; }
   .rk .pts { font-size:42px; font-weight:bold; color:#5A4632; }
   .rk .st { font-size:22px; font-weight:bold; color:#D9913B; min-height:30px; }
@@ -123,8 +131,8 @@
     <div class="pill" id="qTag">第 1 题 / 共 3 题</div>
   </div>
   <div id="tools">
-    <button class="toolBtn" id="btnSound">🔊 声音</button>
-    <button class="toolBtn" id="btnFull">⛶ 全屏</button>
+    <button class="toolBtn" id="btnSound">声音：开</button>
+    <button class="toolBtn" id="btnFull">全屏</button>
   </div>
 
   <div id="qbox">
@@ -191,10 +199,10 @@ var SHAPE_KEYS = ['star','circle','square','heart','tri'];
 var ANAME = { same:'一样多', more:'多', less:'少' };
 
 var PLAYERS = [
-  { nm:'1号 小猴', ava:'🐵', c:'#E8623C', kh:'A S D', keys:{KeyA:'same',KeyS:'more',KeyD:'less'} },
-  { nm:'2号 小兔', ava:'🐰', c:'#3E8CBF', kh:'J K L', keys:{KeyJ:'same',KeyK:'more',KeyL:'less'} },
-  { nm:'3号 小熊', ava:'🐻', c:'#58A85C', kh:'1 2 3', keys:{Digit1:'same',Digit2:'more',Digit3:'less'} },
-  { nm:'4号 小猫', ava:'🐱', c:'#9B6BD8', kh:'7 8 9', keys:{Digit7:'same',Digit8:'more',Digit9:'less'} }
+  { nm:'1号 小猴', no:'1', c:'#E8623C', kh:'A S D', keys:{KeyA:'same',KeyS:'more',KeyD:'less'} },
+  { nm:'2号 小兔', no:'2', c:'#3E8CBF', kh:'J K L', keys:{KeyJ:'same',KeyK:'more',KeyL:'less'} },
+  { nm:'3号 小熊', no:'3', c:'#58A85C', kh:'1 2 3', keys:{Digit1:'same',Digit2:'more',Digit3:'less'} },
+  { nm:'4号 小猫', no:'4', c:'#9B6BD8', kh:'7 8 9', keys:{Digit7:'same',Digit8:'more',Digit9:'less'} }
 ];
 
 /* ---------------- 状态 ---------------- */
@@ -313,7 +321,7 @@ function buildZones(){
     var z=document.createElement('div');
     z.className='zone'; z.id='zone'+i; z.style.setProperty('--c',p.c);
     z.innerHTML=
-      '<div class="zhead"><span class="ava">'+p.ava+'</span><span class="nm">'+p.nm+'</span>'+
+      '<div class="zhead"><span class="ava">'+p.no+'</span><span class="nm">'+p.nm+'</span>'+
       '<span class="sc" id="sc'+i+'">0</span></div>'+
       '<div class="opts">'+
         '<button class="opt same"><span>一样多</span><span class="key">'+p.kh.charAt(0)+'</span></button>'+
@@ -349,14 +357,13 @@ function showOverlay(title,big,withRank){
   if(withRank){
     rk.style.display='flex'; rk.innerHTML='';
     var order=[0,1,2,3].sort(function(x,y){ return S.scores[y]-S.scores[x] || x-y; });
-    var medals=['🥇','🥈','🥉','🎯'];
     order.forEach(function(pi,pos){
       var p=PLAYERS[pi];
       rk.innerHTML+='<div class="rk" style="--c:'+p.c+'">'+
-        '<div class="medal">'+medals[pos]+'</div>'+
-        '<div class="nm">'+p.ava+' '+p.nm+'</div>'+
+        '<div class="medal m'+(pos+1)+'">'+(pos+1)+'</div>'+
+        '<div class="nm">'+p.nm+'</div>'+
         '<div class="pts">'+S.scores[pi]+' 分</div>'+
-        '<div class="st">'+(S.stars[pi] ? '⚡ 最快 ×'+S.stars[pi] : '&nbsp;')+'</div></div>';
+        '<div class="st">'+(S.stars[pi] ? '最快 ×'+S.stars[pi] : '&nbsp;')+'</div></div>';
     });
   } else rk.style.display='none';
 }
@@ -459,7 +466,7 @@ function endQuestion(){
   $('numTop').className='rowNum show'; $('numBot').className='rowNum show';
   sndGood();
   var msg='正确答案：'+ANAME[q.ans];
-  if(S.first!==null) msg+='　⚡ '+PLAYERS[S.first].ava+' 最先答对 +2';
+  if(S.first!==null) msg+='　'+PLAYERS[S.first].nm+' 最先答对 +2';
   else msg+='　这题没人得分';
   showToast(msg);
   speak(SHAPES[q.ka].name+' '+q.a+' 个，'+SHAPES[q.kb].name+' '+q.b+' 个，'+
@@ -479,7 +486,7 @@ function endRound(){
   sndWin();
   showOverlay('第 '+(S.round+1)+' 轮 结束',null,true);
   $('ovSub').innerHTML='比分累计到下一轮 · 准备好了就继续！';
-  $('btnStart').textContent='下一轮 ▶';
+  $('btnStart').textContent='下一轮 ›';
   S.round++;
 }
 
@@ -507,7 +514,7 @@ function init(){
 
   $('btnSound').addEventListener('click',function(){
     soundOn=!soundOn;
-    this.textContent=soundOn?'🔊 声音':'🔇 静音';
+    this.textContent=soundOn?'声音：开':'声音：关';
   });
   $('btnFull').addEventListener('click',function(){
     if(document.fullscreenElement) document.exitFullscreen();
