@@ -168,18 +168,18 @@ button { font-family:inherit; cursor:pointer; }
 .judgeitem.no .slot { border-style:solid; border-color:#e05d5d; color:#e05d5d; }
 
 /* ================= 游戏1 实物变图形 ================= */
-.g1stage { position:relative; width:min(1180px,100%); height:min(56vh,470px); margin-top:4px; }
+.g1stage { position:relative; width:100%; height:min(76vh,660px); margin-top:0; }
 .g1item { position:absolute; transform:translate(-50%,-100%); cursor:pointer; transition:transform .15s, opacity .45s; }
 .g1item.gone { opacity:0; pointer-events:none; }
 .g1item.converging { transition:left .95s cubic-bezier(.55,0,.25,1), top .95s cubic-bezier(.55,0,.25,1); z-index:8; }
 .g1item.blurring { filter:blur(9px); opacity:.12; transform:translate(-50%,-100%) scale(.45);
     transition:filter .7s ease, opacity .7s ease, transform .7s ease; }
 .g1zone { position:absolute; top:8px; bottom:8px; border:2.5px dashed; border-radius:16px; }
-.g1zone .zn { position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
-    font-size:14px; font-weight:900; background:#fff; border:2.5px solid var(--line);
-    border-radius:999px; padding:2px 14px; opacity:0; transition:opacity .4s; }
+.g1zone .zn { position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+    font-size:21px; font-weight:900; background:#fff; border:3px solid var(--line);
+    border-radius:999px; padding:5px 24px; opacity:0; transition:opacity .4s; }
 .g1zone.named .zn { opacity:1; }
-.g1item img { width:auto; height:auto; max-height:clamp(44px,8vh,76px); max-width:clamp(60px,9.5vw,122px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
+.g1item img { width:auto; height:auto; max-height:clamp(64px,13vh,116px); max-width:clamp(88px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
     border-radius:50%; color:#fff; font-weight:900; display:none; align-items:center; justify-content:center; font-size:16px; }
@@ -187,7 +187,7 @@ button { font-family:inherit; cursor:pointer; }
 .g1shape { position:absolute; transform:translate(-50%,-88%); pointer-events:none; }
 .g1shape.merging { transition:left .82s cubic-bezier(.45,0,.25,1), top .82s cubic-bezier(.45,0,.25,1); z-index:6; }
 .g1shape.merged { pointer-events:auto; cursor:pointer; }
-.g1shape.merged svg { width:clamp(100px,11.5vw,150px); height:auto; }
+.g1shape.merged svg { width:clamp(140px,15vw,210px); height:auto; }
 .mtag { display:inline-block; margin-top:-8px; padding:3px 16px; border-radius:999px; color:#fff; font-weight:900;
     border:2.5px solid var(--line); font-size:clamp(14px,1.6vw,19px); box-shadow:0 3px 0 rgba(63,58,52,.2); }
 .g1lineup { display:none; gap:clamp(16px,3vw,54px); align-items:flex-end; justify-content:center; margin-top:10px; }
@@ -566,10 +566,8 @@ const G1_ITEMS = [   /* 课本 P4 原始 10 件：正方体2 长方体3 圆柱3 
 regSlide({
     id:'game1', title:'第1关 认识小伙伴',
     html: () => `
-        <div class="htitle" style="font-size:clamp(26px,3.6vw,42px)">第 1 关 · 认识小伙伴</div>
         <div class="g1stage gridfloor card" id="g1stage"></div>
-        <button class="bigbtn pulse" id="g1next" style="display:none;margin-top:14px">下一关 ➜</button>
-        <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:96px">🔁 重来</button>`,
+        <button class="minibtn" id="g1reset" style="position:absolute;right:26px;bottom:26px">🔁 重来</button>`,
     init(el) {
         this._el = el;
         const stage = el.querySelector('#g1stage');
@@ -591,7 +589,7 @@ regSlide({
         };
         const reset = () => {
             stage.innerHTML = '';
-            el.querySelector('#g1next').style.display = 'none';
+
             mergedBy = {}; morphing = {};
             itemEls = [];
             /* 底层四分区（有边框），各住一种图形 */
@@ -662,7 +660,6 @@ regSlide({
                 setTimeout(() => { e.style.top = '46%'; }, i*220);
             });
             setTimeout(() => {
-                el.querySelector('#g1next').style.display = 'inline-block';
                 toast('🎉 四个图形小伙伴集合完毕！跟老师大声读出它们的名字');
             }, 4*220 + 500);
         };
@@ -670,7 +667,6 @@ regSlide({
         reset();
         el._g1layout = g1layout;
         el.querySelector('#g1reset').onclick = () => { SND.click(); reset(); };
-        el.querySelector('#g1next').onclick = () => { SND.click(); goId('namecards'); };
     },
     enter() { if (this._el && this._el._g1layout) this._el._g1layout(); }
 });
