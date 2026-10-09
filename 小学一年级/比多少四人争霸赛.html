@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>比多少 · 四人争霸赛</title>
 <style>
   /* ============ 基础：全屏自适应，无滚动条（同《比大小》1920×1080 舞台） ============ */
@@ -503,8 +504,15 @@ function hideToast(){ $('toast').style.visibility='hidden'; clearTimeout(toastTi
 /* ---------------- 1920×1080 自适应缩放 ---------------- */
 function fit(){
   try{
-    var s=Math.min(window.innerWidth/1920, window.innerHeight/1080);
-    $('stage').style.transform='translate(-50%,-50%) scale('+s+')';
+    var w=window.innerWidth, h=window.innerHeight, s, t;
+    if(w<h){ // 手机竖屏：舞台旋转90度铺满，手机横过来即全屏
+      s=Math.min(w/1080, h/1920);
+      t='translate(-50%,-50%) rotate(90deg) scale('+s+')';
+    }else{
+      s=Math.min(w/1920, h/1080);
+      t='translate(-50%,-50%) scale('+s+')';
+    }
+    $('stage').style.transform=t;
   }catch(e){}
 }
 
