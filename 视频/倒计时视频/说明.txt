@@ -1,3 +1,3 @@
 重新生成命令（在本目录上一级 AIGame 下执行）：
-视频/ffmpeg.exe -y -f lavfi -i "color=c=0xEBEBEB:s=1920x1080:r=30:d=124" -filter_complex_script "视频/倒计时视频/生成滤镜配置.txt" -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -movflags +faststart "视频/倒计时视频/2分钟倒计时.mp4"
+视频/ffmpeg.exe -y -f lavfi -i "color=c=0xFFFFFF:s=1920x1080:r=30:d=124" -filter_complex_script "视频/倒计时视频/生成滤镜配置.txt" -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -movflags +faststart "视频/倒计时视频/2分钟倒计时.mp4"
 改时长：把滤镜里的120换成秒数、命令里的d=124换成 秒数+4

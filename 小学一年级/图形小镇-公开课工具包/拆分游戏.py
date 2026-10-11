@@ -11,6 +11,22 @@ SRC = os.path.join(HERE, '..', '认识立体图形-图形小镇课件.html')
 OUT = os.path.join(HERE, '一键启动')
 os.makedirs(OUT, exist_ok=True)
 
+# 课本配色覆盖（仅这两个文件：粉长方体/浅蓝正方体/橙圆柱/红球，与老师课本图一致）
+PALETTES = {
+    '猜谜语': {
+        "cuboid": {"m":"#f7b8c4","d":"#e593a8","l":"#fcd6de","tint":"#fdeef2","tintB":"#f3c3d0","face":"#f7b8c4"},
+        "cube":   {"m":"#6fb9ec","d":"#4f9bd6","l":"#b5ddfa","tint":"#eaf3fd","tintB":"#b9d7f2","face":"#6fb9ec"},
+        "cyl":    {"m":"#f5a13d","d":"#e08a28","l":"#ffc98a","tint":"#fff3e6","tintB":"#f5d2a8","face":"#f5a13d"},
+        "ball":   {"m":"#e85560","d":"#d13f4d","l":"#ff9ba6","tint":"#fdeef2","tintB":"#f3c3d0","face":"#e85560"}
+    },
+    '第1关-认识小伙伴': {
+        "cuboid": {"m":"#f7b8c4","d":"#e593a8","l":"#fcd6de","tint":"#fdeef2","tintB":"#f3c3d0","face":"#f7b8c4"},
+        "cube":   {"m":"#6fb9ec","d":"#4f9bd6","l":"#b5ddfa","tint":"#eaf3fd","tintB":"#b9d7f2","face":"#6fb9ec"},
+        "cyl":    {"m":"#f5a13d","d":"#e08a28","l":"#ffc98a","tint":"#fff3e6","tintB":"#f5d2a8","face":"#f5a13d"},
+        "ball":   {"m":"#e85560","d":"#d13f4d","l":"#ff9ba6","tint":"#fdeef2","tintB":"#f3c3d0","face":"#e85560"}
+    },
+}
+
 SLIDES = [
     ('context',     '情境导入'),
     ('game1',       '第1关-认识小伙伴'),
@@ -31,8 +47,11 @@ SLIDES = [
 html = io.open(SRC, encoding='utf-8').read()
 assert '<script>' in html and 'renderDeck' in html
 
+import json
 for sid, name in SLIDES:
-    tag = f'<script>window.__ONLY="{sid}";window.__EMBED=1;</script>'
+    pal = PALETTES.get(name)
+    pal_js = ';window.__PALETTE=' + json.dumps(pal, ensure_ascii=False) if pal else ''
+    tag = f'<script>window.__ONLY="{sid}";window.__EMBED=1{pal_js};</script>'
     # 注入到 <head> 最前（保证在主脚本执行前定义）
     out = html.replace('<head>', '<head>\n' + tag, 1)
     assert tag in out

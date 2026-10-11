@@ -113,6 +113,9 @@ var PAIRS=[
   {mv:'F', mvFrom: D/2, mvAxis:'z', tg:'B',  to:-D/2+0.012}
 ];
 var easeIO=function(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
+var smooth=function(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+function lerpN(a,b,t){ return a+(b-a)*t; }
+function lerpV(a,b,t){ return [lerpN(a[0],b[0],t), lerpN(a[1],b[1],t), lerpN(a[2],b[2],t)]; }
 
 function setT(t){
   rig.rotation.y=-0.35;
@@ -138,9 +141,9 @@ function setT(t){
     var mv=faceMesh[P.mv];
     if (tau<MOVE){
       var a=easeIO(tau/MOVE);
-      mv.position.setComponent(P.mvAxis, lerpN(P.mvFrom, P.to, a));
+      mv.position.setComponent(P.axisIndex, lerpN(P.mvFrom, P.to, a));
     } else {
-      mv.position.setComponent(P.mvAxis, P.to);
+      mv.position.setComponent(P.axisIndex, P.to);
       var pu=0.5+0.5*Math.sin((tau-MOVE)*Math.PI*3);
       var em=new THREE.Color(RED).lerp(new THREE.Color(0xffc9c0), 0.3+0.55*pu);
       MAT[P.mv].color.copy(em);
@@ -149,9 +152,10 @@ function setT(t){
   }
   renderer.render(scene,camera);
 }
+PAIRS[0].axisIndex=0; PAIRS[1].axisIndex=1; PAIRS[2].axisIndex=2;
 var mF=location.search.match(/frame=(\d+)/);
 setT(mF?parseInt(mF[1],10)/FPS:0);
-window.setT=setT;
+window.setT=setT; window.lerpN=lerpN; window.lerpV=lerpV;
 })();
 </script>
 </body>

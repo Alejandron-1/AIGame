@@ -113,6 +113,9 @@ var PAIRS=[
   {mv:'F', mvFrom: D/2, mvAxis:'z', tg:'B',  to:-D/2+0.012}
 ];
 var easeIO=function(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
+var smooth=function(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+function lerpN(a,b,t){ return a+(b-a)*t; }
+function lerpV(a,b,t){ return [lerpN(a[0],b[0],t), lerpN(a[1],b[1],t), lerpN(a[2],b[2],t)]; }
 
 function setT(t){
   rig.rotation.y=-0.35;
@@ -152,7 +155,7 @@ function setT(t){
 PAIRS[0].axisIndex=0; PAIRS[1].axisIndex=1; PAIRS[2].axisIndex=2;
 var mF=location.search.match(/frame=(\d+)/);
 setT(mF?parseInt(mF[1],10)/FPS:0);
-window.setT=setT;
+window.setT=setT; window.lerpN=lerpN; window.lerpV=lerpV;
 })();
 </script>
 </body>
