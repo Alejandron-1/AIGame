@@ -128,12 +128,12 @@ function setT(t){
     MAT[key].color.setHex(RED);
     MAT[key].emissive.setHex(0x000000);
   });
-  /* 已开始/进行中/已完成的组：本组两面染色 */
+  /* 只染当前演示组：其余面（含已完成组）保持无色线框 */
   var cur=-1;
-  for (var k=0;k<3;k++){ if (t>=STARTS[k]) cur=k; }
-  for (var k2=0;k2<=cur && k2<3;k2++){
-    MAT[PAIRS[k2].mv].opacity=0.72;
-    MAT[PAIRS[k2].tg].opacity=0.72;
+  for (var k=0;k<3;k++){ if (t>=STARTS[k] && t<STARTS[k]+3.2) { cur=k; break; } }
+  if (cur>=0){
+    MAT[PAIRS[cur].mv].opacity=0.72;
+    MAT[PAIRS[cur].tg].opacity=0.72;
   }
   /* 当前进行中的组：平移+重合脉冲 */
   if (cur>=0){

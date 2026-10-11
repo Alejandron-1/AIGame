@@ -1257,14 +1257,11 @@ regSlide({
         document.addEventListener('keydown', ensure, true);
         document.addEventListener('pointerdown', ensure, true);
     },
-    /* 翻页笔按键桥：PageDown/→/Enter/空格=主按钮；PageUp/←/P=重播谜语 */
+    /* 翻页笔按键桥：PageDown/→/Enter/空格=主按钮（揭晓⇄下一题）；播放谜语只用屏幕按钮 */
     keys(e) {
         const k = e.key;
         if (['PageDown','ArrowRight','Enter',' '].includes(k)) {
             if (this._el && this._el._primary) { this._el._primary(); return true; }
-        }
-        if (['PageUp','ArrowLeft','p','P'].includes(k)) {
-            if (this._el && this._el._playAudio) { this._el._playAudio(); return true; }
         }
         return false;
     }

@@ -13,7 +13,7 @@ foreach ($f in $files) {
   $url = 'file:///' + ($f.FullName -replace '\\', '/') -replace ' ', '%20'
   $lnk = $ws.CreateShortcut((Join-Path $here ($f.BaseName + '.lnk')))
   $lnk.TargetPath = $edge
-  $lnk.Arguments = ('--app="' + $url + '"')
+  $lnk.Arguments = ('--autoplay-policy=no-user-gesture-required --app="' + $url + '"')
   $lnk.IconLocation = $edge
   $lnk.Save()
   Write-Host ('已生成 ' + $f.BaseName + '.lnk')
