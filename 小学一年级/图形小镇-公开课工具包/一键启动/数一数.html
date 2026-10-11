@@ -535,6 +535,8 @@ $('#fsBtn').onclick = () => {
     else document.exitFullscreen && document.exitFullscreen();
 };
 addEventListener('keydown', e => {
+    const curSlide = SLIDES[cur];
+    if (curSlide && curSlide.keys && curSlide.keys(e)) { e.preventDefault(); return; }   /* 翻页笔优先控制当前游戏 */
     if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)) { e.preventDefault(); go(cur+1); }
     else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); go(cur-1, true); }
     else if (e.key === 'Home') go(0);
@@ -1237,12 +1239,32 @@ regSlide({
             }
         };
         setPuzzle();
-        abtn.onclick = () => {
+        const playRiddle = () => {
             SND.click();
             if (audio) { audio.pause(); }
             audio = new Audio(G2_AUDIO[idx]);
+            el._audio = audio;
             audio.play();
         };
+        /* 主按钮：未揭晓→开幕公布；已揭晓→下一题（自动朗读新谜语） */
+        el._primary = () => {
+            const wasRevealed = revealed;
+            btn.click();
+            if (wasRevealed) playRiddle();   /* 翻到新谜语自动朗读 */
+        };
+        el._playAudio = playRiddle;
+        abtn.onclick = () => playRiddle();
+    },
+    /* 翻页笔按键桥：PageDown/→/Enter/空格=主按钮；PageUp/←/P=重播谜语 */
+    keys(e) {
+        const k = e.key;
+        if (['PageDown','ArrowRight','Enter',' '].includes(k)) {
+            if (this._el && this._el._primary) { this._el._primary(); return true; }
+        }
+        if (['PageUp','ArrowLeft','p','P'].includes(k)) {
+            if (this._el && this._el._playAudio) { this._el._playAudio(); return true; }
+        }
+        return false;
     }
 });
 /* ================= 游戏3 按形状分一分（课本"找朋友"连线式） ================= */
