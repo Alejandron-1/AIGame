@@ -10,7 +10,9 @@ if (-not $edge) { Write-Host '未找到 Edge/Chrome'; Read-Host '按回车退出
 $ws = New-Object -ComObject WScript.Shell
 $files = Get-ChildItem -Path $here -Filter '*.html' | Sort-Object Name
 foreach ($f in $files) {
-  $url = 'file:///' + ($f.FullName -replace '\\', '/') -replace ' ', '%20'
+$segs = ($f.FullName -replace '\\', '/') -split '/'
+$enc = ($segs | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
+$url = 'file:///' + $enc
   $lnk = $ws.CreateShortcut((Join-Path $here ($f.BaseName + '.lnk')))
   $lnk.TargetPath = $edge
   $lnk.Arguments = ('--autoplay-policy=no-user-gesture-required --app="' + $url + '"')
