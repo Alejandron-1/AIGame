@@ -175,9 +175,6 @@ button { font-family:inherit; cursor:pointer; }
 .g1item.blurring { filter:blur(9px); opacity:.12; transform:translate(-50%,-100%) scale(.45);
     transition:filter .7s ease, opacity .7s ease, transform .7s ease; }
 .g1zone { position:absolute; top:8px; bottom:8px; border:2.5px dashed; border-radius:16px; }
-.g1zone .zn { position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
-    font-size:21px; font-weight:900; background:#fff; border:3px solid var(--line);
-    border-radius:999px; padding:5px 24px; opacity:0; transition:opacity .4s; }
 .g1zone.named .zn { opacity:1; }
 .g1item img { width:auto; height:auto; max-height:clamp(64px,13vh,116px); max-width:clamp(88px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
@@ -630,8 +627,7 @@ regSlide({
             stage.appendChild(zones);
             zones.innerHTML = [['cube'],['cuboid'],
                 ['cyl'],['ball']].map(([s], z) =>
-                `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${PALETTE[s].tint};border-color:${PALETTE[s].tintB}">
-                    <span class="zn"></span></div>`).join('');
+                `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${PALETTE[s].tint};border-color:${PALETTE[s].tintB}"></div>`).join('');
             G1_ITEMS.forEach(([img, shape], i) => {
                 const d = document.createElement('div');
                 d.className = 'g1item';
@@ -673,14 +669,11 @@ regSlide({
                 big.style.left = zc + '%'; big.style.top = '48%';
                 big.innerHTML = `<div class="pop">${shapeSVG(shape, 150, {uid:'big'+shape+'_'+Date.now()%9973})}</div>
                     <div class="mtag" style="background:var(--${shape})">${SHAPES[shape].name}</div>`;
-                big.onclick = () => { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); };
                 stage.appendChild(big);
                 const r = stage.getBoundingClientRect();
                 confetti(r.left + r.width*zc/100, r.top + r.height*.48, 30);
                 SND.win();
                 mergedBy[shape] = true;
-                const zn = document.querySelector('#g1z' + shape + ' .zn');
-                if (zn) { zn.textContent = SHAPES[shape].name; document.querySelector('#g1z' + shape).classList.add('named'); }
                 toast('🎉 同类小伙伴聚在一起，变成了一个大' + SHAPES[shape].name + '！');
                 if (Object.keys(mergedBy).length === 4) setTimeout(finale, 1000);
             }, 1800);

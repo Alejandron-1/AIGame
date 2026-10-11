@@ -176,9 +176,6 @@ button { font-family:inherit; cursor:pointer; }
 .g1item.blurring { filter:blur(9px); opacity:.12; transform:translate(-50%,-100%) scale(.45);
     transition:filter .7s ease, opacity .7s ease, transform .7s ease; }
 .g1zone { position:absolute; top:8px; bottom:8px; border:2.5px dashed; border-radius:16px; }
-.g1zone .zn { position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
-    font-size:21px; font-weight:900; background:#fff; border:3px solid var(--line);
-    border-radius:999px; padding:5px 24px; opacity:0; transition:opacity .4s; }
 .g1zone.named .zn { opacity:1; }
 .g1item img { width:auto; height:auto; max-height:clamp(64px,13vh,116px); max-width:clamp(88px,13vw,160px); display:block; filter:drop-shadow(0 6px 5px rgba(63,58,52,.22)); }
 .g1item:hover { transform:translate(-50%,-100%) translateY(-7px) scale(1.05); }
@@ -631,8 +628,7 @@ regSlide({
             stage.appendChild(zones);
             zones.innerHTML = [['cube'],['cuboid'],
                 ['cyl'],['ball']].map(([s], z) =>
-                `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${PALETTE[s].tint};border-color:${PALETTE[s].tintB}">
-                    <span class="zn"></span></div>`).join('');
+                `<div class="g1zone" id="g1z${s}" data-shape="${s}" style="left:calc(${z*25}% + 5px);width:calc(25% - 10px);background:${PALETTE[s].tint};border-color:${PALETTE[s].tintB}"></div>`).join('');
             G1_ITEMS.forEach(([img, shape], i) => {
                 const d = document.createElement('div');
                 d.className = 'g1item';
@@ -674,14 +670,11 @@ regSlide({
                 big.style.left = zc + '%'; big.style.top = '48%';
                 big.innerHTML = `<div class="pop">${shapeSVG(shape, 150, {uid:'big'+shape+'_'+Date.now()%9973})}</div>
                     <div class="mtag" style="background:var(--${shape})">${SHAPES[shape].name}</div>`;
-                big.onclick = () => { SND.click(); toast('这是大' + SHAPES[shape].name + '！跟它打个招呼吧'); };
                 stage.appendChild(big);
                 const r = stage.getBoundingClientRect();
                 confetti(r.left + r.width*zc/100, r.top + r.height*.48, 30);
                 SND.win();
                 mergedBy[shape] = true;
-                const zn = document.querySelector('#g1z' + shape + ' .zn');
-                if (zn) { zn.textContent = SHAPES[shape].name; document.querySelector('#g1z' + shape).classList.add('named'); }
                 toast('🎉 同类小伙伴聚在一起，变成了一个大' + SHAPES[shape].name + '！');
                 if (Object.keys(mergedBy).length === 4) setTimeout(finale, 1000);
             }, 1800);
@@ -1202,7 +1195,7 @@ regSlide({
         </div>`,
     init(el) {
         this._el = el;
-        let idx = 0, revealed = false, wantAudio = true, audio = null;
+        let idx = 0, revealed = false, wantAudio = false, audio = null;
         const curtainL = el.querySelector('#g2curL'), curtainR = el.querySelector('#g2curR'),
               shape = el.querySelector('#g2shape'), bub = el.querySelector('#g2bub'),
               btn = el.querySelector('#g2btn'), abtn = el.querySelector('#g2audio');
@@ -1212,7 +1205,7 @@ regSlide({
             el._audio = audio;
             const pr = audio.play();
             if (pr) pr.then(() => { wantAudio = false; if (!revealed) bub.classList.remove('show'); })
-                     .catch(() => { wantAudio = true; });
+                     .catch(() => { wantAudio = true; });   /* 被拦截：首次按键/触摸自动补播 */
         };
         const setPuzzle = () => {
             revealed = false;
@@ -1225,13 +1218,6 @@ regSlide({
             bub.className = 'g2bubble';
             btn.textContent = '🎭 揭晓答案';
             if (audio) { audio.pause(); audio = null; }
-            playCurrent();   /* 进入/换题即自动朗读（浏览器拦截则首次交互补播） */
-            if (idx === 0 && !revealed) setTimeout(() => {
-                if (wantAudio) {
-                    bub.textContent = '👆 点一下屏幕，听魔法师读谜语';
-                    bub.classList.add('show');
-                }
-            }, 900);
         };
         btn.onclick = () => {
             SND.click();
@@ -1249,20 +1235,24 @@ regSlide({
             } else {
                 idx = (idx + 1) % G2_RIDDLES.length;
                 setPuzzle();
+                playCurrent();   /* 新谜语自动朗读 */
                 SND.pop();
             }
         };
         setPuzzle();
         el._primary = () => btn.click();
-        el._playAudio = () => { wantAudio = true; playCurrent(); };
+        el._playAudio = () => { wantAudio = false; playCurrent(); };
         abtn.onclick = () => { wantAudio = true; playCurrent(); };
-        /* 自动播放被拦截时：首次任意按键/触摸自动补播（该次按键不再触发揭晓） */
+        /* 自动播放被拦截时：首次按键/触摸自动补播（仅猜谜语环节生效，该次不触发揭晓） */
         const ensure = e => {
+            if (!el.classList.contains('on')) return;
             if (wantAudio) { playCurrent(); wantAudio = false; e.stopImmediatePropagation(); }
         };
         document.addEventListener('keydown', ensure, true);
         document.addEventListener('pointerdown', ensure, true);
     },
+    enter() { if (this._el) this._el._playAudio(); },   /* 进入环节自动朗读当前谜语 */
+    leave() { if (this._el && this._el._stopAudio) this._el._stopAudio(); },
     /* 翻页笔按键桥：PageDown/→/Enter/空格=主按钮（揭晓⇄下一题）；播放谜语只用屏幕按钮 */
     keys(e) {
         const k = e.key;
