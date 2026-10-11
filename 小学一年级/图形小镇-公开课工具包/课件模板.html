@@ -1201,11 +1201,17 @@ regSlide({
         </div>`,
     init(el) {
         this._el = el;
-        let idx = 0, revealed = false;
+        let idx = 0, revealed = false, wantAudio = true, audio = null;
         const curtainL = el.querySelector('#g2curL'), curtainR = el.querySelector('#g2curR'),
               shape = el.querySelector('#g2shape'), bub = el.querySelector('#g2bub'),
               btn = el.querySelector('#g2btn'), abtn = el.querySelector('#g2audio');
-        let audio = null;
+        const playCurrent = () => {
+            if (audio) audio.pause();
+            audio = new Audio(G2_AUDIO[idx]);
+            el._audio = audio;
+            const pr = audio.play();
+            if (pr) pr.catch(() => { /* 自动播放被拦截：首次按键/触摸自动补播 */ });
+        };
         const setPuzzle = () => {
             revealed = false;
             const r = G2_RIDDLES[idx];
@@ -1217,6 +1223,8 @@ regSlide({
             bub.className = 'g2bubble';
             btn.textContent = '🎭 揭晓答案';
             if (audio) { audio.pause(); audio = null; }
+            wantAudio = true;
+            playCurrent();   /* 进入/换题即朗读（被拦截则首次按键补播） */
         };
         btn.onclick = () => {
             SND.click();
@@ -1238,21 +1246,15 @@ regSlide({
             }
         };
         setPuzzle();
-        const playRiddle = () => {
-            SND.click();
-            if (audio) { audio.pause(); }
-            audio = new Audio(G2_AUDIO[idx]);
-            el._audio = audio;
-            audio.play();
+        el._primary = () => btn.click();
+        el._playAudio = () => { wantAudio = true; playCurrent(); };
+        abtn.onclick = () => { wantAudio = true; playCurrent(); };
+        /* 自动播放被拦截时：首次任意按键/触摸自动补播（该次按键不再触发揭晓） */
+        const ensure = e => {
+            if (wantAudio) { playCurrent(); wantAudio = false; e.stopImmediatePropagation(); }
         };
-        /* 主按钮：未揭晓→开幕公布；已揭晓→下一题（自动朗读新谜语） */
-        el._primary = () => {
-            const wasRevealed = revealed;
-            btn.click();
-            if (wasRevealed) playRiddle();   /* 翻到新谜语自动朗读 */
-        };
-        el._playAudio = playRiddle;
-        abtn.onclick = () => playRiddle();
+        document.addEventListener('keydown', ensure, true);
+        document.addEventListener('pointerdown', ensure, true);
     },
     /* 翻页笔按键桥：PageDown/→/Enter/空格=主按钮；PageUp/←/P=重播谜语 */
     keys(e) {
