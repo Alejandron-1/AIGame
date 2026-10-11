@@ -21,10 +21,14 @@ var COLORS={cube:0x3fa3ef, cuboid:0xe8463f, cylinder:0x47c167, ball:0xf0923f};
 var qm=location.search.match(/shape=(\w+)/);
 var SHAPE=qm?qm[1]:'cube';
 var COLOR=COLORS[SHAPE];
+/* 背景色参数：&bg=RRGGBB（默认纯白） */
+var bm=location.search.match(/bg=([0-9a-fA-F]{6})/);
+var BGCOL=parseInt(bm?bm[1]:'ffffff',16);
+document.body.style.background='#'+('000000'+BGCOL.toString(16)).slice(-6);
 
 var renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(1);
-renderer.setClearColor(0xffffff,1);
+renderer.setClearColor(BGCOL,1);
 renderer.setSize(1920,1080);
 document.getElementById('scene').appendChild(renderer.domElement);
 

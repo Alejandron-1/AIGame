@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FRAMES = os.path.join(HERE, 'frames')
 TMP = r"C:\Users\aa109\AppData\Local\Temp"
 PAGE = sys.argv[3] if len(sys.argv) > 3 else 'render_net.html'
-URL = "http://127.0.0.1:8643/" + PAGE + "&frame=%d"
+URL = "file:///C:/Users/aa109/AppData/Local/Temp/facebox/" + PAGE + "&frame=%d"
 TOTAL = int(sys.argv[2]) if len(sys.argv) > 2 else 150
 BUDGET = int(sys.argv[1]) if len(sys.argv) > 1 else 520
 

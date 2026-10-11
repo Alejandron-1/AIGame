@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>长方体相对面重合演示 · 完整版拍片页</title>
+<style>
+  html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:#ffffff;}
+  #scene{position:absolute;left:0;top:0;width:1920px;height:1080px;}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<script src="three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ============ 长方体相对面重合 · 完整版 ============
+   节奏紧凑：左右合并 → 立即上下 → 立即前后，不返回、不停顿
+   每组 3.2 秒：平移 2.0s（缓入缓出直线）→ 重合脉冲 1.2s
+   0–0.3 开场定格；9.9–10.4 结尾定格；总长 10.4 秒   ?frame=N  30fps
+==================================================== */
+var FPS=30;
+var W=2.8, H=1.7, D=1.4, TH=0.10, E=0.085;
+var EDGE=0x111111, RED=0xe8463f;
+var MOVE=2.0, PULSE=1.2;
+var STARTS=[0.3, 3.5, 6.7];          /* 三组的开始时刻 */
+var TOTAL=10.4;
+
+var renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(1);
+renderer.setClearColor(0xffffff,1);
+renderer.setSize(1920,1080);
+document.getElementById('scene').appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+scene.add(new THREE.AmbientLight(0xffffff,0.85));
+var sun=new THREE.DirectionalLight(0xffffff,0.45); sun.position.set(4,6,5); scene.add(sun);
+
+/* 正交相机（课本画法） */
+var CAMH=3.0;
+var camera=new THREE.OrthographicCamera(-9.6,9.6,5.4,-5.4,0.1,50);
+camera.position.set(0,0,10);
+(function(){
+  var a=1920/1080;
+  camera.left=-CAMH*a/2; camera.right=CAMH*a/2;
+  camera.top=CAMH/2; camera.bottom=-CAMH/2;
+  camera.updateProjectionMatrix();
+})();
+
+var rig=new THREE.Group(); scene.add(rig);
+var root=new THREE.Group(); rig.add(root);
+
+var edgeMat=new THREE.MeshBasicMaterial({color:EDGE});
+function mat(op){ return new THREE.MeshLambertMaterial({color:RED,transparent:true,
+  opacity:op,depthWrite:false,depthTest:false}); }
+/* 六个面各自独立材质 */
+var MAT={ L:mat(0), R:mat(0), T:mat(0), Bo:mat(0), F:mat(0), B:mat(0) };
+
+/* ---------- 六个面（位置=折叠姿态；透明队列按距离自动排序） ---------- */
+var FACES={
+  L :{w:D, h:H, pos:[-W/2,0,0],   rot:['y',-Math.PI/2]},
+  R :{w:D, h:H, pos:[ W/2,0,0],   rot:['y', Math.PI/2]},
+  T :{w:W, h:D, pos:[0, H/2,0],   rot:['x',-Math.PI/2]},
+  Bo:{w:W, h:D, pos:[0,-H/2,0],   rot:['x', Math.PI/2]},
+  F :{w:W, h:H, pos:[0,0, D/2],   rot:[null,0]},
+  B :{w:W, h:H, pos:[0,0,-D/2],   rot:['y', Math.PI]}
+};
+var faceMesh={};
+Object.keys(FACES).forEach(function(key){
+  var d=FACES[key];
+  var g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(d.w,d.h,TH),MAT[key]));
+  [[0, d.h/2,0, d.w+E, false],[0,-d.h/2,0, d.w+E, false],
+   [-d.w/2,0,0, d.h+E, true],[ d.w/2,0,0, d.h+E, true]].forEach(function(bd){
+    var geo=bd[4]?new THREE.BoxGeometry(E,bd[3],E):new THREE.BoxGeometry(bd[3],E,E);
+    var st=new THREE.Mesh(geo,edgeMat);
+    st.position.set(bd[0],bd[1],0);
+    g.add(st);
+  });
+  g.position.set(d.pos[0],d.pos[1],d.pos[2]);
+  if(d.rot[0]==='y') g.rotation.y=d.rot[1]; else g.rotation.x=d.rot[1];
+  root.add(g);
+  faceMesh[key]=g;
+});
+
+/* ---------- 折叠态被挡棱：灰色粗虚线（画在最上层作内部参考） ---------- */
+var dashMat=new THREE.MeshBasicMaterial({color:0x70757e,transparent:true,
+  depthWrite:false,depthTest:false});
+function dashedEdge(a,b){
+  var A=new THREE.Vector3(a[0],a[1],a[2]), B=new THREE.Vector3(b[0],b[1],b[2]);
+  var dir=B.clone().sub(A), len=dir.length(); dir.normalize();
+  var dash=0.22, gap=0.13;
+  var geo=new THREE.BoxGeometry(dash,E,E);
+  var q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  var n=Math.floor((len-dash)/(dash+gap))+1;
+  for(var i=0;i<n;i++){
+    var m=new THREE.Mesh(geo,dashMat);
+    m.position.copy(A).addScaledVector(dir, dash/2 + i*(dash+gap));
+    m.quaternion.copy(q);
+    m.renderOrder=1;
+    root.add(m);
+  }
+}
+var X=W/2, Y=H/2, ZB=-D/2, ZF=D/2;
+dashedEdge([-X,-Y,ZB],[ X,-Y,ZB]);
+dashedEdge([-X,-Y,ZB],[-X, Y,ZB]);
+dashedEdge([-X,-Y,ZB],[-X,-Y,ZF]);
+
+/* ================= 三组序列（全部直线平移，合并后立即下一组） ================= */
+var PAIRS=[
+  {mv:'L', mvFrom:-W/2, mvAxis:'x', tg:'R', to:W/2-0.012},
+  {mv:'T', mvFrom: H/2, mvAxis:'y', tg:'Bo', to:-H/2+0.012},
+  {mv:'F', mvFrom: D/2, mvAxis:'z', tg:'B',  to:-D/2+0.012}
+];
+var easeIO=function(x){x=Math.max(0,Math.min(1,x));return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
+
+function setT(t){
+  rig.rotation.y=-0.35;
+  rig.rotation.x=0.24;
+  /* 默认：全部折叠原位、无色 */
+  Object.keys(FACES).forEach(function(key){
+    var d=FACES[key];
+    faceMesh[key].position.set(d.pos[0],d.pos[1],d.pos[2]);
+    MAT[key].opacity=0;
+    MAT[key].color.setHex(RED);
+    MAT[key].emissive.setHex(0x000000);
+  });
+  /* 已开始/进行中/已完成的组：本组两面染色 */
+  var cur=-1;
+  for (var k=0;k<3;k++){ if (t>=STARTS[k]) cur=k; }
+  for (var k2=0;k2<=cur && k2<3;k2++){
+    MAT[PAIRS[k2].mv].opacity=0.72;
+    MAT[PAIRS[k2].tg].opacity=0.72;
+  }
+  /* 当前进行中的组：平移+重合脉冲 */
+  if (cur>=0){
+    var P=PAIRS[cur], tau=t-STARTS[cur];
+    var mv=faceMesh[P.mv];
+    if (tau<MOVE){
+      var a=easeIO(tau/MOVE);
+      mv.position.setComponent(P.axisIndex, lerpN(P.mvFrom, P.to, a));
+    } else {
+      mv.position.setComponent(P.axisIndex, P.to);
+      var pu=0.5+0.5*Math.sin((tau-MOVE)*Math.PI*3);
+      var em=new THREE.Color(RED).lerp(new THREE.Color(0xffc9c0), 0.3+0.55*pu);
+      MAT[P.mv].color.copy(em);
+      MAT[P.tg].color.copy(em);
+    }
+  }
+  renderer.render(scene,camera);
+}
+PAIRS[0].axisIndex=0; PAIRS[1].axisIndex=1; PAIRS[2].axisIndex=2;
+var mF=location.search.match(/frame=(\d+)/);
+setT(mF?parseInt(mF[1],10)/FPS:0);
+window.setT=setT;
+})();
+</script>
+</body>
+</html>
