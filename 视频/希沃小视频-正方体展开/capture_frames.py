@@ -5,6 +5,7 @@
   例：python capture_frames.py 400 150 "render_solid.html?shape=cuboid"
 """
 import os, sys, subprocess, time
+from PIL import Image
 
 for _s in (sys.stdout, sys.stderr):
     try:
@@ -35,7 +36,17 @@ def capture(i, tag):
             subprocess.run(cmd, capture_output=True, timeout=40)
         except Exception:
             pass
-        if os.path.isfile(f) and os.path.getsize(f) > 10000:
+        ok_size = os.path.isfile(f) and os.path.getsize(f) > 10000
+        if ok_size:
+            try:
+                im = Image.open(f).convert('L')
+                ex = im.getextrema()
+                if ex[1] < 30:            # 全黑帧
+                    ok_size = False
+                    os.remove(f)
+            except Exception:
+                ok_size = False
+        if ok_size:
             subprocess.run(['cmd', '/c', 'rmdir', '/s', '/q', prof],
                            capture_output=True)
             return True

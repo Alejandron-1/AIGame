@@ -1479,12 +1479,19 @@ regSlide({
 /* ================= 启动 ================= */
 renderDeck();
 (function boot() {
-    if (new URLSearchParams(location.search).get('embed') === '1') {
+    if (window.__EMBED || new URLSearchParams(location.search).get('embed') === '1') {
         document.body.classList.add('embed');   /* 嵌入模式：隐藏壳层 */
     }
-    const h = (location.hash || '').replace('#','');
+    let h = (location.hash || '').replace('#','');
+    if (window.__ONLY) h = window.__ONLY;       /* 单游戏模式：只保留指定环节 */
     const i = SLIDES.findIndex(s => s.id === h);
     go(i >= 0 ? i : 0);
+    if (window.__ONLY) {
+        const t = SLIDES.splice(cur, 1)[0];
+        SLIDES.length = 0;
+        SLIDES.push(t);
+        cur = 0;
+    }
 })();
 /* 支持同文档 hash 跳转（PPT 按钮/浏览器地址栏改 hash） */
 addEventListener('hashchange', () => {
