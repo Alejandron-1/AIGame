@@ -285,6 +285,14 @@ button { font-family:inherit; cursor:pointer; }
 /* ================= 幕布彩蛋 ================= */
 #cv { position:fixed; inset:0; z-index:990; pointer-events:none; }
 
+/* ================= 单游戏模式（拆分文件）：底部居中「返回希沃」按钮 ================= */
+.backBtn { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:970;
+    background:var(--gold); border:4px solid var(--line); border-radius:999px; padding:16px 52px;
+    font-size:clamp(19px,2.2vw,26px); font-weight:900; box-shadow:0 7px 0 #c99a1f;
+    display:none; }
+body.only-game .backBtn { display:block; }
+.backBtn:active { transform:translateX(-50%) translateY(5px); box-shadow:0 2px 0 #c99a1f; }
+
 /* ================= 嵌入模式（URL 加 ?embed=1：隐藏壳层，纯游戏画面，供希沃网页组件内嵌） ================= */
 body.embed #lessonChip, body.embed #pageno, body.embed #navbtns, body.embed #fsBtn, body.embed #progress { display:none !important; }
 
@@ -333,6 +341,7 @@ body.embed #lessonChip, body.embed #pageno, body.embed #navbtns, body.embed #fsB
 <div id="lessonChip">🧱 立体图形小镇 · 一年级数学公开课</div>
 <div id="pageno">1 / 16</div>
 <button id="fsBtn" title="全屏 (F)">⛶</button>
+<button class="backBtn" id="backBtn">🏠 返回希沃</button>
 <div id="navbtns">
     <button id="prevB" title="上一页 (←)">‹</button>
     <button id="nextB" title="下一页 (→ / PgDn)">›</button>
@@ -1487,10 +1496,21 @@ renderDeck();
     const i = SLIDES.findIndex(s => s.id === h);
     go(i >= 0 ? i : 0);
     if (window.__ONLY) {
+        document.body.classList.add('only-game');
         const t = SLIDES.splice(cur, 1)[0];
         SLIDES.length = 0;
         SLIDES.push(t);
         cur = 0;
+        /* 返回希沃：游戏窗口是希沃超链接打开的独立窗口，关闭它即回到希沃 */
+        const bb = document.getElementById('backBtn');
+        bb.onclick = () => {
+            SND.click();
+            window.close();
+            setTimeout(() => {
+                try { window.open('', '_self'); window.close(); } catch (e) {}
+                toast('浏览器未允许自动关闭：请按 Alt+Tab 切回希沃，或直接关闭本窗口', 3200);
+            }, 350);
+        };
     }
 })();
 /* 支持同文档 hash 跳转（PPT 按钮/浏览器地址栏改 hash） */

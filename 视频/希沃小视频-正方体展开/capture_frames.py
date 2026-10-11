@@ -30,7 +30,7 @@ def capture(i, tag):
         cmd = [EDGE, '--headless=new', '--disable-gpu', '--use-angle=swiftshader',
                '--no-first-run', '--no-default-browser-check',
                '--window-size=1920,1080', '--hide-scrollbars',
-               '--virtual-time-budget=4000', '--user-data-dir=' + prof,
+               '--virtual-time-budget=4000', '--run-all-compositor-stages-before-draw', '--user-data-dir=' + prof,
                '--screenshot=' + f, URL % i]
         try:
             subprocess.run(cmd, capture_output=True, timeout=40)
@@ -41,7 +41,9 @@ def capture(i, tag):
             try:
                 im = Image.open(f).convert('L')
                 ex = im.getextrema()
-                if ex[1] < 30:            # 全黑帧
+                hist = im.histogram()
+                mean = sum(i*v for i,v in enumerate(hist))/max(1,sum(hist))
+                if ex[1] < 60 or mean < 15:   # 全黑帧（含噪点黑帧）
                     ok_size = False
                     os.remove(f)
             except Exception:
