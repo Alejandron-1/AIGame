@@ -1210,7 +1210,8 @@ regSlide({
             audio = new Audio(G2_AUDIO[idx]);
             el._audio = audio;
             const pr = audio.play();
-            if (pr) pr.catch(() => { /* 自动播放被拦截：首次按键/触摸自动补播 */ });
+            if (pr) pr.then(() => { if (!revealed) bub.classList.remove('show'); })
+                     .catch(() => { /* 自动播放被拦截：首次按键/触摸自动补播 */ });
         };
         const setPuzzle = () => {
             revealed = false;
@@ -1225,6 +1226,12 @@ regSlide({
             if (audio) { audio.pause(); audio = null; }
             wantAudio = true;
             playCurrent();   /* 进入/换题即朗读（被拦截则首次按键补播） */
+            if (idx === 0 && !revealed) setTimeout(() => {
+                if (wantAudio) {
+                    bub.textContent = '👆 点一下屏幕，听魔法师读谜语';
+                    bub.classList.add('show');
+                }
+            }, 900);
         };
         btn.onclick = () => {
             SND.click();
