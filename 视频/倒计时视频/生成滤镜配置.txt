@@ -1,0 +1,1 @@
+drawtext=fontfile='C\:/Windows/Fonts/arialbd.ttf':text='%{eif\:trunc((120-clip(t-2\,0\,120))/60)\:d\:2}\:%{eif\:mod(trunc(120-clip(t-2\,0\,120))\,60)\:d\:2}':fontsize=560:fontcolor=0x595959:x=(w-text_w)/2:y=(h-text_h)/2
