@@ -674,7 +674,6 @@ regSlide({
                 confetti(r.left + r.width*zc/100, r.top + r.height*.48, 30);
                 SND.win();
                 mergedBy[shape] = true;
-                toast('🎉 同类小伙伴聚在一起，变成了一个大' + SHAPES[shape].name + '！');
                 if (Object.keys(mergedBy).length === 4) setTimeout(finale, 1000);
             }, 1800);
         };
@@ -684,9 +683,7 @@ regSlide({
                 const e = shapesBig(s);
                 setTimeout(() => { e.style.top = '46%'; }, i*220);
             });
-            setTimeout(() => {
-                toast('🎉 四个图形小伙伴集合完毕！跟老师大声读出它们的名字');
-            }, 4*220 + 500);
+
         };
         const shapesBig = (s) => [...stage.querySelectorAll('.g1shape.merged')].find(e => e.dataset.shape === s);
         reset();
