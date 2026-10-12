@@ -688,10 +688,22 @@ regSlide({
         };
         const shapesBig = (s) => [...stage.querySelectorAll('.g1shape.merged')].find(e => e.dataset.shape === s);
         reset();
-        el._g1layout = g1layout;
+        /* 翻页笔：触发下一组“聚拢→合体”；全部完成后返回 false（翻页键翻页） */
+        el._nextGroup = () => {
+            const grp = ORDER.find(s => !mergedBy[s]);
+            if (!grp) return false;
+            const i = G1_ITEMS.findIndex(([img, s], k) => s === grp && !itemEls[k].classList.contains('done'));
+            if (i >= 0) itemEls[i].click();
+            return true;
+        };
         el.querySelector('#g1reset').onclick = () => { SND.click(); reset(); };
     },
-    enter() { if (this._el && this._el._g1layout) this._el._g1layout(); }
+    enter() { if (this._el && this._el._g1layout) this._el._g1layout(); },
+    keys(e) {
+        if (!['PageDown','ArrowRight','Enter',' '].includes(e.key)) return false;
+        if (this._el && this._el._nextGroup) return this._el._nextGroup();
+        return false;
+    }
 });
 /* ================= 图形名片 ================= */
 regSlide({
