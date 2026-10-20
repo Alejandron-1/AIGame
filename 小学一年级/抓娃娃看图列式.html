@@ -252,6 +252,10 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
    所以不用 grid 等分，整行居中 + 一条小缝就够分组了。 */
 .figline.grpline.gsub{display:flex;justify-content:center;align-items:flex-end;
   column-gap:calc(var(--isz, 30px) * 0.26);}
+/* 两组数量差得太多（9+1）时等分格子塞不下：改成整排居中、组间留一条明显的缝，
+   宁可不在正中间，也不能把图案裁掉（.pfig 有 overflow:hidden） */
+.figline.grpline.gtight{display:flex;justify-content:center;align-items:flex-end;
+  column-gap:calc(var(--isz, 30px) * 0.95);}
 /* 每个图案区域是一列：区域之间并排，区域内每 4 个一行（行是显式包出来的，不会被撑成一行） */
 .gsec{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:clamp(2px,.5vh,8px);flex:0 0 auto;}
@@ -261,14 +265,13 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
    emoji 字形的 advance 宽是 1.373em，但真正画出来的墨迹只有 0.99em——左右各有 0.19em 纯空白。
    用 margin:0 -0.12em 把空白吃掉（放大后 -0.12em 正好约等于这部分留白的一半），
    于是图案视觉上大了 20%，一行占的宽度反而没变，不会挤破面板。 */
+/* 图案尺寸 = --isz（renderFigure 按面板实际宽度算出的 px）× 每种 emoji 的等面积系数 --k × 1.15。
+   emoji 字形的 advance 宽是 1.373em，但真正画出来的墨迹只有 0.99em——左右各有 0.19em 纯空白。
+   用 margin:0 -0.12em 把空白吃掉，于是图案视觉上大了 15%，一行占的宽度反而没变。
+   （字号不再用 vw 档位，改成实测反算，所以这里没有 media query 的缩放覆盖。） */
 .it{font-size:calc(var(--isz,30px) * var(--k,1) * 1.15);margin:0 -0.12em;
   line-height:1.34;position:relative;display:inline-flex;
   align-items:center;justify-content:center;transition:opacity .2s,transform .2s;}
-/* 1600 / 1366 的面板一格只有 1.6 个字宽（大屏是 1.73），放大倍数收到 1.08 才不会顶破 */
-@media (max-width:1700px){
-  .it{font-size:calc(var(--isz,30px) * var(--k,1) * 1.04);}
-  .figline.grpline{column-gap:calc(var(--isz, 30px) * 0.6);}
-}
 .it .sl{position:absolute;left:-8%;top:50%;width:116%;height:3px;background:#e0392b;border-radius:2px;
   transform:rotate(-32deg);box-shadow:0 0 0 1px rgba(255,255,255,.35);}
 .dashbox{display:flex;flex-direction:column;gap:clamp(2px,.5vh,8px);justify-content:center;align-items:center;
@@ -276,8 +279,9 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
 .unknown{display:flex;align-items:center;justify-content:center;min-width:clamp(48px,4.6vw,82px);height:clamp(38px,3.8vw,66px);
   border:3px dashed #8d8378;border-radius:12px;font-size:clamp(20px,1.9vw,32px);font-weight:900;color:#8d8378;
   background:rgba(255,255,255,.5);margin-left:6px;}
+/* 问号占位只画一个「?」；margin-left 让它跟最后一组图案之间留一口气，别贴着 */
 .qmark{font-size:clamp(16px,1.45vw,26px);font-weight:900;color:#6b6155;white-space:nowrap;
-  align-self:center;justify-self:center;margin-left:0;}
+  align-self:center;justify-self:center;margin-left:0.45em;}
 /* width:100% 保证大括号和 ?只 在整块面板里居中，不会跟着最宽那组图案跑偏 */
 .figbox{display:flex;flex-direction:column;align-items:center;width:100%;max-width:100%;gap:clamp(6px,1.1vh,14px);}
 .bracewrap{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:0;}
@@ -687,7 +691,7 @@ function buildQuestion(type){
     var a = rndInt(1, MAX - 1), b = rndInt(1, MAX - a);
     q.a = a; q.b = b; q.c = a + b;
     q.groups = [a, b];
-    q.brace = {from:0, to:1, label:'?' + q.unit};   /* 括号括住两组，标问号 */
+    q.brace = {from:0, to:1, label:'?'};   /* 括号括住两组，标问号 */
   } else if (type === 'cross' || type === 'box'){
     /* 划去 / 框走：总数 n，去掉 k，问还剩 */
     var n = rndInt(2, MAX), k = rndInt(1, n - 1);
@@ -695,7 +699,7 @@ function buildQuestion(type){
     q.boxMark = (type === 'box');
     for (var i = 0; i < n; i++) q.items.push({mark: i >= n - k ? (type === 'box' ? 'box' : 'slash') : ''});
     /* 课本只在下面画大括号、标一个 ?X，不写「还剩」这类提示语 */
-    q.brace = {from:0, to:0, label:'?' + q.unit};
+    q.brace = {from:0, to:0, label:'?'};
   } else if (type === 'part'){
     /* 求另一部分：总数 n 已知（括号标 n），一部分 k 已知，问另一部分 */
     var n2 = rndInt(3, MAX), k2 = rndInt(1, n2 - 1);
@@ -703,14 +707,14 @@ function buildQuestion(type){
     q.groups = [k2];                       /* 只画已知那部分 */
     q.unknown = true;                      /* 另一部分用虚线「?」占位 */
     q.brace = {from:0, to:1, label:n2 + q.unit};
-    q.labelText = '?' + q.unit;
+    q.labelText = '?';
   } else if (type === 'add3'){
     /* 连加：三组，和 ≤ 10 */
     var x = rndInt(1, MAX - 2), y = rndInt(1, MAX - x - 1), z = rndInt(1, MAX - x - y);
     q.a = x; q.b = y; q.c = x + y + z;
     q.third = z;
     q.groups = [x, y, z];
-    q.brace = {from:0, to:2, label:'?' + q.unit};
+    q.brace = {from:0, to:2, label:'?'};
   } else {
     /* 连减：总数 n，先划去 k1、再框走 k2 */
     var n3 = rndInt(4, MAX), k1 = rndInt(1, n3 - 2), k2 = rndInt(1, n3 - k1 - 1);
@@ -721,7 +725,7 @@ function buildQuestion(type){
       else if (j >= n3 - k1 - k2) mark = 'box';
       q.items.push({mark:mark});
     }
-    q.brace = {from:0, to:0, label:'?' + q.unit};
+    q.brace = {from:0, to:0, label:'?'};
   }
 
   /* 开局一律不留任何已填数字：算式三个空全由学生自己填（运算符同理） */
@@ -732,16 +736,41 @@ function buildQuestion(type){
   return q;
 }
 
+/* 同一题的「指纹」：题型 + 三个数。四个人同时看四块屏，出现两道一模一样的题
+   最伤课堂（学生会互相抄，也没法比较），所以同一时刻必须两两不同。 */
+function qSig(q){
+  if (!q) return '';
+  return [q.type, q.a, q.b, q.third == null ? '' : q.third].join('|');
+}
+
 function newQuestionFor(p, avoid){
   var pool = allowedTypes();
   if (!pool.length) pool = ['add'];
-  /* 尽量避开上一题题型（p.q 是题目对象，比较 type），四个人题目不重样 */
+  /* 尽量避开上一题题型（p.q 是题目对象，比较 type） */
   var last = p.q ? p.q.type : null;
-  var choices = pool.filter(function(t){ return t !== last && t !== avoid; });
-  if (!choices.length) choices = pool.filter(function(t){ return t !== last; });
-  if (!choices.length) choices = pool;
-  var t = pick(choices);
-  p.q = buildQuestion(t);
+  function pickType(){
+    var c = pool.filter(function(t){ return t !== last && t !== avoid; });
+    if (!c.length) c = pool.filter(function(t){ return t !== last; });
+    if (!c.length) c = pool;
+    return pick(c);
+  }
+
+  /* 其他人现在手上的题：算式不能撞，图形（物种）也尽量错开 */
+  var others = (S.players || []).filter(function(o){ return o && o !== p && o.q; });
+  var usedSig = others.map(function(o){ return qSig(o.q); });
+  var usedEmoji = others.map(function(o){ return o.q.emoji; });
+
+  var q = null, fallback = null;
+  for (var i = 0; i < 60; i++){
+    var cand = buildQuestion(pickType());
+    var sigDup = usedSig.indexOf(qSig(cand)) >= 0;
+    var emojiDup = usedEmoji.indexOf(cand.emoji) >= 0;
+    if (!sigDup && !emojiDup){ q = cand; break; }
+    /* 题池太小时退一步：只要求算式不同（图案撞了也能接受） */
+    if (!fallback && !sigDup) fallback = cand;
+  }
+  p.q = q || fallback || buildQuestion(pickType());
+
   p.slots = p.q.slots.slice();
   p.answers = {};
   p.ops = {};   /* 学生自己选的运算符：{0:'+'|'-', 1:...}，缺省 ? 表示还没选 */
@@ -799,89 +828,155 @@ function itemEl(q, mark){
   return s;
 }
 
-/* 图案字号：既要按「并排一共几格宽」算（横向不能溢），也要按「每组最多几行」算（纵向不能顶破） */
-var SIZE_STEPS = [
-  'clamp(26px,2.7vw,50px)',
-  'clamp(23px,2.35vw,43px)',
-  'clamp(19px,1.95vw,36px)',
-  'clamp(16px,1.65vw,30px)',
-  'clamp(14px,1.42vw,26px)',
-  'clamp(13px,1.28vw,23px)'
-];
-function sizeFor(width, rows){
-  var iw = width <= 5 ? 0 : width <= 6 ? 1 : width <= 8 ? 2 : width <= 10 ? 3 : width <= 12 ? 4 : 5;
-  var ir = rows <= 1 ? 0 : rows === 2 ? 2 : rows === 3 ? 3 : 4;
-  return SIZE_STEPS[Math.max(iw, ir)];
+/* ===================== 图形排布（V3.4）=====================
+   老师的口径：图案要像课本那样「一行排开」，不能 4 个一行、剩下 1 个孤零零掉到第二行。
+   做法：先按最大字号量出一个图案有多宽，再按面板实际可用宽度反算字号——
+   一行塞得下就用这个字号；实在塞不下（10 个 + 问号）才折行，而且折成等长的几行（5+5 / 4+3）。
+
+   排布原则：每个「图案区域」是一列，区域之间左右并排（平行）；
+   区域内部按 perRow 折行。 */
+
+var IT_FONT_SCALE = 1.15;   /* .it 的 font-size 相对 --isz 的放大倍数（与 CSS 保持一致） */
+
+/* 把题目拆成「图案区域」：加法两组 / 减法一整排 / 虚线框 / 求另一部分 + 问号 */
+function buildRegions(q){
+  var regions = [];
+  if (q.groups && q.groups.length){
+    q.groups.forEach(function(n){ regions.push({kind:'items', n:n, mark:''}); });
+    if (q.unknown) regions.push({kind:'mark', n:1});
+    return regions;
+  }
+  var free = 0, boxed = 0, slashed = 0;
+  (q.items || []).forEach(function(o){
+    if (o.mark === 'box') boxed++;
+    else if (o.mark === 'slash') slashed++;
+    else free++;
+  });
+  if (boxed){
+    /* 虚线框必须包住连续的一块，所以还是拆成「正常组 + 虚线框组」两段 */
+    if (free) regions.push({kind:'items', n:free, mark:''});
+    regions.push({kind:'box', n:boxed, mark:''});
+    if (slashed) regions.push({kind:'items', n:slashed, mark:'slash'});   /* 连减才有 */
+  } else if (free || slashed){
+    /* 只有斜线划去：整排一起摆，前 free 个正常、后面带斜线，跟课本一样 */
+    regions.push({kind:'items', n:free + slashed, mark:'slash', markFrom:free});
+  }
+  return regions;
 }
 
-/* 把一题画进该玩家的 .pfig
-   排布原则：每个「图案区域」是一列，区域之间左右并排（平行），不会被挤到下一行；
-   区域内部一行最多 4 个，超过就自己换行。 */
+/* 把 n 个图案分到若干行，行与行尽量等长：n=5、perRow=4 → 3+2（不是 4+1） */
+function splitRows(n, perRow){
+  perRow = Math.max(1, perRow);
+  if (n <= perRow) return [n];
+  var rows = Math.ceil(n / perRow);
+  var base = Math.floor(n / rows), rem = n % rows, out = [];
+  for (var i = 0; i < rows; i++) out.push(base + (i < rem ? 1 : 0));
+  return out;
+}
+
+/* 按 perRow 把各区域画进 line（每次重画都先清空） */
+function paintRegions(line, regions, q, perRow){
+  line.innerHTML = '';
+  var idx = 0;
+  regions.forEach(function(r){
+    if (r.kind === 'mark'){
+      /* 问号占位：只画一个「?」，不带「只/条/个」这些字（教学上尽量少提示） */
+      line.appendChild(el('span','qmark','?'));
+      return;
+    }
+    var seg = el(r.kind === 'box' ? 'span' : 'div', r.kind === 'box' ? 'dashbox' : 'gsec');
+    splitRows(r.n, perRow).forEach(function(inRow){
+      var row = el('div','irow');
+      for (var j = 0; j < inRow; j++, idx++){
+        var m = (r.markFrom != null && idx < r.markFrom) ? '' : (r.mark || '');
+        row.appendChild(itemEl(q, m));
+      }
+      seg.appendChild(row);
+    });
+    line.appendChild(seg);
+  });
+}
+
+/* 一行摆 perLine 个图案时最大能用多大字号（px）：
+   宽度 = perLine 个图案 + 行内间隙 + 组间空隙 + 问号/虚线框的固定开销 */
+function iszForLine(perLine, avail, w1, maxIsz, groupGap, marks, pads, gap){
+  var fixed = Math.max(0, perLine - 1) * gap + marks * 26 + pads * 22;
+  var v = (avail * 0.985 - fixed) / (perLine * (w1 / maxIsz) + groupGap);
+  return (!isFinite(v) || v <= 0) ? maxIsz : v;
+}
+
+/* 把一题画进该玩家的 .pfig */
 function renderFigure(p){
   var q = p.q, wrap = p.fig;
   wrap.innerHTML = '';
 
-  var regions = [];   /* {kind:'items'|'box'|'mark', n, mark} */
-  if (q.groups && q.groups.length){
-    q.groups.forEach(function(n){ regions.push({kind:'items', n:n, mark:''}); });
-    if (q.unknown) regions.push({kind:'mark', n:2});
-  } else {
-    var free = q.items.filter(function(o){ return o.mark === ''; }).length;
-    var boxed = q.items.filter(function(o){ return o.mark === 'box'; }).length;
-    var slashed = q.items.filter(function(o){ return o.mark === 'slash'; }).length;
-    if (boxed){
-      /* 虚线框必须包住连续的一块，所以还是拆成「正常组 + 虚线框组」两段 */
-      if (free) regions.push({kind:'items', n:free, mark:''});
-      regions.push({kind:'box', n:boxed, mark:''});
-      if (slashed) regions.push({kind:'items', n:slashed, mark:'slash'});   /* 连减才有 */
-    } else if (free || slashed){
-      /* 只有斜线划去：整排一起摆（4 个一行），前 free 个正常、后面带斜线，
-         跟课本一样是"一整排里划掉后面几个"，而不是左右两块 */
-      regions.push({kind:'items', n:free + slashed, mark:'slash', markFrom:free});
-    }
-  }
-
-  /* 横向格数 = 每区最多 4 格 + 区间空隙；行数 = 各区里最多的行数 */
-  var width = 0, rows = 1;
+  var regions = buildRegions(q);
+  var count = 0, marks = 0, pads = 0;
   regions.forEach(function(r){
-    width += Math.min(r.n, 4) + (r.kind === 'box' ? 1 : 0);
-    rows = Math.max(rows, Math.ceil(r.n / 4));
+    if (r.kind === 'mark') marks++;
+    else { count += r.n; if (r.kind === 'box') pads++; }
   });
-  /* 组间空隙现在约 1.25 个字宽 + 10px，估算时按 1.75 格留足余量（不改变现有档位，只防溢出） */
-  width += Math.max(0, regions.length - 1) * 1.75;
-  wrap.style.setProperty('--isz', sizeFor(width, rows));
 
-  /* 每 4 个包成一行，超出就新起一行 */
-  function fillSeg(seg, n, mark, markFrom){
-    for (var i = 0; i < n; i += 4){
-      var row = el('div','irow');
-      for (var j = i; j < Math.min(i + 4, n); j++){
-        var m = (markFrom != null && j < markFrom) ? '' : (mark || '');
-        row.appendChild(itemEl(q, m));
-      }
-      seg.appendChild(row);
-    }
-  }
-
-  /* 只要不止一个区域（两组图案 / 图案 + 虚线框 / 图案 + ?只），就拉开组间空隙 */
-  /* 加法：两组是两堆不同的事物，要分开摆（grpline 等分）。
-     减法：是同一堆里划掉 / 框走 / 求剩下，两组要挨在一起读成一整幅图（gsub）。 */
+  /* 加法：两组分开摆（grpline 等分）；减法：同一堆里划掉，两组挨在一起（gsub） */
   var line = el('div', 'figline' + (regions.length > 1 ? ' grpline' : '') + (q.op === '-' ? ' gsub' : ''));
-  regions.forEach(function(r){
-    if (r.kind === 'mark'){
-      line.appendChild(el('span','qmark','?' + q.unit));
-      return;
-    }
-    var seg = el(r.kind === 'box' ? 'span' : 'div', r.kind === 'box' ? 'dashbox' : 'gsec');
-    fillSeg(seg, r.n, r.mark, r.markFrom);
-    line.appendChild(seg);
-  });
-
   var box = el('div','figbox');
   box.appendChild(line);
   if (q.brace) box.appendChild(braceSVG(q.brace.label));
   if (q.labelText && !q.unknown) box.appendChild(el('div','qtext', q.labelText));
   wrap.appendChild(box);
+
+  /* ---- 先按最大字号、全部一行画一次，量出一个图案的真实宽度 ---- */
+  var vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1920;
+  var maxIsz = clamp(vw * 0.028, 22, 54);
+  /* 低于这个字号就看不清了：此时宁可按等长折行，也不再继续缩 */
+  var minIsz = clamp(vw * 0.0135, 14, 26);
+  var gap = clamp(vw * 0.0025, 1, 5);
+  var avail = Math.max(140, (p.fig.clientWidth || 430) - 14);
+  var availH = Math.max(60, (p.fig.clientHeight || 150) - (q.brace ? 42 : 0) -
+                        ((q.labelText && !q.unknown) ? 26 : 0) - 10);
+  var groupCoef = (q.op === '-' ? 0.26 : 0.70);
+  var groupGap = Math.max(0, regions.length - 1) * groupCoef;   /* 以 isz 为单位 */
+
+  line.style.setProperty('--isz', maxIsz + 'px');
+  paintRegions(line, regions, q, count || 1);
+  var probe = line.querySelector('.it');
+  var w1 = (probe && probe.offsetWidth) ? probe.offsetWidth : 1.373 * IT_FONT_SCALE * maxIsz;
+  /* .it 有 margin:0 -0.12em，实际占位比 offsetWidth 窄 0.24em（≈0.825 倍），不扣掉会少排一个 */
+  w1 = w1 * 0.825;
+
+  /* ---- 反算字号：先假设全部排在一行（跟课本一样）---- */
+  var perRow = count || 1;
+  var isz = iszForLine(count || 1, avail, w1, maxIsz, groupGap, marks, pads, gap);
+  isz = Math.min(isz, maxIsz);
+
+  var maxReg = 0;
+  regions.forEach(function(r){ if (r.kind !== 'mark') maxReg = Math.max(maxReg, r.n); });
+
+  /* ---- 加法两组/三组是按等分格子摆的，字号还得让「最胖那一组」塞进自己那格 ----
+     不等分就会裁掉图案：9+1 时 9 只挤在半个面板里，两边直接被 overflow:hidden 切掉。
+     格子实在塞不下（9+1、1+1+8 这种），就改用「整排居中 + 组间一条缝」，宁可不在正中间也不裁图案。 */
+  var tight = false;
+  if (regions.length > 1 && q.op === '+'){
+    var iszCol = ((avail - (regions.length - 1) * gap) / regions.length - 4) / (maxReg * (w1 / maxIsz));
+    if (iszCol < minIsz) tight = true;
+    else isz = Math.min(isz, iszCol);
+  }
+  if (tight) line.classList.add('gtight');
+
+  /* 单区域（划去 / 框走 / 一整排）一行实在放不下时，才折成等长的几行；
+     多区域的题（加法两组）横向本来就是两组并排，折行只会更难看，直接让字号小一点 */
+  if (count === maxReg && isz < minIsz){
+    perRow = Math.max(1, Math.floor((avail * 0.985 - marks * 26 - pads * 22) / (w1 * minIsz / maxIsz + gap)));
+    isz = Math.min(iszForLine(perRow, avail, w1, maxIsz, groupGap, marks, pads, gap), maxIsz);
+  }
+
+  var rows = Math.ceil((count || 1) / Math.max(1, perRow));
+  /* 纵向也要收得住：每一行大约 1.5 个字高 */
+  isz = Math.min(isz, availH / (rows * 1.5));
+  isz = Math.max(isz, clamp(vw * 0.0085, 9, 17));
+
+  line.style.setProperty('--isz', isz.toFixed(1) + 'px');
+  paintRegions(line, regions, q, perRow);
 }
 
 /* 算式行：槽 + 固定运算符 */
@@ -1726,7 +1821,8 @@ window.__T = {
   renderFigure: renderFigure, renderQuestion: renderQuestion,
   allowedTypes: allowedTypes, mmss: mmss,
   loadSettings: loadSettings, saveSettings: saveSettings,
-  buildSettingsUI: buildSettingsUI
+  buildSettingsUI: buildSettingsUI,
+  qSig: qSig, buildRegions: buildRegions, splitRows: splitRows
 };
 
 if (window.document && document.getElementById('app')) boot();

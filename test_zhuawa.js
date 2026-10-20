@@ -292,7 +292,7 @@ Object.keys(T.TYPES).forEach(type => {
     if (type === 'add'){
       __okT(q.a >= 1 && q.b >= 1 && q.a + q.b <= 10 && q.c === q.a + q.b, '加法不越界 ' + tag);
       __okT(q.groups.length === 2 && q.groups[0] + q.groups[1] === q.c, '加法两组之和=' + tag);
-      __okT(q.brace && q.brace.label === '?' + q.unit, '加法大括号问号 ' + tag);
+      __okT(q.brace && q.brace.label === '?', '加法大括号问号 ' + tag);
     }
     if (type === 'cross' || type === 'box'){
       const total = q.a, k = q.b;
@@ -302,13 +302,13 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(mk === k, '记号数=去掉数 ' + tag + ' 记号' + mk + ' k' + k);
       /* 课本做法：不写「还剩」这类提示语，只在下面画大括号标 ?X */
       __okT(!q.labelText, '不出现「还剩」提示语 ' + tag);
-      __okT(q.brace && q.brace.label === '?' + q.unit, '大括号标问号 ' + tag);
+      __okT(q.brace && q.brace.label === '?', '大括号标问号 ' + tag);
     }
     if (type === 'part'){
       __okT(q.a >= 3 && q.a <= 10 && q.b >= 1 && q.b < q.a && q.c === q.a - q.b, '求另一部分范围 ' + tag);
       __okT(q.groups[0] === q.b && q.unknown === true, '已知部分+问号占位 ' + tag);
       __okT(q.brace.label === q.a + q.unit, '括号标总数 ' + tag);
-      __okT(q.labelText === '?' + q.unit, '问句为? ' + tag);
+      __okT(q.labelText === '?', '问句为? ' + tag);
     }
     if (type === 'add3'){
       __okT(q.a >= 1 && q.b >= 1 && q.third >= 1 && q.a + q.b + q.third <= 10, '连加不越界 ' + tag);
@@ -319,7 +319,7 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(k1 >= 1 && k2 >= 1 && k1 + k2 <= n - 1 && q.c === n - k1 - k2, '连减不越界 ' + tag);
       __okT(q.items.filter(o => o.mark === 'slash').length === k1, '连减划去数 ' + tag);
       __okT(q.items.filter(o => o.mark === 'box').length === k2, '连减速线框数 ' + tag);
-      __okT(!q.labelText && q.brace && q.brace.label === '?' + q.unit, '连减也不写提示语、只用大括号标问号 ' + tag);
+      __okT(!q.labelText && q.brace && q.brace.label === '?', '连减也不写提示语、只用大括号标问号 ' + tag);
     }
     /* 槽位 */
     const expSlots = q.given ? 1 : (q.arity === 2 ? 3 : 4);
@@ -634,8 +634,8 @@ S.settings.scope = 'mix';
 reset();
 S.players.forEach(p => {
   const qm = __kids(p.fig, 'qmark');
-  __okT(qm.length === 1, '求另一部分有「?单位」标注');
-  __okT(qm[0] && qm[0]._text.indexOf('?') === 0, '问号标注以 ? 开头', qm[0] && qm[0]._text);
+  __okT(qm.length === 1, '求另一部分有一个问号占位');
+  __okT(qm[0] && qm[0]._text === '?', '问号占位只画一个 ?（不带只/条/个）', qm[0] && qm[0]._text);
   __okT(__kids(p.fig, 'bracewrap').length === 1, '求另一部分有大括号(标总数)');
 });
 
@@ -671,7 +671,7 @@ const fl = __kids(pp.fig, 'figline')[0];
 const gees = __kids(pp.fig, 'gsec');
 __okT(gees.length === 1, '划去题整排摆成一块', 'gsec=' + gees.length);
 __okT(__kids(gees[0], 'it').length === 10, '整排 10 个物体');
-__okT(__kids(pp.fig, 'irow').length === 3, '10 个 → 3 行（每行最多 4 个）', 'rows=' + __kids(pp.fig, 'irow').length);
+__okT(__kids(pp.fig, 'irow').length === 1, '10 个排成一行（不再 4+4+2 折行）', 'rows=' + __kids(pp.fig, 'irow').length);
 __okT(__kids(pp.fig, 'sl').length === 8, '划去记号 8 个');
 /* 前 2 个不带斜线，第 3 个开始带 */
 const flat = __kids(gees[0], 'it');
@@ -714,6 +714,70 @@ T.renderFigure(pp);
 const fl5 = __kids(pp.fig, 'figline')[0];
 __okT(fl5._cls.has('grpline') && !fl5._cls.has('gsub'), '加法两组分开摆（不等分成一排）');
 __okT(__kids(pp.fig, 'gsec').length === 2, '加法仍是两段图案');
+
+/* ========== 15c. 一行排开（不再 4+1）、标签只剩问号、四人题目不重样 ========== */
+/* 5 个图案：课本画法是一行，不能 4 个 + 1 个"孤儿行" */
+pp.q = { type:'cross', emoji:'🐯', unit:'只', op:'-', arity:2, a:5, b:1, c:4,
+         brace:{from:0,to:0,label:'?'}, given:false, slots:['a','b','c'],
+         items: Array.from({length:5}, (_, i) => ({ mark: i >= 4 ? 'slash' : '' })) };
+T.renderFigure(pp);
+__okT(__kids(pp.fig, 'irow').length === 1, '5 个图案排成一行（不再 4+1）', 'rows=' + __kids(pp.fig, 'irow').length);
+__okT(__kids(__kids(pp.fig, 'irow')[0], 'it').length === 5, '一行里正好 5 个图案');
+
+/* 大括号下面的标签只留一个「?」，不带「个/只/条」 */
+const lb = __kids(pp.fig, 'lb')[0];
+__okT(lb && lb._text === '?', '大括号下面只有一个问号', lb && lb._text);
+
+/* 实在要折行时折成等长：5→3+2、10→5+5、7→4+3，绝不 4+1 */
+__okT(T.splitRows(5, 4).join(',') === '3,2', '5 个折成 3+2（不是 4+1）', T.splitRows(5, 4).join(','));
+__okT(T.splitRows(10, 5).join(',') === '5,5', '10 个折成 5+5', T.splitRows(10, 5).join(','));
+__okT(T.splitRows(7, 6).join(',') === '4,3', '7 个折成 4+3', T.splitRows(7, 6).join(','));
+__okT(T.splitRows(4, 4).join(',') === '4', '刚好放得下就不折行');
+
+/* 求另一部分：问号占位只画「?」 */
+pp.q = { type:'part', emoji:'🐤', unit:'只', op:'-', arity:2, a:6, b:2, c:4,
+         groups:[2], unknown:true, brace:{from:0,to:1,label:'6只'}, labelText:'?',
+         given:false, slots:['a','b','c'], items:[] };
+T.renderFigure(pp);
+const qm2 = __kids(pp.fig, 'qmark')[0];
+__okT(qm2 && qm2._text === '?', '问号占位不带单位', qm2 && qm2._text);
+
+/* 四人题目两两不同：连开 30 局都不能撞（算式不撞、图案物种也不撞） */
+S.settings.types = ['add','cross','box','part'];
+S.settings.scope = 'mix';
+S.settings.max = 10;
+let dupSig = 0, dupEmoji = 0;
+for (let t = 0; t < 30; t++){
+  reset();
+  const sigs = S.players.map(x => T.qSig(x.q));
+  const ems = S.players.map(x => x.q.emoji);
+  if (new Set(sigs).size !== sigs.length) dupSig++;
+  if (new Set(ems).size !== ems.length) dupEmoji++;
+}
+__okT(dupSig === 0, '30 次开局四人算式从不重复', 'dup=' + dupSig);
+__okT(dupEmoji === 0, '30 次开局四人图案不重复', 'dup=' + dupEmoji);
+
+/* 5 以内题池更小，仍然要能排出四道不同的题 */
+S.settings.max = 5;
+let dup5 = 0;
+for (let t = 0; t < 30; t++){
+  reset();
+  const sigs = S.players.map(x => T.qSig(x.q));
+  if (new Set(sigs).size !== sigs.length) dup5++;
+}
+__okT(dup5 === 0, '5 以内四人算式也不重复', 'dup=' + dup5);
+S.settings.max = 10;
+
+/* 答对后换的新题也不能跟别人撞 */
+reset();
+const pa = S.players[0];
+for (let t = 0; t < 20; t++){
+  fillRight(pa);
+  T.confirmAnswer(pa);
+  __okMs(T.CONFIG.NEXT_MS + 400);
+  const others = S.players.slice(1).map(x => T.qSig(x.q));
+  __okT(others.indexOf(T.qSig(pa.q)) < 0, '换新题后仍与其他人不同 #' + t);
+}
 
 /* ========== 16. 长时间连打：不越界、不抛错 ========== */reset();
 for (let round = 0; round < 60; round++){
