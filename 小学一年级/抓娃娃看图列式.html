@@ -238,6 +238,15 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
 #panels{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:8px;flex:1 1 52%;min-height:0;}
 .panel{display:flex;flex-direction:column;gap:5px;background:#fff;border:3px solid var(--pc-d);border-radius:16px;
   padding:6px 6px 8px;min-height:0;min-width:0;box-shadow:0 4px 0 rgba(63,58,52,.1);}
+/* 人数不足 4 人时多出来的座位：只占位、不答题。面板宽度不错 → 键盘按键大小也不变 */
+.panel.off{background:#f8f5ef;border:3px dashed #e2dacc;box-shadow:none;
+  align-items:center;justify-content:center;gap:0;}
+.panel.off .offtip{display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:#c6baa7;font-weight:900;font-size:clamp(14px,1.1vw,20px);letter-spacing:.18em;}
+.panel.off .offtip b{font-size:2.1em;line-height:1;letter-spacing:0;}
+/* 空座位对应的娃娃堆和筐：压暗、去色，一眼看出"这格今天没人" */
+.pile.off{opacity:.28;filter:grayscale(.8);}
+.bin.off{opacity:.4;box-shadow:0 0 0 3px #d9d0c1, inset 0 9px 14px rgba(0,0,0,.45);}
 .pfig{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(4px,.8vh,10px);
   background:var(--pc-l);border-radius:10px;padding:8px 6px;overflow:hidden;position:relative;}
 .figline{display:flex;align-items:flex-end;justify-content:center;flex-wrap:nowrap;gap:clamp(2px,.3vw,6px);}
@@ -536,6 +545,11 @@ var TYPES = {
   sub3:  {name:'连减（划去+框走）', op:'-', arity:3, def:false, scope:'sub'}
 };
 var TYPE_ORDER = ['add','cross','box','part','add3','sub3'];
+
+/* 座位数固定为 4：不管开 2 人还是 3 人，整屏永远是四宫格，
+   空出来的座位只占位、不答题。这样面板宽度、键盘按键大小、抓斗位置全都不用变
+   ——老师换人数时看到的应该是"少了一个人"，而不是"整个界面重新排一遍"。 */
+var SLOTS = 4;
 
 /* 颜色（与截图一致：红黄蓝紫） */
 var COLORS = [
@@ -1081,7 +1095,7 @@ function makePlayer(i){
 
 function buildUI(){
   var n = S.settings.count;
-  document.documentElement.style.setProperty('--n', n);
+  document.documentElement.style.setProperty('--n', SLOTS);
 
   /* 徽章 */
   var badges = $('badges');
@@ -1102,7 +1116,6 @@ function buildUI(){
   var stage = $('stage');
   Array.prototype.slice.call(stage.querySelectorAll('.claw,.bin,.doll,.clawhit,.stars span'))
     .forEach(function(e){ e.remove(); });
-  var n0 = Math.min(4, n);
 
   /* 彩虹：五道同心半圆（SVG 画，任何宽高比都不变形） */
   var rb = stage.querySelector('.rainbow');
@@ -1112,11 +1125,12 @@ function buildUI(){
       return '<path d="M' + (200 - r) + ' 200 A' + r + ' ' + r + ' 0 0 1 ' + (200 + r) + ' 200" fill="none" stroke="' + c + '" stroke-width="22"/>';
     }).join('') + '</svg>';
 
-  /* 每人一堆：真的堆成小山（自下而上 6/5/4/3，层间互相压住），爪子只从自己这堆里抓 */
+  /* 每人一堆：真的堆成小山（自下而上 6/5/4/3，层间互相压住），爪子只从自己这堆里抓。
+     固定 4 堆：没人坐的那堆照样在（否则机器会突然"变宽"），只是压暗、没人抓 */
   var piles = stage.querySelector('.piles');
   piles.innerHTML = '';
-  for (var pi = 0; pi < n; pi++){
-    var pile = el('div','pile');
+  for (var pi = 0; pi < SLOTS; pi++){
+    var pile = el('div','pile' + (pi >= n ? ' off' : ''));
     var cnt = 16 + Math.floor(Math.random() * 4);
     var bag = shuffle(DOLLS.slice());
     while (bag.length < cnt) bag = bag.concat(shuffle(DOLLS.slice()));
@@ -1156,7 +1170,7 @@ function buildUI(){
 
   var binbox = stage.querySelector('.bins');
   binbox.innerHTML = '';
-  binbox.style.gridTemplateColumns = 'repeat(' + n + ',1fr)';
+  binbox.style.gridTemplateColumns = 'repeat(' + SLOTS + ',1fr)';
 
   /* 背景光斑 */
   var bok = stage.querySelector('.bokeh');
@@ -1186,7 +1200,7 @@ function buildUI(){
   }
 
   S.players.forEach(function(p, i){
-    var cx = (i + 0.5) * 100 / n;
+    var cx = (i + 0.5) * 100 / SLOTS;
     var claw = el('div','claw');
     claw.style.left = cx + '%';
     /* 金属抓斗：橙色电机箱 + 两条金属爪臂，抓取时向内收拢 */
@@ -1244,7 +1258,14 @@ function buildUI(){
     p.els.doll = doll;
   });
 
-  /* 题目面板 */
+  /* 空座位的筐：照样摆一个（机器不变形），只是没有玩家色、压暗 */
+  for (var bi2 = S.players.length; bi2 < SLOTS; bi2++){
+    binbox.appendChild(el('div','bin off'));
+  }
+
+  /* 题目面板：永远是 4 块。
+     人少于 4 人时，多出来的那几块只占位、不铺题、不铺键盘——
+     键盘按键的宽度由面板宽度决定，面板宽度由 4 等分决定，所以换人数时键盘一动不动。 */
   var panels = $('panels');
   panels.innerHTML = '';
   S.players.forEach(function(p){
@@ -1277,6 +1298,16 @@ function buildUI(){
     btns.appendChild(back); btns.appendChild(ok);
     p.els.ok = ok;
   });
+
+  /* 空座位的面板：一块安静的占位牌，不给题、不给键盘、点了也没反应 */
+  for (var si = S.players.length; si < SLOTS; si++){
+    var rest = el('div','panel off');
+    var tip = el('div','offtip');
+    tip.appendChild(el('b','','—'));
+    tip.appendChild(el('span','','轮空'));
+    rest.appendChild(tip);
+    panels.appendChild(rest);
+  }
 }
 
 /* ---------------------------- 作答交互 ---------------------------- */
@@ -1365,6 +1396,15 @@ function checkAnswer(p){
     var b = q.given ? q.b : vals[1];
     var uc = q.given ? vals[0] : vals[2];
     var res = q.op === '+' ? a + b : a - b;
+    /* 「求另一部分」的图和两种列式都成立：
+       图上画的是「已知的一部分 + ? ，下面大括号标总数」。
+       ① 总数 − 已知部分 = 另一部分（本课要练的减法）
+       ② 已知部分 + 另一部分 = 总数（孩子常用的「想加算减」）
+       孩子写 3+2=5 是在讲同一件事，判错会打击人，所以两种都算对。 */
+    if (q.type === 'part' && p.ops[0] === '+' && vals[2] === q.a &&
+        ((vals[0] === q.b && vals[1] === q.c) || (vals[0] === q.c && vals[1] === q.b))){
+      return {ok:true, expect:q.c};
+    }
     return {ok: opsOk && uc === res, expect: res};
   }
   var x = q.given ? q.a : vals[0];
@@ -1448,7 +1488,7 @@ function killNode(n){
 function prizeBurst(p){
   var stage = $('stage');
   if (!stage) return;
-  var n = S.settings.count;
+  var n = SLOTS;   /* 固定四宫格：+1 飘字永远落在自己那一格的正中 */
   var x = (p.id + 0.5) * 100 / n;
   var pop = el('div','pop1','+1');
   pop.style.left = x + '%';
@@ -1480,7 +1520,7 @@ function prizeBurst(p){
 function grab(p, success){
   var stage = $('stage');
   if (!stage) return;
-  var n = S.settings.count;
+  var n = SLOTS;   /* 固定四宫格：抓斗的落点跟面板列对齐 */
   var cw = stage.clientWidth || 800, ch = stage.clientHeight || 300;
   var colW = cw / n;
   var colLeft = p.id * colW;
@@ -1630,7 +1670,7 @@ function toast(msg){
 /* ---------------------------- 设置弹窗 ---------------------------- */
 function buildSettingsUI(){
   var st = S.settings;
-  document.documentElement.style.setProperty('--n', st.count);
+  document.documentElement.style.setProperty('--n', SLOTS);
   /* 人数 */
   Array.prototype.forEach.call($('pcPills').children, function(b){
     b.classList.toggle('on', Number(b.dataset.c) === st.count);
@@ -1763,7 +1803,7 @@ function bindUI(){
   /* 窗口尺寸变化：图是流式布局，无需重算坐标；这里只保证舞台宽度缓存刷新 */
   window.addEventListener('resize', function(){
     /* 爪子回位（百分比，天然自适应） */
-    var n = S.settings.count;
+    var n = SLOTS;
     S.players.forEach(function(p){
       if (p.els.claw && !p.done) p.els.claw.style.left = ((p.id + 0.5) * 100 / n) + '%';
     });
@@ -1774,10 +1814,14 @@ function bindUI(){
 function boot(){
   loadSettings();          /* 先把老师上次选的「数的范围」读回来，再铺界面 */
 
-  /* 截图/演示用参数（不影响正常使用）：?max=5 → 直接按 5 以内出题 */
-  var qsMax = null;
-  try { qsMax = new URLSearchParams(location.search).get('max'); } catch(e){ }
+  /* 截图/演示用参数（不影响正常使用）：?max=5 → 直接按 5 以内出题；?pc=3 → 直接 3 人开局 */
+  var qsMax = null, qsPc = null;
+  try {
+    qsMax = new URLSearchParams(location.search).get('max');
+    qsPc = new URLSearchParams(location.search).get('pc');
+  } catch(e){ }
   if (qsMax && Number(qsMax) >= 5 && Number(qsMax) <= 10) S.settings.max = Number(qsMax);
+  if (qsPc && Number(qsPc) >= 2 && Number(qsPc) <= 4) S.settings.count = Number(qsPc);
 
   bindUI();
   buildSettingsUI();

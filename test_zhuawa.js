@@ -555,6 +555,27 @@ for (let i = 0; i < 30; i++){
 reset();
 __okT(S.players.every(p => p.q.type === 'part'), '全部出求另一部分');
 
+/* ========== 8b. 求另一部分：减法、加法两种列式都算对 ========== */
+/* 图是「3 个 + ? ，大括号标 5 个」。5-3=2 和 3+2=5 讲的是同一件事，
+   一年级孩子常用「想加算减」：先想 3+2=5，再说 5-3=2。写加法不能判错。 */
+function judge(q, vals, op){
+  const slots = q.slots || ['a','b','c'];
+  const answers = {};
+  slots.forEach((s, i) => { answers[s] = String(vals[i]); });
+  return T.checkAnswer({ q: q, slots: slots, ops: { 0: op }, answers: answers });
+}
+const qPart = { type:'part', emoji:'🐤', unit:'只', op:'-', arity:2, a:5, b:3, c:2,
+                given:false, slots:['a','b','c'], groups:[3], unknown:true };
+__okT(judge(qPart, [5,3,2], '-').ok === true, '求另一部分：5-3=2 判对');
+__okT(judge(qPart, [3,2,5], '+').ok === true, '求另一部分：3+2=5 也判对（想加算减）');
+__okT(judge(qPart, [2,3,5], '+').ok === true, '求另一部分：2+3=5 也判对');
+__okT(judge(qPart, [3,2,4], '+').ok === false, '求另一部分：3+2=4 判错（得数不对）');
+__okT(judge(qPart, [3,3,5], '+').ok === false, '求另一部分：3+3=5 判错（编数）');
+/* 只有「求另一部分」放宽：划去题写 3+2=5 仍然要判错（那题问的是还剩几个） */
+const qCross = { type:'cross', emoji:'🐯', unit:'只', op:'-', arity:2, a:5, b:2, c:3,
+                 given:false, slots:['a','b','c'], items:[] };
+__okT(judge(qCross, [3,2,5], '+').ok === false, '划去题不放宽：3+2=5 判错');
+
 /* ========== 9. 教学范围：加法模式只出加法 ========== */
 S.settings.types = ['add','cross','box','part','add3','sub3'];
 S.settings.scope = 'add';
@@ -567,16 +588,32 @@ S.settings.scope = 'sub';
 __okT(T.allowedTypes().indexOf('add') < 0 && T.allowedTypes().indexOf('add3') < 0, '减法范围排除加法类');
 S.settings.scope = 'mix';
 
-/* ========== 10. 人数 2 → 面板 / 徽章 / 爪子 都是 2 个 ========== */
+/* ========== 10. 人数 2/3 人：永远是四宫格，多出来的座位只占位不答题 ========== */
+/* 老师的要求：换人数时不要重排界面，键盘区必须一动不动，只是少一个人能答 */
 S.settings.count = 2;
 S.settings.types = ['add','cross','box','part'];
 reset();
 __okT(S.players.length === 2, '2 人开局');
-__okT(__kids(__reg('badges'), 'badge').length === 2, '2 个徽章');
-__okT(__kids(__reg('panels'), 'panel').length === 2, '2 个面板');
+__okT(__kids(__reg('badges'), 'badge').length === 2, '2 个徽章（只给真人）');
+const panels2 = __kids(__reg('panels'), 'panel');
+__okT(panels2.length === 4, '2 人时仍是 4 块面板（不重排）', 'panels=' + panels2.length);
+__okT(panels2.filter(x => x._cls.has('off')).length === 2, '2 人时多出的 2 块是空座位');
+__okT(panels2.filter(x => x._cls.has('off')).every(x => __kids(x, 'pkey').length === 0),
+  '空座位里没有键盘');
+__okT(panels2.filter(x => x._cls.has('off')).every(x => __kids(x, 'pfig').length === 0),
+  '空座位里不铺题');
+const key0 = __kids(panels2[0], 'pkey')[0];
+__okT(key0 && key0.children.length === 12, '真人面板仍是 12 个按键（1-9 0 + -）');
+__okT(Number(document.documentElement.style._p['--n']) === 4, '面板列数固定 4 列',
+  String(document.documentElement.style._p['--n']));
+__okT(__kids(__reg('stage'), 'pile').length === 4, '娃娃堆固定 4 堆');
+__okT(__kids(__reg('stage'), 'bin').length === 4, '筐固定 4 个');
 S.settings.count = 3;
 reset();
-__okT(S.players.length === 3 && __kids(__reg('panels'), 'panel').length === 3, '3 人开局');
+const panels3 = __kids(__reg('panels'), 'panel');
+__okT(S.players.length === 3 && panels3.length === 4, '3 人开局也是 4 块面板', 'panels=' + panels3.length);
+__okT(panels3.filter(x => x._cls.has('off')).length === 1, '3 人时只有最后 1 块是空座位');
+__okT(panels3[3]._cls.has('off'), '空座位排在最后一格');
 
 /* ========== 11. 计时与结算 ========== */
 S.settings.count = 4;
