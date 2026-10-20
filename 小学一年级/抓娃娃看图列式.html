@@ -235,9 +235,9 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
   100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,-40px))) scale(1.25)}}
 
 /* ===================== 题目面板 ===================== */
-#panels{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:8px;flex:1 1 52%;min-height:0;}
+#panels{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:8px;flex:1 1 52%;min-height:0;}
 .panel{display:flex;flex-direction:column;gap:5px;background:#fff;border:3px solid var(--pc-d);border-radius:16px;
-  padding:6px 6px 8px;min-height:0;box-shadow:0 4px 0 rgba(63,58,52,.1);}
+  padding:6px 6px 8px;min-height:0;min-width:0;box-shadow:0 4px 0 rgba(63,58,52,.1);}
 .pfig{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(4px,.8vh,10px);
   background:var(--pc-l);border-radius:10px;padding:8px 6px;overflow:hidden;position:relative;}
 .figline{display:flex;align-items:flex-end;justify-content:center;flex-wrap:nowrap;gap:clamp(2px,.3vw,6px);}
@@ -245,16 +245,30 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
    把整行按组数等分成若干"位置"，每组摆在自己那一格的正中间——
    既不像整行居中那样挤成一串，也不会像 space-between 那样贴到面板最边上。
    （grid-auto-flow:column + 1fr 让列数随组数自适应：两道算式 2 列，连加/连减 3 列。） */
-.figline.grpline{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;
+.figline.grpline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);
   justify-items:center;align-items:end;align-self:stretch;
-  column-gap:calc(var(--isz, 30px) * 0.5);}
+  column-gap:calc(var(--isz, 30px) * 0.70);}
+/* 减法（划去 / 框走 / 求另一部分 / 连减）：两组挨在一起，变成"一整排里划掉一部分"的样子。
+   所以不用 grid 等分，整行居中 + 一条小缝就够分组了。 */
+.figline.grpline.gsub{display:flex;justify-content:center;align-items:flex-end;
+  column-gap:calc(var(--isz, 30px) * 0.26);}
 /* 每个图案区域是一列：区域之间并排，区域内每 4 个一行（行是显式包出来的，不会被撑成一行） */
 .gsec{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:clamp(2px,.5vh,8px);flex:0 0 auto;}
 .irow{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:clamp(1px,.25vw,5px);}
 /* line-height 必须 >1：emoji 字形会越出行盒，1 会让下一行文字压到图案上 */
-.it{font-size:var(--isz,clamp(19px,1.95vw,36px));line-height:1.34;position:relative;display:inline-flex;
+/* 图案尺寸 = 档位 × 每种 emoji 的等面积系数 --k × 1.20。
+   emoji 字形的 advance 宽是 1.373em，但真正画出来的墨迹只有 0.99em——左右各有 0.19em 纯空白。
+   用 margin:0 -0.12em 把空白吃掉（放大后 -0.12em 正好约等于这部分留白的一半），
+   于是图案视觉上大了 20%，一行占的宽度反而没变，不会挤破面板。 */
+.it{font-size:calc(var(--isz,30px) * var(--k,1) * 1.15);margin:0 -0.12em;
+  line-height:1.34;position:relative;display:inline-flex;
   align-items:center;justify-content:center;transition:opacity .2s,transform .2s;}
+/* 1600 / 1366 的面板一格只有 1.6 个字宽（大屏是 1.73），放大倍数收到 1.08 才不会顶破 */
+@media (max-width:1700px){
+  .it{font-size:calc(var(--isz,30px) * var(--k,1) * 1.04);}
+  .figline.grpline{column-gap:calc(var(--isz, 30px) * 0.6);}
+}
 .it .sl{position:absolute;left:-8%;top:50%;width:116%;height:3px;background:#e0392b;border-radius:2px;
   transform:rotate(-32deg);box-shadow:0 0 0 1px rgba(255,255,255,.35);}
 .dashbox{display:flex;flex-direction:column;gap:clamp(2px,.5vh,8px);justify-content:center;align-items:center;
@@ -264,7 +278,8 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
   background:rgba(255,255,255,.5);margin-left:6px;}
 .qmark{font-size:clamp(16px,1.45vw,26px);font-weight:900;color:#6b6155;white-space:nowrap;
   align-self:center;justify-self:center;margin-left:0;}
-.figbox{display:flex;flex-direction:column;align-items:center;max-width:100%;gap:clamp(6px,1.1vh,14px);}
+/* width:100% 保证大括号和 ?只 在整块面板里居中，不会跟着最宽那组图案跑偏 */
+.figbox{display:flex;flex-direction:column;align-items:center;width:100%;max-width:100%;gap:clamp(6px,1.1vh,14px);}
 .bracewrap{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:0;}
 .bracewrap svg{width:100%;height:clamp(16px,1.9vh,28px);overflow:visible;}
 .bracewrap .lb{font-size:clamp(14px,1.25vw,23px);font-weight:900;color:#5c5449;margin-top:0;white-space:nowrap;}
@@ -430,6 +445,17 @@ select.sel{height:32px;border:2.5px solid #d9c9bd;border-radius:8px;background:#
             <span style="font-weight:900;color:#8b8073;font-size:13px">秒</span>
           </div>
         </div>
+        <div class="row"><span class="lab">数的范围</span>
+          <div class="pills" id="mxPills">
+            <button class="pill" data-m="5">5</button>
+            <button class="pill" data-m="6">6</button>
+            <button class="pill" data-m="7">7</button>
+            <button class="pill" data-m="8">8</button>
+            <button class="pill" data-m="9">9</button>
+            <button class="pill" data-m="10">10</button>
+            <span style="font-weight:900;color:#8b8073;font-size:13px">以内</span>
+          </div>
+        </div>
         <div class="row"><span class="lab">教学范围</span>
           <select class="sel" id="selScope">
             <option value="mix">10以内综合</option>
@@ -530,6 +556,7 @@ var S = {
   settings: {
     count: 4,
     time: CONFIG.TIME_DEFAULT,
+    max: 10,                   /* 数的范围：5~10 以内，出题时所有数的和/总数都不超过它 */
     scope: 'mix',              /* mix | add | sub */
     anim: 'auto',
     names: ['1号','2号','3号','4号'],
@@ -545,6 +572,26 @@ var S = {
   gen: 0,                      /* 代数戳：重置时让旧定时器失效 */
   lastSpeak: 0
 };
+
+/* ---------------------------- 设置持久化 ---------------------------- */
+/* 只记「数的范围」这一项：老师按教学进度换到 5 以内之后，下次打开不用再点一遍。
+   其他项（人数 / 时间 / 名字）每次都是新的一局，保持默认。 */
+var STORE_KEY = 'zhuawa_settings';
+function loadSettings(){
+  try {
+    var raw = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(STORE_KEY) : null;
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (o && o.max >= 5 && o.max <= 10) S.settings.max = Number(o.max);
+  } catch (e) {}
+}
+function saveSettings(){
+  try {
+    if (typeof window !== 'undefined' && window.localStorage){
+      window.localStorage.setItem(STORE_KEY, JSON.stringify({ max: S.settings.max }));
+    }
+  } catch (e) {}
+}
 
 /* ---------------------------- 小工具 ---------------------------- */
 function $(id){ return document.getElementById(id); }
@@ -631,7 +678,7 @@ function allowedTypes(){
 }
 
 function buildQuestion(type){
-  var th = pick(THINGS), MAX = CONFIG.MAX_SUM;
+  var th = pick(THINGS), MAX = S.settings.max;
   var q = {type:type, emoji:th.e, unit:th.u, op:TYPES[type].op,
            arity:TYPES[type].arity, given:false, items:[], groups:[]};
 
@@ -647,7 +694,8 @@ function buildQuestion(type){
     q.a = n; q.b = k; q.c = n - k;
     q.boxMark = (type === 'box');
     for (var i = 0; i < n; i++) q.items.push({mark: i >= n - k ? (type === 'box' ? 'box' : 'slash') : ''});
-    q.labelText = '还剩?' + q.unit;
+    /* 课本只在下面画大括号、标一个 ?X，不写「还剩」这类提示语 */
+    q.brace = {from:0, to:0, label:'?' + q.unit};
   } else if (type === 'part'){
     /* 求另一部分：总数 n 已知（括号标 n），一部分 k 已知，问另一部分 */
     var n2 = rndInt(3, MAX), k2 = rndInt(1, n2 - 1);
@@ -673,7 +721,7 @@ function buildQuestion(type){
       else if (j >= n3 - k1 - k2) mark = 'box';
       q.items.push({mark:mark});
     }
-    q.labelText = '还剩?' + q.unit;
+    q.brace = {from:0, to:0, label:'?' + q.unit};
   }
 
   /* 开局一律不留任何已填数字：算式三个空全由学生自己填（运算符同理） */
@@ -733,8 +781,20 @@ function braceSVG(label){
   return wrap;
 }
 
+/* 每种 emoji 的等面积校正系数。
+   来源：用 canvas 把字形画到 160px，采样 alpha 通道量出墨迹面积（单位 em²）——
+   🍇 0.431 / 🍓 0.482 / 🍐 0.499 / 🐦 0.554 / 🐟 0.551 / 🐤 0.562 / 🍊 0.575 / 🐰 0.590
+   🐠 0.625 / 🐯 0.761 / 🍎 0.764 / 🦋 0.797。
+   统一到 0.60em²（sqrt(0.60/area)），葡萄要放大 18%、蝴蝶要缩 13%，看起来才是一样大。 */
+var EMOJI_K = {
+  '🐦': 1.04, '🐟': 1.04, '🐠': 0.98, '🐯': 0.89,
+  '🍎': 0.89, '🍐': 1.10, '🍇': 1.18, '🐰': 1.01,
+  '🦋': 0.87, '🍓': 1.12, '🐤': 1.03, '🍊': 1.02
+};
 function itemEl(q, mark){
   var s = el('span','it', q.emoji);
+  var k = EMOJI_K[q.emoji];
+  if (k) s.style.setProperty('--k', k);
   if (mark === 'slash') s.appendChild(el('i','sl'));
   return s;
 }
@@ -769,9 +829,16 @@ function renderFigure(p){
     var free = q.items.filter(function(o){ return o.mark === ''; }).length;
     var boxed = q.items.filter(function(o){ return o.mark === 'box'; }).length;
     var slashed = q.items.filter(function(o){ return o.mark === 'slash'; }).length;
-    if (free) regions.push({kind:'items', n:free, mark:''});
-    if (boxed) regions.push({kind:'box', n:boxed, mark:''});
-    if (slashed) regions.push({kind:'items', n:slashed, mark:'slash'});
+    if (boxed){
+      /* 虚线框必须包住连续的一块，所以还是拆成「正常组 + 虚线框组」两段 */
+      if (free) regions.push({kind:'items', n:free, mark:''});
+      regions.push({kind:'box', n:boxed, mark:''});
+      if (slashed) regions.push({kind:'items', n:slashed, mark:'slash'});   /* 连减才有 */
+    } else if (free || slashed){
+      /* 只有斜线划去：整排一起摆（4 个一行），前 free 个正常、后面带斜线，
+         跟课本一样是"一整排里划掉后面几个"，而不是左右两块 */
+      regions.push({kind:'items', n:free + slashed, mark:'slash', markFrom:free});
+    }
   }
 
   /* 横向格数 = 每区最多 4 格 + 区间空隙；行数 = 各区里最多的行数 */
@@ -785,23 +852,28 @@ function renderFigure(p){
   wrap.style.setProperty('--isz', sizeFor(width, rows));
 
   /* 每 4 个包成一行，超出就新起一行 */
-  function fillSeg(seg, n, mark){
+  function fillSeg(seg, n, mark, markFrom){
     for (var i = 0; i < n; i += 4){
       var row = el('div','irow');
-      for (var j = i; j < Math.min(i + 4, n); j++) row.appendChild(itemEl(q, mark || ''));
+      for (var j = i; j < Math.min(i + 4, n); j++){
+        var m = (markFrom != null && j < markFrom) ? '' : (mark || '');
+        row.appendChild(itemEl(q, m));
+      }
       seg.appendChild(row);
     }
   }
 
   /* 只要不止一个区域（两组图案 / 图案 + 虚线框 / 图案 + ?只），就拉开组间空隙 */
-  var line = el('div', 'figline' + (regions.length > 1 ? ' grpline' : ''));
+  /* 加法：两组是两堆不同的事物，要分开摆（grpline 等分）。
+     减法：是同一堆里划掉 / 框走 / 求剩下，两组要挨在一起读成一整幅图（gsub）。 */
+  var line = el('div', 'figline' + (regions.length > 1 ? ' grpline' : '') + (q.op === '-' ? ' gsub' : ''));
   regions.forEach(function(r){
     if (r.kind === 'mark'){
       line.appendChild(el('span','qmark','?' + q.unit));
       return;
     }
     var seg = el(r.kind === 'box' ? 'span' : 'div', r.kind === 'box' ? 'dashbox' : 'gsec');
-    fillSeg(seg, r.n, r.mark);
+    fillSeg(seg, r.n, r.mark, r.markFrom);
     line.appendChild(seg);
   });
 
@@ -1098,6 +1170,8 @@ function buildUI(){
     /* 键盘：1-9 0 + -（+ - 用来选运算符：加还是减由学生自己判断） */
     [1,2,3,4,5,6,7,8,9,0,'+','-'].forEach(function(k){
       var b = el('button','', String(k));
+      /* 比「数的范围」还大的数字键置灰：本题答案不可能是这个数，按了也填不进去 */
+      if (typeof k === 'number' && k > S.settings.max) b.classList.add('dis');
       b.dataset.k = String(k);
       b.onclick = function(){ pressKey(p, k); };
       key.appendChild(b);
@@ -1131,6 +1205,9 @@ function pressKey(p, k){
   if (!S.running || S.paused || p.locked || p.done) return;
   if (k === '+' || k === '-') return setOp(p, k); /* 运算符键：填进第一个空运算槽 */
   if (typeof k !== 'number') return;
+  /* 比「数的范围」还大的数字键（键盘上已置灰）一律不落：本题答案不可能这么大，
+     让它出现在格子里只会让孩子白填一遍 */
+  if (k > S.settings.max) return;
   var which = p.slots[p.cur];
   if (which == null) return;
   var digits = String(k);
@@ -1138,9 +1215,12 @@ function pressKey(p, k){
   if (prev == null){
     /* 空槽：先落一位，先不跳槽（留出按「0」组成 10 的机会） */
     p.answers[which] = digits;
+  } else if (prev === '0'){
+    /* 先按了 0 又改主意：直接换成新数字，别拼出 07 这种 */
+    p.answers[which] = digits;
   } else {
     var joined = Number(String(prev) + digits);
-    if (String(prev).length === 1 && joined <= CONFIG.MAX_SUM){
+    if (String(prev).length === 1 && joined <= S.settings.max){
       p.answers[which] = String(prev) + digits;   /* 1 → 10 */
     } else {
       /* 不是两位合法数：当前槽已定，跳到下一个空槽 */
@@ -1464,7 +1544,15 @@ function buildSettingsUI(){
   Array.prototype.forEach.call($('tmPills').children, function(b){
     b.classList.toggle('on', Number(b.dataset.t) === st.time);
   });
-  $('selScope').value = st.scope;
+  Array.prototype.forEach.call($('mxPills').children, function(b){
+    if (b.dataset.m) b.classList.toggle('on', Number(b.dataset.m) === st.max);
+  });
+  /* 教学范围的三条文案跟着「数的范围」走：选了 5 就显示「5以内综合 / 5以内加法…」 */
+  var scopeSel = $('selScope');
+  ['综合','加法','减法'].forEach(function(t, i){
+    if (scopeSel.options[i]) scopeSel.options[i].text = st.max + '以内' + t;
+  });
+  scopeSel.value = st.scope;
   $('selAnim').value = st.anim;
 
   /* 名字输入：只显示当前人数 */
@@ -1520,6 +1608,12 @@ function bindUI(){
   $('pcPills').onclick = function(e){
     var b = e.target.closest('.pill'); if (!b) return;
     S.settings.count = Number(b.dataset.c);
+    buildSettingsUI(); SND.click();
+  };
+  $('mxPills').onclick = function(e){
+    var b = e.target.closest('.pill'); if (!b || !b.dataset.m) return;
+    S.settings.max = Number(b.dataset.m);
+    saveSettings();
     buildSettingsUI(); SND.click();
   };
   $('tmPills').onclick = function(e){
@@ -1584,6 +1678,13 @@ function bindUI(){
 
 /* ---------------------------- 启动 ---------------------------- */
 function boot(){
+  loadSettings();          /* 先把老师上次选的「数的范围」读回来，再铺界面 */
+
+  /* 截图/演示用参数（不影响正常使用）：?max=5 → 直接按 5 以内出题 */
+  var qsMax = null;
+  try { qsMax = new URLSearchParams(location.search).get('max'); } catch(e){ }
+  if (qsMax && Number(qsMax) >= 5 && Number(qsMax) <= 10) S.settings.max = Number(qsMax);
+
   bindUI();
   buildSettingsUI();
   startGame();
@@ -1623,7 +1724,9 @@ window.__T = {
   checkAnswer: checkAnswer, startGame: startGame, endGame: endGame,
   grab: grab, prizeBurst: prizeBurst, startTimerTick: tickTimer, renderEquation: renderEquation,
   renderFigure: renderFigure, renderQuestion: renderQuestion,
-  allowedTypes: allowedTypes, mmss: mmss
+  allowedTypes: allowedTypes, mmss: mmss,
+  loadSettings: loadSettings, saveSettings: saveSettings,
+  buildSettingsUI: buildSettingsUI
 };
 
 if (window.document && document.getElementById('app')) boot();

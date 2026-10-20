@@ -160,8 +160,16 @@ const doc = {
   addEventListener(t, fn) { if (t === 'keydown') doc._keyHandlers.push(fn); }
 };
 
+const fakeLS = {
+  _d: {},
+  getItem(k) { return Object.prototype.hasOwnProperty.call(this._d, k) ? this._d[k] : null; },
+  setItem(k, v) { this._d[k] = String(v); },
+  removeItem(k) { delete this._d[k]; }
+};
+
 const windowStub = {
   document: doc,
+  localStorage: fakeLS,
   addEventListener(t, fn) { if (t === 'resize') doc._resize.push(fn); },
   speechSynthesis: undefined,
   AudioContext: undefined
@@ -170,7 +178,7 @@ const windowStub = {
 /* ---------------- 预置静态元素（对应 HTML 里写死的结构） ---------------- */
 (function seed() {
   const ids = ['app', 'topbar', 'brand', 'timer', 'btnSet', 'btnMute', 'btnPause', 'btnRestart',
-    'badges', 'stage', 'panels', 'setMask', 'setModal', 'setClose', 'pcPills', 'tmPills',
+    'badges', 'stage', 'panels', 'setMask', 'setModal', 'setClose', 'pcPills', 'tmPills', 'mxPills',
     'selScope', 'selAnim', 'nameInputs', 'typeChecks', 'btnStart', 'resMask', 'resModal',
     'resSub', 'podium', 'btnAgain', 'btnAdjust', 'btnLook', 'toast'];
   ids.forEach(id => doc.getElementById(id));
@@ -187,8 +195,17 @@ const windowStub = {
   const tm = registry.get('tmPills');
   [60, 100, 180].forEach(t => { const b = mkEl('button'); b.className = 'pill'; b.dataset.t = String(t); b.textContent = String(t); tm.appendChild(b); });
 
-  /* select 的 value 由测试直接设置，这里给默认 */
-  registry.get('selScope').value = 'mix';
+  /* 数的范围胶囊：5 / 6 / 7 / 8 / 9 / 10 */
+  const mx = registry.get('mxPills');
+  for (let m = 5; m <= 10; m++) {
+    const b = mkEl('button'); b.className = 'pill';
+    b.dataset.m = String(m); b.textContent = String(m); mx.appendChild(b);
+  }
+
+  /* select 的 value 由测试直接设置，这里给默认；options 供「教学范围文案跟随」使用 */
+  const sc = registry.get('selScope');
+  sc.options = ['mix', 'add', 'sub'].map(v => ({ value: v, text: '' }));
+  sc.value = 'mix';
   registry.get('selAnim').value = 'auto';
   registry.get('setMask')._cls.add('on');
 })();
@@ -283,7 +300,9 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(q.items.length === total, '物体数=总数 ' + tag);
       const mk = q.items.filter(o => o.mark === (type === 'box' ? 'box' : 'slash')).length;
       __okT(mk === k, '记号数=去掉数 ' + tag + ' 记号' + mk + ' k' + k);
-      __okT(q.labelText === '还剩?' + q.unit, '还剩问句 ' + tag);
+      /* 课本做法：不写「还剩」这类提示语，只在下面画大括号标 ?X */
+      __okT(!q.labelText, '不出现「还剩」提示语 ' + tag);
+      __okT(q.brace && q.brace.label === '?' + q.unit, '大括号标问号 ' + tag);
     }
     if (type === 'part'){
       __okT(q.a >= 3 && q.a <= 10 && q.b >= 1 && q.b < q.a && q.c === q.a - q.b, '求另一部分范围 ' + tag);
@@ -300,12 +319,98 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(k1 >= 1 && k2 >= 1 && k1 + k2 <= n - 1 && q.c === n - k1 - k2, '连减不越界 ' + tag);
       __okT(q.items.filter(o => o.mark === 'slash').length === k1, '连减划去数 ' + tag);
       __okT(q.items.filter(o => o.mark === 'box').length === k2, '连减速线框数 ' + tag);
+      __okT(!q.labelText && q.brace && q.brace.label === '?' + q.unit, '连减也不写提示语、只用大括号标问号 ' + tag);
     }
     /* 槽位 */
     const expSlots = q.given ? 1 : (q.arity === 2 ? 3 : 4);
     __okT(q.slots.length === expSlots, '槽位数量 ' + tag);
   }
 });
+
+/* ========== 1b. 数的范围（设置里可选 5~10 以内） ========== */
+/* 老师按教学进度设 N 以内：出题时任何数都不该超过 N，题目本身仍然成立 */
+const TYPES_ALL = Object.keys(T.TYPES);
+[5, 6, 7, 8, 9, 10].forEach(function(mx){
+  S.settings.max = mx;
+  TYPES_ALL.forEach(function(type){
+    for (let i = 0; i < 120; i++){
+      const q = T.buildQuestion(type);
+      const tag = 'max=' + mx + ' ' + type + '#' + i;
+      __okT(q.c >= 0 && q.c <= mx, '得数不超过数的范围 ' + tag, 'c=' + q.c);
+      __okT(q.a >= 1 && q.a <= mx, '第一个数不超过范围 ' + tag, 'a=' + q.a);
+      if (type === 'add'){
+        __okT(q.a + q.b <= mx, '加法和不超范围 ' + tag, 'a+b=' + (q.a + q.b));
+      }
+      if (type === 'add3'){
+        __okT(q.a + q.b + q.third <= mx, '连加和不超范围 ' + tag);
+      }
+      if (type === 'cross' || type === 'box' || type === 'part' || type === 'sub3'){
+        __okT(q.a <= mx, '减法的总数不超范围 ' + tag);
+      }
+      if (type === 'sub3'){
+        __okT(q.b + q.third <= q.a - 1, '连减两次仍留得下 ' + tag);
+      }
+    }
+  });
+});
+S.settings.max = 10;
+
+/* 设置界面：6 个胶囊、默认 10 高亮；点 5 后高亮切换、教学范围文案跟着变 */
+T.buildSettingsUI();
+let mxKids = __kids(__reg('mxPills'), 'pill');
+__okT(mxKids.length === 6, '数的范围 5~10 共 6 个胶囊', 'n=' + mxKids.length);
+__okT(mxKids.filter(b => b._cls.has('on')).length === 1, '只有一个胶囊高亮');
+__okT(mxKids[5]._cls.has('on'), '默认高亮 10');
+__okT(__reg('selScope').options[0].text === '10以内综合', '教学范围文案跟随默认值', __reg('selScope').options[0].text);
+
+const pill5 = mxKids[0];
+__reg('mxPills').onclick({ target: pill5 });
+__okT(S.settings.max === 5, '点「5」后数的范围=5');
+__okT(pill5._cls.has('on') && !mxKids[5]._cls.has('on'), '高亮从 10 切到 5');
+__okT(__reg('selScope').options[0].text === '5以内综合', '教学范围文案变 5以内综合', __reg('selScope').options[0].text);
+__okT(__reg('selScope').options[2].text === '5以内减法', '减法文案也跟着变', __reg('selScope').options[2].text);
+
+/* 落盘：只记数的范围，别把人数/名字也带出去 */
+const rawSaved = window.localStorage.getItem('zhuawa_settings');
+__okT(!!rawSaved && JSON.parse(rawSaved).max === 5, '设置写入 localStorage', String(rawSaved));
+__okT(Object.keys(JSON.parse(rawSaved)).length === 1, '只持久化 max 一项');
+
+/* 读回：换个新页面重开，5 以内还留着 */
+S.settings.max = 10;
+T.loadSettings();
+__okT(S.settings.max === 5, '重开时读回上次选的 5 以内', 'max=' + S.settings.max);
+/* 脏数据不能把范围带飞 */
+window.localStorage.setItem('zhuawa_settings', '{"max":40}');
+S.settings.max = 10; T.loadSettings();
+__okT(S.settings.max === 10, '超范围的脏值被拒', 'max=' + S.settings.max);
+window.localStorage.setItem('zhuawa_settings', '{oops');
+S.settings.max = 10; T.loadSettings();
+__okT(S.settings.max === 10, '坏 JSON 不抛错、保持默认');
+
+/* 键盘：5 以内按 7 不落格；1 后面按 0 不能再拼出 10 */
+/* 键盘：比范围大的数字键置灰，按了也不落格 */
+S.settings.max = 5; reset();
+const grayKeys = __kids(S.players[0].key, 'dis').map(b => b._text).sort().join(',');
+__okT(grayKeys === '6,7,8,9', '5 以内时 6~9 键置灰', grayKeys);
+S.settings.max = 10; reset();
+__okT(__kids(S.players[0].key, 'dis').length === 0, '10 以内没有灰键');
+
+reset();
+const pk = S.players[0];
+pk.q = { type:'add', emoji:'🍎', unit:'个', op:'+', arity:2, a:2, b:3, c:5,
+         groups:[2,3], brace:{from:0,to:1,label:'?个'}, given:false,
+         slots:['a','b','c'], items:[] };
+pk.slots = ['a','b','c']; pk.answers = {}; pk.ops = {}; pk.cur = 0; pk.done = false; pk.locked = false;
+S.settings.max = 5;
+T.pressKey(pk, 7);
+__okT(pk.answers.a == null, '5 以内按 7 不落格', String(pk.answers.a));
+T.pressKey(pk, 2);
+__okT(pk.answers.a === '2', '按 2 正常落格');
+T.pressKey(pk, 1);
+__okT(pk.answers.a === '2' && pk.answers.b === '1', '拼成 21 越界 → 拆到下一槽', JSON.stringify(pk.answers));
+T.pressKey(pk, 0);
+__okT(pk.answers.b === '1' && pk.answers.c === '0', '5 以内不接受 10 → 继续往下一槽走', JSON.stringify(pk.answers));
+S.settings.max = 10;
 
 /* ========== 2. 开局：4 名玩家 / 面板 / 独立题目 ========== */
 reset();
@@ -557,26 +662,31 @@ __okT(__kids(pp.eq, 'opslot')[0]._text === '?', '运算符槽显示 ?');
 /* ========== 15b. 图题排布：区域左右并排、区内每行最多 4 个 ========== */
 /* 直接构造题目对象，验证渲染结构 */
 pp.q = { type:'cross', emoji:'🐟', unit:'条', op:'-', arity:2, a:10, b:8, c:2,
-         labelText:'还剩?条', given:false, slots:['a','b','c'],
+         brace:{from:0,to:0,label:'?条'}, given:false, slots:['a','b','c'],
          items: Array.from({length:10}, (_, i) => ({ mark: i >= 2 ? 'slash' : '' })) };
 pp.slots = ['a','b','c'];
 T.renderFigure(pp);
 const fl = __kids(pp.fig, 'figline')[0];
-__okT(fl && fl._children.length >= 2, '两段图案在同一个并排容器里（不上下叠）');
-__okT(fl._cls.has('grpline'), '两段图案之间走宽空隙样式（方便观察）');
-const segFree = __kids(pp.fig, 'gsec')[0];
-__okT(__kids(segFree, 'it').length === 2, '前段 2 个');
-__okT(__kids(pp.fig, 'irow').length === 3, '2 个自由 + 8 个划去 = 1+2 行（每行最多 4 个）', 'rows=' + __kids(pp.fig, 'irow').length);
+/* 划去题：整排摆成一块（跟课本一致），不再拆成左右两段 */
+const gees = __kids(pp.fig, 'gsec');
+__okT(gees.length === 1, '划去题整排摆成一块', 'gsec=' + gees.length);
+__okT(__kids(gees[0], 'it').length === 10, '整排 10 个物体');
+__okT(__kids(pp.fig, 'irow').length === 3, '10 个 → 3 行（每行最多 4 个）', 'rows=' + __kids(pp.fig, 'irow').length);
 __okT(__kids(pp.fig, 'sl').length === 8, '划去记号 8 个');
+/* 前 2 个不带斜线，第 3 个开始带 */
+const flat = __kids(gees[0], 'it');
+__okT(__kids(flat[0], 'sl').length === 0 && __kids(flat[1], 'sl').length === 0, '前 2 个保持干净');
+__okT(__kids(flat[2], 'sl').length === 1 && __kids(flat[9], 'sl').length === 1, '后 8 个才有斜线');
+__okT(fl._cls.has('gsub'), '减法走「两组挨近」样式');
 
 /* 虚线框题：自由段与虚线框段并排 */
 pp.q = { type:'box', emoji:'🐟', unit:'条', op:'-', arity:2, a:9, b:7, c:2,
-         labelText:'还剩?条', given:false, slots:['a','b','c'],
+         brace:{from:0,to:0,label:'?条'}, given:false, slots:['a','b','c'],
          items: Array.from({length:9}, (_, i) => ({ mark: i >= 2 ? 'box' : '' })) };
 T.renderFigure(pp);
 const fl2 = __kids(pp.fig, 'figline')[0];
 __okT(__kids(fl2, 'gsec').length === 1 && __kids(fl2, 'dashbox').length === 1, '自由段与虚线框并排在同一行');
-__okT(fl2._cls.has('grpline'), '图案与虚线框之间也拉开空隙');
+__okT(fl2._cls.has('grpline') && fl2._cls.has('gsub'), '虚线框题：与图案挨在一起');
 
 /* 求另一部分：图案与「?只」并排 */
 pp.q = { type:'part', emoji:'🐤', unit:'只', op:'-', arity:2, a:6, b:2, c:4,
@@ -585,7 +695,7 @@ pp.q = { type:'part', emoji:'🐤', unit:'只', op:'-', arity:2, a:6, b:2, c:4,
 T.renderFigure(pp);
 const fl3 = __kids(pp.fig, 'figline')[0];
 __okT(__kids(fl3, 'gsec').length === 1 && __kids(fl3, 'qmark').length === 1, '图案与问号并排');
-__okT(fl3._cls.has('grpline'), '图案与问号之间也拉开空隙');
+__okT(fl3._cls.has('grpline') && fl3._cls.has('gsub'), '求另一部分：图案与问号挨在一起');
 __okT(__kids(pp.fig, 'bracewrap').length === 1, '求另一部分仍带大括号');
 
 /* 只有一个区域时不需要组间空隙，保持紧凑居中 */
@@ -595,6 +705,15 @@ pp.q = { type:'sum', emoji:'🍐', unit:'个', op:'+', arity:2, a:3, b:0, c:3,
 T.renderFigure(pp);
 const fl4 = __kids(pp.fig, 'figline')[0];
 __okT(!fl4._cls.has('grpline'), '单区域题不加组间空隙');
+
+/* 加法题：两组要分开放（grpline 等分，不带 gsub） */
+pp.q = { type:'add', emoji:'🍎', unit:'个', op:'+', arity:2, a:5, b:5, c:10,
+         groups:[5,5], brace:{from:0,to:1,label:'?个'}, labelText:'?个',
+         given:false, slots:['a','b','c'], items:[] };
+T.renderFigure(pp);
+const fl5 = __kids(pp.fig, 'figline')[0];
+__okT(fl5._cls.has('grpline') && !fl5._cls.has('gsub'), '加法两组分开摆（不等分成一排）');
+__okT(__kids(pp.fig, 'gsec').length === 2, '加法仍是两段图案');
 
 /* ========== 16. 长时间连打：不越界、不抛错 ========== */reset();
 for (let round = 0; round < 60; round++){
