@@ -898,10 +898,11 @@ function paintRegions(line, regions, q, perRow){
 }
 
 /* 一行摆 perLine 个图案时最大能用多大字号（px）：
-   宽度 = perLine 个图案 + 行内间隙 + 组间空隙 + 问号/虚线框的固定开销 */
-function iszForLine(perLine, avail, w1, maxIsz, groupGap, marks, pads, gap){
+   宽度 = perLine 个图案 + 行内间隙 + 组间空隙 + 问号/虚线框的固定开销。
+   factor < 1 是给整行留白——加法两组要靠这点留白把「两堆」分开，不留就挤成一长串。 */
+function iszForLine(perLine, avail, w1, maxIsz, groupGap, marks, pads, gap, factor){
   var fixed = Math.max(0, perLine - 1) * gap + marks * 26 + pads * 22;
-  var v = (avail * 0.985 - fixed) / (perLine * (w1 / maxIsz) + groupGap);
+  var v = (avail * (factor || 0.985) - fixed) / (perLine * (w1 / maxIsz) + groupGap);
   return (!isFinite(v) || v <= 0) ? maxIsz : v;
 }
 
@@ -945,8 +946,10 @@ function renderFigure(p){
   w1 = w1 * 0.825;
 
   /* ---- 反算字号：先假设全部排在一行（跟课本一样）---- */
+  /* 加法两组要留出「两堆」的缝隙：整行只用 90% 宽，剩下 10% 就是两组之间的空档 */
+  var factor = (regions.length > 1 && q.op === '+') ? 0.90 : 0.985;
   var perRow = count || 1;
-  var isz = iszForLine(count || 1, avail, w1, maxIsz, groupGap, marks, pads, gap);
+  var isz = iszForLine(count || 1, avail, w1, maxIsz, groupGap, marks, pads, gap, factor);
   isz = Math.min(isz, maxIsz);
 
   var maxReg = 0;
@@ -967,7 +970,7 @@ function renderFigure(p){
      多区域的题（加法两组）横向本来就是两组并排，折行只会更难看，直接让字号小一点 */
   if (count === maxReg && isz < minIsz){
     perRow = Math.max(1, Math.floor((avail * 0.985 - marks * 26 - pads * 22) / (w1 * minIsz / maxIsz + gap)));
-    isz = Math.min(iszForLine(perRow, avail, w1, maxIsz, groupGap, marks, pads, gap), maxIsz);
+    isz = Math.min(iszForLine(perRow, avail, w1, maxIsz, groupGap, marks, pads, gap, factor), maxIsz);
   }
 
   var rows = Math.ceil((count || 1) / Math.max(1, perRow));
