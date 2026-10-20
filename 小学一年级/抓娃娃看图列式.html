@@ -301,10 +301,10 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
 .slot{cursor:pointer;}
 .slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
 .slot.filled{border-color:#bfb5a4;color:var(--ink);}
-/* 运算符槽：加还是减是知识点，由学生自己点出来（? → + → - 循环） */
+/* 运算符槽：只是一个空位，符号由学生按键盘上的 + / - 填（不在算式里预置任何字符） */
 .opslot{height:clamp(30px,3.1vw,44px);min-width:clamp(30px,3vw,44px);border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(15px,1.5vw,26px);font-weight:900;cursor:pointer;
-  border:2.5px dashed #cfc6b6;color:#c0b6a4;padding:0 4px;transition:border-color .15s,color .15s;}
+  justify-content:center;font-size:clamp(15px,1.5vw,26px);font-weight:900;
+  border:2.5px dashed #cfc6b6;color:var(--ink);padding:0 4px;transition:border-color .15s,color .15s;}
 .opslot.set{border-style:solid;border-color:var(--pc-d);color:var(--ink);}
 .opslot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
 .opcell,.eqcell{border:none;background:transparent;min-width:1em;padding:0 2px;}
@@ -1007,11 +1007,11 @@ function renderEquation(p){
     return s;
   }
 
-  /* 运算符槽：加/减是知识点，学生自己点「?」循环选，或按键盘上的 + - 键 */
+  /* 运算符槽就是个空位：不预置 ?，也不做点击循环，
+     加还是减由学生自己按键盘上的 + / - 决定 */
   function addOp(idx){
-    var s = el('div','opslot', p.ops[idx] || '?');
+    var s = el('div','opslot', p.ops[idx] || '');
     if (p.ops[idx]) s.classList.add('set');
-    s.onclick = function(){ tap(s, function(){ cycleOp(p, idx); }); };
     row.appendChild(s);
     p.opEls[idx] = s;
     return s;
@@ -1054,22 +1054,17 @@ function renderEquation(p){
   Array.prototype.forEach.call(row.querySelectorAll('.slot'), function(s){ p.slotEls[s.dataset.slot] = s; });
 }
 
-/* 循环切换运算符：? → + → - → ? */
-function cycleOp(p, idx){
-  if (!S.running || S.paused || p.locked || p.done) return;
-  var cur = p.ops[idx] || '';
-  p.ops[idx] = cur === '' ? '+' : (cur === '+' ? '-' : '');
-  SND.click();
-  renderEquation(p);
-}
-
-/* 键盘 + - 键：直接把运算符填进第一个还没选的槽 */
+/* 键盘 + - 键：把符号填进第一个还没选的符号位；
+   两个符号位都填过之后，再按就改最后一次——学生按错了能直接改，
+   不需要再点算式里的方框（连加/连减的两个符号本来就一样，改哪个都等价） */
 function setOp(p, sym){
   if (!S.running || S.paused || p.locked || p.done) return;
   var n = p.q && p.q.arity === 3 ? 2 : 1;
   for (var i = 0; i < n; i++){
     if (!p.ops[i]){ p.ops[i] = sym; SND.click(); renderEquation(p); return; }
   }
+  p.ops[n - 1] = sym;
+  SND.click(); renderEquation(p);
 }
 
 /* ---------------------------- 玩家面板 ---------------------------- */
@@ -1819,7 +1814,7 @@ window.__T = {
   S: S, CONFIG: CONFIG, TYPES: TYPES, COLORS: COLORS,
   buildQuestion: buildQuestion, newQuestionFor: newQuestionFor,
   pressKey: pressKey, pressBack: pressBack, confirmAnswer: confirmAnswer,
-  cycleOp: cycleOp, setOp: setOp,
+  setOp: setOp,
   checkAnswer: checkAnswer, startGame: startGame, endGame: endGame,
   grab: grab, prizeBurst: prizeBurst, startTimerTick: tickTimer, renderEquation: renderEquation,
   renderFigure: renderFigure, renderQuestion: renderQuestion,

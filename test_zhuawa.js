@@ -472,23 +472,25 @@ reset();
 let pOp = S.players[0];
 const qOp = pOp.q;
 __okT(__kids(pOp.eq, 'opslot').length === (qOp.arity === 3 ? 2 : 1), '算式里有运算符槽');
-__okT(__kids(pOp.eq, 'opslot').every(o => o._text === '?'), '运算符槽默认是 ?（不预先显示加减）');
+__okT(__kids(pOp.eq, 'opslot').every(o => !o._text), '运算符槽是空的（既不显示 ?，也不预先显示加减）');
 __okT(__kids(pOp.eq, 'opcell').length === 0, '不再有预置的加减号');
 /* 键盘 + 键：填进第一个空槽 */
 T.pressKey(pOp, '+');
 __okT(pOp.ops[0] === '+', '按 + 键选中加号');
 if (qOp.arity === 3){ T.pressKey(pOp, '-'); __okT(pOp.ops[1] === '-', '连减第二个槽可选减号'); }
-/* 点槽循环 ? → + → - → ? */
+/* 运算符槽不预置任何字符（不画 ?，也不画 +），点它也没有任何反应 */
 pOp.ops = {};
 T.renderEquation(pOp);
-T.cycleOp(pOp, 0);
-__okT(pOp.ops[0] === '+', '点槽循环第 1 次 → +');
-T.cycleOp(pOp, 0);
-__okT(pOp.ops[0] === '-', '点槽循环第 2 次 → -');
-T.cycleOp(pOp, 0);
-__okT(!pOp.ops[0], '点槽循环第 3 次 → 回到 ?');
+const opSlots = __kids(pOp.eq, 'opslot');
+__okT(opSlots.length === (qOp.arity === 3 ? 2 : 1), '符号位数量对');
+__okT(opSlots.every(s => !s._text), '符号位是空的，不预置 ? 或 +');
+__okT(opSlots.every(s => !s.onclick), '符号位不可点（加还是减只从键盘选）');
+/* 按错了能直接改：先按 + 再按 -，以最后一次为准 */
+T.pressKey(pOp, '+');
+T.pressKey(pOp, '-');
+__okT(pOp.ops[0] === '-', '符号选错后按另一个键能直接改', 'ops0=' + pOp.ops[0]);
 /* 运算符没选 = 没填完 */
-pOp.answers = {}; pOp.cur = 0;
+pOp.ops = {}; pOp.answers = {}; pOp.cur = 0;
 fillNumbers(pOp);
 __okT(T.checkAnswer(pOp).reason === 'empty', '运算符未选视为没填完');
 /* 数字全对但运算符选错 → 判错 */
@@ -658,7 +660,7 @@ pp.cur = 1;
 T.renderEquation(pp);
 __okT(pp.slotEls['a']._cls.has('filled') && pp.slotEls['b']._cls.has('cur'), '填后变色并移动光标');
 __okT(__kids(pp.eq, 'opslot').length === 1, '算式里 1 个运算符槽');
-__okT(__kids(pp.eq, 'opslot')[0]._text === '?', '运算符槽显示 ?');
+__okT(__kids(pp.eq, 'opslot')[0]._text === '', '运算符槽不预置字符');
 
 /* ========== 15b. 图题排布：区域左右并排、区内每行最多 4 个 ========== */
 /* 直接构造题目对象，验证渲染结构 */
