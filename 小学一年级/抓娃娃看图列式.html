@@ -242,12 +242,12 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
   background:var(--pc-l);border-radius:10px;padding:8px 6px;overflow:hidden;position:relative;}
 .figline{display:flex;align-items:flex-end;justify-content:center;flex-wrap:nowrap;gap:clamp(2px,.3vw,6px);}
 /* 分组题（加法 / 求另一部分 / 连加）：几组左右并排（平行）。
-   光加 gap 不够——组内图案本身间距就近 1.2 个字宽，gap 只大一点仍然读成一整串。
-   所以让每组各自靠到面板的左右两边（space-between），组间距离自然拉到组内间距的 2 倍以上；
-   column-gap 只作下限兜底，保证窄屏（1366）上内容撑满时也不会黏在一起。 */
-/* align-self:stretch 是关键：.figbox 是 align-items:center 的纵向 flex，line 默认只有内容宽，
-   space-between 就没有"剩余空间"可分配（踩过）。撑满后两组才真的被推到左右两边。 */
-.figline.grpline{justify-content:space-between;column-gap:calc(var(--isz, 30px) * 1.3);align-self:stretch;}
+   把整行按组数等分成若干"位置"，每组摆在自己那一格的正中间——
+   既不像整行居中那样挤成一串，也不会像 space-between 那样贴到面板最边上。
+   （grid-auto-flow:column + 1fr 让列数随组数自适应：两道算式 2 列，连加/连减 3 列。） */
+.figline.grpline{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;
+  justify-items:center;align-items:end;align-self:stretch;
+  column-gap:calc(var(--isz, 30px) * 0.5);}
 /* 每个图案区域是一列：区域之间并排，区域内每 4 个一行（行是显式包出来的，不会被撑成一行） */
 .gsec{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:clamp(2px,.5vh,8px);flex:0 0 auto;}
@@ -262,8 +262,8 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
 .unknown{display:flex;align-items:center;justify-content:center;min-width:clamp(48px,4.6vw,82px);height:clamp(38px,3.8vw,66px);
   border:3px dashed #8d8378;border-radius:12px;font-size:clamp(20px,1.9vw,32px);font-weight:900;color:#8d8378;
   background:rgba(255,255,255,.5);margin-left:6px;}
-.qmark{font-size:clamp(16px,1.45vw,26px);font-weight:900;color:#6b6155;white-space:nowrap;align-self:center;
-  margin-left:calc(var(--isz, 30px) * -0.45);}   /* 文字标签收一点，别跟图案隔太远 */
+.qmark{font-size:clamp(16px,1.45vw,26px);font-weight:900;color:#6b6155;white-space:nowrap;
+  align-self:center;justify-self:center;margin-left:0;}
 .figbox{display:flex;flex-direction:column;align-items:center;max-width:100%;gap:clamp(6px,1.1vh,14px);}
 .bracewrap{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:0;}
 .bracewrap svg{width:100%;height:clamp(16px,1.9vh,28px);overflow:visible;}
