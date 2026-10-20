@@ -698,8 +698,9 @@ function buildQuestion(type){
     q.a = n; q.b = k; q.c = n - k;
     q.boxMark = (type === 'box');
     for (var i = 0; i < n; i++) q.items.push({mark: i >= n - k ? (type === 'box' ? 'box' : 'slash') : ''});
-    /* 课本只在下面画大括号、标一个 ?X，不写「还剩」这类提示语 */
-    q.brace = {from:0, to:0, label:'?'};
+    /* 减法只靠图说话：斜线 / 虚线框本身就是「去掉一部分」的标记。
+       绝不能再画大括号——大括号在课本里表示「把整体合起来」，等于加法，
+       一个区域里同时出现两种符号，学生读不出这题到底是加还是减。 */
   } else if (type === 'part'){
     /* 求另一部分：总数 n 已知（括号标 n），一部分 k 已知，问另一部分 */
     var n2 = rndInt(3, MAX), k2 = rndInt(1, n2 - 1);
@@ -725,7 +726,7 @@ function buildQuestion(type){
       else if (j >= n3 - k1 - k2) mark = 'box';
       q.items.push({mark:mark});
     }
-    q.brace = {from:0, to:0, label:'?'};
+    /* 同上：连减也是减法，只用斜线 + 虚线框表达，不画大括号 */
   }
 
   /* 开局一律不留任何已填数字：算式三个空全由学生自己填（运算符同理） */

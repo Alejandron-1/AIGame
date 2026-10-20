@@ -300,9 +300,10 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(q.items.length === total, '物体数=总数 ' + tag);
       const mk = q.items.filter(o => o.mark === (type === 'box' ? 'box' : 'slash')).length;
       __okT(mk === k, '记号数=去掉数 ' + tag + ' 记号' + mk + ' k' + k);
-      /* 课本做法：不写「还剩」这类提示语，只在下面画大括号标 ?X */
+      /* 减法只靠斜线 / 虚线框说话。大括号在课本里是「合起来」的意思（加法），
+         两种符号画在同一个区域，学生会读成两道互相矛盾的题 */
       __okT(!q.labelText, '不出现「还剩」提示语 ' + tag);
-      __okT(q.brace && q.brace.label === '?', '大括号标问号 ' + tag);
+      __okT(!q.brace, '减法不画大括号（大括号=加法） ' + tag);
     }
     if (type === 'part'){
       __okT(q.a >= 3 && q.a <= 10 && q.b >= 1 && q.b < q.a && q.c === q.a - q.b, '求另一部分范围 ' + tag);
@@ -319,7 +320,7 @@ Object.keys(T.TYPES).forEach(type => {
       __okT(k1 >= 1 && k2 >= 1 && k1 + k2 <= n - 1 && q.c === n - k1 - k2, '连减不越界 ' + tag);
       __okT(q.items.filter(o => o.mark === 'slash').length === k1, '连减划去数 ' + tag);
       __okT(q.items.filter(o => o.mark === 'box').length === k2, '连减速线框数 ' + tag);
-      __okT(!q.labelText && q.brace && q.brace.label === '?', '连减也不写提示语、只用大括号标问号 ' + tag);
+      __okT(!q.labelText && !q.brace, '连减不画大括号、不写提示语 ' + tag);
     }
     /* 槽位 */
     const expSlots = q.given ? 1 : (q.arity === 2 ? 3 : 4);
@@ -662,7 +663,7 @@ __okT(__kids(pp.eq, 'opslot')[0]._text === '?', '运算符槽显示 ?');
 /* ========== 15b. 图题排布：区域左右并排、区内每行最多 4 个 ========== */
 /* 直接构造题目对象，验证渲染结构 */
 pp.q = { type:'cross', emoji:'🐟', unit:'条', op:'-', arity:2, a:10, b:8, c:2,
-         brace:{from:0,to:0,label:'?条'}, given:false, slots:['a','b','c'],
+         given:false, slots:['a','b','c'],
          items: Array.from({length:10}, (_, i) => ({ mark: i >= 2 ? 'slash' : '' })) };
 pp.slots = ['a','b','c'];
 T.renderFigure(pp);
@@ -681,7 +682,7 @@ __okT(fl._cls.has('gsub'), '减法走「两组挨近」样式');
 
 /* 虚线框题：自由段与虚线框段并排 */
 pp.q = { type:'box', emoji:'🐟', unit:'条', op:'-', arity:2, a:9, b:7, c:2,
-         brace:{from:0,to:0,label:'?条'}, given:false, slots:['a','b','c'],
+         given:false, slots:['a','b','c'],
          items: Array.from({length:9}, (_, i) => ({ mark: i >= 2 ? 'box' : '' })) };
 T.renderFigure(pp);
 const fl2 = __kids(pp.fig, 'figline')[0];
@@ -718,15 +719,16 @@ __okT(__kids(pp.fig, 'gsec').length === 2, '加法仍是两段图案');
 /* ========== 15c. 一行排开（不再 4+1）、标签只剩问号、四人题目不重样 ========== */
 /* 5 个图案：课本画法是一行，不能 4 个 + 1 个"孤儿行" */
 pp.q = { type:'cross', emoji:'🐯', unit:'只', op:'-', arity:2, a:5, b:1, c:4,
-         brace:{from:0,to:0,label:'?'}, given:false, slots:['a','b','c'],
+         given:false, slots:['a','b','c'],
          items: Array.from({length:5}, (_, i) => ({ mark: i >= 4 ? 'slash' : '' })) };
 T.renderFigure(pp);
 __okT(__kids(pp.fig, 'irow').length === 1, '5 个图案排成一行（不再 4+1）', 'rows=' + __kids(pp.fig, 'irow').length);
 __okT(__kids(__kids(pp.fig, 'irow')[0], 'it').length === 5, '一行里正好 5 个图案');
 
-/* 大括号下面的标签只留一个「?」，不带「个/只/条」 */
-const lb = __kids(pp.fig, 'lb')[0];
-__okT(lb && lb._text === '?', '大括号下面只有一个问号', lb && lb._text);
+/* 减法题（划去 / 框走 / 连减）一律不画大括号：
+   大括号=「合起来」=加法，跟斜线/虚线框（减法）画在同一个区域，会读成两道题 */
+__okT(__kids(pp.fig, 'bracewrap').length === 0, '划线题不画大括号');
+__okT(__kids(pp.fig, 'lb').length === 0, '划线题下面不标任何字');
 
 /* 实在要折行时折成等长：5→3+2、10→5+5、7→4+3，绝不 4+1 */
 __okT(T.splitRows(5, 4).join(',') === '3,2', '5 个折成 3+2（不是 4+1）', T.splitRows(5, 4).join(','));
