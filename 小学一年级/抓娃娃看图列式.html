@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>抓娃娃大赛 · 看图列式（10以内加减法）</title>
+<style>
+/* ===================== 基础 ===================== */
+:root{
+  --ink:#3f3a34;
+  --paper:#fdf8ef;
+  --red:#f2707d;  --red-d:#e05664;
+  --yellow:#f6b93b; --yellow-d:#e0a125;
+  --blue:#3aa7e8;  --blue-d:#2a8cc7;
+  --purple:#9b6bd6;--purple-d:#8150bd;
+  --line:#3f3a34;
+}
+*{box-sizing:border-box;}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#fceee4;
+  font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;color:var(--ink);
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+button{font-family:inherit;cursor:pointer;color:var(--ink);}
+
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding:6px 10px 8px;gap:6px;}
+
+/* ===================== 顶栏 ===================== */
+#topbar{display:flex;align-items:center;gap:14px;height:46px;flex:0 0 auto;}
+#brand{font-size:clamp(18px,1.5vw,26px);font-weight:900;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+#brand .paw{font-size:1.1em;}
+#timer{margin:0 auto;background:#fff;border:3px solid var(--line);border-radius:14px;
+  padding:2px 18px;font-size:clamp(18px,1.5vw,26px);font-weight:900;letter-spacing:2px;box-shadow:0 3px 0 rgba(63,58,52,.18);}
+#timer.warn{color:#e03b3b;border-color:#e03b3b;animation:tick .9s infinite;}
+@keyframes tick{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.tools{display:flex;gap:6px;}
+.tools button{width:38px;height:34px;border:2.5px solid var(--line);border-radius:10px;background:#fff;
+  font-size:15px;box-shadow:0 3px 0 rgba(63,58,52,.16);}
+.tools button:active{transform:translateY(2px);box-shadow:none;}
+
+/* ===================== 玩家徽章 ===================== */
+#badges{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:8px;flex:0 0 auto;}
+.badge{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;
+  border:3px solid var(--pc);border-radius:14px;padding:4px 10px;min-height:44px;
+  box-shadow:0 4px 0 rgba(63,58,52,.12);transition:transform .18s;}
+.badge .nm{font-size:clamp(14px,1.05vw,19px);font-weight:900;color:var(--pc-d);
+  background:var(--pc-l);border-radius:999px;padding:2px 14px;white-space:nowrap;max-width:9em;overflow:hidden;text-overflow:ellipsis;}
+.badge .sc{font-size:clamp(18px,1.6vw,28px);font-weight:900;min-width:1.6em;text-align:center;}
+.badge .sc small{font-size:.55em;font-weight:800;margin-left:2px;}
+.badge.bump{animation:bump .4s;}
+@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.09)}100%{transform:scale(1)}}
+
+/* ===================== 娃娃机舞台 ===================== */
+/* 整台机器：奶油色厚外框 + 内凹玻璃 + 顶部灯带 */
+#stage{position:relative;flex:1 1 34%;min-height:168px;border:10px solid #fbebd6;border-radius:26px;
+  overflow:hidden;
+  background:
+    radial-gradient(150% 86% at 50% 106%, #ffdcb6 0%, #ffe2ea 36%, #e4f1ff 70%, #cfe6ff 100%);
+  box-shadow:0 9px 0 rgba(63,58,52,.11), 0 0 0 3px #e5c69f, 0 16px 30px rgba(63,58,52,.15),
+    inset 0 0 0 2px rgba(255,255,255,.9), inset 0 26px 34px rgba(120,150,190,.13);}
+/* 背板：很淡的竖条纹，像娃娃机内壁 */
+#stage::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.45;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.7) 0 1px,transparent 1px 44px);}
+/* 玻璃内框 */
+#stage::after{content:'';position:absolute;inset:6px;border-radius:14px;pointer-events:none;z-index:8;
+  border:2px solid rgba(255,255,255,.65);
+  box-shadow:inset 0 14px 26px rgba(120,150,180,.14), inset 0 -10px 22px rgba(255,255,255,.4);}
+
+/* 顶部打下来的一束灯光 */
+#stage .spot{position:absolute;left:50%;top:0;transform:translateX(-50%);width:78%;height:82%;z-index:0;
+  background:radial-gradient(ellipse at 50% -6%,rgba(255,255,255,.72),rgba(255,255,255,.18) 44%,transparent 74%);
+  pointer-events:none;}
+/* 机台侧柱（木头包边 + 螺丝） */
+#stage .pillar{position:absolute;top:0;bottom:0;width:clamp(9px,.9vw,16px);z-index:6;
+  background:linear-gradient(90deg,#e3bd93,#fff4e4 38%,#f0d6b4 66%,#cfa97d);
+  box-shadow:inset -3px 0 6px rgba(63,58,52,.14),inset 0 0 0 2px rgba(255,255,255,.4);}
+#stage .pillar.l{left:0;border-radius:16px 0 0 16px;}
+#stage .pillar.r{right:0;border-radius:0 16px 16px 0;transform:scaleX(-1);}
+/* 玻璃上缓缓扫过的高光 */
+.glass::after{content:'';position:absolute;top:-25%;left:-30%;width:20%;height:150%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+  transform:rotate(15deg);animation:sheen 7.5s ease-in-out infinite;}
+@keyframes sheen{0%,74%{left:-30%}100%{left:118%}}
+/* 背景光斑 */
+.bokeh{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.bokeh i{position:absolute;border-radius:50%;background:radial-gradient(circle at 36% 32%,rgba(255,255,255,.9),rgba(255,255,255,.35));
+  filter:blur(1px);animation:drift 8s ease-in-out infinite;}
+@keyframes drift{0%,100%{transform:translateY(0) scale(1);opacity:.45}50%{transform:translateY(-9px) scale(1.14);opacity:.85}}
+
+/* 跑马灯灯带（机身顶部） */
+.marquee{position:absolute;left:0;right:0;top:0;height:5.4%;min-height:15px;z-index:3;
+  background:
+    radial-gradient(circle at 50% 50%,#ffe27a 0 3px,rgba(255,206,96,.55) 3px,transparent 5px) 0 0/44px 100% repeat-x,
+    linear-gradient(#5a5273,#332e49 52%,#453d61);
+  border-bottom:2px solid rgba(255,255,255,.24);
+  box-shadow:0 3px 7px rgba(63,58,52,.32), inset 0 2px 0 rgba(255,255,255,.16);}
+/* 灯珠交替亮：一串跑马灯 */
+.marquee::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,#fffbe0 0 3px,rgba(255,228,142,.6) 3px,transparent 5px) 22px 0/44px 100% repeat-x;
+  animation:mqChase 1.6s steps(1,end) infinite;}
+@keyframes mqChase{0%,49%{opacity:.1}50%,100%{opacity:.95}}
+.marquee::after{content:'';position:absolute;left:8%;right:8%;bottom:1px;height:2.5px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,214,120,.9),transparent);}
+.marquee i{display:none;}
+
+/* 爪子横向轨道（金属，带铆钉） */
+.rails{position:absolute;left:0;right:0;top:5.4%;height:clamp(8px,.85vw,14px);z-index:2;
+  background:linear-gradient(#f6f1e7,#c3b8a7 46%,#9a8f80);
+  box-shadow:0 2px 4px rgba(63,58,52,.26),inset 0 1px 0 rgba(255,255,255,.85);}
+.rails::after{content:'';position:absolute;left:12px;right:12px;top:50%;height:5px;
+  transform:translateY(-50%);
+  background:radial-gradient(circle,rgba(88,78,66,.4) 1.5px,transparent 2px) 0 0/28px 5px repeat-x;}
+
+/* 爪子：天车 + 吊绳 + 液压两爪抓斗 */
+.claw{position:absolute;top:5.4%;z-index:5;width:0;height:0;transition:left .32s cubic-bezier(.4,0,.3,1);}
+.claw .carriage{position:absolute;left:-19px;top:-4px;width:38px;height:17px;border-radius:9px;
+  background:linear-gradient(#ffd07a,#f0942f 62%,#d9801d);border:2px solid #bf6a15;
+  box-shadow:0 2px 0 rgba(63,58,52,.26),inset 0 2px 0 rgba(255,255,255,.6);}
+.claw .carriage::before,.claw .carriage::after{content:'';position:absolute;bottom:-6px;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#ffffff,#a9b2bd 56%,#5d6570);border:1.5px solid #4d5560;
+  box-shadow:0 1px 1px rgba(63,58,52,.3);}
+.claw .carriage::before{left:2px;}
+.claw .carriage::after{right:2px;}
+/* 吊绳与抓斗都跟着屏幕高度缩放，矮屏上爪子不会插进娃娃堆里 */
+.claw{--rope:clamp(20px,4.9vh,58px);}
+.claw .rope{position:absolute;left:-1.8px;top:12px;width:3.6px;height:var(--rope);border-radius:2px;
+  background:linear-gradient(90deg,#8d97a4,#e7edf4 42%,#98a2af 62%,#5f6874);
+  box-shadow:0 0 2px rgba(63,58,52,.35);}
+.claw .arm{--aw:clamp(62px,8.2vh,98px);
+  position:absolute;left:calc(var(--aw) / -2);top:calc(11px + var(--rope));
+  width:var(--aw);height:calc(var(--aw) * .75);
+  transform-origin:50% 0;transition:transform .6s ease;}
+.claw .arm svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 4px rgba(0,0,0,.24));}
+/* 闲置时轻轻摆动，像真的挂在轨道上 */
+.claw .arm{animation:sway 3.6s ease-in-out infinite;}
+.claw.down .arm,.claw.grab .arm{animation:none;}
+@keyframes sway{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
+.claw .arm .l,.claw .arm .r{transform-origin:40px 14px;transition:transform .5s ease;}
+.claw.grab .arm .l{transform:rotate(19deg);}
+.claw.grab .arm .r{transform:rotate(-19deg);}
+.claw.moving{transition:left .5s cubic-bezier(.4,0,.3,1);}
+.claw.down{transform:translateY(var(--down,120px));transition:transform .55s cubic-bezier(.4,0,.35,1);}
+
+/* 奖品层板（娃娃堆站在上面） */
+#stage .shelf{position:absolute;left:1.2%;right:1.2%;bottom:19.6%;height:clamp(9px,1.3vh,15px);z-index:2;
+  border-radius:4px 4px 6px 6px;
+  background:linear-gradient(#fffaf2,#eed9bb 55%,#dcc0a0);
+  box-shadow:0 4px 7px rgba(63,58,52,.2),inset 0 1px 0 rgba(255,255,255,.95);}
+/* 机身底座（取物口就开在这块底座上） */
+#stage .floor{position:absolute;left:0;right:0;bottom:0;height:21%;z-index:2;
+  background:linear-gradient(#fff6e8,#f1ddc3 38%,#e6cfb1 78%,#dcc3a2);
+  border-top:4px solid rgba(255,255,255,.92);
+  box-shadow:0 -6px 16px rgba(63,58,52,.13), inset 0 3px 0 rgba(255,255,255,.75);}
+/* 底座上沿的一条亮线 + 底部暗缝 */
+#stage .floor::after{content:'';position:absolute;left:0;right:0;bottom:0;height:6px;
+  background:linear-gradient(rgba(255,255,255,.5),rgba(63,58,52,.1));}
+
+/* 背板上的彩虹（贴在层板上方，不压到筐） */
+#stage .rainbow{position:absolute;left:50%;bottom:31%;transform:translateX(-50%);width:34%;height:40%;
+  opacity:.42;pointer-events:none;z-index:1;}
+/* 背景小星星 */
+#stage .stars{position:absolute;inset:0;font-size:clamp(13px,1.1vw,19px);opacity:.6;pointer-events:none;z-index:1;}
+#stage .stars span{position:absolute;animation:twinkle 2.6s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.85)}50%{opacity:.85;transform:scale(1.1)}}
+/* 玻璃窗反光 */
+.glass{position:absolute;inset:0;z-index:7;pointer-events:none;
+  background:linear-gradient(112deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.12) 15%,transparent 27%,
+    transparent 62%,rgba(255,255,255,.16) 73%,transparent 85%);}
+
+/* 被爪起来的那个娃娃 */
+.doll{position:absolute;z-index:6;font-size:clamp(26px,2.6vw,44px);line-height:1;opacity:0;
+  transform:translate(-50%,-50%) scale(.92);
+  transition:left .5s cubic-bezier(.4,0,.3,1),top .45s ease-in,opacity .18s;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.28));pointer-events:none;}
+.doll.on{opacity:1;}
+.doll.fall{transition:top .5s cubic-bezier(.5,0,.8,.4),opacity .5s ease-in;opacity:0;}
+
+/* 抓到 / 抓空时的小气泡（每列自己的颜色） */
+.clawhit{position:absolute;z-index:7;transform:translate(-50%,-50%);font-weight:900;
+  font-size:clamp(13px,1.05vw,19px);white-space:nowrap;
+  background:#fff;border:3px solid var(--pc-d);color:var(--pc-d);border-radius:999px;padding:2px 12px;
+  box-shadow:0 3px 0 rgba(63,58,52,.16);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;}
+.clawhit.show{opacity:1;transform:translate(-50%,-60%);}
+
+/* 娃娃堆：一个玩家一堆，堆成小山；爪子只从自己那堆里抓 */
+.piles{position:absolute;left:1.6%;right:1.6%;bottom:20.4%;height:46%;display:grid;
+  grid-template-columns:repeat(var(--n,4),1fr);gap:clamp(4px,.5vw,10px);z-index:3;
+  --dsz:clamp(20px,1.86vw,34px);}
+.pile{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  justify-self:center;width:96%;padding-bottom:3px;}
+.plrow{position:relative;display:flex;justify-content:center;align-items:flex-end;line-height:1;}
+/* 上层压住下层 → 看起来是堆起来的，不是平铺一行 */
+.plrow + .plrow{margin-top:calc(var(--dsz) * -0.26);}
+.plrow span{font-size:var(--dsz);line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18));}
+/* 堆底部的一圈影子，让堆“坐”在层板上 */
+.pile::after{content:'';position:absolute;left:10%;right:10%;bottom:-2px;height:8px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(63,58,52,.2),transparent 74%);pointer-events:none;}
+
+/* 奖品筐：藤编小筐，抓到的娃娃落进去（玩家色描一圈，一眼认出是谁的） */
+.bins{position:absolute;left:0;right:0;bottom:3.4%;display:grid;grid-template-columns:repeat(var(--n,4),1fr);
+  gap:clamp(8px,.9vw,16px);padding:0 2.2%;z-index:3;
+  filter:drop-shadow(0 6px 6px rgba(63,58,52,.24));}
+.bin{position:relative;justify-self:center;width:47%;max-width:290px;height:clamp(42px,5.9vh,60px);
+  border-radius:8px 8px 16px 16px;
+  background:linear-gradient(#3d352e 0%,#54473b 44%,#6b5847 78%,#7e6a54 100%);
+  box-shadow:0 0 0 3px var(--pc-d), inset 0 9px 14px rgba(0,0,0,.5),
+    inset 0 0 0 1.5px rgba(255,255,255,.12), 0 4px 0 rgba(63,58,52,.2);
+  display:block;overflow:hidden;}
+/* 凹槽底部被灯光照亮的一块，落进来的娃娃看得清 */
+.bin::before{content:'';position:absolute;left:5px;right:5px;bottom:4px;height:52%;border-radius:6px 6px 12px 12px;
+  background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.18));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22);}
+/* 凹槽上沿的一道反光，读起来是“开口”而不是一块板 */
+.bin::after{content:'';position:absolute;left:7px;right:7px;top:3px;height:2.5px;border-radius:2px;
+  background:rgba(255,255,255,.34);}
+/* 奖品层：贴着筐底排列，多了会自动换行 */
+.bin .gotbox{position:absolute;left:6px;right:6px;bottom:22px;z-index:2;
+  display:flex;flex-wrap:nowrap;align-items:flex-end;justify-content:center;
+  gap:0;overflow:visible;}   /* 不能裁：emoji 字形会高出 line-box，裁了会被切头 */
+.bin .gloss{display:none;}
+.bin .got{font-size:clamp(16px,1.55vw,27px);line-height:1.22;flex:0 0 auto;
+  animation:dropIn .35s;filter:drop-shadow(0 1px 2px rgba(110,72,28,.45));}
+@keyframes dropIn{from{transform:translateY(-24px) scale(.6);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.bin.pop{animation:binPop .42s ease;}
+@keyframes binPop{0%,100%{transform:scale(1)}38%{transform:scale(1.07) translateY(-3px)}}
+
+/* 得奖反馈：+1 与星星 */
+.pop1{position:absolute;z-index:9;transform:translate(-50%,-50%);font-weight:900;
+  font-size:clamp(16px,1.5vw,26px);color:#e0392b;text-shadow:0 2px 0 #fff,0 0 8px rgba(255,255,255,.9);
+  animation:popUp .95s ease-out forwards;pointer-events:none;}
+@keyframes popUp{0%{opacity:0;transform:translate(-50%,-40%) scale(.5)}
+  28%{opacity:1;transform:translate(-50%,-80%) scale(1.12)}
+  100%{opacity:0;transform:translate(-50%,-190%) scale(.95)}}
+.spark{position:absolute;z-index:9;pointer-events:none;font-size:clamp(11px,1vw,17px);
+  transform:translate(-50%,-50%);animation:sparkOut .8s ease-out forwards;}
+@keyframes sparkOut{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,-40px))) scale(1.25)}}
+
+/* ===================== 题目面板 ===================== */
+#panels{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:8px;flex:1 1 52%;min-height:0;}
+.panel{display:flex;flex-direction:column;gap:5px;background:#fff;border:3px solid var(--pc-d);border-radius:16px;
+  padding:6px 6px 8px;min-height:0;box-shadow:0 4px 0 rgba(63,58,52,.1);}
+.pfig{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(4px,.8vh,10px);
+  background:var(--pc-l);border-radius:10px;padding:8px 6px;overflow:hidden;position:relative;}
+.figline{display:flex;align-items:flex-end;justify-content:center;flex-wrap:nowrap;gap:clamp(2px,.3vw,6px);}
+/* 分组题（加法 / 求另一部分 / 连加）：几组左右并排（平行）。
+   光加 gap 不够——组内图案本身间距就近 1.2 个字宽，gap 只大一点仍然读成一整串。
+   所以让每组各自靠到面板的左右两边（space-between），组间距离自然拉到组内间距的 2 倍以上；
+   column-gap 只作下限兜底，保证窄屏（1366）上内容撑满时也不会黏在一起。 */
+/* align-self:stretch 是关键：.figbox 是 align-items:center 的纵向 flex，line 默认只有内容宽，
+   space-between 就没有"剩余空间"可分配（踩过）。撑满后两组才真的被推到左右两边。 */
+.figline.grpline{justify-content:space-between;column-gap:calc(var(--isz, 30px) * 1.3);align-self:stretch;}
+/* 每个图案区域是一列：区域之间并排，区域内每 4 个一行（行是显式包出来的，不会被撑成一行） */
+.gsec{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(2px,.5vh,8px);flex:0 0 auto;}
+.irow{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:clamp(1px,.25vw,5px);}
+/* line-height 必须 >1：emoji 字形会越出行盒，1 会让下一行文字压到图案上 */
+.it{font-size:var(--isz,clamp(19px,1.95vw,36px));line-height:1.34;position:relative;display:inline-flex;
+  align-items:center;justify-content:center;transition:opacity .2s,transform .2s;}
+.it .sl{position:absolute;left:-8%;top:50%;width:116%;height:3px;background:#e0392b;border-radius:2px;
+  transform:rotate(-32deg);box-shadow:0 0 0 1px rgba(255,255,255,.35);}
+.dashbox{display:flex;flex-direction:column;gap:clamp(2px,.5vh,8px);justify-content:center;align-items:center;
+  flex:0 0 auto;border:3px dashed #8d8378;border-radius:12px;padding:4px 7px;background:rgba(255,255,255,.35);}
+.unknown{display:flex;align-items:center;justify-content:center;min-width:clamp(48px,4.6vw,82px);height:clamp(38px,3.8vw,66px);
+  border:3px dashed #8d8378;border-radius:12px;font-size:clamp(20px,1.9vw,32px);font-weight:900;color:#8d8378;
+  background:rgba(255,255,255,.5);margin-left:6px;}
+.qmark{font-size:clamp(16px,1.45vw,26px);font-weight:900;color:#6b6155;white-space:nowrap;align-self:center;
+  margin-left:calc(var(--isz, 30px) * -0.45);}   /* 文字标签收一点，别跟图案隔太远 */
+.figbox{display:flex;flex-direction:column;align-items:center;max-width:100%;gap:clamp(6px,1.1vh,14px);}
+.bracewrap{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:0;}
+.bracewrap svg{width:100%;height:clamp(16px,1.9vh,28px);overflow:visible;}
+.bracewrap .lb{font-size:clamp(14px,1.25vw,23px);font-weight:900;color:#5c5449;margin-top:0;white-space:nowrap;}
+.qtext{text-align:center;font-size:clamp(14px,1.25vw,23px);font-weight:900;color:#6f6455;
+  line-height:1.3;margin-top:2px;}
+
+/* 算式行 */
+.prow{display:flex;align-items:center;justify-content:center;gap:clamp(3px,.4vw,8px);flex:0 0 auto;}
+.slot,.opcell,.eqcell{height:clamp(30px,3.1vw,44px);border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:clamp(15px,1.5vw,26px);font-weight:900;background:#fff;
+  border:2.5px solid #cfc6b6;min-width:clamp(28px,2.9vw,42px);}
+.numcell{height:clamp(30px,3.1vw,44px);border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(15px,1.5vw,26px);font-weight:900;background:#fff;border:2.5px solid #cfc6b6;
+  min-width:clamp(28px,2.9vw,42px);padding:0 clamp(2px,.3vw,6px);}
+.slot{cursor:pointer;}
+.slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
+.slot.filled{border-color:#bfb5a4;color:var(--ink);}
+/* 运算符槽：加还是减是知识点，由学生自己点出来（? → + → - 循环） */
+.opslot{height:clamp(30px,3.1vw,44px);min-width:clamp(30px,3vw,44px);border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:clamp(15px,1.5vw,26px);font-weight:900;cursor:pointer;
+  border:2.5px dashed #cfc6b6;color:#c0b6a4;padding:0 4px;transition:border-color .15s,color .15s;}
+.opslot.set{border-style:solid;border-color:var(--pc-d);color:var(--ink);}
+.opslot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
+.opcell,.eqcell{border:none;background:transparent;min-width:1em;padding:0 2px;}
+.slot.bad{animation:shake .45s;border-color:#e0392b;}
+.opslot.bad{animation:shake .45s;border-color:#e0392b;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* 键盘 */
+.pkey{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(2px,.35vw,6px);flex:0 0 auto;}
+.pkey button{height:clamp(26px,2.7vw,40px);border:2.5px solid #cfc6b6;border-radius:8px;background:#fff;
+  font-size:clamp(14px,1.35vw,22px);font-weight:900;box-shadow:0 2px 0 rgba(63,58,52,.12);}
+.pkey button:active{transform:translateY(2px);box-shadow:none;}
+.pkey button.dis{color:#c9c1b2;background:#f7f3ea;box-shadow:none;border-color:#e3dbcb;}
+.pbtns{display:flex;gap:clamp(3px,.4vw,8px);flex:0 0 auto;}
+.pbtns .back{flex:0 0 auto;padding:0 clamp(6px,.7vw,14px);height:clamp(30px,3vw,42px);border:2.5px solid #cfc6b6;
+  border-radius:10px;background:#fff;font-weight:900;font-size:clamp(12px,.95vw,16px);box-shadow:0 2px 0 rgba(63,58,52,.12);}
+.pbtns .ok{flex:1;height:clamp(30px,3vw,42px);border:3px solid var(--pc-d);border-radius:10px;
+  background:var(--pc);color:#fff;font-weight:900;font-size:clamp(14px,1.15vw,20px);
+  box-shadow:0 3px 0 rgba(63,58,52,.22);text-shadow:0 1px 2px rgba(0,0,0,.18);}
+.pbtns .ok:active{transform:translateY(2px);box-shadow:none;}
+.pbtns .ok.right{background:#59c98b;border-color:#3fa96c;}
+
+/* ===================== 弹窗 ===================== */
+.mask{position:fixed;inset:0;background:rgba(70,55,45,.42);display:none;align-items:center;justify-content:center;z-index:800;padding:20px;}
+.mask.on{display:flex;}
+.modal{background:#fff8f4;border:4px solid var(--line);border-radius:24px;box-shadow:0 14px 0 rgba(63,58,52,.18);
+  padding:20px 26px;max-height:94vh;overflow:auto;}
+#setModal .modal{width:min(880px,96vw);}
+.mtitle{display:flex;align-items:center;gap:10px;font-size:clamp(22px,2vw,32px);font-weight:900;color:#c0392b;}
+.mtitle small{display:block;font-size:clamp(12px,.95vw,15px);color:#a08a7a;font-weight:800;margin-top:2px;}
+.mclose{position:absolute;right:18px;top:14px;width:34px;height:34px;border-radius:50%;border:2.5px solid #e0b4a8;
+  background:#fde4dc;font-size:16px;font-weight:900;color:#c0392b;}
+.setgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 30px;margin-top:16px;}
+.sec{font-size:clamp(14px,1.1vw,18px);font-weight:900;color:#c0392b;margin-bottom:8px;}
+.row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.row .lab{width:5.4em;flex:0 0 auto;font-weight:900;font-size:clamp(12px,.95vw,16px);color:#6b5f52;}
+.pills{display:flex;gap:6px;flex-wrap:wrap;}
+.pill{height:30px;padding:0 12px;border:2.5px solid #d9c9bd;border-radius:8px;background:#fff;font-weight:900;
+  font-size:clamp(12px,.9vw,15px);}
+.pill.on{background:#f2707d;border-color:#e05664;color:#fff;}
+select.sel{height:32px;border:2.5px solid #d9c9bd;border-radius:8px;background:#fff;font-weight:900;
+  font-size:clamp(12px,.9vw,15px);padding:0 8px;color:var(--ink);min-width:170px;}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.names input{height:34px;border:2.5px solid var(--pc-d);border-radius:9px;background:var(--pc-l);
+  font-weight:900;text-align:center;font-size:clamp(12px,.95vw,16px);color:var(--ink);outline:none;}
+.qchecks{display:flex;flex-direction:column;gap:7px;}
+.chk{display:flex;align-items:center;gap:9px;border:2.5px solid #e2d3c7;border-radius:9px;background:#fff;
+  padding:6px 10px;font-weight:900;font-size:clamp(12px,.95vw,16px);cursor:pointer;}
+.chk .box{width:20px;height:20px;border:2.5px solid #c9b7a8;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;color:#fff;flex:0 0 auto;}
+.chk.on{border-color:#f2707d;background:#ffeef0;}
+.chk.on .box{background:#f2707d;border-color:#e05664;}
+.chk.dis{opacity:.55;}
+.setfoot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;gap:12px;}
+.ready{font-size:clamp(11px,.85vw,14px);font-weight:900;color:#7aa77c;}
+.bigstart{flex:0 0 auto;padding:10px 46px;border:3.5px solid #c0392b;border-radius:14px;background:#f2707d;
+  color:#fff;font-weight:900;font-size:clamp(18px,1.6vw,26px);box-shadow:0 5px 0 #c0392b;}
+.bigstart:active{transform:translateY(4px);box-shadow:0 1px 0 #c0392b;}
+
+/* 结算 */
+#resModal .modal{width:min(820px,94vw);text-align:center;background:#fffaf2;}
+.bigres{font-size:clamp(26px,2.6vw,42px);font-weight:900;color:#b4552c;}
+.subres{font-size:clamp(14px,1.2vw,20px);font-weight:900;color:#a08a7a;margin-top:2px;}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:clamp(8px,1.4vw,22px);margin:22px 0 8px;}
+.step{display:flex;flex-direction:column;align-items:center;width:clamp(96px,9vw,140px);}
+.step .who{font-size:clamp(13px,1.05vw,17px);font-weight:900;color:#6b5f52;}
+.step .pt{font-size:clamp(20px,2vw,32px);font-weight:900;margin:2px 0 6px;}
+.step .pt small{font-size:.5em;margin-left:2px;}
+.step .block{border:3px solid var(--line);border-radius:10px 10px 0 0;width:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;color:#fff;font-weight:900;}
+.step .block .rk{font-size:clamp(12px,.95vw,15px);}
+.step .block .no{font-size:clamp(18px,1.7vw,28px);}
+.step .face{font-size:clamp(22px,2.2vw,34px);line-height:1;margin-bottom:2px;}
+.step.p1 .block{height:clamp(96px,13vh,140px);background:#f5c344;border-color:#c99a1f;}
+.step.p2 .block{height:clamp(70px,9.5vh,104px);background:#dfe3e8;border-color:#a9b0b8;color:#5a6068;}
+.step.p3 .block{height:clamp(56px,7.5vh,84px);background:#e8b48a;border-color:#c08a5c;}
+.step.p4 .block{height:clamp(46px,6vh,68px);background:#d9c9e8;border-color:#a98cc4;color:#5b4470;}
+.resbtns{display:flex;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;}
+.resbtns button{padding:9px 22px;border:3px solid var(--line);border-radius:12px;background:#fff;
+  font-weight:900;font-size:clamp(13px,1.05vw,17px);box-shadow:0 4px 0 rgba(63,58,52,.16);}
+.resbtns button.primary{background:#f2707d;color:#fff;border-color:#c0392b;box-shadow:0 4px 0 #c0392b;}
+#toast{position:fixed;left:50%;bottom:12%;transform:translate(-50%,20px);background:#fff;border:3px solid var(--line);
+  border-radius:999px;padding:8px 22px;font-weight:900;font-size:clamp(14px,1.1vw,18px);opacity:0;transition:.25s;
+  pointer-events:none;z-index:900;}
+#toast.on{opacity:1;transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div id="brand"><span class="paw">🐾</span>抓娃娃大赛</div>
+    <div id="timer">01:40</div>
+    <div class="tools">
+      <button id="btnSet" title="调整设置">⚙</button>
+      <button id="btnMute" title="音效开关">🔊</button>
+      <button id="btnPause" title="暂停 / 继续">⏸</button>
+      <button id="btnRestart" title="重新开始">↻</button>
+    </div>
+  </div>
+
+  <div id="badges"></div>
+
+  <div id="stage">
+    <div class="bokeh"></div>
+    <div class="spot"></div>
+    <div class="rainbow"></div>
+    <div class="stars"></div>
+    <div class="shelf"></div>
+    <div class="piles"></div>
+    <div class="rails"></div>
+    <div class="marquee"></div>
+    <div class="floor"></div>
+    <div class="bins"></div>
+    <div class="pillar l"></div>
+    <div class="pillar r"></div>
+    <div class="glass"></div>
+  </div>
+
+  <div id="panels"></div>
+</div>
+
+<!-- ================= 设置弹窗 ================= -->
+<div class="mask" id="setMask">
+  <div class="modal" id="setModal" style="position:relative">
+    <button class="mclose" id="setClose">✕</button>
+    <div class="mtitle"><span>🧸</span><div>调整比赛<small>选好规则，一起抓娃娃！</small></div></div>
+    <div class="setgrid">
+      <div>
+        <div class="sec">01　比赛设置</div>
+        <div class="row"><span class="lab">玩家人数</span>
+          <div class="pills" id="pcPills">
+            <button class="pill" data-c="2">2人</button>
+            <button class="pill" data-c="3">3人</button>
+            <button class="pill" data-c="4">4人</button>
+          </div>
+        </div>
+        <div class="row"><span class="lab">比赛时间</span>
+          <div class="pills" id="tmPills">
+            <button class="pill" data-t="60">60</button>
+            <button class="pill" data-t="100">100</button>
+            <button class="pill" data-t="180">180</button>
+            <span style="font-weight:900;color:#8b8073;font-size:13px">秒</span>
+          </div>
+        </div>
+        <div class="row"><span class="lab">教学范围</span>
+          <select class="sel" id="selScope">
+            <option value="mix">10以内综合</option>
+            <option value="add">10以内加法</option>
+            <option value="sub">10以内减法</option>
+          </select>
+        </div>
+        <div class="row"><span class="lab">动画效果</span>
+          <select class="sel" id="selAnim">
+            <option value="auto">自动适配</option>
+            <option value="full">完整</option>
+            <option value="lite">简洁（省性能）</option>
+          </select>
+        </div>
+        <div class="row" style="align-items:flex-start"><span class="lab" style="padding-top:8px">学生名字</span>
+          <div class="names" id="nameInputs" style="flex:1"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec">02　图题选择</div>
+        <div class="qchecks" id="typeChecks"></div>
+        <div style="margin-top:10px;font-size:12px;color:#a08a7a;font-weight:800;line-height:1.6">
+          大括号＝合并求总数（加法）<br>斜线 / 虚线框＝去掉（减法）<br>括号标总数＋? ＝求另一部分
+        </div>
+      </div>
+    </div>
+    <div class="setfoot">
+      <div class="ready">✓ 素材已准备</div>
+      <button class="bigstart" id="btnStart">重新开赛</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 结算弹窗 ================= -->
+<div class="mask" id="resMask">
+  <div class="modal" id="resModal">
+    <div class="bigres">比赛结束</div>
+    <div class="subres" id="resSub">3号 获得第一！</div>
+    <div class="podium" id="podium"></div>
+    <div class="resbtns">
+      <button class="primary" id="btnAgain">再来一局</button>
+      <button id="btnAdjust">调整设置</button>
+      <button id="btnLook">查看赛场</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   抓娃娃大赛 · 看图列式（10以内加减法）
+   单文件零依赖。核心：出题器（六种图题） → 图形渲染（大括号/斜线/虚线框）
+   → 算式槽作答 → 抓娃娃动画 → 计分 → 结算。
+   ===================================================================== */
+
+/* ---------------------------- 可调参数 ---------------------------- */
+var CONFIG = {
+  MAX_SUM: 10,          /* 加减法总数上限（10以内） */
+  TIME_DEFAULT: 100,    /* 默认比赛时间（秒） */
+  NEXT_MS: 1400,        /* 答对后多久换新题 */
+  DEBOUNCE: 220,        /* 同一按键的防误触时间 */
+  CLAW_STEP: [0, 320, 900, 1180, 1600, 2050, 2450], /* 抓娃娃动画时间轴 */
+  MUTE: false
+};
+
+/* 六种图题：名称、算式符号、是否默认开启 */
+var TYPES = {
+  add:   {name:'合并求总数', op:'+', arity:2, def:true,  scope:'add'},
+  cross: {name:'斜线划去',   op:'-', arity:2, def:true,  scope:'sub'},
+  box:   {name:'虚线框去掉', op:'-', arity:2, def:true,  scope:'sub'},
+  part:  {name:'求另一部分', op:'-', arity:2, def:true,  scope:'sub'},
+  add3:  {name:'连加（三部分）', op:'+', arity:3, def:false, scope:'add'},
+  sub3:  {name:'连减（划去+框走）', op:'-', arity:3, def:false, scope:'sub'}
+};
+var TYPE_ORDER = ['add','cross','box','part','add3','sub3'];
+
+/* 颜色（与截图一致：红黄蓝紫） */
+var COLORS = [
+  {c:'#f2707d', d:'#e05664', l:'#fde7ea'}, /* 1号 红 */
+  {c:'#f6b93b', d:'#e0a125', l:'#fdf0d6'}, /* 2号 黄 */
+  {c:'#3aa7e8', d:'#2a8cc7', l:'#e2f1fd'}, /* 3号 蓝 */
+  {c:'#9b6bd6', d:'#8150bd', l:'#f0e7fb'}  /* 4号 紫 */
+];
+
+/* 题中物体池：emoji + 单位 */
+var THINGS = [
+  {e:'🐦', u:'只'}, {e:'🐟', u:'条'}, {e:'🐠', u:'条'}, {e:'🐯', u:'只'},
+  {e:'🍎', u:'个'}, {e:'🍐', u:'个'}, {e:'🍇', u:'串'}, {e:'🐰', u:'只'},
+  {e:'🦋', u:'只'}, {e:'🍓', u:'个'}, {e:'🐤', u:'只'}, {e:'🍊', u:'个'}
+];
+
+/* 娃娃机里的毛绒玩具（抓取用） */
+var DOLLS = ['🧸','🐼','🐨','🐯','🦊','🐰','🐻','🐸','🐧','🐤','🦄','🐮'];
+
+/* ---------------------------- 运行状态 ---------------------------- */
+var S = {
+  settings: {
+    count: 4,
+    time: CONFIG.TIME_DEFAULT,
+    scope: 'mix',              /* mix | add | sub */
+    anim: 'auto',
+    names: ['1号','2号','3号','4号'],
+    types: TYPE_ORDER.filter(function(k){ return TYPES[k].def; })
+  },
+  players: [],
+  timeLeft: CONFIG.TIME_DEFAULT,
+  running: false,
+  paused: false,
+  over: false,
+  timer: null,
+  muted: false,
+  gen: 0,                      /* 代数戳：重置时让旧定时器失效 */
+  lastSpeak: 0
+};
+
+/* ---------------------------- 小工具 ---------------------------- */
+function $(id){ return document.getElementById(id); }
+function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
+function rndInt(a,b){ return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+function shuffle(a){
+  var r = a.slice();
+  for (var i = r.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = r[i]; r[i] = r[j]; r[j] = t; }
+  return r;
+}
+function mmss(sec){
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+/* ---------------------------- 音效（Web Audio 合成，失败静默） ---------------------------- */
+var SND = (function(){
+  var ctx = null;
+  function ac(){
+    if (S.muted) return null;
+    try {
+      if (!ctx){
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+      }
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      return ctx;
+    } catch(e){ return null; }
+  }
+  function tone(freq, dur, type, vol, slideTo){
+    var c = ac(); if (!c) return;
+    try {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      if (slideTo) o.frequency.linearRampToValueAtTime(slideTo, c.currentTime + (dur || .2));
+      g.gain.setValueAtTime(vol || .12, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0008, c.currentTime + (dur || .2));
+      o.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime + (dur || .2) + .02);
+    } catch(e){}
+  }
+  function noise(dur, vol){
+    var c = ac(); if (!c) return;
+    try {
+      var len = Math.floor(c.sampleRate * (dur || .15));
+      var buf = c.createBuffer(1, len, c.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      var src = c.createBufferSource(), g = c.createGain(), f = c.createBiquadFilter();
+      f.type = 'bandpass'; f.frequency.value = 900;
+      g.gain.value = vol || .09;
+      src.buffer = buf; src.connect(f); f.connect(g); g.connect(c.destination);
+      src.start();
+    } catch(e){}
+  }
+  return {
+    click: function(){ tone(760, .06, 'triangle', .07); },
+    correct: function(){ tone(784, .12, 'sine', .14); setTimeout(function(){ tone(988, .14, 'sine', .14); }, 110); setTimeout(function(){ tone(1319, .2, 'sine', .13); }, 220); },
+    wrong: function(){ tone(300, .18, 'sawtooth', .08, 190); },
+    claw: function(){ noise(.16, .06); tone(420, .12, 'square', .05, 300); },
+    drop: function(){ tone(220, .18, 'sine', .1, 120); },
+    tick: function(){ tone(1200, .05, 'square', .05); },
+    win: function(){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ tone(f, .22, 'sine', .13); }, i*130); }); }
+  };
+})();
+
+/* ---------------------------- 出题器 ---------------------------- */
+/* 一题的数据结构：
+   {type, emoji, unit, a, b, c,            // a op b = c（三部分时 a,b,d = c）
+    arity, op, given,                     // given=true 则前几个数已给出，只填得数
+    items:[{mark:''|'slash'|'box'}],      // 单行题
+    groups:[[n,n],[n,n]],                 // 分组题（加法）
+    boxMark:bool,                         // 减法题用斜线还是虚线框
+    labelText, labelPos}                  // 问句文字 */
+function allowedTypes(){
+  var scope = S.settings.scope;
+  return S.settings.types.filter(function(t){
+    var sc = TYPES[t].scope;
+    return scope === 'mix' || sc === scope;
+  });
+}
+
+function buildQuestion(type){
+  var th = pick(THINGS), MAX = CONFIG.MAX_SUM;
+  var q = {type:type, emoji:th.e, unit:th.u, op:TYPES[type].op,
+           arity:TYPES[type].arity, given:false, items:[], groups:[]};
+
+  if (type === 'add'){
+    /* 合并求总数：两组，和 ≤ 10 */
+    var a = rndInt(1, MAX - 1), b = rndInt(1, MAX - a);
+    q.a = a; q.b = b; q.c = a + b;
+    q.groups = [a, b];
+    q.brace = {from:0, to:1, label:'?' + q.unit};   /* 括号括住两组，标问号 */
+  } else if (type === 'cross' || type === 'box'){
+    /* 划去 / 框走：总数 n，去掉 k，问还剩 */
+    var n = rndInt(2, MAX), k = rndInt(1, n - 1);
+    q.a = n; q.b = k; q.c = n - k;
+    q.boxMark = (type === 'box');
+    for (var i = 0; i < n; i++) q.items.push({mark: i >= n - k ? (type === 'box' ? 'box' : 'slash') : ''});
+    q.labelText = '还剩?' + q.unit;
+  } else if (type === 'part'){
+    /* 求另一部分：总数 n 已知（括号标 n），一部分 k 已知，问另一部分 */
+    var n2 = rndInt(3, MAX), k2 = rndInt(1, n2 - 1);
+    q.a = n2; q.b = k2; q.c = n2 - k2;
+    q.groups = [k2];                       /* 只画已知那部分 */
+    q.unknown = true;                      /* 另一部分用虚线「?」占位 */
+    q.brace = {from:0, to:1, label:n2 + q.unit};
+    q.labelText = '?' + q.unit;
+  } else if (type === 'add3'){
+    /* 连加：三组，和 ≤ 10 */
+    var x = rndInt(1, MAX - 2), y = rndInt(1, MAX - x - 1), z = rndInt(1, MAX - x - y);
+    q.a = x; q.b = y; q.c = x + y + z;
+    q.third = z;
+    q.groups = [x, y, z];
+    q.brace = {from:0, to:2, label:'?' + q.unit};
+  } else {
+    /* 连减：总数 n，先划去 k1、再框走 k2 */
+    var n3 = rndInt(4, MAX), k1 = rndInt(1, n3 - 2), k2 = rndInt(1, n3 - k1 - 1);
+    q.a = n3; q.b = k1; q.third = k2; q.c = n3 - k1 - k2;
+    for (var j = 0; j < n3; j++){
+      var mark = '';
+      if (j >= n3 - k1) mark = 'slash';
+      else if (j >= n3 - k1 - k2) mark = 'box';
+      q.items.push({mark:mark});
+    }
+    q.labelText = '还剩?' + q.unit;
+  }
+
+  /* 开局一律不留任何已填数字：算式三个空全由学生自己填（运算符同理） */
+  q.given = false;
+
+  /* 槽位：需要填的位置（按顺序） */
+  q.slots = q.arity === 2 ? ['a','b','c'] : ['a','b','third','c'];
+  return q;
+}
+
+function newQuestionFor(p, avoid){
+  var pool = allowedTypes();
+  if (!pool.length) pool = ['add'];
+  /* 尽量避开上一题题型（p.q 是题目对象，比较 type），四个人题目不重样 */
+  var last = p.q ? p.q.type : null;
+  var choices = pool.filter(function(t){ return t !== last && t !== avoid; });
+  if (!choices.length) choices = pool.filter(function(t){ return t !== last; });
+  if (!choices.length) choices = pool;
+  var t = pick(choices);
+  p.q = buildQuestion(t);
+  p.slots = p.q.slots.slice();
+  p.answers = {};
+  p.ops = {};   /* 学生自己选的运算符：{0:'+'|'-', 1:...}，缺省 ? 表示还没选 */
+  p.cur = 0;
+  p.locked = false;
+  p.done = false;
+  renderQuestion(p);
+}
+
+/* 渲染一题：图 + 算式 + 复位确定按钮 */
+function renderQuestion(p){
+  if (!p.fig || !p.eq) return;
+  renderFigure(p);
+  renderEquation(p);
+  if (p.els.ok){
+    p.els.ok.textContent = '确定';
+    p.els.ok.classList.remove('right');
+  }
+}
+
+/* ---------------------------- 图形渲染 ---------------------------- */
+function el(tag, cls, html){
+  var d = document.createElement(tag);
+  if (cls) d.className = cls;
+  if (html != null) d.innerHTML = html;
+  return d;
+}
+
+/* 大括号：⏟ 形（两端上翘、中间下垂），宽度自适应；non-scaling-stroke 防止横向拉伸把线条压扁 */
+function braceSVG(label){
+  var wrap = el('div','bracewrap');
+  wrap.innerHTML = '<svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true">' +
+    '<path d="M2 1 V7 Q2 13 10 13 H46 Q50 13 50 17 Q50 13 54 13 H90 Q98 13 98 7 V1" ' +
+    'fill="none" stroke="#5c5449" stroke-width="2.4" stroke-linecap="round" ' +
+    'vector-effect="non-scaling-stroke"/></svg>' +
+    '<div class="lb">' + label + '</div>';
+  return wrap;
+}
+
+function itemEl(q, mark){
+  var s = el('span','it', q.emoji);
+  if (mark === 'slash') s.appendChild(el('i','sl'));
+  return s;
+}
+
+/* 图案字号：既要按「并排一共几格宽」算（横向不能溢），也要按「每组最多几行」算（纵向不能顶破） */
+var SIZE_STEPS = [
+  'clamp(26px,2.7vw,50px)',
+  'clamp(23px,2.35vw,43px)',
+  'clamp(19px,1.95vw,36px)',
+  'clamp(16px,1.65vw,30px)',
+  'clamp(14px,1.42vw,26px)',
+  'clamp(13px,1.28vw,23px)'
+];
+function sizeFor(width, rows){
+  var iw = width <= 5 ? 0 : width <= 6 ? 1 : width <= 8 ? 2 : width <= 10 ? 3 : width <= 12 ? 4 : 5;
+  var ir = rows <= 1 ? 0 : rows === 2 ? 2 : rows === 3 ? 3 : 4;
+  return SIZE_STEPS[Math.max(iw, ir)];
+}
+
+/* 把一题画进该玩家的 .pfig
+   排布原则：每个「图案区域」是一列，区域之间左右并排（平行），不会被挤到下一行；
+   区域内部一行最多 4 个，超过就自己换行。 */
+function renderFigure(p){
+  var q = p.q, wrap = p.fig;
+  wrap.innerHTML = '';
+
+  var regions = [];   /* {kind:'items'|'box'|'mark', n, mark} */
+  if (q.groups && q.groups.length){
+    q.groups.forEach(function(n){ regions.push({kind:'items', n:n, mark:''}); });
+    if (q.unknown) regions.push({kind:'mark', n:2});
+  } else {
+    var free = q.items.filter(function(o){ return o.mark === ''; }).length;
+    var boxed = q.items.filter(function(o){ return o.mark === 'box'; }).length;
+    var slashed = q.items.filter(function(o){ return o.mark === 'slash'; }).length;
+    if (free) regions.push({kind:'items', n:free, mark:''});
+    if (boxed) regions.push({kind:'box', n:boxed, mark:''});
+    if (slashed) regions.push({kind:'items', n:slashed, mark:'slash'});
+  }
+
+  /* 横向格数 = 每区最多 4 格 + 区间空隙；行数 = 各区里最多的行数 */
+  var width = 0, rows = 1;
+  regions.forEach(function(r){
+    width += Math.min(r.n, 4) + (r.kind === 'box' ? 1 : 0);
+    rows = Math.max(rows, Math.ceil(r.n / 4));
+  });
+  /* 组间空隙现在约 1.25 个字宽 + 10px，估算时按 1.75 格留足余量（不改变现有档位，只防溢出） */
+  width += Math.max(0, regions.length - 1) * 1.75;
+  wrap.style.setProperty('--isz', sizeFor(width, rows));
+
+  /* 每 4 个包成一行，超出就新起一行 */
+  function fillSeg(seg, n, mark){
+    for (var i = 0; i < n; i += 4){
+      var row = el('div','irow');
+      for (var j = i; j < Math.min(i + 4, n); j++) row.appendChild(itemEl(q, mark || ''));
+      seg.appendChild(row);
+    }
+  }
+
+  /* 只要不止一个区域（两组图案 / 图案 + 虚线框 / 图案 + ?只），就拉开组间空隙 */
+  var line = el('div', 'figline' + (regions.length > 1 ? ' grpline' : ''));
+  regions.forEach(function(r){
+    if (r.kind === 'mark'){
+      line.appendChild(el('span','qmark','?' + q.unit));
+      return;
+    }
+    var seg = el(r.kind === 'box' ? 'span' : 'div', r.kind === 'box' ? 'dashbox' : 'gsec');
+    fillSeg(seg, r.n, r.mark);
+    line.appendChild(seg);
+  });
+
+  var box = el('div','figbox');
+  box.appendChild(line);
+  if (q.brace) box.appendChild(braceSVG(q.brace.label));
+  if (q.labelText && !q.unknown) box.appendChild(el('div','qtext', q.labelText));
+  wrap.appendChild(box);
+}
+
+/* 算式行：槽 + 固定运算符 */
+function renderEquation(p){
+  var q = p.q, row = p.eq;
+  row.innerHTML = '';
+  p.opEls = {};
+  var slots = q.slots;
+  var slotIdx = 0;
+
+  function addSlot(which){
+    var s = el('div','slot','');
+    s.dataset.slot = which;
+    var filled = p.answers[which];
+    if (filled != null){
+      s.textContent = String(filled);
+      s.classList.add('filled');
+    } else if (slotIdx === p.cur){
+      s.classList.add('cur');
+    }
+    s.onclick = function(){ focusSlot(p, which); };
+    row.appendChild(s);
+    slotIdx++;
+    return s;
+  }
+
+  /* 运算符槽：加/减是知识点，学生自己点「?」循环选，或按键盘上的 + - 键 */
+  function addOp(idx){
+    var s = el('div','opslot', p.ops[idx] || '?');
+    if (p.ops[idx]) s.classList.add('set');
+    s.onclick = function(){ tap(s, function(){ cycleOp(p, idx); }); };
+    row.appendChild(s);
+    p.opEls[idx] = s;
+    return s;
+  }
+
+  if (q.arity === 2){
+    if (q.given){
+      row.appendChild(el('div','numcell', String(q.a)));
+      addOp(0);
+      row.appendChild(el('div','numcell', String(q.b)));
+      row.appendChild(el('div','eqcell','='));
+      addSlot('c');
+    } else {
+      addSlot('a');
+      addOp(0);
+      addSlot('b');
+      row.appendChild(el('div','eqcell','='));
+      addSlot('c');
+    }
+  } else {
+    if (q.given){
+      row.appendChild(el('div','numcell', String(q.a)));
+      addOp(0);
+      row.appendChild(el('div','numcell', String(q.b)));
+      addOp(1);
+      row.appendChild(el('div','numcell', String(q.third)));
+      row.appendChild(el('div','eqcell','='));
+      addSlot('c');
+    } else {
+      addSlot('a');
+      addOp(0);
+      addSlot('b');
+      addOp(1);
+      addSlot('third');
+      row.appendChild(el('div','eqcell','='));
+      addSlot('c');
+    }
+  }
+  p.slotEls = {};
+  Array.prototype.forEach.call(row.querySelectorAll('.slot'), function(s){ p.slotEls[s.dataset.slot] = s; });
+}
+
+/* 循环切换运算符：? → + → - → ? */
+function cycleOp(p, idx){
+  if (!S.running || S.paused || p.locked || p.done) return;
+  var cur = p.ops[idx] || '';
+  p.ops[idx] = cur === '' ? '+' : (cur === '+' ? '-' : '');
+  SND.click();
+  renderEquation(p);
+}
+
+/* 键盘 + - 键：直接把运算符填进第一个还没选的槽 */
+function setOp(p, sym){
+  if (!S.running || S.paused || p.locked || p.done) return;
+  var n = p.q && p.q.arity === 3 ? 2 : 1;
+  for (var i = 0; i < n; i++){
+    if (!p.ops[i]){ p.ops[i] = sym; SND.click(); renderEquation(p); return; }
+  }
+}
+
+/* ---------------------------- 玩家面板 ---------------------------- */
+function makePlayer(i){
+  var col = COLORS[i % 4];
+  var p = {
+    id: i, color: col.c, dark: col.d, light: col.l,
+    name: S.settings.names[i] || (i + 1) + '号',
+    score: 0, q: null, slots: [], answers: {}, ops: {}, cur: 0, locked: false, done: false,
+    anim: 0, els: {}
+  };
+  return p;
+}
+
+function buildUI(){
+  var n = S.settings.count;
+  document.documentElement.style.setProperty('--n', n);
+
+  /* 徽章 */
+  var badges = $('badges');
+  badges.innerHTML = '';
+  S.players.forEach(function(p){
+    var b = el('div','badge');
+    b.style.setProperty('--pc', p.color);
+    b.style.setProperty('--pc-d', p.dark);
+    b.style.setProperty('--pc-l', p.light);
+    b.innerHTML = '<span class="nm"></span><span class="sc"><b>0</b><small>分</small></span>';
+    b.querySelector('.nm').textContent = p.name;
+    badges.appendChild(b);
+    p.els.badge = b;
+    p.els.score = b.querySelector('.sc b');
+  });
+
+  /* 舞台：爪子 + 筐 + 毛绒堆 */
+  var stage = $('stage');
+  Array.prototype.slice.call(stage.querySelectorAll('.claw,.bin,.doll,.clawhit,.stars span'))
+    .forEach(function(e){ e.remove(); });
+  var n0 = Math.min(4, n);
+
+  /* 彩虹：五道同心半圆（SVG 画，任何宽高比都不变形） */
+  var rb = stage.querySelector('.rainbow');
+  rb.innerHTML = '<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax meet" style="width:100%;height:100%">' +
+    ['#ff9fb1', '#ffd280', '#a8e6a1', '#9fd8ff', '#c2a8ff'].map(function(c, i){
+      var r = 186 - i * 27;
+      return '<path d="M' + (200 - r) + ' 200 A' + r + ' ' + r + ' 0 0 1 ' + (200 + r) + ' 200" fill="none" stroke="' + c + '" stroke-width="22"/>';
+    }).join('') + '</svg>';
+
+  /* 每人一堆：真的堆成小山（自下而上 6/5/4/3，层间互相压住），爪子只从自己这堆里抓 */
+  var piles = stage.querySelector('.piles');
+  piles.innerHTML = '';
+  for (var pi = 0; pi < n; pi++){
+    var pile = el('div','pile');
+    var cnt = 16 + Math.floor(Math.random() * 4);
+    var bag = shuffle(DOLLS.slice());
+    while (bag.length < cnt) bag = bag.concat(shuffle(DOLLS.slice()));
+    bag = bag.slice(0, cnt);
+    /* 每层放几个（自下而上），多出来的补到底层 */
+    var plan = [6, 5, 4, 3], rows = [], left = cnt;
+    for (var ri = 0; ri < plan.length && left > 0; ri++){
+      var take = Math.min(left, plan[ri]);
+      rows.push(take); left -= take;
+    }
+    if (left > 0) rows[0] += left;
+    var bi = 0;
+    for (var rj = rows.length - 1; rj >= 0; rj--){   /* DOM 自上而下写，底层在最后 → 自然盖住上层 */
+      var row = el('div','plrow');
+      row.style.zIndex = 10 - (rows.length - rj);
+      for (var k = 0; k < rows[rj] && bi < bag.length; k++){
+        var sp = el('span','', bag[bi++]);
+        var rot = (Math.random() * 22 - 11).toFixed(1);
+        var sc = (0.9 + Math.random() * 0.2).toFixed(2);
+        var dy = (-2 + Math.random() * 4).toFixed(1);
+        sp.style.transform = 'rotate(' + rot + 'deg) scale(' + sc + ') translateY(' + dy + 'px)';
+        row.appendChild(sp);
+      }
+      pile.appendChild(row);
+    }
+    piles.appendChild(pile);
+  }
+  var st = stage.querySelector('.stars');
+  st.innerHTML = '';
+  ['✦','✧','⭐','✦','✧'].forEach(function(s, i){
+    var sp = el('span','', s);
+    sp.style.left = (8 + i * 20) + '%';
+    sp.style.top = (10 + (i % 3) * 22) + '%';
+    sp.style.animationDelay = (i * .4) + 's';
+    st.appendChild(sp);
+  });
+
+  var binbox = stage.querySelector('.bins');
+  binbox.innerHTML = '';
+  binbox.style.gridTemplateColumns = 'repeat(' + n + ',1fr)';
+
+  /* 背景光斑 */
+  var bok = stage.querySelector('.bokeh');
+  if (bok){
+    bok.innerHTML = '';
+    for (var bi = 0; bi < 12; bi++){
+      var bd = el('i','');
+      var bsz = 5 + Math.random() * 13;
+      bd.style.width = bsz + 'px'; bd.style.height = bsz + 'px';
+      bd.style.left = (4 + Math.random() * 92) + '%';
+      bd.style.top = (6 + Math.random() * 52) + '%';
+      bd.style.animationDelay = (Math.random() * 6) + 's';
+      bd.style.opacity = (0.25 + Math.random() * 0.35).toFixed(2);
+      bok.appendChild(bd);
+    }
+  }
+
+  /* 跑马灯灯珠 */
+  var mq = stage.querySelector('.marquee');
+  if (mq){
+    mq.innerHTML = '';
+    for (var mi = 0; mi < 22; mi++){
+      var dot = el('i','');
+      dot.style.animationDelay = (mi % 4) * 0.2 + 's';
+      mq.appendChild(dot);
+    }
+  }
+
+  S.players.forEach(function(p, i){
+    var cx = (i + 0.5) * 100 / n;
+    var claw = el('div','claw');
+    claw.style.left = cx + '%';
+    /* 金属抓斗：橙色电机箱 + 两条金属爪臂，抓取时向内收拢 */
+    claw.innerHTML = '<div class="carriage"></div><div class="rope"></div><div class="arm">' +
+      '<svg viewBox="0 0 80 60">' +
+      '<defs>' +
+      '<linearGradient id="mg' + i + '" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="#f2f6fa"/><stop offset=".38" stop-color="#b9c4d0"/>' +
+      '<stop offset=".7" stop-color="#8792a0"/><stop offset="1" stop-color="#5f6a79"/></linearGradient>' +
+      '<linearGradient id="hg' + i + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#ffdf9d"/><stop offset=".5" stop-color="#f5a63c"/><stop offset="1" stop-color="#d97f1b"/></linearGradient>' +
+      '</defs>' +
+      /* 电机箱 */
+      '<rect x="31.5" y="0" width="17" height="10" rx="3.5" fill="url(#hg' + i + ')" stroke="#b9701c" stroke-width="1.6"/>' +
+      '<rect x="34" y="2" width="12" height="2.4" rx="1.2" fill="rgba(255,255,255,.75)"/>' +
+      /* 活塞杆 */
+      '<rect x="37.6" y="9" width="4.8" height="6" rx="2" fill="#8b95a3"/>' +
+      /* 爪臂：先画深色描边，再画金属本体，像一根有厚度的钢条 */
+      '<path class="l" d="M34.5 15 C27 21 22.5 29 23 37 C23.4 42.5 26 47 30 50" fill="none" stroke="#59636f" stroke-width="8.4" stroke-linecap="round"/>' +
+      '<path class="r" d="M45.5 15 C53 21 57.5 29 57 37 C56.6 42.5 54 47 50 50" fill="none" stroke="#59636f" stroke-width="8.4" stroke-linecap="round"/>' +
+      '<path class="l" d="M34.5 15 C27 21 22.5 29 23 37 C23.4 42.5 26 47 30 50" fill="none" stroke="url(#mg' + i + ')" stroke-width="5.6" stroke-linecap="round"/>' +
+      '<path class="r" d="M45.5 15 C53 21 57.5 29 57 37 C56.6 42.5 54 47 50 50" fill="none" stroke="url(#mg' + i + ')" stroke-width="5.6" stroke-linecap="round"/>' +
+      /* 爪尖（向内的小钩） */
+      '<circle class="l" cx="30" cy="50" r="3.4" fill="#4f5965"/>' +
+      '<circle class="r" cx="50" cy="50" r="3.4" fill="#4f5965"/>' +
+      /* 轴心：金属螺栓 */
+      '<circle cx="40" cy="14" r="6.2" fill="url(#mg' + i + ')" stroke="#59636f" stroke-width="1.6"/>' +
+      '<circle cx="40" cy="14" r="2.4" fill="#4f5965"/>' +
+      /* 钢面高光 */
+      '<path d="M31 19 C25.5 25 23.6 31 24 36" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<path d="M49 19 C54.5 25 56.4 31 56 36" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.5" stroke-linecap="round"/>' +
+      '</svg></div>';
+    stage.appendChild(claw);
+    p.els.claw = claw;
+
+    var bin = el('div','bin');
+    bin.style.setProperty('--pc', p.color);
+    bin.style.setProperty('--pc-d', p.dark);
+    bin.appendChild(el('span','gloss'));
+    var gotbox = el('div','gotbox');          /* 奖品落在这个层里，只做横向排列 */
+    bin.appendChild(gotbox);
+    binbox.appendChild(bin);
+    p.els.bin = bin; p.els.gotbox = gotbox;
+
+    var hit = el('div','clawhit');
+    hit.style.setProperty('--pc-d', p.dark);
+    hit.style.left = cx + '%';
+    hit.style.top = '24%';
+    hit.textContent = '答对啦！';
+    stage.appendChild(hit);
+    p.els.hit = hit;
+
+    var doll = el('div','doll','');
+    stage.appendChild(doll);
+    p.els.doll = doll;
+  });
+
+  /* 题目面板 */
+  var panels = $('panels');
+  panels.innerHTML = '';
+  S.players.forEach(function(p){
+    var panel = el('div','panel');
+    panel.style.setProperty('--pc', p.color);
+    panel.style.setProperty('--pc-d', p.dark);
+    panel.style.setProperty('--pc-l', p.light);
+    var fig = el('div','pfig');
+    var eq = el('div','prow');
+    var key = el('div','pkey');
+    var btns = el('div','pbtns');
+    panel.appendChild(fig); panel.appendChild(eq); panel.appendChild(key); panel.appendChild(btns);
+    panels.appendChild(panel);
+    p.els.panel = panel; p.els.fig = fig; p.els.eq = eq; p.els.key = key; p.els.btns = btns;
+    p.fig = fig; p.eq = eq; p.key = key; p.btns = btns;
+
+    /* 键盘：1-9 0 + -（+ - 用来选运算符：加还是减由学生自己判断） */
+    [1,2,3,4,5,6,7,8,9,0,'+','-'].forEach(function(k){
+      var b = el('button','', String(k));
+      b.dataset.k = String(k);
+      b.onclick = function(){ pressKey(p, k); };
+      key.appendChild(b);
+    });
+    var back = el('button','back','退格');
+    back.onclick = function(){ pressBack(p); };
+    var ok = el('button','ok','确定');
+    ok.onclick = function(){ confirmAnswer(p); };
+    btns.appendChild(back); btns.appendChild(ok);
+    p.els.ok = ok;
+  });
+}
+
+/* ---------------------------- 作答交互 ---------------------------- */
+function tap(elx, fn){
+  var now = Date.now();
+  if (elx && elx._lastTap && now - elx._lastTap < CONFIG.DEBOUNCE) return;
+  if (elx) elx._lastTap = now;
+  fn();
+}
+
+function focusSlot(p, which){
+  if (!S.running || S.paused || p.locked) return;
+  var idx = p.slots.indexOf(which);
+  if (idx < 0) return;
+  p.cur = idx;
+  renderEquation(p);
+}
+
+function pressKey(p, k){
+  if (!S.running || S.paused || p.locked || p.done) return;
+  if (k === '+' || k === '-') return setOp(p, k); /* 运算符键：填进第一个空运算槽 */
+  if (typeof k !== 'number') return;
+  var which = p.slots[p.cur];
+  if (which == null) return;
+  var digits = String(k);
+  var prev = p.answers[which];
+  if (prev == null){
+    /* 空槽：先落一位，先不跳槽（留出按「0」组成 10 的机会） */
+    p.answers[which] = digits;
+  } else {
+    var joined = Number(String(prev) + digits);
+    if (String(prev).length === 1 && joined <= CONFIG.MAX_SUM){
+      p.answers[which] = String(prev) + digits;   /* 1 → 10 */
+    } else {
+      /* 不是两位合法数：当前槽已定，跳到下一个空槽 */
+      var i = p.cur + 1;
+      while (i < p.slots.length && p.answers[p.slots[i]] != null) i++;
+      if (i < p.slots.length){
+        p.cur = i;
+        p.answers[p.slots[i]] = digits;
+      }
+    }
+  }
+  SND.click();
+  renderEquation(p);
+}
+
+function pressBack(p){
+  if (!S.running || S.paused || p.locked || p.done) return;
+  var i = p.cur;
+  /* 当前槽有值先清当前，否则回退上一槽 */
+  if (p.answers[p.slots[i]] == null && i > 0) i--;
+  var which = p.slots[i];
+  if (p.answers[which] != null){
+    delete p.answers[which];
+  } else if (i > 0){
+    delete p.answers[p.slots[i - 1]];
+    i = i - 1;
+  }
+  p.cur = i;
+  SND.click();
+  renderEquation(p);
+}
+
+/* 校验答案（槽里存的是字符串，比较前统一转数字） */
+function checkAnswer(p){
+  var q = p.q;
+  /* 运算符也是答案的一部分：没选算没填完，选错判错（要学生自己思考加还是减） */
+  var nOps = q.arity === 3 ? 2 : 1;
+  for (var oi = 0; oi < nOps; oi++){
+    if (!p.ops[oi]) return {ok:false, reason:'empty'};
+  }
+  var raw = p.slots.map(function(s){ return p.answers[s]; });
+  if (raw.some(function(v){ return v == null || v === ''; })) return {ok:false, reason:'empty'};
+  var opsOk = true;
+  for (oi = 0; oi < nOps; oi++){ if (p.ops[oi] !== q.op) opsOk = false; }
+  var vals = raw.map(Number);
+  if (q.arity === 2){
+    var a = q.given ? q.a : vals[0];
+    var b = q.given ? q.b : vals[1];
+    var uc = q.given ? vals[0] : vals[2];
+    var res = q.op === '+' ? a + b : a - b;
+    return {ok: opsOk && uc === res, expect: res};
+  }
+  var x = q.given ? q.a : vals[0];
+  var y = q.given ? q.b : vals[1];
+  var z = q.given ? q.third : vals[2];
+  var uc3 = q.given ? vals[0] : vals[3];
+  var res3 = q.op === '+' ? x + y + z : x - y - z;
+  return {ok: opsOk && uc3 === res3, expect: res3};
+}
+
+function confirmAnswer(p){
+  if (!S.running || S.paused || p.locked || p.done) return;
+  var r = checkAnswer(p);
+  if (r.reason === 'empty'){
+    /* 没填完：只抖一下当前空槽，不弹任何提示文字（键盘上方不给提示） */
+    var which = p.slots[p.cur];
+    var first = p.slotEls[which] || (p.opEls && p.opEls[0]);
+    if (first){ first.classList.add('bad'); setTimeout(function(){ first.classList.remove('bad'); }, 500); }
+    return;
+  }
+  if (r.ok) onRight(p); else onWrong(p);
+}
+
+function onRight(p){
+  p.done = true;
+  p.score += 1;
+  if (p.els.score) p.els.score.textContent = String(p.score);
+  if (p.els.badge){
+    p.els.badge.classList.remove('bump'); void p.els.badge.offsetWidth; p.els.badge.classList.add('bump');
+  }
+  var ok = p.els.ok;
+  if (ok){ ok.textContent = '答对啦！'; ok.classList.add('right'); }
+  SND.correct();
+  if (p.els.hit){
+    p.els.hit.textContent = '答对啦！';
+    p.els.hit.classList.add('show');
+    setTimeout(function(){ p.els.hit.classList.remove('show'); }, 900);
+  }
+  grab(p, true);
+  var gen = S.gen;
+  setTimeout(function(){
+    if (gen !== S.gen || S.over) return;
+    if (ok){ ok.textContent = '确定'; ok.classList.remove('right'); }
+    newQuestionFor(p, p.q && p.q.type);
+  }, CONFIG.NEXT_MS + 900);
+}
+
+function onWrong(p){
+  SND.wrong();
+  p.slots.forEach(function(s){
+    var e = p.slotEls && p.slotEls[s];
+    if (e){ e.classList.add('bad'); setTimeout(function(){ e.classList.remove('bad'); }, 480); }
+  });
+  /* 运算符选错了也要抖一下（不告诉学生哪个错，让他自己想） */
+  if (p.opEls) Object.keys(p.opEls).forEach(function(k){
+    var e2 = p.opEls[k];
+    if (e2){ e2.classList.add('bad'); setTimeout(function(){ e2.classList.remove('bad'); }, 480); }
+  });
+  if (p.els.hit){
+    p.els.hit.textContent = '再想想～';
+    p.els.hit.classList.add('show');
+    setTimeout(function(){ p.els.hit.classList.remove('show'); }, 900);
+  }
+  grab(p, false);
+  /* 清空重填，不锁死 */
+  var gen = S.gen;
+  setTimeout(function(){
+    if (gen !== S.gen) return;
+    p.answers = {}; p.cur = 0;
+    renderEquation(p);
+  }, 620);
+}
+
+/* 元素安全移除（测试桩里没有 remove 时也不报错） */
+function killNode(n){
+  if (!n) return;
+  try { if (n.remove) n.remove(); else if (n.parentNode && n.parentNode.removeChild) n.parentNode.removeChild(n); } catch(e){}
+}
+
+/* 得奖反馈：+1 飘字 + 星星四散 + 筐弹一下 */
+function prizeBurst(p){
+  var stage = $('stage');
+  if (!stage) return;
+  var n = S.settings.count;
+  var x = (p.id + 0.5) * 100 / n;
+  var pop = el('div','pop1','+1');
+  pop.style.left = x + '%';
+  pop.style.top = '76%';
+  stage.appendChild(pop);
+  setTimeout(function(){ killNode(pop); }, 1000);
+  for (var i = 0; i < 6; i++){
+    var sp = el('div','spark','✦');
+    sp.style.left = x + '%';
+    sp.style.top = '82%';
+    sp.style.color = ['#ffcf4d','#ff8fa3','#7fd3ff','#a8e6a1'][i % 4];
+    sp.style.setProperty('--dx', ((Math.random() * 2 - 1) * 70).toFixed(0) + 'px');
+    sp.style.setProperty('--dy', (-25 - Math.random() * 45).toFixed(0) + 'px');
+    sp.style.animationDelay = (i * 45) + 'ms';
+    stage.appendChild(sp);
+    (function(e){ setTimeout(function(){ killNode(e); }, 1200); })(sp);
+  }
+  var bin = p.els.bin;
+  if (bin){
+    bin.classList.remove('pop');
+    void bin.offsetWidth;
+    bin.classList.add('pop');
+  }
+}
+
+/* ---------------------------- 抓娃娃动画 ---------------------------- */
+/* 正确：从娃娃堆抓一个 → 升到顶 → 平移到自己的筐上方 → 松爪掉进筐
+   错误：照样下抓 → 升到半空 → 娃娃掉回堆里 */
+function grab(p, success){
+  var stage = $('stage');
+  if (!stage) return;
+  var n = S.settings.count;
+  var cw = stage.clientWidth || 800, ch = stage.clientHeight || 300;
+  var colW = cw / n;
+  var colLeft = p.id * colW;
+
+  var claw = p.els.claw, doll = p.els.doll;
+  if (!claw || !doll) return;
+
+  var gen = ++p.anim;
+  var tx = colLeft + colW * (0.5 + (Math.random() - 0.5) * 0.3);   /* 抓取点：自己那堆的中央附近 */
+  var binX = colLeft + colW / 2;
+  var downPx = ch * 0.34;
+
+  claw.style.setProperty('--down', downPx + 'px');
+  doll.className = 'doll';
+  doll.textContent = pick(DOLLS);
+  doll.style.left = (tx / cw * 100) + '%';
+  doll.style.top = '64%';
+  doll.classList.add('on');
+
+  var T = CONFIG.CLAW_STEP;
+  var lite = S.settings.anim === 'lite';
+  var k = lite ? 0.7 : 1;
+
+  setTimeout(function(){ if (gen !== p.anim) return; claw.classList.add('moving'); claw.style.left = (tx / cw * 100) + '%'; SND.claw(); }, T[0] * k);
+  setTimeout(function(){ if (gen !== p.anim) return; claw.classList.add('down'); }, T[1] * k);
+  setTimeout(function(){ if (gen !== p.anim) return; claw.classList.add('grab'); }, T[2] * k);
+  setTimeout(function(){
+    if (gen !== p.anim) return;
+    claw.classList.remove('down');
+    if (success) doll.style.top = '30%';
+  }, T[3] * k);
+  setTimeout(function(){
+    if (gen !== p.anim) return;
+    if (success){
+      claw.classList.add('moving');
+      claw.style.left = (binX / cw * 100) + '%';
+      doll.style.left = (binX / cw * 100) + '%';
+      doll.style.top = '26%';
+    }
+  }, T[4] * k);
+  setTimeout(function(){
+    if (gen !== p.anim) return;
+    claw.classList.remove('grab');
+    if (success){
+      SND.drop();
+      doll.classList.add('fall');
+      doll.style.top = '86%';
+      var got = el('span','got', doll.textContent);
+      var gb = p.els.gotbox || p.els.bin;
+      gb.appendChild(got);
+      /* 筐里最多摆 6 个，多了把最早的挤出去（得分数看上面的记分牌） */
+      while (gb.children.length > 6 && gb.children[0]) gb.removeChild(gb.children[0]);
+      prizeBurst(p);
+    } else {
+      /* 抓空：娃娃掉回堆里 */
+      SND.drop();
+      doll.classList.add('fall');
+      doll.style.top = '70%';
+    }
+  }, T[5] * k);
+  setTimeout(function(){
+    if (gen !== p.anim) return;
+    claw.classList.remove('moving');
+    if (!success){ doll.className = 'doll'; }
+    else { doll.className = 'doll'; doll.textContent = ''; }
+    setTimeout(function(){ claw.style.left = ((p.id + 0.5) * 100 / n) + '%'; }, 120);
+  }, T[6] * k);
+}
+
+/* ---------------------------- 计时 / 比赛流程 ---------------------------- */
+function startGame(){
+  clearInterval(S.timer);
+  S.gen++;
+  S.over = false; S.paused = false; S.running = true;
+  S.timeLeft = S.settings.time;
+  S.players = [];
+  for (var i = 0; i < S.settings.count; i++) S.players.push(makePlayer(i));
+  buildUI();
+  S.players.forEach(function(p, i){
+    var avoid = null;
+    newQuestionFor(p, avoid);
+  });
+  updateTimer();
+  S.timer = setInterval(tickTimer, 1000);
+  $('resMask').classList.remove('on');
+  $('setMask').classList.remove('on');
+}
+
+function tickTimer(){
+  if (!S.running || S.paused) return;
+  S.timeLeft--;
+  updateTimer();
+  if (S.timeLeft <= 10 && S.timeLeft > 0) SND.tick();
+  if (S.timeLeft <= 0) endGame();
+}
+
+function updateTimer(){
+  var t = Math.max(0, S.timeLeft);
+  var node = $('timer');
+  node.textContent = mmss(t);
+  if (t <= 10) node.classList.add('warn'); else node.classList.remove('warn');
+}
+
+function endGame(){
+  clearInterval(S.timer);
+  S.running = false; S.over = true;
+  S.players.forEach(function(p){ p.locked = true; });
+  SND.win();
+  showResult();
+}
+
+function showResult(){
+  var list = S.players.map(function(p){ return {name:p.name, score:p.score, color:p.color}; });
+  list.sort(function(a,b){ return b.score - a.score; });
+  var first = list[0];
+  var tied = list.filter(function(o){ return o.score === first.score; }).length > 1;
+  $('resSub').textContent = tied ? ('平分秋色！' + first.score + ' 分并列第一') : (first.name + ' 获得第一！');
+
+  var order = [1,0,2,3];   /* 展示顺序：2 1 3 4 */
+  var pod = $('podium');
+  pod.innerHTML = '';
+  order.forEach(function(idx){
+    var o = list[idx];
+    if (!o) return;
+    var step = el('div','step p' + (idx + 1));
+    var face = idx === 0 ? '🐼' : '🐥';
+    step.innerHTML = '<div class="face">' + face + '</div><div class="who"></div>' +
+      '<div class="pt"><b></b><small>分</small></div>' +
+      '<div class="block"><div class="rk"></div><div class="no"></div></div>';
+    step.querySelector('.who').textContent = o.name;
+    step.querySelector('.pt b').textContent = String(o.score);
+    step.querySelector('.rk').textContent = ['第一名','第二名','第三名','第四名'][idx];
+    step.querySelector('.no').textContent = String(idx + 1);
+    pod.appendChild(step);
+  });
+  $('resMask').classList.add('on');
+}
+
+function toast(msg){
+  var t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.classList.remove('on'); }, 1600);
+}
+
+/* ---------------------------- 设置弹窗 ---------------------------- */
+function buildSettingsUI(){
+  var st = S.settings;
+  document.documentElement.style.setProperty('--n', st.count);
+  /* 人数 */
+  Array.prototype.forEach.call($('pcPills').children, function(b){
+    b.classList.toggle('on', Number(b.dataset.c) === st.count);
+  });
+  Array.prototype.forEach.call($('tmPills').children, function(b){
+    b.classList.toggle('on', Number(b.dataset.t) === st.time);
+  });
+  $('selScope').value = st.scope;
+  $('selAnim').value = st.anim;
+
+  /* 名字输入：只显示当前人数 */
+  var names = $('nameInputs');
+  names.innerHTML = '';
+  names.style.gridTemplateColumns = st.count > 2 ? '1fr 1fr' : '1fr';
+  for (var i = 0; i < st.count; i++){
+    var c = COLORS[i % 4];
+    var inp = document.createElement('input');
+    inp.value = st.names[i] || ((i + 1) + '号');
+    inp.maxLength = 8;
+    inp.dataset.i = String(i);
+    inp.style.setProperty('--pc-d', c.d);
+    inp.style.setProperty('--pc-l', c.l);
+    inp.oninput = function(){ };
+    names.appendChild(inp);
+  }
+
+  /* 图题勾选 */
+  var box = $('typeChecks');
+  box.innerHTML = '';
+  TYPE_ORDER.forEach(function(k){
+    var on = st.types.indexOf(k) >= 0;
+    var item = el('div','chk' + (on ? ' on' : ''), '<span class="box">✓</span><span>' + TYPES[k].name + '</span>');
+    item.dataset.t = k;
+    item.onclick = function(){
+      var idx = st.types.indexOf(k);
+      if (idx >= 0){
+        if (st.types.length === 1) { toast('至少保留一种图题'); return; }
+        st.types.splice(idx, 1);
+      } else st.types.push(k);
+      item.classList.toggle('on', st.types.indexOf(k) >= 0);
+      SND.click();
+    };
+    box.appendChild(item);
+  });
+}
+
+/* 从设置界面读回设置 */
+function readSettings(){
+  var st = S.settings;
+  Array.prototype.forEach.call($('nameInputs').children, function(inp){
+    var i = Number(inp.dataset.i);
+    var v = (inp.value || '').trim();
+    st.names[i] = v || ((i + 1) + '号');
+  });
+  st.scope = $('selScope').value;
+  st.anim = $('selAnim').value;
+}
+
+/* ---------------------------- 绑定事件 ---------------------------- */
+function bindUI(){
+  $('pcPills').onclick = function(e){
+    var b = e.target.closest('.pill'); if (!b) return;
+    S.settings.count = Number(b.dataset.c);
+    buildSettingsUI(); SND.click();
+  };
+  $('tmPills').onclick = function(e){
+    var b = e.target.closest('.pill'); if (!b) return;
+    S.settings.time = Number(b.dataset.t);
+    buildSettingsUI(); SND.click();
+  };
+  $('setClose').onclick = function(){ $('setMask').classList.remove('on'); };
+  $('btnSet').onclick = function(){
+    if (S.running && !S.paused){ S.paused = true; $('btnPause').textContent = '▶'; }
+    buildSettingsUI(); $('setMask').classList.add('on'); SND.click();
+  };
+  $('btnStart').onclick = function(){ readSettings(); startGame(); SND.click(); };
+  $('btnMute').onclick = function(){
+    S.muted = !S.muted;
+    $('btnMute').textContent = S.muted ? '🔇' : '🔊';
+  };
+  $('btnPause').onclick = function(){
+    if (!S.running) return;
+    S.paused = !S.paused;
+    $('btnPause').textContent = S.paused ? '▶' : '⏸';
+    toast(S.paused ? '暂停中，点 ▶ 继续' : '继续比赛！');
+  };
+  $('btnRestart').onclick = function(){ SND.click(); startGame(); };
+
+  $('btnAgain').onclick = function(){ startGame(); };
+  $('btnAdjust').onclick = function(){ $('resMask').classList.remove('on'); buildSettingsUI(); $('setMask').classList.add('on'); };
+  $('btnLook').onclick = function(){ $('resMask').classList.remove('on'); };
+
+  /* 教师快捷键 */
+  document.addEventListener('keydown', function(e){
+    if (e.key === ' '){
+      if (S.running){ e.preventDefault(); $('btnPause').click(); }
+    } else if (e.key === 'r' || e.key === 'R'){
+      startGame();
+    } else if (e.key === 'a' || e.key === 'A'){
+      /* 调试：自动填正确答案（含运算符） */
+      S.players.forEach(function(p){
+        if (!p.q || p.done) return;
+        var q = p.q, c = q.c;
+        p.ops = q.arity === 3 ? { 0: q.op, 1: q.op } : { 0: q.op };
+        if (q.given){ p.answers.c = c; }
+        else if (q.arity === 2){ p.answers.a = q.a; p.answers.b = q.b; p.answers.c = q.c; }
+        else { p.answers.a = q.a; p.answers.b = q.b; p.answers.third = q.third; p.answers.c = q.c; }
+        renderEquation(p);
+      });
+    } else if (e.key === 'Escape'){
+      $('setMask').classList.remove('on');
+      $('resMask').classList.remove('on');
+    }
+  });
+
+  /* 窗口尺寸变化：图是流式布局，无需重算坐标；这里只保证舞台宽度缓存刷新 */
+  window.addEventListener('resize', function(){
+    /* 爪子回位（百分比，天然自适应） */
+    var n = S.settings.count;
+    S.players.forEach(function(p){
+      if (p.els.claw && !p.done) p.els.claw.style.left = ((p.id + 0.5) * 100 / n) + '%';
+    });
+  });
+}
+
+/* ---------------------------- 启动 ---------------------------- */
+function boot(){
+  bindUI();
+  buildSettingsUI();
+  startGame();
+  /* 开局先把界面铺好，但停在设置页：老师选完规则点「重新开赛」才计时 */
+  S.paused = true;
+  $('btnPause').textContent = '▶';
+  $('setMask').classList.add('on');
+
+  /* 截图/演示用参数（不影响正常使用）：
+     ?demo=1 直接开赛不弹设置；?demo=1&fill=1 额外把第一列填一半，方便看答题态 */
+  var qs = null;
+  try { qs = new URLSearchParams(location.search); } catch(e){ }
+  var demo = qs && qs.get('demo');
+  if (demo){
+    S.paused = false;
+    $('btnPause').textContent = '⏸';
+    $('setMask').classList.remove('on');
+    if (qs.get('fill')){
+      var p = S.players[0];
+      if (p && p.q && !p.q.given){
+        p.answers = {};
+        p.ops = { 0: p.q.op };
+        p.answers[p.slots[0]] = String(p.q.a);
+        p.cur = Math.min(1, p.slots.length - 1);
+        renderEquation(p);
+      }
+    }
+  }
+}
+
+/* 供自动化测试使用（浏览器里也保留，便于排查） */
+window.__T = {
+  S: S, CONFIG: CONFIG, TYPES: TYPES, COLORS: COLORS,
+  buildQuestion: buildQuestion, newQuestionFor: newQuestionFor,
+  pressKey: pressKey, pressBack: pressBack, confirmAnswer: confirmAnswer,
+  cycleOp: cycleOp, setOp: setOp,
+  checkAnswer: checkAnswer, startGame: startGame, endGame: endGame,
+  grab: grab, prizeBurst: prizeBurst, startTimerTick: tickTimer, renderEquation: renderEquation,
+  renderFigure: renderFigure, renderQuestion: renderQuestion,
+  allowedTypes: allowedTypes, mmss: mmss
+};
+
+if (window.document && document.getElementById('app')) boot();
+</script>
+</body>
+</html>
