@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分与合运动会｜四人划艇竞速</title>
+<style>
+:root{--ink:#17324d;--sea:#0f6ea0}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;background:#e9f4fa;color:#15314b;user-select:none;-webkit-user-select:none}
+button{cursor:pointer;touch-action:manipulation;font:inherit}
+.app{min-height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;background:#fff;box-shadow:0 2px 10px #1232;z-index:5}
+.brand{font-weight:1000;font-size:clamp(20px,2.2vw,32px);letter-spacing:2px;color:#193c60}.brand span{color:#1288c9}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tool{border:0;border-radius:12px;padding:9px 13px;font-weight:800;background:#e8f4fb;color:#164568;transition:transform .12s}
+.tool:hover{transform:translateY(-1px)}
+.tool.primary{background:var(--sea);color:#fff}
+.tool.danger{background:#ffe5e5;color:#a72d37}
+/* ---------- 赛场 ---------- */
+.race-wrap{padding:12px 16px 8px}
+.race{position:relative;overflow:hidden;height:clamp(220px,30vh,330px);border-radius:22px;border:4px solid #fff;box-shadow:0 6px 20px #163b5630;background:#bfe6f7}
+.scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+.shimmer{position:absolute;left:0;right:0;top:38%;bottom:0;pointer-events:none;opacity:.38;background:repeating-linear-gradient(105deg,transparent 0 90px,rgba(255,255,255,.13) 90px 104px,transparent 104px 220px);animation:drift 8s linear infinite}
+@keyframes drift{to{background-position:300px 0}}
+.rays{transform-box:fill-box;transform-origin:center;animation:spin 36s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cloud{animation:cloudDrift linear infinite}
+.c1{animation-duration:52s}.c2{animation-duration:68s;animation-delay:-24s}.c3{animation-duration:58s;animation-delay:-36s}
+@keyframes cloudDrift{from{transform:translateX(-200px)}to{transform:translateX(1760px)}}
+.race-title{position:absolute;top:32px;left:50%;transform:translateX(-50%);padding:6px 22px;background:#ffffffd9;border-radius:20px;color:#1c4a66;font-size:clamp(13px,1.2vw,17px);font-weight:900;letter-spacing:4px;white-space:nowrap;box-shadow:0 2px 8px #14425e22;z-index:3}
+.race-status{position:absolute;right:16px;top:32px;padding:5px 14px;border-radius:14px;background:#ffffffd9;color:#155a80;font-weight:900;font-size:13px;z-index:3}
+.race-status.paused{background:#fff3c9;color:#8a6410}
+.lane-labels span{position:absolute;left:14px;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:1000;font-size:16px;border:3px solid #fff;box-shadow:0 2px 6px #0a3a5566;z-index:3}
+.finish{position:absolute;right:4.2%;top:37.5%;height:62%;width:14px;background:repeating-linear-gradient(to bottom,#fff 0 12px,#1b3f5f 12px 24px);border:3px solid #fff;border-radius:4px;z-index:2;box-shadow:0 2px 8px #0a3a5566}
+.finish:before{content:"🏁";position:absolute;top:-36px;left:50%;transform:translateX(-50%);font-size:26px;filter:drop-shadow(0 2px 2px #0a3a5566)}
+.boat{position:absolute;height:21%;aspect-ratio:132/72;transform:translateY(-50%);transition:left .8s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 5px 3px #0d4a6660);z-index:2}
+.boat svg{width:100%;height:100%;overflow:visible;display:block;animation:bob 2.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+.boat .number{position:absolute;left:2px;bottom:16%;width:24%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-weight:1000;color:#fff;font-size:clamp(11px,1vw,15px);border:2px solid #fff;box-shadow:0 2px 5px #0a3a5566}
+.paddle{transform-box:fill-box;transform-origin:10% 88%;animation:row .95s ease-in-out infinite alternate}
+@keyframes row{from{transform:rotate(-16deg)}to{transform:rotate(13deg)}}
+.wake{stroke-dasharray:5 9;animation:wake 1.1s linear infinite}
+@keyframes wake{to{stroke-dashoffset:-14}}
+.splash{position:absolute;z-index:4;transform:translate(-50%,-50%);pointer-events:none}
+.splash span{display:block;font-size:34px;animation:pop .8s ease-out forwards}
+.splash i{position:absolute;left:50%;top:50%;width:72px;height:26px;margin:-13px 0 0 -36px;border:3px solid rgba(255,255,255,.85);border-radius:50%;animation:ripple .8s ease-out forwards}
+@keyframes pop{0%{opacity:0;transform:scale(.4) translateY(6px)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.5) translateY(-14px)}}
+@keyframes ripple{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.7)}}
+/* ---------- 答题区 ---------- */
+.teams{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:4px 16px 12px;flex:1}
+.team{--team:#e65b60;min-width:0;background:linear-gradient(#fff,#f6fbff);border:3px solid var(--team);border-radius:19px;overflow:hidden;box-shadow:0 4px 12px #214b6415;display:flex;flex-direction:column;position:relative}
+.team-head{display:flex;align-items:center;justify-content:space-between;gap:5px;padding:9px 10px;background:color-mix(in srgb,var(--team) 12%,white);color:#26455e;font-weight:900}
+.team-head .name{font-size:clamp(14px,1.4vw,21px)}
+.score{font-size:clamp(16px,1.5vw,24px);font-weight:1000;white-space:nowrap;color:#163f60}
+.question{padding:6px 5px 0;display:flex;align-items:center;flex-direction:column}
+.bond{--bs:clamp(52px,3.6vw,72px);width:min(100%,330px);height:calc(var(--bs)*1.8);position:relative}
+.bond:before,.bond:after{content:"";position:absolute;top:calc(var(--bs)*.72);width:36%;height:2.5px;background:#93a6b6;transform-origin:right center;left:13%;transform:rotate(-29deg)}
+.bond:after{left:50%;transform-origin:left center;transform:rotate(29deg)}
+/* 已知数一律白底深字，只有 "?" 涂本队色 */
+.bubble{position:absolute;z-index:1;display:grid;place-items:center;width:var(--bs);height:var(--bs);border-radius:50%;font-weight:1000;font-size:calc(var(--bs)*.48);color:#20415c;background:#fff;border:3px solid #cfdeea;box-shadow:0 2px 5px #2342}
+.bubble.total{top:0;left:calc(50% - var(--bs)/2)}
+.bubble.left{left:14%;bottom:0}
+.bubble.right{right:14%;bottom:0}
+.bubble.missing{background:var(--team);color:#fff;border-color:#fff;animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.prompt{font-size:clamp(15px,1.3vw,21px);font-weight:900;color:#36556c;margin:2px 0 0}
+.answers{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;gap:8px;padding:10px 9px 12px;margin:6px 7px 0;border-radius:16px;background:linear-gradient(180deg,#f8fcff,#e9f2f8);box-shadow:0 4px 10px #163b5625,inset 0 1px 0 #fff;border:1px solid #d8e5ee}
+.answer{min-height:0;border:0;border-radius:14px;background:linear-gradient(#e7f0f6,#dce8f0);box-shadow:inset 0 -3px #c6d6e1;color:#1b3d58;font-weight:1000;font-size:clamp(22px,2.4vw,42px);display:grid;place-items:center;transition:transform .08s,background .15s}
+.answer:active{transform:scale(.94)}
+.answer.correct{background:#25b978;color:#fff;box-shadow:inset 0 -3px #168d57}
+.answer.wrong{background:#f66a70;color:#fff;box-shadow:inset 0 -3px #c9404a}
+.answer:disabled{cursor:default}
+.answer.off{opacity:.38}
+.feedback{min-height:30px;margin:2px 8px 6px;text-align:center;font-weight:1000;font-size:clamp(14px,1.2vw,18px);color:#35566e;padding:2px 3px}
+.feedback.good{color:#15945b}.feedback.bad{color:#c23a48}
+footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 18px;background:#fff;border-top:1px solid #dce8ef;color:#587287;font-size:13px}
+/* ---------- 赛前设置 ---------- */
+.setup{position:fixed;inset:0;z-index:40;display:none;place-items:center;padding:18px;overflow:auto;background:linear-gradient(180deg,#6fc0ec 0%,#bfe6f7 48%,#eafaff 100%)}
+.setup.show{display:grid}
+.setup:before{content:"";position:absolute;top:7%;right:9%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#ffd257 52%,#ffe9a3 68%,transparent 70%);opacity:.9}
+.float{position:absolute;font-size:44px;animation:floaty 5s ease-in-out infinite;filter:drop-shadow(0 6px 4px #0a3a5533)}
+.f1{left:7%;top:14%;animation-delay:-1s}.f2{right:6%;bottom:14%;animation-delay:-2.4s;font-size:54px}.f3{left:12%;bottom:18%;animation-delay:-3.5s;font-size:38px}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-16px) rotate(3deg)}}
+.setup-card{position:relative;background:#fff;border-radius:26px;max-width:780px;width:100%;padding:clamp(20px,3vw,34px) clamp(20px,3.4vw,44px);box-shadow:0 24px 70px #0a3a5540;text-align:center}
+.setup-kicker{display:inline-block;padding:6px 16px;border-radius:999px;background:#e8f4fb;color:#0f6ea0;font-weight:900;font-size:14px;letter-spacing:2px}
+.setup-title{font-size:clamp(30px,4vw,50px);margin:12px 0 6px;color:#123a56;letter-spacing:2px;font-weight:1000}
+.setup-title span{color:#1288c9}
+.setup-dots{display:flex;justify-content:center;gap:8px;margin:2px 0 16px}
+.setup-dots i{width:14px;height:14px;border-radius:50%}
+.opt{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 0;border-top:1px dashed #d7e5ee;text-align:left}
+.opt-label{flex:0 0 148px;font-weight:1000;color:#1c4260;font-size:17px}
+.opt-label small{display:block;font-weight:600;color:#6b8aa0;font-size:12px;margin-top:2px}
+.seg{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.seg button{flex:1;min-width:56px;padding:11px 8px;border-radius:13px;border:2px solid #cfe0ec;background:#f7fbfe;color:#2a4d68;font-weight:900;font-size:clamp(15px,1.4vw,19px);transition:.14s}
+.seg button:hover{border-color:#1288c9}
+.seg button.on{background:#1288c9;border-color:#1288c9;color:#fff;box-shadow:0 4px 12px #1288c955;transform:translateY(-1px)}
+.setup-tip{margin:14px 0 2px;padding:10px 14px;border-radius:12px;background:#f2f9fd;color:#3d647e;font-size:14px;font-weight:600;text-align:left}
+.setup-btns{margin-top:18px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.big-btn{border:0;border-radius:18px;padding:15px 42px;font-size:clamp(19px,2vw,25px);font-weight:1000;color:#fff;background:linear-gradient(180deg,#2cbf7b,#1d9a61);box-shadow:0 6px 18px #1d9a6155;transition:transform .14s}
+.big-btn:hover{transform:translateY(-2px) scale(1.02)}
+.ghost-btn{border:2px solid #cfe0ec;border-radius:18px;padding:15px 26px;font-size:16px;font-weight:800;background:#fff;color:#456a84}
+/* ---------- 结算 ---------- */
+.modal{position:fixed;inset:0;background:#09233bd9;display:none;place-items:center;z-index:30;padding:20px}
+.modal.show{display:grid}
+.modal-card{background:#fff;border-radius:24px;max-width:640px;width:100%;padding:26px;text-align:center;box-shadow:0 20px 70px #0005}
+.modal-card h2{font-size:clamp(26px,3.6vw,44px);margin:4px 0 10px;color:#1a4265}
+#winnerList{display:grid;gap:8px;margin:18px 0}
+.winner{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:12px;background:#eff7fb;font-size:19px;font-weight:900;color:#1a4265}
+.winner:first-child{background:#fff3c9}
+.winner small{display:block;font-size:12px;font-weight:600;color:#587287}
+.modal-card .tool{margin:0 4px;padding:11px 22px}
+@media(max-width:850px){.teams{grid-template-columns:repeat(2,minmax(0,1fr))}.race{height:250px}.opt-label{flex-basis:100%}}
+@media(max-width:480px){.teams{padding:5px;gap:6px}.race-wrap{padding:6px}.team{border-width:2px}.boat{height:19%}.brand{font-size:21px}.toolbar .tool{padding:7px 9px;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">分与合 <span>运动会</span></div>
+  <div class="toolbar">
+    <button class="tool" id="soundBtn">🔊 音效开</button>
+    <button class="tool" id="pauseBtn">⏸ 暂停</button>
+    <button class="tool" id="setupBtn">⚙ 题目设置</button>
+    <button class="tool primary" id="newBtn">↻ 新一轮</button>
+    <button class="tool danger" id="resetBtn">重置</button>
+    <button class="tool" id="fullBtn">⛶ 全屏</button>
+  </div>
+</header>
+<main class="race-wrap">
+  <div class="race" id="race">
+    <svg class="scene" viewBox="0 0 1600 620" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ec3ef"/><stop offset="1" stop-color="#e2f6ff"/></linearGradient>
+        <linearGradient id="gWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3cbbe6"/><stop offset="1" stop-color="#0a6d9b"/></linearGradient>
+        <linearGradient id="gMtn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9edf1"/><stop offset="1" stop-color="#aecfd8"/></linearGradient>
+        <pattern id="bunting" width="120" height="27" patternUnits="userSpaceOnUse">
+          <path d="M0 3 L30 3 L15 26 Z" fill="#f45b62"/><path d="M30 3 L60 3 L45 26 Z" fill="#f5c542"/>
+          <path d="M60 3 L90 3 L75 26 Z" fill="#2675d8"/><path d="M90 3 L120 3 L105 26 Z" fill="#20a878"/>
+        </pattern>
+      </defs>
+      <rect width="1600" height="240" fill="url(#gSky)"/>
+      <g transform="translate(1310,78)">
+        <g class="rays" stroke="#ffdf6b" stroke-width="6" stroke-linecap="round" opacity=".85">
+          <line x1="44" y1="0" x2="62" y2="0"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(30)"/>
+          <line x1="44" y1="0" x2="62" y2="0" transform="rotate(60)"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(90)"/>
+          <line x1="44" y1="0" x2="62" y2="0" transform="rotate(120)"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(150)"/>
+          <line x1="44" y1="0" x2="62" y2="0" transform="rotate(180)"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(210)"/>
+          <line x1="44" y1="0" x2="62" y2="0" transform="rotate(240)"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(270)"/>
+          <line x1="44" y1="0" x2="62" y2="0" transform="rotate(300)"/><line x1="44" y1="0" x2="62" y2="0" transform="rotate(330)"/>
+        </g>
+        <circle r="52" fill="#ffe9a3" opacity=".55"/><circle r="34" fill="#ffd257" stroke="#fff3c9" stroke-width="4"/>
+      </g>
+      <g class="cloud c1" fill="#fff" opacity=".92"><ellipse cx="240" cy="70" rx="52" ry="20"/><ellipse cx="286" cy="58" rx="38" ry="17"/><ellipse cx="198" cy="60" rx="30" ry="14"/></g>
+      <g class="cloud c2" fill="#fff" opacity=".8"><ellipse cx="700" cy="122" rx="44" ry="16"/><ellipse cx="740" cy="112" rx="30" ry="13"/></g>
+      <g class="cloud c3" fill="#fff" opacity=".88"><ellipse cx="1080" cy="56" rx="46" ry="17"/><ellipse cx="1122" cy="46" rx="30" ry="13"/></g>
+      <path d="M0 240 L0 196 L150 148 L290 210 L430 142 L590 216 L740 162 L900 222 L1060 152 L1220 212 L1370 164 L1500 214 L1600 176 L1600 240 Z" fill="url(#gMtn)" opacity=".95"/>
+      <path d="M0 240 Q140 190 320 222 T680 214 T1040 206 T1400 222 L1600 212 L1600 240 Z" fill="#98d285"/>
+      <path d="M0 240 Q220 214 460 230 T920 226 T1380 232 L1600 224 L1600 240 Z" fill="#6fbd60"/>
+      <g fill="#3f9b57"><path d="M104 236 l12 -34 l12 34 Z"/><path d="M146 238 l10 -28 l10 28 Z"/><path d="M1180 236 l12 -34 l12 34 Z"/><path d="M1228 238 l10 -28 l10 28 Z"/><path d="M1470 236 l11 -30 l11 30 Z"/></g>
+      <rect y="236" width="1600" height="384" fill="url(#gWater)"/>
+      <g stroke="rgba(255,255,255,.32)" stroke-width="2.5" stroke-dasharray="3 18" stroke-linecap="round">
+        <line x1="0" y1="332" x2="1600" y2="332"/><line x1="0" y1="428" x2="1600" y2="428"/><line x1="0" y1="524" x2="1600" y2="524"/>
+      </g>
+      <g fill="rgba(255,255,255,.14)">
+        <ellipse cx="420" cy="316" rx="36" ry="5"/><ellipse cx="900" cy="356" rx="30" ry="4.5"/><ellipse cx="1330" cy="330" rx="34" ry="5"/>
+        <ellipse cx="620" cy="452" rx="34" ry="5"/><ellipse cx="1120" cy="500" rx="38" ry="5.5"/><ellipse cx="330" cy="560" rx="34" ry="5"/><ellipse cx="1420" cy="572" rx="30" ry="4.5"/>
+      </g>
+      <g>
+        <g transform="translate(56,284)"><line x1="0" y1="10" x2="0" y2="24" stroke="#fff" stroke-width="3"/><circle r="8" fill="#e65b60" stroke="#fff" stroke-width="2.5"/></g>
+        <g transform="translate(56,380)"><line x1="0" y1="10" x2="0" y2="24" stroke="#fff" stroke-width="3"/><circle r="8" fill="#2675d8" stroke="#fff" stroke-width="2.5"/></g>
+        <g transform="translate(56,476)"><line x1="0" y1="10" x2="0" y2="24" stroke="#fff" stroke-width="3"/><circle r="8" fill="#20a878" stroke="#fff" stroke-width="2.5"/></g>
+        <g transform="translate(56,572)"><line x1="0" y1="10" x2="0" y2="24" stroke="#fff" stroke-width="3"/><circle r="8" fill="#e4a323" stroke="#fff" stroke-width="2.5"/></g>
+      </g>
+      <rect width="1600" height="27" fill="url(#bunting)"/>
+      <rect width="1600" height="3" fill="#e8f4fb"/>
+    </svg>
+    <div class="shimmer"></div>
+    <div class="lane-labels" id="laneLabels"></div>
+    <div class="race-title">分 与 合 · 划 艇 赛</div>
+    <div class="race-status" id="raceStatus">准备开始</div>
+    <div class="finish"></div>
+    <div id="boats"></div>
+  </div>
+</main>
+<section class="teams" id="teams"></section>
+<footer><span id="footLeft">分与合抢答 · 答对小船前进一格 · 答错扣 5 分</span><span id="progress">四队准备就绪</span></footer>
+</div>
+
+<!-- 赛前题目设置 -->
+<div class="setup" id="setup">
+  <span class="float f1">⛵</span><span class="float f2">🚣</span><span class="float f3">🎈</span>
+  <div class="setup-card">
+    <div class="setup-kicker">🏁 四队划艇竞速 · 分与合抢答</div>
+    <h1 class="setup-title">分与合 <span>运动会</span></h1>
+    <div class="setup-dots"><i style="background:#e65b60"></i><i style="background:#2675d8"></i><i style="background:#20a878"></i><i style="background:#e4a323"></i></div>
+    <div class="opt">
+      <div class="opt-label">最大数<small>题目中出现的最大的数</small></div>
+      <div class="seg" id="segMax"></div>
+    </div>
+    <div class="opt">
+      <div class="opt-label">每组题数<small>每队一轮要答的题量</small></div>
+      <div class="seg" id="segRounds"></div>
+    </div>
+    <div class="opt">
+      <div class="opt-label">出题类型<small>求总数 / 求部分 / 混合</small></div>
+      <div class="seg" id="segType"></div>
+    </div>
+    <div class="setup-tip">💡 例：最大数选 5，就只出「5 以内」的分与合，面板上比 5 大的数字键会自动变灰。含 0 的特殊题每轮最多约五分之一。</div>
+    <div class="setup-btns">
+      <button class="big-btn" id="startBtn">🚩 开始比赛</button>
+      <button class="ghost-btn" id="cancelSetup" style="display:none">返回当前比赛</button>
+    </div>
+  </div>
+</div>
+
+<!-- 结算榜 -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h2 id="modalTitle">🏆 比赛结束！</h2>
+    <p id="modalSub" style="color:#59748a"></p>
+    <div id="winnerList"></div>
+    <button class="tool primary" id="nextRound">开始下一轮</button>
+    <button class="tool" id="closeModal">返回查看</button>
+  </div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const colors=['#e65b60','#2675d8','#20a878','#e4a323'];
+const names=['阳阳队','悦悦队','小林队','朵朵队'];
+const laneY=[46.5,61.5,76.5,89];
+const PRAISE=['答对了！前进一格','漂亮！冲啊','太棒了！加速','就是它！前进'];
+let settings={max:10,rounds:10,type:'mix'};
+let pending={...settings};
+let teams=[],roundNo=1,paused=false,soundOn=true,finished=false,started=false;
+let roundStart=0,pausedAt=0,pausedTotal=0,deck=[],deckIndex=0,gen=0;
+let boatEls=[];
+
+/* ---- 音效 ---- */
+let AC=null;
+function tone(freq,dur,delay,vol,type){
+  if(!soundOn)return;
+  try{
+    if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;AC=new C();}
+    if(AC.state==='suspended'){try{AC.resume();}catch(e){}}
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type||'sine';o.frequency.value=freq;
+    g.gain.setValueAtTime(vol||.16,AC.currentTime+(delay||0));
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+(delay||0)+dur);
+    o.connect(g);g.connect(AC.destination);
+    o.start(AC.currentTime+(delay||0));o.stop(AC.currentTime+(delay||0)+dur+.05);
+  }catch(e){}
+}
+const sfx={
+  ok(){tone(660,.1);tone(880,.14,.09);},
+  bad(){tone(220,.25,0,.18,'sawtooth');},
+  win(){[523,659,784,1047].forEach((f,i)=>tone(f,.16,i*.11));},
+  go(){tone(880,.1);tone(1175,.22,.12);}
+};
+
+/* ---- 出题 ---- */
+function rand(n){return Math.floor(Math.random()*n)}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=rand(i+1);[r[i],r[j]]=[r[j],r[i]]}return r}
+function buildDeck(){
+  const n=settings.max,target=settings.rounds,ty=settings.type,all=[];
+  for(let total=1;total<=n;total++)for(let a=0;a<=total;a++){
+    const b=total-a,zero=(a===0||b===0),vs=[];
+    if(ty!=='part')vs.push({total,a,b,missing:'total',answer:total,zero});
+    if(ty!=='sum'){
+      vs.push({total,a,b,missing:'a',answer:a,zero});
+      if(a!==b)vs.push({total,a,b,missing:'b',answer:b,zero});
+    }
+    all.push(...vs);
+  }
+  const zeroPool=shuffle(all.filter(q=>q.zero)),mainPool=shuffle(all.filter(q=>!q.zero));
+  const zeroCount=Math.min(target,Math.round(target*.2));
+  const chosen=[];
+  for(let i=0;i<zeroCount&&zeroPool.length;i++)chosen.push(zeroPool.pop());
+  while(chosen.length<target&&mainPool.length)chosen.push(mainPool.pop());
+  while(chosen.length<target){
+    const src=(chosen.filter(q=>q.zero).length<zeroCount&&zeroPool.length)?zeroPool:mainPool;
+    if(!src.length){if(!mainPool.length)break;chosen.push(mainPool.pop());continue;}
+    chosen.push(src.pop());
+  }
+  const pool=shuffle(chosen),ordered=[];let prev=null;
+  while(pool.length){
+    const scored=pool.map((q,i)=>({q,i,score:
+      (prev&&q.total===prev.total?-6:4)+
+      (prev&&q.missing===prev.missing?-2:2)+
+      (prev&&((q.a===prev.a&&q.b===prev.b)||(q.a===prev.b&&q.b===prev.a))?-8:3)+
+      (q.zero?(prev&&prev.zero?-10:2):0)+Math.random()})).sort((x,y)=>y.score-x.score);
+    ordered.push(scored[0].q);prev=scored[0].q;pool.splice(scored[0].i,1);
+  }
+  deck=ordered;deckIndex=0;
+}
+function makeQuestion(){
+  if(deckIndex>=deck.length)buildDeck();
+  const src=deck[deckIndex++];
+  return {...src,choices:Array.from({length:11},(_,i)=>i),missed:[],answered:false};
+}
+function questionText(q){return q.missing==='total'?'合起来是几？':'另一部分是几？'}
+
+/* ---- 渲染 ---- */
+function bondMarkup(q){
+  const total=q.missing==='total'?'<span class="bubble total missing">?</span>':`<span class="bubble total">${q.total}</span>`;
+  const a=q.missing==='a'?'<span class="bubble left missing">?</span>':`<span class="bubble left">${q.a}</span>`;
+  const b=q.missing==='b'?'<span class="bubble right missing">?</span>':`<span class="bubble right">${q.b}</span>`;
+  return `<div class="bond">${total}${a}${b}</div>`;
+}
+function fmtScore(s){return Math.round(s*10)/10}
+function fmtTime(ms){
+  if(ms==null)return '—';
+  const sec=Math.max(0,Math.floor(ms/1000)),m=Math.floor(sec/60),s=sec%60;
+  return m>0?`${m}分${String(s).padStart(2,'0')}秒`:`${s}秒`;
+}
+function boatSvg(c,i){
+  return `<svg viewBox="0 0 132 72" style="animation-delay:${(-i*.7).toFixed(1)}s">
+  <path class="wake" d="M2 58 q16 6 32 2" stroke="rgba(255,255,255,.55)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path class="wake" style="animation-delay:-.5s" d="M18 65 q18 5 34 1" stroke="rgba(255,255,255,.32)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <line x1="22" y1="44" x2="22" y2="24" stroke="#5b4632" stroke-width="3" stroke-linecap="round"/>
+  <path d="M22 24 L40 30 L22 36 Z" fill="${c}" stroke="#fff" stroke-width="1.5"/>
+  <path d="M16 45 Q64 60 120 43 L103 58 Q62 67 30 55 Z" fill="${c}" stroke="#fff" stroke-width="2.5"/>
+  <path d="M24 47 Q66 56 112 45" stroke="rgba(255,255,255,.7)" stroke-width="2" fill="none"/>
+  <circle cx="60" cy="17" r="9" fill="#f8cba4"/>
+  <path d="M51 16 a9 9 0 0 1 18 0 Z" fill="${c}" stroke="#fff" stroke-width="1.4"/>
+  <path d="M51 26 Q60 22 69 26 L66 40 Q60 43 54 40 Z" fill="${c}" stroke="#fff" stroke-width="1.6"/>
+  <g class="paddle"><line x1="63" y1="27" x2="100" y2="10" stroke="#8a5a33" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="102" cy="9" rx="4.5" ry="8" fill="#c98c4b" transform="rotate(28 102 9)"/></g>
+  </svg>`;
+}
+function render(){
+  const tl=$('teams');tl.innerHTML='';$('boats').innerHTML='';
+  teams.forEach((t,i)=>{
+    const card=document.createElement('article');
+    card.className='team';card.style.setProperty('--team',colors[i]);
+    const q=t.q,doneAll=t.done>=settings.rounds;
+    card.innerHTML=`<div class="team-head"><span class="name">${i+1}号 · ${names[i]}</span><span class="score" id="score${i}">${fmtScore(t.score)}分 · ${t.done}/${settings.rounds}</span></div>
+    <div class="question">${bondMarkup(q)}<div class="prompt">${questionText(q)}</div></div>
+    <div class="answers">${q.choices.map(v=>{
+      const off=v>settings.max,dis=paused||q.answered||doneAll||off||q.missed.includes(v);
+      return `<button class="answer${off?' off':''}" data-value="${v}" ${dis?'disabled':''}>${v}</button>`;
+    }).join('')}</div>
+    <div class="feedback ${t.feedbackType||''}" id="fb${i}">${doneAll?`完成用时：${fmtTime(t.finishMs)}`:(t.feedback||'选择一个答案')}</div>`;
+    card.querySelectorAll('.answer').forEach(btn=>btn.addEventListener('click',()=>answer(i,Number(btn.dataset.value),btn)));
+    tl.appendChild(card);
+    const boat=document.createElement('div');
+    boat.className='boat';boat.style.top=laneY[i]+'%';
+    boat.style.left=`calc(5.5% + ${Math.min(84,t.progress*84/settings.rounds)}%)`;
+    boat.innerHTML=boatSvg(colors[i],i)+`<span class="number" style="background:${colors[i]}">${i+1}</span>`;
+    $('boats').appendChild(boat);
+    const lb=document.createElement('span');
+    lb.style.top=laneY[i]+'%';lb.style.background=colors[i];lb.textContent=i+1;
+    $('laneLabels').appendChild(lb);
+  });
+  boatEls=[...$('boats').children];
+  hud();
+}
+function hud(){
+  teams.forEach((t,i)=>{
+    const sc=$('score'+i);
+    if(sc)sc.textContent=`${fmtScore(t.score)}分 · ${t.done}/${settings.rounds}`;
+  });
+  $('raceStatus').textContent=!started?'准备开始':paused?'比赛已暂停':finished?'比赛结束':'比赛进行中';
+  $('raceStatus').classList.toggle('paused',paused&&started&&!finished);
+  const totalDone=teams.reduce((s,t)=>s+t.done,0);
+  $('progress').textContent=started?(finished?'本轮已完成':`已完成 ${totalDone}/${settings.rounds*4} 题`):'四队准备就绪';
+  $('footLeft').textContent=started?`第 ${roundNo} 轮 · 每组 ${settings.rounds} 题 · 最大数 ${settings.max}`:'分与合抢答 · 答对小船前进一格 · 答错扣 5 分';
+  $('pauseBtn').textContent=paused?'▶ 继续':'⏸ 暂停';
+  $('soundBtn').textContent=soundOn?'🔊 音效开':'🔇 音效关';
+}
+
+/* ---- 作答 ---- */
+function splashAt(i){
+  const race=$('race'),b=boatEls[i];if(!b)return;
+  const R=race.getBoundingClientRect(),r=b.getBoundingClientRect();
+  const s=document.createElement('div');s.className='splash';
+  s.style.left=(r.left-R.left+r.width*.55)+'px';
+  s.style.top=(r.top-R.top+r.height*.72)+'px';
+  s.innerHTML='<span>💦</span><i></i>';
+  race.appendChild(s);setTimeout(()=>s.remove(),900);
+}
+function answer(i,val,btn){
+  if(!started||paused||finished)return;
+  const t=teams[i],q=t.q;
+  if(q.answered||t.done>=settings.rounds)return;
+  if(val===q.answer){
+    const myGen=gen;
+    q.answered=true;t.done++;t.progress++;
+    t.score+=100/settings.rounds;
+    t.feedback=PRAISE[rand(PRAISE.length)];t.feedbackType='good';
+    btn.classList.add('correct');
+    btn.parentElement.querySelectorAll('button').forEach(b=>b.disabled=true);
+    const fb=$('fb'+i);fb.textContent=t.feedback;fb.className='feedback good';
+    const b=boatEls[i];
+    if(b)b.style.left=`calc(5.5% + ${Math.min(84,t.progress*84/settings.rounds)}%)`;
+    sfx.ok();splashAt(i);hud();
+    setTimeout(()=>{
+      if(gen!==myGen)return;
+      if(t.done>=settings.rounds)t.finishMs=Math.max(0,Date.now()-roundStart-pausedTotal);
+      else{t.q=makeQuestion();t.feedback='答对了！继续';}
+      render();checkFinished();
+    },720);
+  }else{
+    t.score=Math.max(0,t.score-5);t.wrongCount=(t.wrongCount||0)+1;
+    if(!q.missed.includes(val))q.missed.push(val);
+    t.feedback='再想一想，答错扣 5 分';t.feedbackType='bad';
+    btn.classList.add('wrong');btn.disabled=true;
+    const fb=$('fb'+i);fb.textContent=t.feedback;fb.className='feedback bad';
+    sfx.bad();hud();
+  }
+}
+function checkFinished(){
+  if(teams.every(t=>t.done>=settings.rounds)){finished=true;paused=false;render();showResults();}
+}
+function showResults(){
+  sfx.win();confetti(110);
+  const ranked=teams.map((t,i)=>({...t,idx:i})).sort((a,b)=>b.score-a.score||b.progress-a.progress);
+  $('modalTitle').textContent='🏆 比赛结束！';
+  $('modalSub').textContent=`第 ${roundNo} 轮成绩 · 答对一题 ${fmtScore(100/settings.rounds)} 分 · 答错一次扣 5 分`;
+  $('winnerList').innerHTML=ranked.map((t,i)=>`<div class="winner"><span>${['🥇','🥈','🥉','🏅'][i]} ${t.idx+1}号 · ${t.name}<small>用时 ${fmtTime(t.finishMs)} · 错误 ${t.wrongCount} 次</small></span><span>${fmtScore(t.score)} 分</span></div>`).join('');
+  $('modal').classList.add('show');
+}
+function confetti(n){
+  const cv=document.createElement('canvas');
+  cv.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:60';
+  cv.width=innerWidth;cv.height=innerHeight;
+  document.body.appendChild(cv);
+  const ctx=cv.getContext('2d');
+  const cols=['#e65b60','#2675d8','#20a878','#e4a323','#f5c542','#f36bb6'];
+  const ps=Array.from({length:n},()=>({x:Math.random()*innerWidth,y:-20-Math.random()*innerHeight*.4,w:6+Math.random()*7,h:10+Math.random()*8,vy:2+Math.random()*3.2,vx:-1.2+Math.random()*2.4,r:Math.random()*Math.PI,vr:-.12+Math.random()*.24,c:cols[rand(cols.length)]}));
+  const t0=performance.now();
+  (function loop(now){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});
+    if(now-t0<2800)requestAnimationFrame(loop);else cv.remove();
+  })(t0);
+}
+
+/* ---- 流程控制 ---- */
+function init(){
+  gen++;buildDeck();
+  paused=false;finished=false;started=true;
+  roundStart=Date.now();pausedAt=0;pausedTotal=0;
+  teams=names.map(name=>({name,score:0,done:0,progress:0,q:makeQuestion(),feedback:'选择一个答案',feedbackType:'',finishMs:null,wrongCount:0}));
+  $('modal').classList.remove('show');
+  render();
+}
+function segInit(id,key,parse,items){
+  const box=$(id);
+  box.innerHTML=items.map(([v,l])=>`<button data-v="${v}">${l}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    pending[key]=parse(b.dataset.v);
+    box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    tone(560,.06,0,.07);
+  }));
+}
+function syncSegs(){
+  [['segMax','max'],['segRounds','rounds'],['segType','type']].forEach(([id,key])=>{
+    $(id).querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(pending[key])===b.dataset.v));
+  });
+}
+let resumeOnCancel=false;
+function openSetup(){
+  pending={...settings};syncSegs();
+  $('cancelSetup').style.display=started?'':'none';
+  $('startBtn').textContent=started?'🚩 应用设置，重新开始':'🚩 开始比赛';
+  resumeOnCancel=started&&!paused;
+  paused=true;hud();
+  $('setup').classList.add('show');
+}
+function closeSetup(){
+  $('setup').classList.remove('show');
+  if(resumeOnCancel)paused=false;
+  hud();
+}
+segInit('segMax','max',Number,[[5,'5'],[6,'6'],[7,'7'],[8,'8'],[9,'9'],[10,'10']]);
+segInit('segRounds','rounds',Number,[[5,'5'],[10,'10'],[15,'15'],[20,'20']]);
+segInit('segType','type',v=>v,[['mix','分与合混合'],['sum','求总数'],['part','求部分']]);
+$('startBtn').addEventListener('click',()=>{settings={...pending};$('setup').classList.remove('show');init();sfx.go();});
+$('cancelSetup').addEventListener('click',closeSetup);
+$('setupBtn').addEventListener('click',openSetup);
+$('newBtn').addEventListener('click',()=>{if(!started){openSetup();return;}init();});
+$('resetBtn').addEventListener('click',()=>{if(!started){openSetup();return;}roundNo=1;init();});
+$('pauseBtn').addEventListener('click',()=>{
+  if(!started||finished)return;
+  paused=!paused;
+  if(paused)pausedAt=Date.now();else pausedTotal+=Date.now()-pausedAt;
+  render();
+});
+$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;hud();});
+$('fullBtn').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}catch(e){alert('当前浏览器不支持全屏，请按 F11。')}});
+$('nextRound').addEventListener('click',()=>{roundNo++;init();});
+$('closeModal').addEventListener('click',()=>$('modal').classList.remove('show'));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if($('modal').classList.contains('show'))$('modal').classList.remove('show');else if($('setup').classList.contains('show')&&started)closeSetup();}
+  if(e.key.toLowerCase()==='p')$('pauseBtn').click();
+});
+
+/* ---- 测试钩子（自动化回归用，不影响游戏） ---- */
+window.__T={
+  get teams(){return teams},get settings(){return settings},get pending(){return pending},
+  get deck(){return deck},get deckIndex(){return deckIndex},
+  get state(){return{started,paused,finished,roundNo}},
+  answer
+};
+
+/* ---- 启动：默认先进入赛前设置；?demo=1 直接开局便于截图验收 ---- */
+const qs=location.search;
+if(qs.includes('demo')){
+  const sp=new URLSearchParams(location.search);
+  if(sp.has('max'))settings.max=Math.min(10,Math.max(1,Number(sp.get('max'))||10));
+  if(sp.has('rounds'))settings.rounds=Number(sp.get('rounds'))||10;
+  if(sp.has('type'))settings.type=sp.get('type');
+  $('setup').classList.remove('show');
+  init();
+  if(qs.includes('fill')){
+    const prog=[3,1,4,2],scores=[300,100,400,200];
+    teams.forEach((t,i)=>{t.progress=prog[i];t.done=prog[i];t.score=scores[i];t.wrongCount=i;});
+    teams[0].feedback='答对了！前进一格';teams[0].feedbackType='good';
+    teams[1].q.missed=[3];
+    render();
+  }
+}else{
+  openSetup();
+}
+})();
+</script>
+</body>
+</html>

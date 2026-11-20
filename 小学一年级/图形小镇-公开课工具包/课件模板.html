@@ -181,10 +181,10 @@ button { font-family:inherit; cursor:pointer; }
 .g1item .ck { position:absolute; right:-14px; top:-14px; width:30px; height:30px; background:#59c98b; border:2.5px solid var(--line);
     border-radius:50%; color:#fff; font-weight:900; display:none; align-items:center; justify-content:center; font-size:16px; }
 .g1item.done .ck { display:flex; }
-.g1shape { position:absolute; transform:translate(-50%,-88%); pointer-events:none; }
+.g1shape { position:absolute; transform:translate(-50%,-50%); pointer-events:none; }
 .g1shape.merging { transition:left .82s cubic-bezier(.45,0,.25,1), top .82s cubic-bezier(.45,0,.25,1); z-index:6; }
 .g1shape.merged { pointer-events:auto; cursor:pointer; }
-.g1shape.merged svg { width:clamp(220px,22vw,330px); height:auto; }
+.g1shape.merged svg { width:min(clamp(220px,22vw,330px), 42vh); height:auto; }
 .mtag { display:inline-block; margin-top:-10px; padding:5px 24px; border-radius:999px; color:#fff; font-weight:900;
     border:3px solid var(--line); font-size:clamp(17px,2vw,26px); box-shadow:0 4px 0 rgba(63,58,52,.2); }
 .g1lineup { display:none; gap:clamp(16px,3vw,54px); align-items:flex-end; justify-content:center; margin-top:10px; }
@@ -353,12 +353,10 @@ body.embed #lessonChip, body.embed #pageno, body.embed #navbtns, body.embed #fsB
 <script>
 'use strict';
 /* ================= 素材（构建时替换为 base64） ================= */
-const A = {
-    basketball:'ASSET:basketball', beachball:'ASSET:beachball', bin:'ASSET:bin', block:'ASSET:block',
-    board:'ASSET:board', box:'ASSET:box', dice:'ASSET:dice', football:'ASSET:football', gift:'ASSET:gift',
-    glue:'ASSET:glue', greyball:'ASSET:greyball', ink:'ASSET:ink', microwave:'ASSET:microwave',
-    pingpong:'ASSET:pingpong', rubik:'ASSET:rubik', rubik_s:'ASSET:rubik_s', shoebox:'ASSET:shoebox',
-    tea:'ASSET:tea', tissue:'ASSET:tissue', toothpaste:'ASSET:toothpaste', woodcube:'ASSET:woodcube'
+const A = {   /* 新素材.pptx 10 件：正方体2 长方体3 圆柱3 球2 */
+    basketball:'ASSET:basketball', bluecube:'ASSET:bluecube', ball_s:'ASSET:ball_s',
+    milk:'ASSET:milk', luckybox:'ASSET:luckybox', toothpaste:'ASSET:toothpaste',
+    glue:'ASSET:glue', beans:'ASSET:beans', disc:'ASSET:disc', rubik:'ASSET:rubik'
 };
 /* ================= 小工具 ================= */
 const $  = s => document.querySelector(s);
@@ -562,8 +560,8 @@ regSlide({
 });
 /* ================= 情境导入（课本 P4） ================= */
 const CTX_ITEMS = [
-    ['basketball','篮球'],['toothpaste','牙膏盒'],['glue','胶棒'],['rubik_s','魔方'],['ink','墨水盒'],
-    ['tea','茶叶筒'],['shoebox','鞋盒'],['block','积木'],['pingpong','乒乓球'],['board','砧板']
+    ['basketball','篮球'],['toothpaste','牙膏盒'],['glue','胶棒'],['rubik','魔方'],['milk','牛奶盒'],
+    ['beans','红豆罐'],['luckybox','礼盒'],['disc','圆盘'],['bluecube','积木'],['ball_s','小球']
 ];
 regSlide({
     id:'context', title:'情境导入',
@@ -586,11 +584,11 @@ regSlide({
     }
 });
 /* ================= 游戏1 认识小伙伴（点一个 → 同类照片向中间靠拢 → 虚化变成图形） ================= */
-const G1_ITEMS = [   /* 课本 P4 原始 10 件：正方体2 长方体3 圆柱3 球2 */
-    ['rubik','cube'],['block','cube'],
-    ['toothpaste','cuboid'],['ink','cuboid'],['shoebox','cuboid'],
-    ['tea','cyl'],['glue','cyl'],['board','cyl'],
-    ['basketball','ball'],['pingpong','ball']
+const G1_ITEMS = [   /* 新素材 10 件：正方体2 长方体3 圆柱3 球2 */
+    ['rubik','cube'],['bluecube','cube'],
+    ['toothpaste','cuboid'],['milk','cuboid'],['luckybox','cuboid'],
+    ['glue','cyl'],['beans','cyl'],['disc','cyl'],
+    ['basketball','ball'],['ball_s','ball']
 ];
 regSlide({
     id:'game1', title:'第1关 认识小伙伴',
@@ -651,7 +649,7 @@ regSlide({
                 if (G1_ITEMS[i][1] !== shape || d.classList.contains('gone')) return;
                 d.classList.add('converging');
                 d.style.left = zc + '%';
-                d.style.top = '48%';
+                d.style.top = '50%';   /* 聚拢到舞台几何中心（与合体后的大图形同一中心） */
             });
             /* 靠拢完成后逐渐虚化 */
             setTimeout(() => {
@@ -666,12 +664,12 @@ regSlide({
                 const big = document.createElement('div');
                 big.className = 'g1shape merged';
                 big.dataset.shape = shape;
-                big.style.left = zc + '%'; big.style.top = '48%';
+                big.style.left = zc + '%'; big.style.top = '50%';   /* 分区几何中心：随容器尺寸自适应，任何分辨率都居中 */
                 big.innerHTML = `<div class="pop">${shapeSVG(shape, 150, {uid:'big'+shape+'_'+Date.now()%9973})}</div>
                     <div class="mtag" style="background:var(--${shape})">${SHAPES[shape].name}</div>`;
                 stage.appendChild(big);
                 const r = stage.getBoundingClientRect();
-                confetti(r.left + r.width*zc/100, r.top + r.height*.48, 30);
+                confetti(r.left + r.width*zc/100, r.top + r.height*.5, 30);
                 SND.win();
                 mergedBy[shape] = true;
                 if (Object.keys(mergedBy).length === 4) setTimeout(finale, 1000);
@@ -681,12 +679,13 @@ regSlide({
             SND.win(); fireworks(4);
             ORDER.forEach((s, i) => {
                 const e = shapesBig(s);
-                setTimeout(() => { e.style.top = '46%'; }, i*220);
+                setTimeout(() => { e.style.top = '50%'; }, i*220);
             });
 
         };
         const shapesBig = (s) => [...stage.querySelectorAll('.g1shape.merged')].find(e => e.dataset.shape === s);
         reset();
+        el._g1layout = g1layout;
         /* 翻页笔：触发下一组“聚拢→合体”；全部完成后返回 false（翻页键翻页） */
         el._nextGroup = () => {
             const grp = ORDER.find(s => !mergedBy[s]);
@@ -1036,7 +1035,7 @@ featSlide({
     id:'feat-cuboid', shape:'cuboid', title:'认识长方体',
     question:'你能给这样长长方方的物体取个名字吗？', answer:'它叫 长方体！',
     lines:['长长方方的','有 6 个平平的面','相对的两个面一样大'],
-    life:[['box','纸箱'],['microwave','微波炉'],['tissue','抽纸盒'],['toothpaste','牙膏盒']],
+    life:[['toothpaste','牙膏盒'],['milk','牛奶盒'],['luckybox','礼盒']],
     vbtns:[
         { t:'🖐 数一数有几个面', fn:'count',
           fb: el => { const fan = el.querySelector('#feat-cuboid-fan');
@@ -1053,7 +1052,7 @@ featSlide({
     id:'feat-cube', shape:'cube', title:'认识正方体',
     question:'你能给这样正正方方的物体取个名字吗？', answer:'它叫 正方体！',
     lines:['正正方方的','有 6 个平平的面','6 个面一样大'],
-    life:[['rubik','魔方'],['dice','骰子'],['woodcube','木块'],['gift','礼物盒']],
+    life:[['rubik','魔方'],['bluecube','积木']],
     vbtns:[
         { t:'🖐 数一数有几个面', fn:'count',
           fb: el => { const fan = el.querySelector('#feat-cube-fan');
@@ -1091,7 +1090,7 @@ featSlide({
     id:'feat-cyl', shape:'cyl', title:'认识圆柱',
     question:'它长得有什么特别？', answer:'它叫 圆柱！',
     lines:['直直的','上下一样粗','两头都是圆圆的、平平的面'],
-    life:[['tea','茶叶筒'],['glue','胶棒'],['board','砧板']],
+    life:[['glue','胶棒'],['beans','红豆罐'],['disc','圆盘']],
     vbtns:[ { t:'🖐 数一数平平的面', fn:'count',
         fb: () => toast('圆柱两头各有一个平平的圆面，一共 2 个！侧面弯弯的～', 3000) },
         { t:'🤝 相对的面', fn:'pairs',
@@ -1132,7 +1131,7 @@ featSlide({
     id:'feat-ball', shape:'ball', title:'认识球',
     question:'这个圆鼓鼓的小家伙是谁？', answer:'它叫 球！',
     lines:['圆圆的、鼓鼓的','没有平平的面','可以到处滚动'],
-    life:[['football','足球'],['basketball','篮球'],['greyball','皮球'],['pingpong','乒乓球']],
+    life:[['basketball','篮球'],['ball_s','小球']],
     vbtns:[ { t:'🖐 摸一摸，找平面', fn:'count',
         fb: () => toast('找不到平平的面！球是鼓鼓的曲面，轻轻一推就滚走啦～', 2800) } ]
 });
@@ -1271,11 +1270,11 @@ regSlide({
     }
 });
 /* ================= 游戏3 按形状分一分（课本"找朋友"连线式） ================= */
-const G3_ITEMS = [   /* 10 件排一行：长方体3 正方体3 圆柱2 球2 */
-    ['box','cuboid'],['toothpaste','cuboid'],['ink','cuboid'],
-    ['rubik','cube'],['dice','cube'],['gift','cube'],
-    ['tea','cyl'],['glue','cyl'],
-    ['football','ball'],['basketball','ball']
+const G3_ITEMS = [   /* 10 件排一行：长方体3 正方体2 圆柱3 球2 */
+    ['toothpaste','cuboid'],['milk','cuboid'],['luckybox','cuboid'],
+    ['rubik','cube'],['bluecube','cube'],
+    ['glue','cyl'],['beans','cyl'],['disc','cyl'],
+    ['basketball','ball'],['ball_s','ball']
 ];
 const G3_PRAISE = { cuboid:'对啦！长长方方，站稳啦！', cube:'对啦！方方正正，六面一样！', cyl:'对啦！圆柱躺下能滚哦！', ball:'对啦！球滚滚球～' };
 const G3 = { red:0, blue:0, team:'red', placed:0 };

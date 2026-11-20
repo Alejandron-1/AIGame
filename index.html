@@ -108,7 +108,7 @@
 
 <script>
 'use strict';
-/* 年级与游戏数据：新增游戏时往对应年级的 games 里加一条即可
+/* 年级与游戏数据：新增游戏时往对应年级的 games 里【末尾】加一条即可，主页自动把新的排最前
    s = 预览图文件名（thumbs/<s>.png，没有预览图就不写 s，卡片自动用渐变+图标兜底） */
 var GRADES = [
 { id:'g1', name:'小学一年级', short:'一', c:'#E8623C', tag:'当前重点年级', games:[
@@ -134,6 +134,9 @@ var GRADES = [
   { n:'立体图形小镇 · 整课课件', f:'小学一年级/认识立体图形-图形小镇课件.html', d:'16页整课翻页课件（情境→特征→连线→颁奖）· 公开课主力 · 支持嵌入PPT', s:'xiaozhen', b:'可玩' },
   { n:'数字列车 6~10', f:'小学一年级/数字列车.html', d:'数量对应 / 尺子数序 / 第几节车厢 · 三级支架提示 · 语音播报', s:'lieshi', b:'可玩' },
   { n:'分与合', f:'小学一年级/分与合.html', d:'2~10 的分与合 · 小球分房间找齐全部分法 · 范围可设置', s:'fenhe', b:'可玩' },
+  { n:'分与合运动会', f:'小学一年级/分与合运动会.html', d:'四人划艇竞速抢答 · 赛前可设最大数/题数/题型 · 图示只给问号涂色', b:'可玩' },
+  { n:'分与合早读', f:'小学一年级/分与合早读.html', d:'数字变形闪卡齐读（葫芦8天鹅2蜗牛6…手绘SVG）· 最大数可调 · 语音领读自动翻页', b:'可玩' },
+  { n:'3D口算卡', f:'小学一年级/3D口算卡.html', d:'艺术封面口算本 · 3D翻页答题 · 答对自动翻张 · 收尾连翻出成绩 · 错题重做', b:'可玩' },
   { n:'连续变化剧场', f:'小学一年级/连续变化剧场.html', d:'两步加减法动画 · 连加/连减/加减混合 · 答错按类型提示', s:'juchang', b:'可玩' },
   { n:'一图四式算式工厂', f:'小学一年级/一图四式算式工厂.html', d:'一幅图写出两加两减 · 7张算式卡挑4张 · 错题告诉错在哪类', s:'yitu', b:'可玩' },
   { n:'比大小', f:'小学一年级/比大小.html', d:'数一数比一比：左右两组图案谁多谁少 · 大于/等于/小于 · 答对亮数字', s:'bidxiao', b:'可玩' },
@@ -190,7 +193,7 @@ function miniThumb(g){
 function renderGrades(){
   var html='';
   GRADES.forEach(function(g){
-    var picks=g.games.filter(function(x){return x.s;}).slice(0,3);
+    var picks=g.games.slice().reverse().filter(function(x){return x.s;}).slice(0,3);   /* 最新的排前面 */
     var minis='';
     picks.forEach(function(x){ minis+=miniThumb(x); });
     var moreN=g.games.length-picks.length;
@@ -214,7 +217,7 @@ function renderGames(gid){
   document.getElementById('gameView').style.setProperty('--c', g.c);
   $('gvTitle').innerHTML='<b>'+g.name+'</b>　'+g.games.length+' 个游戏 · 点卡片直接打开';
   var html='';
-  g.games.forEach(function(x){
+  g.games.slice().reverse().forEach(function(x){   /* 最近加入的排在最前 */
     var chip=x.b?'<span class="chip '+(x.bc||'')+'">'+x.b+'</span>':'';
     var face=x.s
       ? '<div class="bgimg" style="background-image:url(\'thumbs/'+x.s+'.png\')"></div>'+(x.fa?'<div class="fa">'+x.fa+'</div>':'')

@@ -308,11 +308,12 @@ button{font-family:inherit;cursor:pointer;color:var(--ink);}
   font-size:clamp(15px,1.5vw,26px);font-weight:900;background:#fff;border:2.5px solid #cfc6b6;
   min-width:clamp(28px,2.9vw,42px);padding:0 clamp(2px,.3vw,6px);}
 .slot{cursor:pointer;}
-.slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
 .slot.filled{border-color:#bfb5a4;color:var(--ink);}
-/* 运算符槽：只是一个空位，符号由学生按键盘上的 + / - 填（不在算式里预置任何字符） */
+.slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
+/* 运算符槽：符号由学生按键盘上的 + / - 填（不预置任何字符）；
+   点符号位可把输入光标切过去，之后按 + / - 改的就是这一位 */
 .opslot{height:clamp(30px,3.1vw,44px);min-width:clamp(30px,3vw,44px);border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:clamp(15px,1.5vw,26px);font-weight:900;
+  justify-content:center;font-size:clamp(15px,1.5vw,26px);cursor:pointer;
   border:2.5px dashed #cfc6b6;color:var(--ink);padding:0 4px;transition:border-color .15s,color .15s;}
 .opslot.set{border-style:solid;border-color:var(--pc-d);color:var(--ink);}
 .opslot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l);}
@@ -790,6 +791,8 @@ function newQuestionFor(p, avoid){
   p.answers = {};
   p.ops = {};   /* 学生自己选的运算符：{0:'+'|'-', 1:...}，缺省 ? 表示还没选 */
   p.cur = 0;
+  p.curOp = null;   /* 光标是否停在某个符号位上（点符号位后非空） */
+  p.clicked = false; /* 光标是否由学生亲手点选（点选后按数字=替换该框） */
   p.locked = false;
   p.done = false;
   renderQuestion(p);
@@ -1012,20 +1015,22 @@ function renderEquation(p){
     if (filled != null){
       s.textContent = String(filled);
       s.classList.add('filled');
-    } else if (slotIdx === p.cur){
-      s.classList.add('cur');
     }
+    /* 红框光标跟着 p.cur 走：空槽、已填的槽都显示，点哪个框就亮哪个 */
+    if ((p.curOp == null) && slotIdx === p.cur) s.classList.add('cur');
     s.onclick = function(){ focusSlot(p, which); };
     row.appendChild(s);
     slotIdx++;
     return s;
   }
 
-  /* 运算符槽就是个空位：不预置 ?，也不做点击循环，
-     加还是减由学生自己按键盘上的 + / - 决定 */
+  /* 运算符槽：不预置 ?，加还是减由学生按键盘上的 + / - 决定；
+     点符号位可把光标切过来，之后按 + / - 改的就是这一位 */
   function addOp(idx){
     var s = el('div','opslot', p.ops[idx] || '');
     if (p.ops[idx]) s.classList.add('set');
+    if (p.curOp === idx) s.classList.add('cur');
+    s.onclick = function(){ focusOp(p, idx); };
     row.appendChild(s);
     p.opEls[idx] = s;
     return s;
@@ -1068,12 +1073,16 @@ function renderEquation(p){
   Array.prototype.forEach.call(row.querySelectorAll('.slot'), function(s){ p.slotEls[s.dataset.slot] = s; });
 }
 
-/* 键盘 + - 键：把符号填进第一个还没选的符号位；
-   两个符号位都填过之后，再按就改最后一次——学生按错了能直接改，
-   不需要再点算式里的方框（连加/连减的两个符号本来就一样，改哪个都等价） */
+/* 键盘 + - 键：点了某个符号位就改那一位；
+   没点就按「第一个空符号位 → 都填过后改最后一位」的老顺序，
+   连加/连减的两个符号本来就一样，改哪个都等价 */
 function setOp(p, sym){
   if (!S.running || S.paused || p.locked || p.done) return;
   var n = p.q && p.q.arity === 3 ? 2 : 1;
+  if (p.curOp != null){
+    p.ops[p.curOp] = sym;
+    SND.click(); renderEquation(p); return;
+  }
   for (var i = 0; i < n; i++){
     if (!p.ops[i]){ p.ops[i] = sym; SND.click(); renderEquation(p); return; }
   }
@@ -1087,7 +1096,7 @@ function makePlayer(i){
   var p = {
     id: i, color: col.c, dark: col.d, light: col.l,
     name: S.settings.names[i] || (i + 1) + '号',
-    score: 0, q: null, slots: [], answers: {}, ops: {}, cur: 0, locked: false, done: false,
+    score: 0, q: null, slots: [], answers: {}, ops: {}, cur: 0, curOp: null, clicked: false, locked: false, done: false,
     anim: 0, els: {}
   };
   return p;
@@ -1322,39 +1331,48 @@ function focusSlot(p, which){
   if (!S.running || S.paused || p.locked) return;
   var idx = p.slots.indexOf(which);
   if (idx < 0) return;
-  p.cur = idx;
+  p.cur = idx; p.curOp = null; p.clicked = true;
+  renderEquation(p);
+}
+
+/* 点运算符槽：光标切到这一位符号，之后按 + / - 改的就是它 */
+function focusOp(p, idx){
+  if (!S.running || S.paused || p.locked) return;
+  p.curOp = idx; p.clicked = true;
   renderEquation(p);
 }
 
 function pressKey(p, k){
   if (!S.running || S.paused || p.locked || p.done) return;
-  if (k === '+' || k === '-') return setOp(p, k); /* 运算符键：填进第一个空运算槽 */
+  if (k === '+' || k === '-') return setOp(p, k); /* 运算符键：填进点选的/第一个空运算槽 */
   if (typeof k !== 'number') return;
   /* 比「数的范围」还大的数字键（键盘上已置灰）一律不落：本题答案不可能这么大，
      让它出现在格子里只会让孩子白填一遍 */
   if (k > S.settings.max) return;
+  /* 光标停在符号位时数字键不落框：先点回要填的数字框 */
+  if (p.curOp != null) return;
   var which = p.slots[p.cur];
   if (which == null) return;
   var digits = String(k);
   var prev = p.answers[which];
-  if (prev == null){
+  if (prev == null || prev === '0'){
     /* 空槽：先落一位，先不跳槽（留出按「0」组成 10 的机会） */
     p.answers[which] = digits;
-  } else if (prev === '0'){
-    /* 先按了 0 又改主意：直接换成新数字，别拼出 07 这种 */
+  } else if (String(prev).length === 1 && Number(String(prev) + digits) <= S.settings.max){
+    p.answers[which] = String(prev) + digits;   /* 1 → 10 */
+  } else if (p.clicked){
+    /* 学生亲手点选了这个方框再按数字：直接替换这个框的内容（答错后逐框修改靠它） */
     p.answers[which] = digits;
   } else {
-    var joined = Number(String(prev) + digits);
-    if (String(prev).length === 1 && joined <= S.settings.max){
-      p.answers[which] = String(prev) + digits;   /* 1 → 10 */
+    /* 顺序作答：当前槽已定，跳到下一个空槽接着填 */
+    var i = p.cur + 1;
+    while (i < p.slots.length && p.answers[p.slots[i]] != null) i++;
+    if (i < p.slots.length){
+      p.cur = i; p.clicked = false;
+      p.answers[p.slots[i]] = digits;
     } else {
-      /* 不是两位合法数：当前槽已定，跳到下一个空槽 */
-      var i = p.cur + 1;
-      while (i < p.slots.length && p.answers[p.slots[i]] != null) i++;
-      if (i < p.slots.length){
-        p.cur = i;
-        p.answers[p.slots[i]] = digits;
-      }
+      /* 全填满了再按数字：改当前框 */
+      p.answers[which] = digits;
     }
   }
   SND.click();
@@ -1363,6 +1381,13 @@ function pressKey(p, k){
 
 function pressBack(p){
   if (!S.running || S.paused || p.locked || p.done) return;
+  /* 光标在符号位：退格清掉这一位符号，光标留在原地可立刻重选 */
+  if (p.curOp != null){
+    delete p.ops[p.curOp];
+    SND.click();
+    renderEquation(p);
+    return;
+  }
   var i = p.cur;
   /* 当前槽有值先清当前，否则回退上一槽 */
   if (p.answers[p.slots[i]] == null && i > 0) i--;
@@ -1420,8 +1445,8 @@ function confirmAnswer(p){
   var r = checkAnswer(p);
   if (r.reason === 'empty'){
     /* 没填完：只抖一下当前空槽，不弹任何提示文字（键盘上方不给提示） */
-    var which = p.slots[p.cur];
-    var first = p.slotEls[which] || (p.opEls && p.opEls[0]);
+    var first = (p.curOp != null && p.opEls && p.opEls[p.curOp]) ||
+                p.slotEls[p.slots[p.cur]] || (p.opEls && p.opEls[0]);
     if (first){ first.classList.add('bad'); setTimeout(function(){ first.classList.remove('bad'); }, 500); }
     return;
   }
@@ -1469,11 +1494,11 @@ function onWrong(p){
     setTimeout(function(){ p.els.hit.classList.remove('show'); }, 900);
   }
   grab(p, false);
-  /* 清空重填，不锁死 */
+  /* 算式保留不清空：红框光标停在原处，学生点哪个框就改哪个框，
+     按数字/符号只替换点中的那一位，不用整题重打 */
   var gen = S.gen;
   setTimeout(function(){
     if (gen !== S.gen) return;
-    p.answers = {}; p.cur = 0;
     renderEquation(p);
   }, 620);
 }
@@ -1850,6 +1875,22 @@ function boot(){
         renderEquation(p);
       }
     }
+    if (qs.get('wrong')){
+      /* 演示「答错后逐框修改」：算式保留，红框光标停在结果框，点哪个框改哪个 */
+      var pw = S.players[0];
+      if (pw && pw.q && !pw.q.given){
+        var qW = pw.q;
+        pw.ops = qW.arity === 3 ? { 0: qW.op, 1: qW.op } : { 0: qW.op };
+        pw.answers[qW.slots[0]] = String(qW.a);
+        if (qW.arity === 3){ pw.answers[qW.slots[1]] = String(qW.b); pw.answers[qW.slots[2]] = String(qW.third); }
+        else { pw.answers[qW.slots[1]] = String(qW.b); }
+        var resW = qW.op === '+' ? (qW.arity === 3 ? qW.a + qW.b + qW.third : qW.a + qW.b)
+                                 : (qW.arity === 3 ? qW.a - qW.b - qW.third : qW.a - qW.b);
+        pw.answers[qW.slots[qW.slots.length - 1]] = String(resW === 0 ? 1 : resW - 1);
+        pw.cur = pw.slots.length - 1; pw.curOp = null; pw.clicked = true;
+        renderEquation(pw);
+      }
+    }
   }
 }
 
@@ -1858,7 +1899,7 @@ window.__T = {
   S: S, CONFIG: CONFIG, TYPES: TYPES, COLORS: COLORS,
   buildQuestion: buildQuestion, newQuestionFor: newQuestionFor,
   pressKey: pressKey, pressBack: pressBack, confirmAnswer: confirmAnswer,
-  setOp: setOp,
+  setOp: setOp, focusSlot: focusSlot, focusOp: focusOp,
   checkAnswer: checkAnswer, startGame: startGame, endGame: endGame,
   grab: grab, prizeBurst: prizeBurst, startTimerTick: tickTimer, renderEquation: renderEquation,
   renderFigure: renderFigure, renderQuestion: renderQuestion,

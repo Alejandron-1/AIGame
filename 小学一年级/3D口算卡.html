@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>口卡 KOUKA｜3D口算翻页卡 · 10以内加减法</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+.still *{animation:none!important;transition:none!important}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;touch-action:manipulation}
+.serif{font-family:"STZhongsong","STSong","SimSun","Microsoft YaHei",serif}
+
+/* ---------- 桌面场景 ---------- */
+#desk{position:fixed;inset:0;background:linear-gradient(180deg,#dff0fa 0%,#eef8ff 60%,#e3f4ee 100%);overflow:hidden}
+#pad{position:absolute;inset:3.2% 3.4% 4%;
+  background:
+  radial-gradient(circle at 12% 18%,rgba(255,255,255,.5) 3px,transparent 4px),
+  radial-gradient(circle at 34% 64%,rgba(255,255,255,.42) 3px,transparent 4px),
+  radial-gradient(circle at 78% 30%,rgba(255,255,255,.4) 3px,transparent 4px),
+  radial-gradient(circle at 58% 84%,rgba(255,255,255,.45) 3px,transparent 4px),
+  linear-gradient(160deg,#d7eee2 0%,#cfe8dc 100%);
+  background-color:#d3e9dd;border-radius:44px;
+  box-shadow:0 24px 60px #4a7a6b33,inset 0 0 0 3px #b8d8c8}
+#pad:before{content:"";position:absolute;inset:26px;border:3px dashed #a7cdbb;border-radius:32px;opacity:.9}
+.sun{position:absolute;top:5.5%;right:6%;width:clamp(70px,8vw,120px);height:clamp(70px,8vw,120px);border-radius:50%;
+  background:radial-gradient(circle,#ffe08a 58%,#ffd970 60%,transparent 62%);opacity:.95}
+.sun:after{content:"";position:absolute;inset:-14%;border-radius:50%;border:4px dotted #f2c955;opacity:.8;animation:spin 30s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.doodle{position:absolute;color:#f0b7c8;font-size:clamp(18px,2vw,30px);opacity:.8;pointer-events:none}
+.doodle.star{color:#cfe3d8}
+#pencil{position:absolute;left:2.6%;bottom:6.5%;width:clamp(150px,17vw,300px);filter:drop-shadow(0 6px 8px #4a7a6b2e);transform:rotate(-4deg)}
+#eraser{position:absolute;right:6.5%;bottom:4%;width:clamp(70px,7.5vw,130px);transform:rotate(14deg);filter:drop-shadow(0 6px 8px #4a7a6b2e)}
+
+/* ---------- 本子 ---------- */
+#book{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%) rotateX(7deg) rotateZ(-1.8deg);
+  width:min(62vw,940px);aspect-ratio:1.55;perspective:1250px;z-index:3}
+.bookbase{position:absolute;inset:-7px -9px 14px -9px;border-radius:10px 16px 16px 10px;background:#fdfefc;
+  box-shadow:0 2px 0 #e8eef0,0 5px 0 #dfe8ea,0 8px 0 #d6e1e3,0 12px 0 #ccd9db,0 26px 44px #35594e40}
+.pageshadow{position:absolute;inset:0;border-radius:8px 14px 14px 8px;box-shadow:inset 0 0 34px #94b5ab26;pointer-events:none;z-index:9}
+.half{position:absolute;top:0;bottom:0;width:50%;overflow:visible}
+#leftHalf{left:0;border-radius:8px 2px 2px 8px}
+#rightHalf{right:0;border-radius:2px 12px 12px 2px}
+.page{position:absolute;inset:0;background:#fdfffd;overflow:hidden}
+#leftHalf .page{border-radius:8px 2px 2px 8px;box-shadow:inset 22px 0 30px -22px #7f9d9440}
+#rightHalf>.page{border-radius:2px 12px 12px 2px;box-shadow:inset -18px 0 26px -20px #7f9d9438}
+.spine{position:absolute;left:50%;top:0;bottom:0;width:26px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,#c9d6ce66 38%,#a9bcae55 52%,transparent);z-index:8;pointer-events:none;border-radius:0 4px 4px 0}
+
+/* 翻页叶子：中段拱起（translateZ）+ 轻微歪头（--rz）的纸感动画 */
+.leaf{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;z-index:6;--rz:-1deg}
+.leaf.flipping{animation:leafFlip .85s cubic-bezier(.42,.08,.24,1) both}
+@keyframes leafFlip{
+  0%{transform:rotateY(0deg)}
+  30%{transform:rotateY(-64deg) translateZ(16px) rotateZ(calc(var(--rz)*.5))}
+  62%{transform:rotateY(-142deg) translateZ(10px) rotateZ(var(--rz))}
+  100%{transform:rotateY(-181.5deg) translateZ(0) rotateZ(calc(var(--rz)*.6))}}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:#fdfffd}
+.face.front{border-radius:2px 12px 12px 2px;box-shadow:inset -18px 0 26px -20px #7f9d9438}
+.face.back{transform:rotateY(180deg);border-radius:8px 2px 2px 8px;background:linear-gradient(90deg,#f7fbf8,#e7efe9);box-shadow:inset 22px 0 30px -22px #7f9d9440}
+.face .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(110,142,130,.30),rgba(110,142,130,.05) 55%,transparent);opacity:0}
+.leaf.flipping .face.front .shade{opacity:1}
+/* 翻页时右页扫过一道书脊阴影 */
+.sweep{position:absolute;top:0;bottom:0;left:48%;right:0;z-index:5;pointer-events:none;border-radius:2px 12px 12px 2px;
+  background:linear-gradient(90deg,rgba(74,106,94,.30),rgba(74,106,94,.06) 55%,transparent);opacity:0}
+.sweep.on{animation:sweepSh .85s ease-out both}
+@keyframes sweepSh{0%{opacity:0;transform:translateX(26%)}30%{opacity:.55}100%{opacity:0;transform:translateX(-16%)}}
+.cardshade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(120,150,140,.12),transparent 45%);pointer-events:none;z-index:5}
+
+/* 左页叠痕 */
+.sliver{position:absolute;left:0;right:38%;height:5px;background:#f4f8f5;border:1px solid #dde7e1;border-radius:4px;pointer-events:none}
+
+/* ---------- 卡面 ---------- */
+.card{position:absolute;inset:clamp(14px,2.6vh,30px) clamp(14px,2.2vw,34px);background:#fff;border:3px solid #dfe7e3;border-radius:18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,1.6vh,18px);text-align:center}
+.card .corner{position:absolute;color:#e2604f;font-size:clamp(12px,1.2vw,18px)}
+.card .corner.tr{right:9%;bottom:8%;color:#3f9e6e}
+.kicker{letter-spacing:.45em;color:#8a9a93;font-weight:800;font-size:clamp(11px,1.15vw,17px);text-indent:.45em}
+.title-big{font-weight:1000;color:#22343a;font-size:clamp(26px,3.6vw,58px);letter-spacing:.06em}
+.dashes{display:flex;gap:14px}
+.dashes i{width:34px;height:5px;border-radius:3px}
+.dashes i:nth-child(1){background:#e2604f}.dashes i:nth-child(2){background:#f2c04d}.dashes i:nth-child(3){background:#3f9e6e}
+.subline{color:#5b6e68;font-weight:800;font-size:clamp(13px,1.4vw,20px);letter-spacing:.2em}
+.hintline{color:#9fb0a9;font-weight:700;font-size:clamp(11px,1.05vw,15px);letter-spacing:.3em}
+.pagetag{position:absolute;top:8%;right:7%;color:#9db2aa;font-weight:800;font-size:clamp(11px,1vw,15px);letter-spacing:.1em}
+
+/* 算式 */
+.eq{display:flex;align-items:center;justify-content:center;gap:clamp(5px,.9vw,16px);
+  font-weight:1000;color:#253c36;font-size:clamp(34px,4.4vw,74px);line-height:1.1;letter-spacing:.02em;white-space:nowrap}
+.eq .op{color:#3c554e}
+.abox{position:relative;display:inline-grid;place-items:center;width:1.7em;height:1.5em;border-radius:.22em;
+  border:.05em solid #b9c8c1;background:#fbfefc;color:#253c36;transition:background .18s,border-color .18s,color .18s}
+.abox.filled{border-color:#8fb8a8}
+.abox.good{background:#e9f7ee;border-color:#3f9e6e;color:#2e8f60}
+.abox.bad{background:#fdecec;border-color:#e2604f;color:#d84b3e}
+.okstamp{position:absolute;top:-.55em;right:-.4em;width:.62em;height:.62em;border-radius:.14em;background:#3f9e6e;color:#fff;
+  display:grid;place-items:center;font-size:.5em;transform:rotate(10deg);animation:stampIn .3s cubic-bezier(.3,1.6,.5,1) both;box-shadow:0 3px 8px #2e8f6055}
+@keyframes stampIn{from{transform:rotate(40deg) scale(2.2);opacity:0}to{transform:rotate(10deg) scale(1);opacity:1}}
+.card.shake{animation:shakeEq .45s}
+@keyframes shakeEq{0%,100%{transform:translateX(0)}18%{transform:translateX(-12px)}36%{transform:translateX(11px)}54%{transform:translateX(-8px)}72%{transform:translateX(5px)}}
+.sparkle{position:absolute;font-size:clamp(14px,1.4vw,22px);pointer-events:none;animation:fly .8s ease-out forwards}
+@keyframes fly{0%{opacity:0;transform:translate(0,0) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
+
+/* 扉页设置 pills */
+.optrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.optrow .lab{color:#8a9a93;font-weight:800;font-size:clamp(12px,1.1vw,15px);letter-spacing:.15em}
+.pill{padding:6px 14px;border-radius:999px;border:2px solid #d7e4de;background:#fbfdfc;color:#51706a;font-weight:900;font-size:clamp(12px,1.15vw,16px)}
+.pill.on{background:#3f9e6e;border-color:#3f9e6e;color:#fff;box-shadow:0 4px 10px #3f9e6e44}
+
+/* 成绩卡 */
+.scorestats{display:flex;align-items:stretch;justify-content:center;gap:clamp(12px,2vw,30px)}
+.stat{min-width:clamp(58px,6.4vw,104px)}
+.stat .lab{color:#8a9a93;font-weight:800;font-size:clamp(11px,1.1vw,15px);letter-spacing:.18em;margin-bottom:6px;white-space:nowrap}
+.stat .val{font-weight:1000;color:#22343a;font-size:clamp(20px,2.6vw,44px);white-space:nowrap}
+.stat+.stat{border-left:2px solid #e7eee9;padding-left:clamp(12px,2vw,30px)}
+.scorebtns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.bigpill{padding:11px 26px;border-radius:999px;font-weight:1000;font-size:clamp(14px,1.5vw,20px);letter-spacing:.1em;transition:transform .12s}
+.bigpill:hover{transform:translateY(-2px)}
+.bigpill.green{background:#3f9e6e;color:#fff;box-shadow:0 6px 16px #3f9e6e44}
+.bigpill.plain{border:2px solid #d7e4de;color:#51706a;background:#fbfdfc}
+
+/* 封面 */
+#coverArt{position:absolute;inset:0;border-radius:2px 12px 12px 2px;overflow:hidden;background:#f6d7ca;box-shadow:0 10px 30px #35594e33}
+#coverArt svg{width:100%;height:100%;display:block}
+
+/* ---------- 键盘 ---------- */
+#keypad{position:fixed;left:50%;bottom:2.6%;transform:translateX(-50%);z-index:12;display:none;
+  grid-template-columns:repeat(3,1fr);gap:clamp(8px,.9vw,14px);padding:clamp(11px,1.2vw,18px);border-radius:22px;
+  background:#ffffffd9;box-shadow:0 12px 30px #35594e2e,0 0 0 3px #d7e4de}
+#keypad.show{display:grid}
+#keypad button{width:clamp(66px,6vw,100px);height:clamp(58px,5.2vw,86px);border-radius:16px;background:#fff;
+  border:3px solid #dfe9e3;color:#33544c;font-weight:1000;font-size:clamp(24px,2.5vw,38px);
+  box-shadow:0 4px 0 #d3e1da;transition:transform .07s,box-shadow .07s}
+#keypad button:active{transform:translateY(4px);box-shadow:none}
+#keypad button.act{background:#3f9e6e;border-color:#3f9e6e;color:#fff;box-shadow:0 4px 0 #2e8f60;font-size:clamp(18px,1.9vw,28px)}
+#keypad button:disabled{opacity:.45;cursor:default}
+
+/* 顶栏小按钮 */
+#topbtns{position:fixed;top:2.2%;right:3.2%;z-index:12;display:flex;gap:8px}
+.tbtn{padding:7px 14px;border-radius:999px;background:#ffffffcc;color:#51706a;font-weight:900;font-size:clamp(12px,1.1vw,16px);
+  box-shadow:0 4px 12px #35594e22}
+@media(max-width:900px){#book{width:86vw;top:44%}#keypad{bottom:1.5%}#pencil{bottom:2%}}
+</style>
+</head>
+<body>
+<div id="desk">
+  <div id="pad"></div>
+  <div class="sun"></div>
+  <span class="doodle" style="left:6%;top:22%">✦</span>
+  <span class="doodle star" style="left:13%;top:58%">✧</span>
+  <span class="doodle" style="right:22%;top:14%">✦</span>
+  <span class="doodle star" style="right:30%;bottom:20%">✧</span>
+  <span class="doodle" style="left:40%;bottom:6%">✦</span>
+  <svg id="pencil" viewBox="0 0 300 34">
+    <rect x="6" y="8" width="220" height="18" rx="4" fill="#f5c344" stroke="#d9a52e" stroke-width="1.5"/>
+    <rect x="0" y="6" width="26" height="22" rx="6" fill="#f2a9b8" stroke="#dd8fa1" stroke-width="1.5"/>
+    <rect x="24" y="6" width="8" height="22" fill="#d9dfe2"/>
+    <path d="M226 8 L272 15 L272 19 L226 26 Z" fill="#f2ddb0" stroke="#d9a52e" stroke-width="1.5"/>
+    <path d="M258 12.5 L272 15 L272 19 L258 21.5 Z" fill="#4b4a48"/>
+  </svg>
+  <svg id="eraser" viewBox="0 0 130 56">
+    <path d="M10 34 L96 10 L124 20 L38 46 Z" fill="#eef3f6" stroke="#b9c9d2" stroke-width="2"/>
+    <path d="M10 34 L38 46 L36 52 L8 40 Z" fill="#7fb8d8" stroke="#5f9cbd" stroke-width="2"/>
+  </svg>
+
+  <div id="book">
+    <div class="bookbase"></div>
+    <div class="half" id="leftHalf"></div>
+    <div class="half" id="rightHalf"></div>
+    <div class="spine"></div>
+    <div class="pageshadow"></div>
+  </div>
+
+  <div id="keypad"></div>
+  <div id="topbtns">
+    <button class="tbtn" id="homeBtn">↮ 回封面</button>
+    <button class="tbtn" id="fullBtn">⛶ 全屏</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================= 工具 ================= */
+const $=id=>document.getElementById(id);
+const rand=n=>Math.floor(Math.random()*n);
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=rand(i+1);[r[i],r[j]]=[r[j],r[i]]}return r}
+const FLIP_MS=790,PRaise=['真棒','答对啦','好极了','厉害'];
+
+/* ================= 状态 ================= */
+const S={phase:'cover',deck:[],idx:0,input:'',wrong:0,wrongIdx:new Set(),t0:0,tEnd:0,
+  set:{n:10,kind:'mix'},flipping:false,redo:false};
+let leafSeq=0;
+
+/* ================= 出题（10以内，去重洗牌） ================= */
+function buildDeck(){
+  const pool=[];
+  const addK=S.set.kind!=='sub',subK=S.set.kind!=='add';
+  if(addK)for(let a=0;a<=10;a++)for(let b=0;a+b<=10;b++)pool.push({op:'+',a,b,ans:a+b});
+  if(subK)for(let a=1;a<=10;a++)for(let b=0;b<=a;b++)pool.push({op:'−',a,b,ans:a-b});
+  const n=Math.min(S.set.n,pool.length);
+  const picked=[],used=new Set();
+  while(picked.length<n&&used.size<pool.length){
+    const q=pool[rand(pool.length)],sig=q.op+q.a+'_'+q.b;
+    if(used.has(sig))continue;used.add(sig);picked.push(q);
+  }
+  return picked.map(q=>({...q,wrongOnce:false}));
+}
+
+/* ================= 卡面模板 ================= */
+function eqCardHTML(q,tag,input,state){
+  const boxCls='abox'+(state==='good'?' good':state==='bad'?' bad':(input?' filled':''));
+  const shown=state==='good'?String(q.ans):(input||'');
+  const stamp=state==='good'?'<span class="okstamp">✓</span>':'';
+  return `<div class="card" id="curcard">
+    <span class="corner tl" style="left:9%;top:9%">✦</span><span class="corner tr">✦</span>
+    <span class="pagetag">${tag}</span>
+    <div class="eq"><span>${q.a}</span><span class="op">${q.op}</span><span>${q.b}</span><span class="op">=</span>
+      <span class="${boxCls}" id="abox">${shown}${stamp}</span></div>
+  </div>`;
+}
+function titleCardHTML(){
+  const n=S.set.n;
+  return `<div class="card" id="curcard">
+    <span class="corner tl" style="left:9%;top:9%">✦</span><span class="corner tr" style="right:9%;bottom:8%;color:#3f9e6e">✦</span>
+    <div class="kicker">一 年 级 · 口 算 卡 片</div>
+    <div class="title-big serif">10以内的加减法</div>
+    <div class="dashes"><i></i><i></i><i></i></div>
+    <div class="subline">0 ～ 9 加减法 · ${n} 道</div>
+    <div class="optrow"><span class="lab">题数</span>${[5,10,15,20].map(v=>`<button class="pill${v===n?' on':''}" data-setn="${v}">${v}</button>`).join('')}</div>
+    <div class="optrow"><span class="lab">题型</span>
+      <button class="pill${S.set.kind==='mix'?' on':''}" data-setk="mix">混合</button>
+      <button class="pill${S.set.kind==='add'?' on':''}" data-setk="add">加法</button>
+      <button class="pill${S.set.kind==='sub'?' on':''}" data-setk="sub">减法</button></div>
+    <div class="hintline">点 卡 片 · 翻 页 开 始</div>
+  </div>`;
+}
+function scoreCardHTML(){
+  const ms=Math.max(0,S.tEnd-S.t0),sec=Math.floor(ms/1000),mm=String(Math.floor(sec/60)).padStart(2,'0'),ss=String(sec%60).padStart(2,'0');
+  const first=Math.round((S.deck.length-[...S.wrongIdx].length)/Math.max(1,S.deck.length)*100);
+  const nWrong=S.wrongIdx.size;
+  return `<div class="card" id="curcard">
+    <span class="corner tl" style="left:9%;top:9%">✦</span><span class="corner tr" style="right:9%;bottom:8%;color:#3f9e6e">✦</span>
+    <div class="kicker" style="letter-spacing:.3em">ROUND COMPLETE</div>
+    <div class="title-big serif">全部答完</div>
+    <div class="dashes"><i></i><i></i><i></i></div>
+    <div class="scorestats">
+      <div class="stat"><div class="lab">用时</div><div class="val">${mm}:${ss}</div></div>
+      <div class="stat"><div class="lab">答错</div><div class="val">${S.wrong} 次</div></div>
+      <div class="stat"><div class="lab">正确率</div><div class="val">${first}%</div></div>
+    </div>
+    <div class="hintline">${nWrong?nWrong+' 道没一次答对 · 选下面接着练':'全对一次过 · 太厉害了'}</div>
+    <div class="scorebtns">
+      ${nWrong?'<button class="bigpill green" id="redoBtn">错题重做</button>':''}
+      <button class="bigpill ${nWrong?'plain':'green'}" id="againBtn">再来一轮</button>
+    </div>
+  </div>`;
+}
+function blankHTML(){return `<div class="page" style="display:grid;place-items:center;color:#c3d4cb;font-size:30px">✦</div>`}
+
+/* ================= 原创艺术封面（全宽：梨形夜空·摘星女孩） ================= */
+function coverHTML(){
+  let stars='';
+  const pts=[[180,180,3,'#f7d06f'],[268,132,2,'#fff'],[388,150,3.2,'#f7d06f'],[236,242,2,'#fff'],[420,232,2.4,'#ffe9a8'],
+    [178,320,3,'#fff'],[472,300,2.2,'#f7d06f'],[242,392,2.6,'#fff'],[388,420,3,'#ffe9a8'],[196,462,2,'#fff'],[452,388,2.4,'#fff']];
+  pts.forEach(([x,y,r,c])=>{stars+=`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity=".95"/>`});
+  const sparks=[[152,246],[330,158],[470,346],[212,362],[430,262],[262,442]];
+  let sp='';sparks.forEach(([x,y],i)=>{sp+=`<path d="M${x} ${y-8} L${x+2.2} ${y-2.2} L${x+8} ${y} L${x+2.2} ${y+2.2} L${x} ${y+8} L${x-2.2} ${y+2.2} L${x-8} ${y} L${x-2.2} ${y-2.2} Z" fill="#ffe9a8" opacity="${.45+((i*13)%40)/100}"/>`});
+  return `<div id="coverArt"><svg viewBox="0 0 760 560" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="pear" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c544d"/><stop offset="1" stop-color="#163532"/></linearGradient>
+    <clipPath id="pearclip"><path d="M286 106 C256 138 238 158 238 198 C238 238 206 258 196 320 C184 396 228 470 288 476 C348 470 392 396 380 320 C370 258 338 238 338 198 C338 158 316 138 286 106 Z"/></clipPath>
+  </defs>
+  <rect width="760" height="560" fill="#f6d7ca"/>
+  <rect x="16" y="16" width="728" height="528" rx="18" fill="none" stroke="#ffffffc9" stroke-width="3"/>
+  <g>
+    <path d="M286 106 C256 138 238 158 238 198 C238 238 206 258 196 320 C184 396 228 470 288 476 C348 470 392 396 380 320 C370 258 338 238 338 198 C338 158 316 138 286 106 Z" fill="url(#pear)"/>
+    <g clip-path="url(#pearclip)">
+      <circle cx="238" cy="168" r="26" fill="#f4d06f"/><circle cx="250" cy="160" r="22" fill="#2c544d"/>
+      ${stars}${sp}
+      <circle cx="212" cy="420" r="15" fill="#ef8a3e"/><path d="M212 405 q5 -7 12 -5" stroke="#6cbf6c" stroke-width="2.5" fill="none"/>
+      <circle cx="356" cy="290" r="12" fill="#ef8a3e"/><path d="M356 278 q4 -6 11 -5" stroke="#6cbf6c" stroke-width="2.2" fill="none"/>
+      <circle cx="344" cy="430" r="14" fill="#ef8a3e"/><path d="M344 416 q5 -7 12 -5" stroke="#6cbf6c" stroke-width="2.5" fill="none"/>
+      <g transform="translate(288 300) rotate(-6)">
+        <path d="M36 -64 C46 -72 56 -72 60 -66" stroke="#ecc35c" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <circle cx="14" cy="-52" r="13" fill="#ecc35c"/>
+        <circle cx="26" cy="-62" r="6.5" fill="#ecc35c"/>
+        <path d="M30 -66 q10 -6 14 -14" stroke="#ecc35c" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M8 -40 C18 -44 24 -44 28 -38 C34 -26 30 -12 24 -2 C14 6 -4 8 -18 2 C-30 -4 -34 -12 -32 -18 C-22 -24 -2 -32 8 -40 Z" fill="#ecc35c"/>
+        <path d="M24 -40 L52 -68" stroke="#ecc35c" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="60" cy="-78" r="9" fill="#f4d06f"/>
+        <path d="M60 -92 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#ffe9a8" opacity=".9" transform="scale(.001)"/>
+        <path d="M4 -34 L-18 -22" stroke="#ecc35c" stroke-width="7" stroke-linecap="round"/>
+        <path d="M6 0 L16 30 M-12 0 L-24 26" stroke="#ecc35c" stroke-width="7" stroke-linecap="round"/>
+        <path d="M16 30 l10 2 M-24 26 l-10 3" stroke="#ecc35c" stroke-width="5" stroke-linecap="round"/>
+        <path d="M-30 -4 q-14 12 -12 30" fill="none" stroke="#c9a94f" stroke-width="2.4" stroke-dasharray="2 7" stroke-linecap="round"/>
+      </g>
+      <g fill="#dfeee6" opacity=".85">
+        <path d="M240 452 q-24 -6 -40 8 q22 8 40 -4 Z"/>
+        <path d="M330 468 q20 -10 40 -2 q-16 14 -40 6 Z"/>
+        <path d="M292 486 q-16 -8 -30 -2 q14 10 30 4 Z"/>
+      </g>
+    </g>
+    <path d="M286 106 q2 -16 14 -22" stroke="#153332" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M300 84 q22 -14 38 -4 q-14 16 -38 4 Z" fill="#4d8a6a"/>
+  </g>
+  <text x="560" y="192" text-anchor="middle" font-size="108" font-weight="900" fill="#233230" style="font-family:'STZhongsong','STSong','SimSun',serif;letter-spacing:10px">口卡</text>
+  <text x="560" y="244" text-anchor="middle" font-size="26" fill="#4c6b64" style="letter-spacing:12px;font-weight:700">K O U K A</text>
+  <line x1="512" y1="274" x2="608" y2="274" stroke="#c9a94f" stroke-width="2"/>
+  <text x="560" y="318" text-anchor="middle" font-size="22" fill="#5d7a72" style="letter-spacing:6px;font-weight:700">一年级 · 数学</text>
+  <text x="560" y="452" text-anchor="middle" font-size="20" fill="#a4b8b1" style="letter-spacing:5px">10 以内加减法</text>
+  <text x="560" y="498" text-anchor="middle" font-size="17" fill="#c9a94f">✦ ✧ ✦</text>
+  <rect x="0" y="522" width="760" height="38" fill="#fbfaf6"/>
+  <rect x="0" y="518" width="760" height="6" fill="#e6e2d4"/>
+  </svg></div>`;
+}
+
+/* ================= 渲染 ================= */
+function setRight(underHTML){
+  $('rightHalf').innerHTML=`<div class="page">${underHTML}</div>`;
+}
+function setLeft(){
+  const slivers=[];
+  for(let i=0;i<S.idx&&i<14;i++){
+    slivers.push(`<div class="sliver" style="top:${8+i*2.1}%;left:${2+i*.4}%;right:${44-i*1.4}%"></div>`);
+  }
+  let hist='';
+  if(S.idx>0){
+    const items=S.deck.slice(Math.max(0,S.idx-6),S.idx);
+    hist=`<div style="position:absolute;left:12%;top:10%;width:70%;color:#9fb0a9;font-weight:800;font-size:clamp(12px,1.3vw,19px);line-height:2">
+    ${items.map((q,i)=>{const done=S.idx-1-Math.max(0,S.idx-6)+i;
+      const mark=S.wrongIdx.has(done)?'<span style="color:#e2604f">✗</span>':'<span style="color:#3f9e6e">✓</span>';
+      return `<div style="display:flex;justify-content:space-between"><span>${q.a} ${q.op} ${q.b} = ${q.ans}</span><span>${mark}</span></div>`}).join('')}
+    <div style="margin-top:8px;color:#c3d4cb;font-size:.85em">… 已答 ${S.idx} 题</div></div>`;
+  }else{
+    hist=`<div style="position:absolute;left:14%;top:12%;color:#c3d4cb;font-size:clamp(20px,2.4vw,34px)">✧</div>
+    <div style="position:absolute;left:20%;bottom:16%;color:#d8e6de;font-size:clamp(14px,1.6vw,24px)">✦</div>`;
+  }
+  $('leftHalf').innerHTML=`<div class="page">${hist}</div>${slivers.join('')}`;
+}
+
+/* ================= 流程 ================= */
+/* 封面态：全宽封皮盖在整本上，右页已备好扉页，点封皮整张翻开 */
+function showCover(){
+  S.phase='cover';S.flipping=false;
+  $('keypad').classList.remove('show');
+  $('rightHalf').innerHTML=`<div class="page">${titleCardHTML()}</div>`;
+  bindCard();
+  $('leftHalf').innerHTML=`<div class="page"></div><div class="sliver" style="top:10%;left:2%;right:40%"></div><div class="sliver" style="top:16%;left:3%;right:42%"></div><div class="sliver" style="top:22%;left:2.5%;right:39%"></div>`;
+  const old=$('coverLeaf');if(old)old.remove();
+  const leaf=document.createElement('div');
+  leaf.className='leaf';leaf.id='coverLeaf';
+  leaf.style.inset='0';leaf.style.zIndex='10';
+  leaf.innerHTML=`<div class="face front">${coverHTML()}<div class="shade"></div></div><div class="face back">${blankHTML()}</div>`;
+  leaf.addEventListener('click',openBook);
+  $('book').appendChild(leaf);
+}
+function openBook(){
+  if(S.phase!=='cover'||S.flipping)return;
+  const leaf=$('coverLeaf');if(!leaf)return;
+  S.phase='title';S.flipping=true;
+  leaf.classList.add('flipping');
+  setTimeout(()=>{
+    leaf.remove();S.flipping=false;
+    refreshCard();
+  },FLIP_MS);
+}
+/* ================= 流程 ================= */
+/* 3D 翻页：把当前右页内容包成叶子（正面），底下垫新页，绕左脊翻过去 */
+function flipTo(underHTML,after){
+  S.flipping=true;
+  const half=$('rightHalf');
+  const oldPage=half.querySelector('.page');
+  const oldHTML=oldPage?oldPage.innerHTML:'';
+  half.querySelectorAll('.leaf').forEach(l=>l.remove());
+  const leaf=document.createElement('div');
+  leaf.className='leaf';leaf.id='flipLeaf'+(++leafSeq);
+  leaf.innerHTML=`<div class="face front">${oldHTML}<div class="shade"></div></div><div class="face back">${blankHTML()}</div>`;
+  half.appendChild(leaf);
+  /* 书脊阴影随翻页扫过右页 */
+  const sw=document.createElement('div');sw.className='sweep on';
+  half.appendChild(sw);setTimeout(()=>sw.remove(),FLIP_MS+150);
+  const under=half.querySelector('.page');
+  if(under)under.innerHTML=underHTML;
+  else{
+    const pg=document.createElement('div');pg.className='page';pg.innerHTML=underHTML;
+    half.appendChild(pg);
+  }
+  bindCard();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>leaf.classList.add('flipping')));
+  setTimeout(()=>{
+    leaf.remove();S.flipping=false;setLeft();
+    bindCard();
+    if(after)after();
+  },FLIP_MS);
+}
+function startRound(){
+  if(S.phase!=='title'||S.flipping)return;
+  S.deck=buildDeck();S.idx=0;S.input='';S.wrong=0;S.wrongIdx=new Set();
+  S.t0=Date.now();S.tEnd=0;S.phase='q';
+  flipTo(eqCardHTML(S.deck[0],'第 1 张 · 共 '+S.deck.length+' 张',''),()=>{
+    $('keypad').classList.add('show');refreshKeys();
+  });
+}
+function showQuestion(){
+  S.input='';
+  flipTo(eqCardHTML(S.deck[S.idx],`第 ${S.idx+1} 张 · 共 ${S.deck.length} 张`,''),()=>{refreshKeys();});
+}
+/* 点数字即作答：
+   · 一位数答案：点中立即判
+   · 两位数答案（10）：点「1」先落框等第二位，点其余数直接判错；再点一位拼成两位后判 */
+function pressKey(k){
+  if(S.phase!=='q'||S.flipping)return;
+  const q=S.deck[S.idx];if(!q)return;
+  if(k==='back'){S.input=S.input.slice(0,-1);renderBox(S.input);return;}
+  const ansStr=String(q.ans);
+  const guess=(S.input==='0')?String(k):(S.input+String(k));
+  /* 可能是两位答案的首位：先落框等待，不判 */
+  if(guess.length===1&&ansStr.length===2&&ansStr[0]===guess){S.input=guess;renderBox(guess);return;}
+  S.input=guess;
+  if(Number(guess)===q.ans)pickRight(q);else pickWrong(q);
+}
+function pickWrong(q){
+  S.wrong++;q.wrongOnce=true;S.wrongIdx.add(S.idx);
+  const card=$('curcard');
+  if(card){card.classList.add('shake');setTimeout(()=>card.classList.remove('shake'),480);}
+  const box=$('abox');
+  if(box){box.classList.add('bad');setTimeout(()=>{S.input='';renderBox('');},420);}
+}
+function pickRight(q){
+  renderBox(String(q.ans),'good');
+  burstSparkles();
+  setTimeout(()=>{
+    if(S.idx+1>=S.deck.length)finishRound();
+    else{S.idx++;showQuestion();}
+  },680);
+}
+function renderBox(text,state){
+  const box=$('abox');if(!box)return;
+  box.className='abox'+(state==='good'?' good':state==='bad'?' bad':(text?' filled':''));
+  box.innerHTML=text+(state==='good'?'<span class="okstamp">✓</span>':'');
+}
+function burstSparkles(){
+  const card=$('curcard');if(!card)return;
+  ['✦','✧','⭐','✦'].forEach((s,i)=>{
+    const sp=document.createElement('span');sp.className='sparkle';sp.textContent=s;
+    sp.style.left=(38+Math.random()*24)+'%';sp.style.top=(30+Math.random()*30)+'%';
+    sp.style.setProperty('--dx',((Math.random()*2-1)*90).toFixed(0)+'px');
+    sp.style.setProperty('--dy',(-40-Math.random()*60).toFixed(0)+'px');
+    sp.style.animationDelay=(i*60)+'ms';
+    card.appendChild(sp);setTimeout(()=>sp.remove(),1000);
+  });
+}
+function finishRound(){
+  S.tEnd=Date.now();S.phase='score';S.redo=false;
+  $('keypad').classList.remove('show');
+  /* 连续快速翻页：一叠空白页哗哗翻过，露出成绩卡 */
+  const holder=document.createElement('div');
+  holder.style.cssText='position:absolute;inset:0;z-index:7;pointer-events:none';
+  $('rightHalf').appendChild(holder);
+  const under=scoreCardHTML();
+  const keep=$('rightHalf').querySelector('.page');if(keep)keep.innerHTML=under;
+  const N=7;
+  for(let i=0;i<N;i++){
+    const lf=document.createElement('div');lf.className='leaf cascade';
+    lf.style.setProperty('--rz',(Math.random()*6-3).toFixed(1)+'deg');
+    lf.style.animation=`leafFlip .62s cubic-bezier(.42,.08,.24,1) ${((120+i*95)/1000).toFixed(3)}s both`;
+    lf.innerHTML=`<div class="face front">${blankHTML()}<div class="shade"></div></div><div class="face back">${blankHTML()}</div>`;
+    holder.appendChild(lf);
+  }
+  setTimeout(()=>{
+    holder.remove();setRight(under);setLeft();bindCard();
+  },120+N*95+FLIP_MS);
+}
+function bindCard(){
+  const c=$('curcard');if(!c||c._bound)return;
+  c._bound=true;
+  if(S.phase==='title'){
+    c.addEventListener('click',e=>{
+      if(e.target.dataset.setn){S.set.n=Number(e.target.dataset.setn);refreshCard();return;}
+      if(e.target.dataset.setk){S.set.kind=e.target.dataset.setk;refreshCard();return;}
+      startRound();
+    });
+  }
+  if(S.phase==='score'){
+    const r=$('redoBtn'),a=$('againBtn');
+    if(r)r.addEventListener('click',()=>{if(!S.flipping)redoWrong();});
+    if(a)a.addEventListener('click',()=>{if(!S.flipping){S.phase='title';refreshCard();}});
+  }
+}
+function refreshCard(){
+  const under=S.phase==='title'?titleCardHTML():scoreCardHTML();
+  setRight(under);setLeft();bindCard();
+}
+function redoWrong(){
+  const bads=S.deck.filter(q=>q.wrongOnce);
+  if(!bads.length)return;
+  S.deck=shuffle(bads);S.idx=0;S.input='';S.wrong=0;S.wrongIdx=new Set();
+  S.t0=Date.now();S.phase='q';
+  flipTo(eqCardHTML(S.deck[0],'错题重做 · 共 '+S.deck.length+' 张',''),()=>{
+    $('keypad').classList.add('show');refreshKeys();
+  });
+}
+
+/* ================= 键盘 ================= */
+function refreshKeys(){
+  const on=S.phase==='q'&&!S.flipping;
+  $('keypad').querySelectorAll('button').forEach(b=>b.disabled=!on);
+}
+function buildKeypad(){
+  const kp=$('keypad');kp.innerHTML='';
+  [1,2,3,4,5,6,7,8,9,0,'back'].forEach(k=>{
+    const b=document.createElement('button');
+    if(k==='back'){b.textContent='删';b.className='act';}
+    else b.textContent=String(k);
+    if(k===0)b.style.gridColumn='span 2';
+    b.addEventListener('click',()=>pressKey(k));
+    kp.appendChild(b);
+  });
+}
+
+/* ================= 顶栏 / 键盘 ================= */
+$('homeBtn').addEventListener('click',()=>{if(!S.flipping){$('keypad').classList.remove('show');showCover();}});
+$('fullBtn').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}catch(e){alert('当前浏览器不支持全屏，请按 F11。')}});
+
+/* ================= 测试钩子 & 启动 ================= */
+window.__T={S,buildDeck,pressKey,openBook,startRound,showQuestion,showCover,finishRound,redoWrong,refreshCard,FLIP_MS,
+  get abox(){return $('abox')}};
+
+buildKeypad();
+(function boot(){
+  let qs=null;
+  try{qs=new URLSearchParams(location.search);}catch(e){}
+  if(qs&&qs.has('still'))document.documentElement.classList.add('still');
+  const demo=qs&&qs.has('demo');
+  if(!demo){showCover();return;}
+  /* demo：直接摆好目标姿态（不跑翻页定时器，避免覆盖画面） */
+  if(qs.has('score')){
+    S.deck=[{op:'+',a:6,b:2,ans:8,wrongOnce:false},{op:'−',a:9,b:4,ans:5,wrongOnce:true}];
+    S.idx=2;S.wrong=1;S.wrongIdx=new Set([0]);
+    S.t0=Date.now()-138000;S.tEnd=Date.now();S.phase='score';
+    setRight(scoreCardHTML());setLeft();bindCard();return;
+  }
+  if(qs.has('right')||qs.has('wrong')||qs.has('q')){
+    S.set.n=Number(qs.get('n'))||10;
+    S.deck=buildDeck();S.idx=0;S.t0=Date.now();S.phase='q';
+    const q=S.deck[0];
+    setRight(eqCardHTML(q,'第 1 张 · 共 '+S.deck.length+' 张'));
+    setLeft();bindCard();
+    $('keypad').classList.add('show');refreshKeys();
+    if(qs.has('right')){S.input=String(q.ans);renderBox(String(q.ans),'good');}
+    else if(qs.has('wrong')){S.input=String(q.ans===0?3:(q.ans-1||q.ans+1));renderBox(S.input,'bad');}
+    return;
+  }
+  S.phase='title';
+  if(qs.has('n'))S.set.n=Number(qs.get('n'))||10;
+  setRight(titleCardHTML());setLeft();bindCard();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分与合 · 数学早读｜数字变形闪卡</title>
+<style>
+*{box-sizing:border-box}
+.still *{animation:none!important}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;touch-action:manipulation}
+
+/* ---------- 全屏粉彩舞台 ---------- */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;transition:background 1s ease;
+  background:linear-gradient(180deg,#d9f2ee 0%,#eefaf7 100%)}
+#app.bg1{background:linear-gradient(180deg,#d9f2ee,#eefaf7)}
+#app.bg2{background:linear-gradient(180deg,#fdf3dd,#fffaf0)}
+#app.bg3{background:linear-gradient(180deg,#d9ecf9,#eef7ff)}
+#app.bg4{background:linear-gradient(180deg,#fbe3ea,#fff3f7)}
+#app.bg5{background:linear-gradient(180deg,#e9e2f9,#f6f2ff)}
+
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;z-index:5}
+#topbar .title{font-weight:1000;font-size:clamp(16px,1.6vw,24px);color:#5b8a80;letter-spacing:2px;opacity:.85}
+.hbtns{display:flex;gap:8px}
+.hbtn{padding:8px 14px;border-radius:14px;font-weight:900;font-size:clamp(13px,1.1vw,17px);
+  background:#ffffffb8;color:#4a6f66;box-shadow:0 2px 8px #3a6a5f1f;transition:transform .12s}
+.hbtn:hover{transform:translateY(-1px)}
+.hbtn.on{background:#6cbfa8;color:#fff}
+
+/* ---------- 中央舞台 ---------- */
+#stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(8px,2.5vh,26px);min-height:0;cursor:pointer;padding:0 20px}
+#numRow{display:flex;align-items:flex-end;justify-content:center;gap:clamp(10px,3vw,54px);min-height:0}
+.bignum{height:clamp(150px,34vh,320px);aspect-ratio:100/120;position:relative}
+.bignum svg{width:100%;height:100%;overflow:visible;display:block}
+.bignum.bob{animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.qmark{animation:wig 1.6s ease-in-out infinite}
+@keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+/* 答案数字：从屏幕边边飘着飞进来（左右各一路，带弧线和甩头） */
+.flyL,.flyR{display:inline-flex;align-items:flex-end}
+.flyL{animation:flyL 1s cubic-bezier(.22,.8,.32,1) both}
+.flyR{animation:flyR 1s cubic-bezier(.22,.8,.32,1) both}
+@keyframes flyL{0%{transform:translate(-92vw,-14vh) rotate(-32deg);opacity:0}
+  40%{opacity:1}
+  68%{transform:translate(2.6vw,1.4vh) rotate(6deg)}
+  100%{transform:translate(0,0) rotate(0)}}
+@keyframes flyR{0%{transform:translate(92vw,-14vh) rotate(32deg);opacity:0}
+  40%{opacity:1}
+  68%{transform:translate(-2.6vw,1.4vh) rotate(-6deg)}
+  100%{transform:translate(0,0) rotate(0)}}
+.andword{display:inline-block;font-size:clamp(26px,4vw,54px);font-weight:1000;color:#7a8f88;padding-bottom:clamp(20px,6vh,60px)}
+.andword.fadein{animation:fadein .55s ease .32s both}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* 句式卡 */
+#sentence{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  font-size:clamp(30px,5vw,62px);font-weight:1000;color:#3e5a54;letter-spacing:2px;
+  padding:clamp(10px,2vh,20px) clamp(16px,2.5vw,34px);margin-bottom:clamp(8px,3vh,26px);
+  background:#ffffffc9;border-radius:22px;box-shadow:0 4px 18px #3a6a5f1a;max-width:min(94vw,1300px);line-height:1.45}
+#sentence .chip{display:inline-grid;place-items:center;min-width:1.5em;height:1.45em;padding:0 .18em;
+  border-radius:.45em;margin:0 .1em;color:#fff;vertical-align:-.22em;font-size:.95em}
+#sentence .ji{background:#7fb8e8;color:#fff;border-radius:.45em;padding:0 .3em;margin:0 .12em;display:inline-grid;place-items:center;height:1.45em;vertical-align:-.22em;font-size:.95em;animation:wig 1.6s ease-in-out infinite}
+#sentence .plain{padding:0 .06em}
+
+/* 底栏 */
+#botbar{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,26px);
+  padding:12px 18px 16px;z-index:5}
+.nav{width:clamp(44px,4vw,58px);height:clamp(44px,4vw,58px);border-radius:50%;background:#ffffffc9;
+  color:#4a6f66;font-size:clamp(20px,2vw,30px);font-weight:1000;box-shadow:0 3px 10px #3a6a5f22;
+  display:grid;place-items:center;transition:transform .12s}
+.nav:hover{transform:scale(1.08)}
+#counter{font-weight:1000;font-size:clamp(14px,1.3vw,19px);color:#5b8a80;min-width:9ch;text-align:center}
+#hint{font-size:clamp(12px,1vw,15px);color:#7ba39a;margin-left:clamp(8px,2vw,30px)}
+
+/* 揭晓星星 */
+.spark{position:fixed;font-size:26px;pointer-events:none;z-index:8;animation:fly .9s ease-out forwards}
+@keyframes fly{0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}25%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.15) rotate(140deg)}}
+
+/* ---------- 设置页 ---------- */
+#setup{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:18px;overflow:auto;
+  background:linear-gradient(180deg,#9fd8cb 0%,#d9f2ee 55%,#fdf3dd 100%)}
+#setup.show{display:grid}
+#setup:before{content:"葫芦";position:absolute;top:6%;right:7%;font-size:110px;opacity:.9;transform:rotate(8deg)}
+#setup:after{content:"🐠";position:absolute;left:8%;bottom:12%;font-size:86px;opacity:.85;transform:rotate(-8deg)}
+.card{position:relative;background:#fff;border-radius:26px;max-width:720px;width:100%;
+  padding:clamp(20px,3vw,34px) clamp(20px,3.4vw,44px);box-shadow:0 24px 70px #2a5a4e33;text-align:center;z-index:1}
+.kicker{display:inline-block;padding:6px 16px;border-radius:999px;background:#e2f3ee;color:#3d8a76;
+  font-weight:900;font-size:14px;letter-spacing:2px}
+.card h1{font-size:clamp(28px,3.6vw,46px);margin:12px 0 4px;color:#2f5a50;letter-spacing:2px;font-weight:1000}
+.card h1 span{color:#e8a020}
+.opt{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 0;border-top:1px dashed #d7e8e2;text-align:left}
+.opt-label{flex:0 0 132px;font-weight:1000;color:#33544c;font-size:17px}
+.opt-label small{display:block;font-weight:600;color:#7ba39a;font-size:12px;margin-top:2px}
+.seg{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.seg button{flex:1 1 44px;min-width:0;padding:10px 4px;border-radius:12px;border:2px solid #cfe6df;
+  background:#f7fcfa;color:#3d6a5e;font-weight:900;font-size:clamp(14px,1.3vw,18px);transition:.14s}
+.seg button:hover{border-color:#3d8a76}
+.seg button.on{background:#3d8a76;border-color:#3d8a76;color:#fff;box-shadow:0 4px 12px #3d8a7655;transform:translateY(-1px)}
+.go{margin-top:18px;border-radius:18px;padding:15px 46px;font-size:clamp(19px,2vw,25px);font-weight:1000;
+  color:#fff;background:linear-gradient(180deg,#f0a24b,#e2822a);box-shadow:0 6px 18px #e2822a55;transition:transform .14s}
+.go:hover{transform:translateY(-2px) scale(1.02)}
+@media(max-width:850px){.opt-label{flex-basis:100%}.bignum{height:26vh}#sentence{font-size:clamp(22px,6vw,34px)}}
+</style>
+</head>
+<body>
+<div id="app" class="bg1">
+  <div id="topbar">
+    <span class="title">分与合 · 数学早读</span>
+    <div class="hbtns">
+      <button class="hbtn" id="autoBtn">▶ 自动翻页</button>
+      <button class="hbtn" id="setupBtn">⚙ 设置</button>
+      <button class="hbtn" id="fullBtn">⛶ 全屏</button>
+    </div>
+  </div>
+  <div id="stage">
+    <div id="numRow"></div>
+    <div id="sentence"></div>
+  </div>
+  <div id="botbar">
+    <button class="nav" id="prevBtn">‹</button>
+    <span id="counter"></span>
+    <button class="nav" id="nextBtn">›</button>
+    <span id="hint">点大屏 / 空格 = 揭晓 · 再按 = 下一张</span>
+  </div>
+</div>
+
+<div id="setup">
+  <div class="card">
+    <div class="kicker">📐 一年级上册 · 分与合 · 早读闪卡</div>
+    <h1>分与合 <span>数学早读</span></h1>
+    <div class="opt">
+      <div class="opt-label">最大数<small>出的题最大到几</small></div>
+      <div class="seg" id="segMax"></div>
+    </div>
+    <div class="opt">
+      <div class="opt-label">句式类型<small>分成 / 组成</small></div>
+      <div class="seg" id="segKind"></div>
+    </div>
+    <div class="opt">
+      <div class="opt-label">卡片模式<small>思考题带 ？ / 纯齐读</small></div>
+      <div class="seg" id="segMode"></div>
+    </div>
+    <div class="opt">
+      <div class="opt-label">自动翻页<small>齐读节奏，不用点</small></div>
+      <div class="seg" id="segAuto"></div>
+    </div>
+    <button class="go" id="goBtn">📖 开始早读</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================= 数字变形 SVG 素材（手绘，viewBox 0 0 100 120） =================
+   风格约定：棕色粗描边 #57403a、白点高光眼、粉腮红、圆角圆润 —— 贴近视频里的可爱风 */
+const OUT='#57403a';
+const FACE=(x,y,s)=>{
+  s=s||1;
+  return `<g transform="translate(${x} ${y}) scale(${s})">
+<circle cx="-11" cy="0" r="3.4" fill="#3a2a24"/><circle cx="-9.9" cy="-1.2" r="1.1" fill="#fff"/>
+<circle cx="11" cy="0" r="3.4" fill="#3a2a24"/><circle cx="12.1" cy="-1.2" r="1.1" fill="#fff"/>
+<circle cx="-17.5" cy="5" r="4.4" fill="#ff9fb0" opacity=".5"/><circle cx="17.5" cy="5" r="4.4" fill="#ff9fb0" opacity=".5"/>
+<path d="M-4.5 6 Q0 10.5 4.5 6" stroke="#3a2a24" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>`;
+};
+
+/* 0 = 甜甜圈 */
+const N0=`<svg viewBox="0 0 100 120"><path d="M12 62a38 38 0 1 0 76 0a38 38 0 1 0 -76 0Z M35 62a15 15 0 1 0 30 0a15 15 0 1 0 -30 0Z" fill-rule="evenodd" fill="#f7a8c0" stroke="${OUT}" stroke-width="3"/>
+<ellipse cx="34" cy="36" rx="9" ry="5.5" fill="#fff" opacity=".4" transform="rotate(-24 34 36)"/>
+<g><rect x="46" y="27" width="8" height="4" rx="2" fill="#ffd257" transform="rotate(18 50 29)"/><rect x="66" y="36" width="8" height="4" rx="2" fill="#7fd3ff" transform="rotate(-30 70 38)"/><rect x="78" y="56" width="8" height="4" rx="2" fill="#8ce6a1" transform="rotate(40 82 58)"/><rect x="14" y="52" width="8" height="4" rx="2" fill="#fff" transform="rotate(-45 18 54)"/><rect x="22" y="86" width="8" height="4" rx="2" fill="#7fd3ff" transform="rotate(30 26 88)"/><rect x="70" y="86" width="8" height="4" rx="2" fill="#ffd257" transform="rotate(-30 74 88)"/></g>
+${FACE(50,76)}</svg>`;
+
+/* 1 = 长颈鹿（头在柱顶，角+耳+吻部，柱身斑纹） */
+const N1=`<svg viewBox="0 0 100 120">
+<line x1="44" y1="12" x2="43" y2="5" stroke="${OUT}" stroke-width="2.5"/><circle cx="43" cy="4.5" r="3.2" fill="#c98a3e" stroke="${OUT}" stroke-width="2"/>
+<line x1="58" y1="12" x2="59" y2="5" stroke="${OUT}" stroke-width="2.5"/><circle cx="59" cy="4.5" r="3.2" fill="#c98a3e" stroke="${OUT}" stroke-width="2"/>
+<ellipse cx="34" cy="18" rx="6" ry="4" fill="#f7ce4f" stroke="${OUT}" stroke-width="2.4" transform="rotate(-28 34 18)"/>
+<ellipse cx="68" cy="18" rx="6" ry="4" fill="#f7ce4f" stroke="${OUT}" stroke-width="2.4" transform="rotate(28 68 18)"/>
+<path d="M40 34 L24 48 L40 48 Z" fill="#f7ce4f" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+<rect x="40" y="28" width="22" height="60" rx="8" fill="#f7ce4f" stroke="${OUT}" stroke-width="3"/>
+<rect x="30" y="86" width="44" height="15" rx="7" fill="#f7ce4f" stroke="${OUT}" stroke-width="3"/>
+<ellipse cx="51" cy="21" rx="17" ry="12" fill="#f7ce4f" stroke="${OUT}" stroke-width="3"/>
+<ellipse cx="55" cy="26" rx="8.5" ry="5.5" fill="#f3e2b8" stroke="${OUT}" stroke-width="2.2"/>
+<circle cx="52.5" cy="25.5" r="1.1" fill="#3a2a24"/><circle cx="58.5" cy="25.5" r="1.1" fill="#3a2a24"/>
+<circle cx="43" cy="19" r="2.9" fill="#3a2a24"/><circle cx="44" cy="17.9" r="1" fill="#fff"/>
+<circle cx="59" cy="19" r="2.9" fill="#3a2a24"/><circle cx="60" cy="17.9" r="1" fill="#fff"/>
+<circle cx="37" cy="24" r="3.4" fill="#ff9fb0" opacity=".55"/><circle cx="66" cy="24" r="3.4" fill="#ff9fb0" opacity=".55"/>
+<g clip-path="url(#c1p)"><circle cx="46" cy="40" r="5.5" fill="#c98a3e"/><circle cx="57" cy="52" r="6.5" fill="#c98a3e"/><circle cx="45" cy="64" r="6" fill="#c98a3e"/><circle cx="58" cy="76" r="6" fill="#c98a3e"/><circle cx="44" cy="92" r="5" fill="#c98a3e"/><circle cx="60" cy="94" r="4.5" fill="#c98a3e"/></g>
+<defs><clipPath id="c1p"><rect x="40" y="28" width="22" height="60" rx="8"/><rect x="30" y="86" width="44" height="15" rx="7"/></clipPath></defs>
+</svg>`;
+
+/* 2 = 天鹅 */
+const N2=`<svg viewBox="0 0 100 120">
+<path d="M20 94 C24 74 36 60 52 48 C62 40 68 32 65 24 C62 17 52 16 49 23 C47 28 51 33 56 32" fill="none" stroke="${OUT}" stroke-width="17" stroke-linecap="round"/>
+<path d="M20 94 C24 74 36 60 52 48 C62 40 68 32 65 24 C62 17 52 16 49 23 C47 28 51 33 56 32" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+<polygon points="49,27 38,30 49,34" fill="#f59a3e" stroke="${OUT}" stroke-width="2" stroke-linejoin="round"/>
+<circle cx="55" cy="26" r="2.6" fill="#3a2a24"/><circle cx="56" cy="25" r=".9" fill="#fff"/>
+<path d="M18 96 C18 84 30 78 44 78 L70 78 C82 78 86 86 84 94 C82 101 74 104 62 104 L34 104 C24 104 18 101 18 96 Z" fill="#ffffff" stroke="${OUT}" stroke-width="3"/>
+<path d="M40 88 C48 84 60 84 68 88" stroke="#d8e6ee" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M46 95 C54 92 62 92 66 95" stroke="#d8e6ee" stroke-width="3" fill="none" stroke-linecap="round"/>
+<circle cx="38" cy="90" r="4.5" fill="#ff9fb0" opacity=".55"/>
+<path d="M12 112 q9 -7 18 0 t18 0 t18 0 t18 0" stroke="#7fc4e8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<path d="M26 118 q9 -7 18 0 t18 0 t14 0" stroke="#a8d8ef" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+/* 3 = 蝴蝶（身体在左，两片翅膀鼓包 = 3） */
+const N3=`<svg viewBox="0 0 100 120">
+<path d="M26 22 C20 12 10 10 8 16 C6 22 14 26 22 26" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/><circle cx="7" cy="15" r="2.6" fill="#f78fb0" stroke="${OUT}" stroke-width="1.5"/>
+<path d="M30 22 C32 12 42 10 44 16 C45 21 38 25 31 25" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/><circle cx="44" cy="15" r="2.6" fill="#f78fb0" stroke="${OUT}" stroke-width="1.5"/>
+<ellipse cx="27" cy="62" rx="8" ry="27" fill="#8a5a33" stroke="${OUT}" stroke-width="2.5"/>
+<circle cx="27" cy="30" r="8" fill="#8a5a33" stroke="${OUT}" stroke-width="2.5"/>
+<circle cx="24" cy="29" r="2.2" fill="#fff"/><circle cx="30" cy="29" r="2.2" fill="#fff"/><circle cx="24" cy="29.6" r="1.1" fill="#3a2a24"/><circle cx="30" cy="29.6" r="1.1" fill="#3a2a24"/>
+<path d="M34 42 C48 16 80 18 84 36 C87 50 66 58 36 55 Z" fill="#f78fb0" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+<path d="M36 68 C62 64 84 70 82 86 C80 100 54 100 36 84 Z" fill="#f7a8c0" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="64" cy="36" r="5.5" fill="#fff" opacity=".85"/><circle cx="73" cy="46" r="3" fill="#fff" opacity=".7"/>
+<circle cx="62" cy="82" r="5.5" fill="#fff" opacity=".85"/><circle cx="70" cy="90" r="3" fill="#fff" opacity=".7"/>
+<circle cx="27" cy="66" r="3.5" fill="#ff9fb0" opacity=".8"/>
+<path d="M23 36 Q27 39 31 36" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+/* 4 = 帆船（帆=斜边 桅杆=竖 甲板=横杠 船身=底） */
+const N4=`<svg viewBox="0 0 100 120">
+<path d="M30 20 L62 20 L62 56 Z" fill="#7fc4e8" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+<path d="M38 28 L58 44" stroke="#fff" stroke-width="3" opacity=".7" stroke-linecap="round"/>
+<line x1="62" y1="14" x2="62" y2="86" stroke="#8a5a33" stroke-width="5" stroke-linecap="round"/>
+<polygon points="62,14 76,18 62,23" fill="#f36b6b" stroke="${OUT}" stroke-width="2" stroke-linejoin="round"/>
+<rect x="18" y="56" width="52" height="9" rx="4.5" fill="#f7ce4f" stroke="${OUT}" stroke-width="3"/>
+<path d="M22 68 L74 68 L67 86 C65 92 60 95 52 95 L40 95 C32 95 27 91 25 84 Z" fill="#f3856b" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+${FACE(46,76,.85)}
+</svg>`;
+
+/* 5 = 青蛙（横杠=大嘴，弯钩=肚皮） */
+const N5=`<svg viewBox="0 0 100 120">
+<path d="M70 26 L34 26 L34 54 C48 50 70 58 70 76 C70 92 56 100 45 98 C35 96 29 88 28 79" fill="none" stroke="${OUT}" stroke-width="20" stroke-linecap="round"/>
+<path d="M70 26 L34 26 L34 54 C48 50 70 58 70 76 C70 92 56 100 45 98 C35 96 29 88 28 79" fill="none" stroke="#7cc576" stroke-width="15" stroke-linecap="round"/>
+<ellipse cx="56" cy="78" rx="13" ry="11" fill="#d9f2d0"/>
+<circle cx="32" cy="16" r="8.5" fill="#7cc576" stroke="${OUT}" stroke-width="2.5"/>
+<circle cx="32" cy="16" r="4" fill="#fff"/><circle cx="32" cy="17" r="2" fill="#3a2a24"/><circle cx="32.8" cy="16" r=".7" fill="#fff"/>
+<circle cx="48" cy="16" r="8.5" fill="#7cc576" stroke="${OUT}" stroke-width="2.5"/>
+<circle cx="48" cy="16" r="4" fill="#fff"/><circle cx="48" cy="17" r="2" fill="#3a2a24"/><circle cx="48.8" cy="16" r=".7" fill="#fff"/>
+<path d="M40 30 Q44 34 48 30" stroke="#3a5a34" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<circle cx="26" cy="36" r="4" fill="#ff9fb0" opacity=".6"/><circle cx="52" cy="36" r="4" fill="#ff9fb0" opacity=".6"/>
+</svg>`;
+
+/* 6 = 蜗牛（壳=圆肚 脖子=竖钩） */
+const N6=`<svg viewBox="0 0 100 120">
+<path d="M28 94 C22 76 26 50 38 32" fill="none" stroke="${OUT}" stroke-width="16" stroke-linecap="round"/>
+<path d="M28 94 C22 76 26 50 38 32" fill="none" stroke="#f7ce4f" stroke-width="11" stroke-linecap="round"/>
+<circle cx="39" cy="29" r="11" fill="#f7ce4f" stroke="${OUT}" stroke-width="3"/>
+<line x1="34" y1="19" x2="32" y2="12" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="10" r="2.8" fill="#f7ce4f" stroke="${OUT}" stroke-width="2"/>
+<line x1="44" y1="18" x2="46" y2="11" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/><circle cx="46" cy="9" r="2.8" fill="#f7ce4f" stroke="${OUT}" stroke-width="2"/>
+${FACE(39,30,.8)}
+<circle cx="60" cy="74" r="27" fill="#f59a3e" stroke="${OUT}" stroke-width="3"/>
+<path d="M62 74a4.5 4.5 0 1 0 -4.5 4.5a10 10 0 1 0 -10 -10a15.5 15.5 0 1 0 15.5 15.5" fill="none" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>
+<ellipse cx="48" cy="58" rx="7" ry="4.5" fill="#fff" opacity=".4" transform="rotate(-30 48 58)"/>
+</svg>`;
+
+/* 7 = 竹子 */
+const N7=`<svg viewBox="0 0 100 120">
+<path d="M22 18 C16 6 26 2 32 7 C30 12 26 16 22 18 Z" fill="#4caf50" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M24 20 C30 8 42 6 46 12 C42 17 32 20 24 20 Z" fill="#6cbf6c" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="14" y="20" width="64" height="13" rx="6.5" fill="#7cc576" stroke="${OUT}" stroke-width="3"/>
+<path d="M68 31 C62 50 54 72 46 95" fill="none" stroke="${OUT}" stroke-width="16" stroke-linecap="round"/>
+<path d="M68 31 C62 50 54 72 46 95" fill="none" stroke="#7cc576" stroke-width="11.5" stroke-linecap="round"/>
+<line x1="57" y1="46" x2="68" y2="52" stroke="${OUT}" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="50" y1="68" x2="61" y2="74" stroke="${OUT}" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M62 52 C76 46 86 50 86 58 C78 62 66 58 62 52 Z" fill="#4caf50" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M55 74 C68 68 78 72 78 80 C70 84 58 80 55 74 Z" fill="#6cbf6c" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+${FACE(50,60,.72)}
+</svg>`;
+
+/* 8 = 葫芦（视频同款：黄葫芦+叶+红蝴蝶结） */
+const N8=`<svg viewBox="0 0 100 120">
+<line x1="52" y1="16" x2="52" y2="26" stroke="${OUT}" stroke-width="3" stroke-linecap="round"/>
+<path d="M52 17 C58 6 72 6 76 11 C70 19 58 20 52 17 Z" fill="#6cbf6c" stroke="${OUT}" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M54 14 C60 8 66 8 66 12" fill="none" stroke="${OUT}" stroke-width="2" stroke-linecap="round"/>
+<path d="M52 26 C38 26 30 36 32 46 C33 52 37 56 42 58 C34 62 28 70 29 80 C30 95 43 103 53 103 C67 103 77 93 76 80 C75 70 68 62 62 58 C68 55 72 49 71 42 C69 32 62 26 52 26 Z" fill="#ffd257" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+<ellipse cx="43" cy="38" rx="7" ry="4.5" fill="#fff" opacity=".45" transform="rotate(-24 43 38)"/>
+<path d="M44 56 L32 50 L34 62 Z" fill="#f36b6b" stroke="${OUT}" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M62 56 L74 50 L72 62 Z" fill="#f36b6b" stroke="${OUT}" stroke-width="2.2" stroke-linejoin="round"/>
+<circle cx="53" cy="57" r="4.5" fill="#e8556a" stroke="${OUT}" stroke-width="2.2"/>
+${FACE(52,80)}
+</svg>`;
+
+/* 9 = 气球（球=圆肚 线=竖钩甩尾） */
+const N9=`<svg viewBox="0 0 100 120">
+<ellipse cx="54" cy="42" rx="26" ry="30" fill="#f36b6b" stroke="${OUT}" stroke-width="3"/>
+<ellipse cx="44" cy="28" rx="7" ry="10" fill="#fff" opacity=".4" transform="rotate(-18 44 28)"/>
+<polygon points="48,71 60,71 54,64" fill="#f36b6b" stroke="${OUT}" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M54 74 C60 84 64 92 60 102 C57 109 49 109 47 103" fill="none" stroke="${OUT}" stroke-width="3" stroke-linecap="round"/>
+${FACE(54,42)}
+</svg>`;
+
+/* ? 气泡（视频同款：淡蓝圆 + 白 ?） */
+const QM=`<svg viewBox="0 0 100 120"><circle cx="50" cy="60" r="34" fill="#bcd9ee" stroke="#fff" stroke-width="5"/>
+<circle cx="38" cy="42" r="8" fill="#fff" opacity=".5"/>
+<text x="50" y="76" text-anchor="middle" font-size="44" font-weight="900" fill="#fff" font-family="inherit">?</text></svg>`;
+
+/* 10 = 长颈鹿1 + 甜甜圈0 并排 */
+function numSVG(n){
+  if(n===10)return `<span style="display:flex;align-items:flex-end;gap:5%;height:100%"><span style="height:100%;width:clamp(70px,15vh,150px)">${N1}</span><span style="height:100%;width:clamp(70px,15vh,150px)">${N0}</span></span>`;
+  return [N0,N1,N2,N3,N4,N5,N6,N7,N8,N9][n];
+}
+/* 数字主题色（句式卡上色用） */
+const NCOLOR={0:'#e88aa8',1:'#d9a420',2:'#7fb8d8',3:'#e8739e',4:'#e8734d',5:'#4d9e52',6:'#e89020',7:'#3d9e42',8:'#e2a51e',9:'#e8455f',10:'#4f9e8a'};
+
+/* ================= 出题与状态 ================= */
+const $=id=>document.getElementById(id);
+const rand=n=>Math.floor(Math.random()*n);
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=rand(i+1);[r[i],r[j]]=[r[j],r[i]]}return r}
+const BGS=['bg1','bg2','bg3','bg4','bg5'];
+
+const S={max:10,kind:'mix',mode:'think',auto:0};
+let deck=[],idx=0,revealed=false,autoTimer=null;
+
+function loadSettings(){
+  try{const o=JSON.parse(localStorage.getItem('fenhezaodu_settings')||'{}');
+    if(o.max>=2&&o.max<=10)S.max=o.max;
+    if(['mix','fen','zu'].includes(o.kind))S.kind=o.kind;
+    if(['think','read'].includes(o.mode))S.mode=o.mode;
+    if([0,3,5,8].includes(o.auto))S.auto=o.auto;
+  }catch(e){}
+}
+function saveSettings(){
+  try{localStorage.setItem('fenhezaodu_settings',JSON.stringify(S));}catch(e){}
+}
+
+/* ---- 出整副卡：total 2→最大数（教学进度顺序），组内打乱 ---- */
+function buildDeck(){
+  const out=[];
+  for(let total=2;total<=S.max;total++){
+    const cards=[];
+    for(let a=1;a<total;a++){
+      const b=total-a;
+      if(a>b)continue;                       /* 去掉镜像重复（3和5 / 5和3 只留一个顺序） */
+      if(S.kind!=='zu')cards.push({total,a,b,kind:'fen',miss:(a===b)?'b':(Math.random()<.5?'a':'b')});
+      if(S.kind!=='fen')cards.push({total,a,b,kind:'zu', miss:(a===b)?'b':(Math.random()<.5?'a':'b')});
+    }
+    out.push(...shuffle(cards));
+  }
+  return out;
+}
+
+/* ---- 卡面文案 ---- */
+function cardText(c,showAnswer){
+  const t=c.total,miss=c.miss,other=miss==='a'?c.b:c.a;
+  const chip=(n)=>`<span class="chip" style="background:${NCOLOR[n]}">${n}</span>`;
+  const ji=`<span class="ji">几</span>`;
+  const W=v=>`<span class="plain">${v}</span>`;
+  if(c.kind==='fen'){
+    if(showAnswer)return `${chip(t)}${W('可以分成')}${chip(c.a)}${W('和')}${chip(c.b)}`;
+    return miss==='a'?`${chip(t)}${W('可以分成')}${ji}${W('和')}${chip(other)}`
+                     :`${chip(t)}${W('可以分成')}${chip(other)}${W('和')}${ji}`;
+  }
+  if(showAnswer)return `${chip(c.a)}${W('和')}${chip(c.b)}${W('可以组成')}${chip(t)}`;
+  return miss==='a'?`${ji}${W('和')}${chip(other)}${W('可以组成')}${chip(t)}`
+                   :`${chip(other)}${W('和')}${ji}${W('可以组成')}${chip(t)}`;
+}
+function cardSpeak(c,showAnswer){
+  const t=c.total,miss=c.miss,other=miss==='a'?c.b:c.a;
+  if(c.kind==='fen')return showAnswer?`${t}可以分成${c.a}和${c.b}`
+                        :miss==='a'?`${t}可以分成几和${other}`:`${t}可以分成${other}和几`;
+  return showAnswer?`${c.a}和${c.b}可以组成${t}`
+        :miss==='a'?`几和${other}可以组成${t}`:`${other}和几可以组成${t}`;
+}
+
+/* ---- 渲染一张卡 ---- */
+/* fly='L'/'R'：从屏幕左边/右边飘进来；'' 不飞（？气泡原地出现，素材验收等静态场景用） */
+function bigNum(n,fly,delay){
+  const cls='bignum bob'+(n==='q'?' qmark':'');
+  const inner=`<span class="${cls}">${typeof n==='number'?numSVG(n):QM}</span>`;
+  if(!fly)return inner;
+  const dl=delay?` style="animation-delay:${delay}s"`:'';
+  return `<span class="fly${fly}"${dl}>${inner}</span>`;
+}
+function andWord(){return `<span class="andword fadein">和</span>`}
+function renderCard(popAll){
+  const c=deck[idx];if(!c)return;
+  const show=revealed||S.mode==='read';
+  const row=$('numRow');
+  if(c.kind==='fen'){
+    row.innerHTML=show
+      ? bigNum(c.a,'L')+andWord()+bigNum(c.b,'R',.14)
+      : bigNum(c.total,'L');
+  }else{
+    row.innerHTML=show
+      ? bigNum(c.a,'L')+andWord()+bigNum(c.b,'R',.14)
+      : (c.miss==='a'? bigNum('q')+andWord()+bigNum(c.b,'R',.14)
+                     : bigNum(c.b,'L')+andWord()+bigNum('q'));
+  }
+  $('sentence').innerHTML=cardText(c,show);
+  $('counter').textContent=`第 ${idx+1} / ${deck.length} 张`;
+  $('app').className=BGS[idx%BGS.length];
+}
+
+/* ---- 揭晓 / 翻页 ---- */
+function sparkles(){
+  const st=$('stage').getBoundingClientRect();
+  ['✦','✧','⭐','✨'].forEach((s,i)=>{
+    const sp=document.createElement('span');sp.className='spark';sp.textContent=s;
+    sp.style.left=(st.left+st.width*(.3+Math.random()*.4))+'px';
+    sp.style.top=(st.top+st.height*(.25+Math.random()*.35))+'px';
+    sp.style.setProperty('--dx',((Math.random()*2-1)*120).toFixed(0)+'px');
+    sp.style.setProperty('--dy',(-60-Math.random()*70).toFixed(0)+'px');
+    sp.style.animationDelay=(i*70)+'ms';
+    document.body.appendChild(sp);
+    setTimeout(()=>sp.remove(),1100);
+  });
+}
+function reveal(){
+  if(revealed)return;
+  revealed=true;
+  renderCard(false);
+  sparkles();
+  scheduleAuto();
+}
+function next(){
+  idx++;
+  if(idx>=deck.length){deck=buildDeck();idx=0;}
+  revealed=false;
+  renderCard(true);
+  scheduleAuto();
+}
+function prev(){
+  if(idx>0)idx--;
+  else idx=deck.length-1;
+  revealed=false;
+  renderCard(true);
+  scheduleAuto();
+}
+function stageClick(){
+  if(!deck.length)return;
+  if(S.mode==='read'||revealed)next();else reveal();
+}
+
+/* ---- 自动翻页 ---- */
+function stopAuto(){if(autoTimer){clearTimeout(autoTimer);autoTimer=null;}}
+function scheduleAuto(){
+  stopAuto();
+  if(!S.auto||!deck.length)return;
+  const wait=revealed||S.mode==='read'?S.auto*1000:S.auto*500; /* 未揭晓先半程揭晓 */
+  autoTimer=setTimeout(()=>{
+    if(!revealed&&S.mode==='think')reveal();
+    else next();
+  },wait);
+}
+function toggleAuto(){
+  S.auto=S.auto?0:5;
+  $('autoBtn').classList.toggle('on',!!S.auto);
+  $('autoBtn').textContent=S.auto?'⏸ 自动翻页':'▶ 自动翻页';
+  if(S.auto)scheduleAuto();else stopAuto();
+}
+
+/* ---- 开始 / 重开 ---- */
+function startSession(){
+  deck=buildDeck();idx=0;revealed=false;
+  $('setup').classList.remove('show');
+  renderCard(true);
+  scheduleAuto();
+}
+
+/* ---- 设置页 ---- */
+function segInit(id,key,items,parse){
+  const box=$(id);
+  box.innerHTML=items.map(([v,l])=>`<button data-v="${v}">${l}</button>`).join('');
+  box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    S[key]=parse(b.dataset.v);
+    box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  }));
+  box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',String(S[key])===b.dataset.v));
+}
+function openSetup(){
+  stopAuto();
+  segInit('segMax','max',Array.from({length:9},(_,i)=>[i+2,(i+2)+'']),Number);
+  segInit('segKind','kind',[['mix','分与合混合'],['fen','只练分成'],['zu','只练组成']],v=>v);
+  segInit('segMode','mode',[['think','思考题（带？）'],['read','纯齐读领读']],v=>v);
+  segInit('segAuto','auto',[[0,'手动'],[3,'3秒'],[5,'5秒'],[8,'8秒']],Number);
+  $('setup').classList.add('show');
+}
+
+/* ---- 事件 ---- */
+$('goBtn').addEventListener('click',()=>{saveSettings();startSession();});
+$('setupBtn').addEventListener('click',openSetup);
+$('stage').addEventListener('click',stageClick);
+$('nextBtn').addEventListener('click',e=>{e.stopPropagation();next();});
+$('prevBtn').addEventListener('click',e=>{e.stopPropagation();prev();});
+$('autoBtn').addEventListener('click',e=>{e.stopPropagation();toggleAuto();});
+$('fullBtn').addEventListener('click',async e=>{e.stopPropagation();
+  try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}
+  catch(err){alert('当前浏览器不支持全屏，请按 F11。');}});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&$('setup').classList.contains('show')){$('setup').classList.remove('show');return;}
+  if($('setup').classList.contains('show'))return;
+  if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();stageClick();}
+  if(e.key==='ArrowLeft'){e.preventDefault();prev();}
+});
+
+/* ---- 启动 ---- */
+(function boot(){
+  loadSettings();
+  let demo=false,qs=null;
+  try{
+    qs=new URLSearchParams(location.search);
+    if(qs.has('still')){document.documentElement.classList.add('still');}
+    if(qs.has('demo')){
+      demo=true;
+      if(qs.has('max'))S.max=Math.min(10,Math.max(2,Number(qs.get('max'))||10));
+      if(qs.has('kind'))S.kind=qs.get('kind');
+      if(qs.has('mode'))S.mode=qs.get('mode');
+      if(qs.has('auto'))S.auto=Number(qs.get('auto'))||0;
+    }
+  }catch(e){}
+  if(demo){
+    if(qs.has('gallery')){
+      /* 素材验收：一屏铺开 0~10 全部数字变形 */
+      const row=$('numRow');
+      row.style.flexWrap='wrap';row.style.gap='14px';
+      row.innerHTML=[0,1,2,3,4,5,6,7,8,9,10].map(n=>
+        `<span class="bignum bob" style="height:clamp(80px,19vh,150px)">${numSVG(n)}</span>`).join('');
+      $('sentence').innerHTML='<span class="plain">数字变形全家福 0 ~ 10</span>';
+      $('counter').textContent='素材验收模式';
+      return;
+    }
+    startSession();
+    if(qs.has('reveal')){revealed=false;reveal();}
+  }
+  else openSetup();
+})();
+
+/* ---- 测试钩子 ---- */
+window.__T={S,get deck(){return deck},get idx(){return idx},get revealed(){return revealed},
+  buildDeck,cardText,cardSpeak,reveal,next,prev,startSession,renderCard,NCOLOR,numSVG};
+</script>
+</body>
+</html>

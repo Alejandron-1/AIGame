@@ -17,10 +17,14 @@ A collection of standalone HTML-based educational mini-games for Chinese element
 - `三年级/` — Grade 3 games (15 games covering 上册7 + 下册8 units)
 - `四年级/` — Grade 4 games (大数读法×2)
 - `通用工具/` — Cross-grade tools (消消乐、七巧板、三视图、答题闯关游戏/、zhuomianchongwu/ 课堂宠物系统含 server)
-- `视频/` — 视频生产线：ffmpeg.exe(勿挪，脚本按相对路径引用)、立体王国2(魔法师导入视频)、课本插图转视频等
-- `小学一年级需求文档文件夹/` — Grade 1 requirement docs (.md)
+- `视频/` — 视频生产线总目录：ffmpeg.exe(勿挪，脚本按绝对路径引用)、立体王国2(魔法师导入视频)、立体王国视频生成、课本插图转视频、素材库(视频生成素材图)、惠州集览项目(惠州建筑集览.mp4 成片 + MusicGPT 本地音乐生成 exe)
+- `小学一年级需求文档文件夹/` — Grade 1 requirement docs (.md)；`认识立体图形/` 子文件夹存公开课 PPT 成品(184M，已 gitignore)
+- `开发调试/` — 根目录淘汰下来的一次性调试资产：probe_*.js 探针、shot_*.js 截图脚本、test_*.js 测试脚本(绝对路径指向各游戏，移动不影响运行)、历史截图/(_shots 调试截图存档)
+- `文档/` — 散篇文档：公开课实战指南、小游戏制作规范、更新部署新页面步骤、网址.txt、一键打开在线网站.url
+- `图片处理/`、`图片转文档工具/` — 打印页/板书素材产物与图片转文档小工具
 
 New games go into the matching grade folder and get registered in `index.html`. 公开课/课件素材进 `图形小镇-公开课工具包/` 对应子文件夹，别散落在年级目录根部。
+- `小学一年级/图形小镇-公开课工具包/素材处理工作区/` — 《新素材.pptx》源文件与导出处理脚本（去白底→裁边→base64，喂给课件素材库）
 
 ## Tech Stack & Conventions
 
@@ -51,28 +55,28 @@ Games share a consistent look reproduced across files:
 
 | File | Topic | Lines | Rendering |
 |---|---|---|---|
-| `测试七巧板3.html` | Tangram puzzle — 3-panel SVG layout with hint overlays | 853 | SVG |
-| `测试七巧板5.html` | Tangram puzzle — Canvas-based with corner-handle rotation | 1070 | Canvas |
-| `百变七巧板.html` | Single-canvas tangram, simpler drag + wheel rotate | 853 | Canvas |
-| `时间认读PK赛.html` | Clock reading competition for 2nd grade | ~970 | CSS/HTML |
-| `消消乐(待改进).html` | Mental math match-3 game | ~490 | CSS Grid |
-| `认识数字-多位数.html` | Multi-digit number place-value explorer | ~836 | CSS/Canvas |
-| `探索星球-大数读法.html` | Large number reading via planet exploration | ~697 | CSS/HTML |
-| `小天才空间积木盒 - 三视图挑战.html` | 3D block spatial reasoning (orthographic views) | ~370 | CSS/HTML |
-| `水果分配 余数教学.html` | Division with remainder using fruit distribution | ~611 | CSS/HTML |
-| `数字转盘小游戏.html` | Number wheel spinner game | ~798 | CSS/HTML |
+| `通用工具/百变七巧板.html` | Single-canvas tangram, simpler drag + wheel rotate | 853 | Canvas |
+| `二年级/时间认读PK赛.html` | Clock reading competition for 2nd grade | ~970 | CSS/HTML |
+| `通用工具/消消乐(待改进).html` | Mental math match-3 game | ~490 | CSS Grid |
+| `二年级/认识数字-多位数.html` | Multi-digit number place-value explorer | ~836 | CSS/Canvas |
+| `四年级/探索星球-大数读法.html` | Large number reading via planet exploration | ~697 | CSS/HTML |
+| `通用工具/小天才空间积木盒 - 三视图挑战.html` | 3D block spatial reasoning (orthographic views) | ~370 | CSS/HTML |
+| `二年级/水果分配 余数教学.html` | Division with remainder using fruit distribution | ~611 | CSS/HTML |
+| `小学一年级/数字转盘小游戏.html` | Number wheel spinner game | ~798 | CSS/HTML |
+| `小学一年级/分与合运动会.html` | Part-whole bond 4-team boat race; pre-race setup screen (adjustable max number), only "?" bubble is team-colored | ~530 | SVG scene + CSS/HTML |
 
-### Tangram Family (迭代关系)
+注：早期迭代文件 `测试七巧板.html`~`测试七巧板5.html` 已删除，仅存 `通用工具/百变七巧板.html`；行数与描述为历史记录，未必与当前文件一致。
 
-The tangram games have undergone iterative development across multiple files:
+### Tangram Family (历史迭代关系)
 
-- **`测试七巧板3.html`** — SVG-based, three-panel layout (left: reference pieces, center: free assembly, right: example buttons). Rotation was originally button-only (±45°), later upgraded with **corner-handle rotation**: selecting a piece shows blue circles on each vertex; dragging a circle rotates the piece around its centroid.
-- **`测试七巧板4.html`** — Similar to 3, with example hints overlaid on the center panel
-- **`测试七巧板5.html`** — Full Canvas rewrite using a `Piece` class with centroid-relative vertex coordinates (`relVerts`), rotation matrices in `getAbsVerts()`, ray-casting `containsPoint()` for hit detection, and corner-handle drag-to-rotate. Uses the same piece geometry as file 3 (400×400 coordinate system scaled to 200×200).
-- **`百变七巧板.html`** — Single-canvas simplified version (1 panel, no examples)
-- **`测试七巧板.html` / `测试七巧板2.html`** — Earliest iterations
+七巧板历经多版迭代，**现仅存 `通用工具/百变七巧板.html`**（单 Canvas 简化版：1 面板、拖拽 + 滚轮旋转）。以下为历史沿革，文件均已删除：
 
-**Piece geometry** (from file 3, used across all versions): 7 pieces decomposed from a square — 2 large right triangles (① red, ② blue), 1 medium triangle (③ yellow), 1 parallelogram (④ gold), 1 square (⑤ orange), 2 small triangles (⑥ green, ⑦ pink). Colors: `#E74C3C, #3498DB, #F1C40F, #D4AC0D, #E67E22, #27AE60, #E91E63`.
+- **测试七巧板3.html** — SVG 三面板布局（左参考件/中自由拼/右例题按钮），后升级角点手柄旋转（选中块后顶点显示蓝圆，拖动绕质心旋转）
+- **测试七巧板4.html** — 类似 3，中面板叠加例题提示
+- **测试七巧板5.html** — Canvas 全面重写：`Piece` 类、质心相对顶点坐标（`relVerts`）、旋转矩阵 `getAbsVerts()`、射线法 `containsPoint()` 命中检测、角点拖转；与 3 共用 400×400 坐标系缩至 200×200 的块几何
+- **测试七巧板.html / 测试七巧板2.html** — 最早迭代
+
+**Piece geometry**（源自七巧板3，百变七巧板沿用）：正方形分解的 7 块 — 2 大三角（①红 ②蓝）、1 中三角（③黄）、1 平行四边形（④金）、1 正方形（⑤橙）、2 小三角（⑥绿 ⑦粉）。颜色：`#E74C3C, #3498DB, #F1C40F, #D4AC0D, #E67E22, #27AE60, #E91E63`。
 
 ## How to Test
 
