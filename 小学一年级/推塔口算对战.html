@@ -30,7 +30,10 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;tou
 @keyframes pulseT{50%{transform:scale(1.08)}}
 
 /* ---------- 战场 ---------- */
-#battle{position:relative;height:38vh;min-height:230px;overflow:hidden;
+#battle{position:relative;height:38vh;min-height:230px;overflow:hidden}
+#battle3d{position:absolute;inset:0}
+#battle3d canvas{display:block;width:100%;height:100%}
+#battle.has3d #battle2d{display:none;
   background:linear-gradient(180deg,#9fd4ef 0%,#c2e6f7 46%,#79c46e 47%,#5aa854 100%)}
 #battle .ground{position:absolute;left:0;right:0;top:52%;bottom:0;background:linear-gradient(180deg,#7cc06f,#549e4c)}
 #battle .road{position:absolute;left:0;right:0;top:62%;height:26%;background:linear-gradient(180deg,#e8cf96,#d9b978);
@@ -144,10 +147,13 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;tou
     <div class="hpwrap" id="hpR"><div class="hpfill"></div><div class="hpnum"></div></div>
   </div>
   <div id="battle">
-    <div class="ground"></div><div class="road"></div>
-    <div class="base" id="baseL"></div><div class="base" id="baseR"></div>
-    <div class="towerbox" id="towerL"></div><div class="towerbox" id="towerR"></div>
-    <div id="field"></div>
+    <div id="battle3d"></div>
+    <div id="battle2d">
+      <div class="ground"></div><div class="road"></div>
+      <div class="base" id="baseL"></div><div class="base" id="baseR"></div>
+      <div class="towerbox" id="towerL"></div><div class="towerbox" id="towerR"></div>
+      <div id="field"></div>
+    </div>
   </div>
   <div id="panels">
     <div class="panel" id="panel0"></div>
@@ -183,6 +189,10 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;tou
   </div>
 </div>
 
+<script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
+<script src="SkeletonUtils.js"></script>
+<script src="推塔素材/Soldier.glb.js"></script>
 <script>
 'use strict';
 /* ================= 工具 ================= */
@@ -405,9 +415,21 @@ function judge(ti){
   }
 }
 
-/* ================= 出兵 / 砍塔 ================= */
+/* ================= 出兵 / 砍塔（2D 兜底 + 3D 主路） ================= */
 function spawnSoldier(ti){
-  const side=ti===0?'L':'R',foe=1-ti;
+  const foe=1-ti;
+  if(B3D&&B3D.ready)spawn3D(ti);else spawn2D(ti);
+  setTimeout(()=>{
+    const chops=0;
+    const iv=setInterval(()=>{
+      hitTower(foe);
+      if(B3D&&B3D.ready)chopPulse3D(ti);
+    },450);
+    setTimeout(()=>{clearInterval(iv);},3*450+50);
+  },1700);
+}
+function spawn2D(ti){
+  const side=ti===0?'L':'R';
   const s=document.createElement('div');
   s.className='soldier walking';
   s.innerHTML=soldierSVG(side);
@@ -416,26 +438,20 @@ function spawnSoldier(ti){
   s.style.transform=side==='L'?'none':'scaleX(-1)';
   $('field').appendChild(s);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{s.style.left=endX+'%';}));
-  setTimeout(()=>{
-    s.classList.remove('walking');s.classList.add('atk');
-    let chops=0;
-    const iv=setInterval(()=>{
-      chops++;
-      hitTower(foe);
-      if(chops>=3){clearInterval(iv);
-        s.classList.add('done');setTimeout(()=>s.remove(),520);}
-    },450);
-  },1700);
+  setTimeout(()=>{s.classList.remove('walking');s.classList.add('atk');
+    setTimeout(()=>{s.classList.add('done');setTimeout(()=>s.remove(),520);},3*450);},1700);
 }
 function hitTower(ti){
   S.hp[ti]=Math.max(0,S.hp[ti]-7);
   renderHP();
-  const box=$('tower'+(ti===0?'L':'R'));
-  box.classList.remove('hit');void box.offsetWidth;box.classList.add('hit');
-  /* 每过 20 血掉一层：碎块粒子 */
-  const before=Math.ceil((S.hp[ti]+7)/20),after=Math.ceil(S.hp[ti]/20);
-  if(after<before)spawnDebris(ti,after);
-  box.querySelector('svg')?box.innerHTML=towerSVG(S.hp[ti],ti===0?'L':'R'):'';
+  if(B3D&&B3D.ready){hitTower3D(ti);}
+  else{
+    const box=$('tower'+(ti===0?'L':'R'));
+    box.classList.remove('hit');void box.offsetWidth;box.classList.add('hit');
+    const before=Math.ceil((S.hp[ti]+7)/20),after=Math.ceil(S.hp[ti]/20);
+    if(after<before)spawnDebris(ti,after);
+    if(box.querySelector('svg'))box.innerHTML=towerSVG(S.hp[ti],ti===0?'L':'R');
+  }
   if(S.hp[ti]<=0&&!S.ended)towerFall(ti);
 }
 function spawnDebris(ti,layersLeft){
@@ -460,28 +476,240 @@ function renderHP(){
     w.querySelector('.hpfill').style.width=S.hp[i]+'%';
     w.querySelector('.hpnum').textContent=S.hp[i];
   });
-  $('towerL').innerHTML=towerSVG(S.hp[0],'L');
-  $('towerR').innerHTML=towerSVG(S.hp[1],'R');
+  if(!(B3D&&B3D.ready)){
+    $('towerL').innerHTML=towerSVG(S.hp[0],'L');
+    $('towerR').innerHTML=towerSVG(S.hp[1],'R');
+  }else{syncTower3D(0);syncTower3D(1);}
   [0,1].forEach(i=>{const p=$('panel'+i);if(p){const f=p.querySelector('.pfoot span:last-child');if(f)f.textContent='剩余血量 '+S.hp[i];}});
 }
 function towerFall(loser){
   S.ended=true;
-  const box=$('tower'+(loser===0?'L':'R'));
-  box.classList.add('fall');
-  const r=box.getBoundingClientRect(),base=$('battle').getBoundingClientRect();
-  for(let i=0;i<14;i++){
-    const de=document.createElement('span');de.className='debris';
-    de.textContent=i%3===0?'🧱':'▫';
-    de.style.left=(r.left-base.left+r.width*(.2+Math.random()*.6))+'px';
-    de.style.top=(r.top-base.top+r.height*(.3+Math.random()*.6))+'px';
-    de.style.fontSize=(16+Math.random()*18)+'px';
-    de.style.setProperty('--dx',(Math.random()*260-130)+'px');
-    de.style.setProperty('--dy',(-60+Math.random()*160)+'px');
-    de.style.animationDelay=(i*50)+'ms';
-    $('battle').appendChild(de);setTimeout(()=>de.remove(),1600);
+  if(B3D&&B3D.ready)fall3D(loser);
+  else{
+    const box=$('tower'+(loser===0?'L':'R'));
+    box.classList.add('fall');
+    const r=box.getBoundingClientRect(),base=$('battle').getBoundingClientRect();
+    for(let i=0;i<14;i++){
+      const de=document.createElement('span');de.className='debris';
+      de.textContent=i%3===0?'🧱':'▫';
+      de.style.left=(r.left-base.left+r.width*(.2+Math.random()*.6))+'px';
+      de.style.top=(r.top-base.top+r.height*(.3+Math.random()*.6))+'px';
+      de.style.fontSize=(16+Math.random()*18)+'px';
+      de.style.setProperty('--dx',(Math.random()*260-130)+'px');
+      de.style.setProperty('--dy',(-60+Math.random()*160)+'px');
+      de.style.animationDelay=(i*50)+'ms';
+      $('battle').appendChild(de);setTimeout(()=>de.remove(),1600);
+    }
   }
   setTimeout(()=>gameOver(loser===0?1:0,'推平了 '+NAMES[loser]+' 的塔'),1000);
 }
+
+/* ================= 3D 战场（three.js + 士兵骨骼动画素材） =================
+   素材：Soldier.glb（three.js 官方示例，MIT）经 GLTFLoader 载入，走路/待机骨骼动画；
+   塔与场景为低模组合（分层可掉层）。WebGL 不可用时自动退回上方 2D 场景。 */
+let B3D=null;
+function loadScript(src,ok,err){
+  const s=document.createElement('script');
+  s.src=src;s.onload=ok;s.onerror=err;
+  document.head.appendChild(s);
+}
+function boot3D(){
+  try{
+    const loader=new THREE.GLTFLoader();
+    loader.load(window.SOLDIER_GLB,g=>{try{init3D(g.scene,g.animations);}catch(e){document.title="IERR:"+e.message;}},undefined,()=>{});
+  }catch(e){/* 无 WebGL/three 时走 2D 兜底 */}
+}
+const W2X=p=>(p-50)/46*44;               /* 面板百分比 → 世界x（±22 左右覆盖） */
+function init3D(proto,clips){
+  const holder=$('battle3d'),b=$('battle');
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+  // BISECT: shadow off
+  // BISECT: srgb off
+  holder.appendChild(r.domElement);
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xa9dcf5);
+  // BISECT: fog off
+  const cam=new THREE.PerspectiveCamera(28,2,0.1,400);
+  cam.position.set(0,24,46);cam.lookAt(0,5,0);
+  scene.add(new THREE.HemisphereLight(0xcfe8ff,0x6f9e5c,.95));
+  const sun=new THREE.DirectionalLight(0xfff2d0,1.05);
+  sun.position.set(-18,26,14);sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);
+  Object.assign(sun.shadow.camera,{left:-38,right:38,top:26,bottom:-18});
+  scene.add(sun);
+  const M=(c,o)=>new THREE.MeshPhongMaterial(Object.assign({color:c,shininess:6,flatShading:true},o||{}));
+  /* 地面+路 */
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(140,60),M(0x7cc06f));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(110,6.5),M(0xe2c98f));
+  road.rotation.x=-Math.PI/2;road.position.set(0,0.02,0);road.receiveShadow=true;scene.add(road);
+  /* 树 */
+  for(let i=0;i<22;i++){
+    const g=new THREE.Group();
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,1.6,6),M(0x8a5a33));tr.position.y=.8;g.add(tr);
+    const co=new THREE.Mesh(new THREE.ConeGeometry(1.5-i%3*.25,3.2,7),M(0x3f9e42));
+    co.position.y=3;co.castShadow=true;g.add(co);
+    const zx=(rand(2)?1:-1)*(5.5+rand(6));
+    g.position.set(-44+rand(88),0,zx);
+    if(Math.abs(g.position.x)>38)g.position.z=zx*0.6;
+    scene.add(g);
+  }
+  /* 云 */
+  const clouds=[];
+  for(let i=0;i<4;i++){
+    const c=new THREE.Group();
+    for(let k=0;k<3;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(1.6-k*.3,7,6),M(0xffffff,{transparent:true,opacity:.92}));s.position.x=k*1.9-1.9;s.scale.y=.55;c.add(s);}
+    c.position.set(-40+i*22,13+i*2.5,-14-i*3);scene.add(c);
+    clouds.push({g:c,v:.012+i*.006});
+  }
+  /* 塔 */
+  function buildTower(side){
+    const g=new THREE.Group();
+    const team=side==='L'?{roof:0xe05a52,dark:0xb32e28}:{roof:0x3d8fe0,dark:0x1d5ea8};
+    const plinth=new THREE.Mesh(new THREE.BoxGeometry(5.4,1.2,3.4),M(0xd7dee3));plinth.position.y=.6;plinth.castShadow=true;g.add(plinth);
+    const layers=[];
+    const ws=[4.4,4.0,3.6,3.2,2.9];
+    for(let i=0;i<5;i++){
+      const h=1.85,w=ws[i];
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),M(i===4?0xe8eef2:0xc9d3da));
+      m.position.y=1.2+h/2+i*h;m.castShadow=true;
+      g.add(m);layers.push(m);
+    }
+    const topY=1.2+5*1.85;
+    const door=new THREE.Mesh(new THREE.BoxGeometry(1.1,2,1.1),M(0x6d7e88));door.position.set(0,1.9,ws[0]/2-0.4);g.add(door);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(2.6,2.6,4),M(team.roof));
+    roof.rotation.y=Math.PI/4;roof.position.y=topY+1.3+1.3;roof.castShadow=true;g.add(roof);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.8,6),M(0x5c6b74));pole.position.y=topY+2.6+1.9;g.add(pole);
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.85),new THREE.MeshBasicMaterial({color:team.roof,side:THREE.DoubleSide}));
+    flag.position.set(.78,topY+1.85+3.1,0);g.add(flag);
+    g.userData={layers,roof,flag,baseY:0};
+    return g;
+  }
+  let towerL=buildTower('L');towerL.position.set(-16,0,0);scene.add(towerL);
+  let towerR=buildTower('R');towerR.position.set(16,0,0);scene.add(towerR);
+  /* 基地 */
+  function buildBase(side){
+    const team=side==='L'?{roof:0xe05a52}:{roof:0x3d8fe0};
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(new THREE.BoxGeometry(5,3,3.6),M(0xece4d4));b.position.y=1.5;b.castShadow=true;g.add(b);
+    const rf=new THREE.Mesh(new THREE.ConeGeometry(4,2.6,4),M(team.roof));rf.rotation.y=Math.PI/4;rf.position.y=4.3;rf.castShadow=true;g.add(rf);
+    const d=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.9,0.4),M(0x6d7e88));d.position.set(0,1,1.85);g.add(d);
+    return g;
+  }
+  const baseL=buildBase('L');baseL.position.set(-26.5,0,0);scene.add(baseL);
+  const baseR=buildBase('R');baseR.position.set(26.5,0,0);scene.add(baseR);
+  /* 士兵原型 */
+  proto.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  proto.scale.setScalar(2.1);
+  const walkClip=clips.find(a=>/walk/i.test(a.name))||clips[0];
+  const idleClip=clips.find(a=>/idle/i.test(a.name))||walkClip;
+  const soldiers=[];
+  const debris=[];
+  /* 3D 碎砖：小方块带重力抛物线，落地面反弹 */
+  function dropDebris(x,y,z,n){
+    for(let i=0;i<n;i++){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(.5+Math.random()*.4,.4,.5),M(0xc9d3da));
+      m.position.set(x+(Math.random()*2-1),Math.max(.4,y+(Math.random()*.8)),z+(Math.random()*.8));
+      m.castShadow=true;scene.add(m);
+      debris.push({m,vx:(Math.random()*2-1)*5,vy:6+Math.random()*4,vz:(Math.random()*2-1)*3.5,life:1.5,t:0});
+    }
+  }
+  /* 视口自适应（横向铺满战场，纵向固定 fov） */
+  function fit(){
+    const w=b.clientWidth||1600,h=b.clientHeight||400;
+    r.setSize(w,h,false);
+    cam.aspect=w/h;
+    cam.updateProjectionMatrix();
+  }
+  fit();window.addEventListener('resize',fit);
+  /* 主循环：云飘 · 旗摆 · 行军/挥剑 · 碎砖物理 · 塔晃/倒塌 */
+  let last=performance.now();
+  function loop(now){
+    requestAnimationFrame(loop);
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    clouds.forEach(c=>{c.g.position.x+=c.v;if(c.g.position.x>55)c.g.position.x=-55;});
+    towerL.userData.flag.rotation.y=Math.sin(now/300)*.5;
+    towerR.userData.flag.rotation.y=Math.sin(now/300+1)*.5;
+    for(let i=soldiers.length-1;i>=0;i--){
+      const s=soldiers[i],el=now-s.t0;
+      if(s.phase==='walk'){
+        const p=Math.min(1,el/1700),e=p*p*(3-2*p);
+        s.g.position.x=s.x0+(s.xEnd-s.x0)*e;
+        s.g.position.y=Math.abs(Math.sin(el/110))*.25;
+        s.mixer.update(dt);
+        if(p>=1){s.phase='chop';s.act.fadeOut(.15);
+          const idle=s.mixer.clipAction(idleClip);idle.play();s.idle=idle;}
+      }else if(s.phase==='chop'){
+        s.lean=Math.max(0,s.lean-dt*4.5);
+        s.g.rotation.z=-s.lean*.5*(s.side==='L'?1:-1);
+        s.g.position.y=Math.abs(Math.sin(el/110))*.1;
+        s.mixer.update(dt);
+      }else if(s.phase==='leave'){
+        s.g.scale.multiplyScalar(1-dt*2.4);
+        if(s.g.scale.x<.06){scene.remove(s.g);soldiers.splice(i,1);}
+      }
+    }
+    for(let i=debris.length-1;i>=0;i--){
+      const d=debris[i];d.t+=dt;
+      d.vy-=15*dt;
+      d.m.position.x+=d.vx*dt;d.m.position.y+=d.vy*dt;d.m.position.z+=d.vz*dt;
+      d.m.rotation.x+=dt*6;d.m.rotation.z+=dt*5;
+      if(d.m.position.y<.2&&d.vy<0){d.vy*=-.35;d.vx*=.6;d.vz*=.6;}
+      if(d.t>1.8){scene.remove(d.m);debris.splice(i,1);}
+    }
+    [towerL,towerR].forEach(t=>{
+      if(t.userData.shake){
+        const e=(now-t.userData.shake)/450;
+        if(e>=1){t.userData.shake=0;t.rotation.z=0;}
+        else t.rotation.z=Math.sin(e*26)*.035*(1-e);
+      }
+      if(t.userData.fall){
+        const e=Math.min(1,(now-t.userData.fall.t0)/1100);
+        t.rotation.z=t.userData.fall.dir*e*1.25;
+        t.position.y=-e*2.4;
+      }
+    });
+    r.render(scene,cam);
+  }
+  requestAnimationFrame(loop);
+  /* 引擎就绪后把模块级空函数绑定为 3D 实现 */
+  spawn3D=function(ti){
+    const side=ti===0?"L":"R";
+    const inst=THREE.SkeletonUtils.clone(proto);
+    const mixer=new THREE.AnimationMixer(inst);
+    const act=mixer.clipAction(walkClip);act.play();
+    const x0=side==="L"?-26:26,xEnd=side==="L"?12.6:-12.6;
+    inst.position.set(x0,0,soldiers.length%2?-0.9:0.9);
+    inst.rotation.y=side==="L"?Math.PI/2:-Math.PI/2;
+    scene.add(inst);
+    const rec={g:inst,mixer,act,t0:performance.now(),x0,xEnd,side,foe:1-ti,phase:"walk",lean:0};
+    soldiers.push(rec);
+    setTimeout(()=>{rec.phase="chop";rec.act.fadeOut(.15);
+      const idle=mixer.clipAction(idleClip);idle.play();rec.idle=idle;},1700);
+    setTimeout(()=>{rec.phase="leave";},1700+3*450+120);
+  };
+  chopPulse3D=function(ti){const s=soldiers.find(x=>x.side===(ti===0?"L":"R")&&x.phase==="chop");if(s)s.lean=1;};
+  hitTower3D=function(ti){const g=ti===0?towerL:towerR;g.userData.shake=performance.now();
+    const want=Math.max(1,Math.ceil(S.hp[ti]/20));
+    while(g.userData.layers.length>want){const m=g.userData.layers.pop();dropDebris(g.position.x,m.position.y,0,6);g.remove(m);}};
+  fall3D=function(loser){const g=loser===0?towerL:towerR;g.userData.fall={t0:performance.now(),dir:loser===0?-1:1};dropDebris(g.position.x,2.5,0,16);};
+  syncTower3D=function(ti){const g=ti===0?towerL:towerR;const want=Math.max(1,Math.ceil(S.hp[ti]/20));
+    while(g.userData.layers.length>want){const m=g.userData.layers.pop();dropDebris(g.position.x,m.position.y,0,6);g.remove(m);}};
+  B3D={ready:true,soldiers,debris,scene,cam,r,
+    reset(){soldiers.forEach(x=>scene.remove(x.g));soldiers.length=0;debris.forEach(d=>scene.remove(d.m));debris.length=0;
+      scene.remove(towerL);scene.remove(towerR);
+      towerL=buildTower("L");towerL.position.set(-16,0,0);scene.add(towerL);
+      towerR=buildTower("R");towerR.position.set(16,0,0);scene.add(towerR);}};
+  b.classList.add("has3d");
+  syncTower3D(0);syncTower3D(1);
+}
+/* 3D 未就绪时这些名字是空函数（函数声明提升，运行期由 init3D 覆盖） */
+function spawn3D(){}
+function chopPulse3D(){}
+function hitTower3D(){}
+function fall3D(){}
+function syncTower3D(){}
 
 /* ================= 计时与流程 ================= */
 function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
@@ -519,6 +747,7 @@ function startRound(){
   S.t0=Date.now();S.timeLeft=S.secs;
   S.teams=NAMES.map(n=>({q:buildQuestion(),ans:{},ops:[],cur:null,solved:0,msg:'',judging:false}));
   $('over').classList.remove('show');$('setup').classList.remove('show');
+  if(B3D&&B3D.ready)B3D.reset();
   $('field').innerHTML='';
   renderHP();renderPanel(0);renderPanel(1);
   clearInterval(tickIv);tickIv=setInterval(tick,300);tick();
@@ -545,8 +774,8 @@ function decorate(){
   $('baseL').innerHTML=baseSVG('L');$('baseR').innerHTML=baseSVG('R');
   const cl=document.createElement('span');cl.className='cloud';cl.textContent='☁️';cl.style.top='6%';cl.style.animationDuration='60s';
   const cl2=document.createElement('span');cl2.className='cloud';cl2.textContent='☁️';cl2.style.top='22%';cl2.style.animationDuration='85s';cl2.style.animationDelay='-30s';
-  $('battle').prepend(cl2);$('battle').prepend(cl);
-  const tr=document.createElement('div');tr.innerHTML=treeRow();$('battle').appendChild(tr);
+  $('battle2d').prepend(cl2);$('battle2d').prepend(cl);
+  const tr=document.createElement('div');tr.innerHTML=treeRow();$('battle2d').appendChild(tr);
 }
 segInit('segTime','secs',[[120,'2 分钟'],[180,'3 分钟']],Number);
 segInit('segKind','kind',[['mix','混合'],['fig','看图列式'],['lian','连加连减']],v=>v);
@@ -554,6 +783,7 @@ decorate();
 renderHP();
 S.teams=NAMES.map(n=>({q:buildQuestion(),ans:{},ops:[],cur:null,solved:0,msg:'',judging:false}));
 renderPanel(0);renderPanel(1);
+boot3D();
 /* ?demo=1 直接摆好对战画面（截图验收用）；&win=1 显示结算浮层 */
 let demoQs=null;
 try{demoQs=new URLSearchParams(location.search);}catch(e){}
@@ -563,8 +793,7 @@ if(demoQs&&demoQs.has('demo')){
   if(demoQs.has('midway')){
     /* 摆出中局：红方占优+小兵已在场上 */
     S.hp=[75,100];renderHP();
-    const s=document.createElement('div');s.className='soldier walking';s.innerHTML=soldierSVG('L');
-    s.style.left='40%';$('field').appendChild(s);
+    spawn3D(0);if(B3D&&B3D.ready&&B3D.soldiers[0])B3D.soldiers[0].t0=performance.now()+900;
   }
   if(demoQs.has('win')){
     S.hp=[100,0];renderHP();S.phase='run';S.t0=Date.now()-95000;gameOver(0,'红 方 推 平 了 蓝 方 的 塔');

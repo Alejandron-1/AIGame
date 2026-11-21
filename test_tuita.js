@@ -87,7 +87,7 @@ function queryAll(root, selector) {
   walk(root); return out;
 }
 const doc = {
-  documentElement: mkEl('html'), body: mkEl('body'), fullscreenElement: undefined, _keyHandlers: [],
+  documentElement: mkEl('html'), body: mkEl('body'), head: mkEl('head'), fullscreenElement: undefined, _keyHandlers: [],
   getElementById(id) {
     if (registry.has(id)) return registry.get(id);
     const find = (root) => { if (root.id === id) return root; for (const c of root._children) { const f = find(c); if (f) return f; } return null; };

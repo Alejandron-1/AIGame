@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><script>window.__errs=[];window.onerror=function(m,s,l,c,e){window.__errs.push(m+' @'+l+':'+c);document.title='ERR:'+m;};</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>口算推塔对战｜看图列式+连加连减</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+  background:#20344a;color:#1e3a34;user-select:none;-webkit-user-select:none}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;touch-action:manipulation}
+.still *{animation:none!important;transition:none!important}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---------- 顶部血条 ---------- */
+#hud{display:flex;align-items:center;gap:clamp(10px,1.4vw,24px);padding:clamp(6px,1vh,12px) clamp(14px,2vw,30px);z-index:6}
+.hpwrap{flex:1;height:clamp(16px,2.2vh,26px);border-radius:999px;background:#0e2233;overflow:hidden;position:relative;
+  box-shadow:inset 0 2px 6px #0007}
+.hpfill{position:absolute;top:0;bottom:0;transition:width .5s ease}
+#hpL .hpfill{left:0;background:linear-gradient(180deg,#ff7a6e,#d9403a)}
+#hpR .hpfill{right:0;background:linear-gradient(180deg,#6cb8ff,#2b7cd9)}
+.hpnum{position:absolute;top:0;bottom:0;width:100%;display:flex;align-items:center;font-weight:1000;
+  font-size:clamp(11px,1.2vh,16px);color:#fff;text-shadow:0 1px 2px #0008}
+#hpL .hpnum{justify-content:flex-start;padding-left:10px}
+#hpR .hpnum{justify-content:flex-end;padding-right:10px}
+#timer{min-width:clamp(84px,8vw,130px);text-align:center;background:#0e2233;color:#ffd76b;border-radius:12px;
+  padding:clamp(4px,.8vh,9px) clamp(10px,1vw,18px);font-weight:1000;font-size:clamp(20px,2.6vh,34px);
+  box-shadow:0 0 0 3px #ffffff14;font-variant-numeric:tabular-nums}
+#timer.hurry{color:#ff8d7e;animation:pulseT 1s infinite}
+@keyframes pulseT{50%{transform:scale(1.08)}}
+
+/* ---------- 战场 ---------- */
+#battle{position:relative;height:38vh;min-height:230px;overflow:hidden}
+#battle3d{position:absolute;inset:0}
+#battle3d canvas{display:block;width:100%;height:100%}
+#battle.has3d #battle2d{display:none;
+  background:linear-gradient(180deg,#9fd4ef 0%,#c2e6f7 46%,#79c46e 47%,#5aa854 100%)}
+#battle .ground{position:absolute;left:0;right:0;top:52%;bottom:0;background:linear-gradient(180deg,#7cc06f,#549e4c)}
+#battle .road{position:absolute;left:0;right:0;top:62%;height:26%;background:linear-gradient(180deg,#e8cf96,#d9b978);
+  border-top:3px solid #c4a565;border-bottom:3px solid #b89a58;opacity:.95}
+.tree{position:absolute;font-size:clamp(26px,3.4vh,44px);filter:drop-shadow(0 3px 3px #2c6b2c40);transform-origin:bottom center;animation:sway 5s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+.cloud{position:absolute;font-size:clamp(22px,3vh,38px);opacity:.85;animation:cloudmove linear infinite}
+@keyframes cloudmove{from{transform:translateX(-10vw)}to{transform:translateX(110vw)}}
+
+.base{position:absolute;top:30%;width:clamp(110px,12vw,170px);filter:drop-shadow(0 6px 8px #1c3a2e55)}
+#baseL{left:1%}
+#baseR{right:1%;transform:scaleX(-1)}
+.towerbox{position:absolute;top:1%;height:90%;width:auto;transform-origin:bottom center}
+#towerL{left:13%}
+#towerR{right:13%}
+.towerbox svg{height:100%;width:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 10px #1c3a2e44)}
+.towerbox.hit{animation:towerShake .45s}
+@keyframes towerShake{0%,100%{transform:rotate(0)}25%{transform:rotate(2.4deg) translateX(4px)}60%{transform:rotate(-2deg) translateX(-4px)}}
+.towerbox.fall{animation:fallDown 1.1s ease-in both}
+@keyframes fallDown{0%{transform:rotate(0)}55%{transform:rotate(-6deg) translateX(-8px)}100%{transform:rotate(-78deg) translate(-40px,34px);opacity:.15}}
+.debris{position:absolute;z-index:7;pointer-events:none;font-weight:900;animation:debrisFly .95s ease-out both}
+@keyframes debrisFly{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(220deg)}}
+.dust{position:absolute;z-index:7;pointer-events:none;border-radius:50%;background:radial-gradient(circle,#d9cdb0,#b9a98588 62%,transparent 70%);
+  animation:dustGrow .8s ease-out both}
+@keyframes dustGrow{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(2.6)}}
+
+/* 小兵 */
+.soldier{position:absolute;top:52%;width:clamp(44px,4.4vw,68px);z-index:6;filter:drop-shadow(0 3px 4px #1c3a2e55)}
+.soldier svg{width:100%;display:block}
+.soldier.walking svg{animation:march .5s ease-in-out infinite alternate}
+@keyframes march{from{transform:translateY(0) rotate(-3deg)}to{transform:translateY(-5px) rotate(3deg)}}
+.soldier.atk svg{animation:chop .45s ease-in-out 3}
+@keyframes chop{0%,100%{transform:rotate(0)}50%{transform:rotate(-16deg) translateX(6px)}}
+.soldier.done{transition:opacity .5s;opacity:0}
+
+/* 面板 */
+#panels{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.2vw,20px);padding:clamp(8px,1.2vh,14px) clamp(10px,1.4vw,22px);min-height:0}
+.panel{--pc:#d9403a;--pc-d:#b32e28;--pc-l:#ffd9d5;border-radius:20px;border:4px solid var(--pc);background:#fffdf6;
+  display:flex;flex-direction:column;padding:clamp(8px,1.2vh,14px) clamp(10px,1vw,18px);min-width:0;min-height:0;position:relative;
+  box-shadow:0 8px 22px #0a1a2a44}
+.panel.blue{--pc:#2b7cd9;--pc-d:#1d5ea8;--pc-l:#d5e9ff}
+.phead{display:flex;align-items:center;justify-content:space-between;font-weight:1000;color:var(--pc-d);font-size:clamp(14px,1.5vh,20px)}
+.phead .tag{background:var(--pc);color:#fff;border-radius:8px;padding:2px 10px;font-size:clamp(12px,1.3vh,16px)}
+.fig{flex:1;display:flex;align-items:center;justify-content:center;gap:clamp(4px,.5vw,10px);min-height:0;padding:clamp(2px,.6vh,8px) 0 0;flex-wrap:nowrap;overflow:hidden}
+.fig .grp{display:flex;align-items:flex-end;gap:2px}
+.fig .em{font-size:clamp(26px,4.6vh,52px);line-height:1;position:relative;padding:0 1px}
+.fig .em.cut:after{content:"";position:absolute;left:-10%;top:42%;width:120%;height:4px;background:#d9403a;transform:rotate(-24deg);border-radius:3px}
+.fig .plus{font-size:clamp(20px,3vh,34px);font-weight:1000;color:#7a8a80;align-self:center}
+.figlabel{text-align:center;font-weight:1000;color:#e2822a;font-size:clamp(18px,2.4vh,30px);margin-top:2px}
+.figsub{text-align:center;font-weight:800;color:#5b6e68;font-size:clamp(12px,1.4vh,18px)}
+.figcol{display:flex;flex-direction:column;align-items:center}
+
+/* 算式槽 */
+.eq{display:flex;align-items:center;justify-content:center;gap:clamp(4px,.6vw,12px);padding:clamp(3px,.8vh,9px) 0}
+.slot,.opslot,.eqc{height:clamp(30px,4.6vh,52px);border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(18px,2.6vh,30px);font-weight:1000;min-width:clamp(30px,3.4vw,52px)}
+.slot,.opslot{background:#fff;border:3px solid #cfc6b6}
+.slot{cursor:pointer;color:#2b3f38}
+.slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l)}
+.slot.bad{border-color:#e2604f;color:#d84b3e;animation:shk .4s}
+.opslot{border-style:dashed;cursor:pointer;color:#5b6e68}
+.opslot.set{border-style:solid;border-color:var(--pc-d);color:#22343a}
+.opslot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l)}
+.eqc{border:none;color:#42564f}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.goodflash{position:absolute;inset:0;border-radius:16px;background:#3f9e6e26;display:grid;place-items:center;
+  font-size:clamp(26px,4vh,46px);font-weight:1000;color:#2e8f60;z-index:5;animation:gf .9s ease-out both}
+@keyframes gf{0%{opacity:0;transform:scale(.7)}25%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+
+/* 键盘 */
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(4px,.5vw,8px)}
+.keys button{height:clamp(30px,4.6vh,52px);border-radius:10px;background:#fff;border:3px solid #d5cdbd;
+  font-size:clamp(17px,2.4vh,28px);font-weight:1000;color:#33544c;box-shadow:0 2px 0 #c9bfa9}
+.keys button:active{transform:translateY(2px);box-shadow:none}
+.keys button.op{background:#fff8e8;border-color:#e3d3a8}
+.keys button.ok{background:var(--pc);border-color:var(--pc-d);color:#fff;box-shadow:0 3px 0 var(--pc-d);grid-column:span 2}
+.keys button.del{background:#f4efe3;font-size:clamp(13px,1.6vh,20px)}
+.keys button:disabled{opacity:.4;cursor:default}
+.pfoot{display:flex;align-items:center;justify-content:space-between;color:#9aa8a1;font-weight:700;font-size:clamp(11px,1.3vh,15px);padding-top:clamp(3px,.7vh,8px)}
+
+/* ---------- 浮层 ---------- */
+.mask{position:fixed;inset:0;background:#0a1a2ad9;display:none;place-items:center;z-index:40;padding:20px}
+.mask.show{display:grid}
+.mcard{background:#fffdf6;border-radius:24px;max-width:640px;width:100%;padding:clamp(20px,3.4vh,36px) clamp(22px,3vw,44px);text-align:center;
+  box-shadow:0 24px 70px #0007}
+.mcard h1{font-size:clamp(28px,4.6vh,50px);color:#22343a;margin:8px 0 4px;font-weight:1000;letter-spacing:2px}
+.mcard .sub{color:#8a9a93;font-weight:800;letter-spacing:.3em;font-size:clamp(12px,1.4vh,17px)}
+.seg{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:10px 0}
+.seg button{padding:10px 22px;border-radius:12px;border:3px solid #d5e4dc;background:#f7fcfa;color:#3d6a5e;font-weight:900;font-size:clamp(14px,1.7vh,19px)}
+.seg button.on{background:#3f9e6e;border-color:#3f9e6e;color:#fff;box-shadow:0 4px 12px #3f9e6e55}
+.lab{color:#8a9a93;font-weight:900;letter-spacing:.2em;font-size:clamp(12px,1.4vh,16px);margin-top:10px}
+.go{margin-top:16px;padding:14px 50px;border-radius:16px;background:linear-gradient(180deg,#f0a24b,#e2822a);color:#fff;
+  font-weight:1000;font-size:clamp(19px,2.4vh,27px);box-shadow:0 6px 18px #e2822a55}
+.go:hover{transform:translateY(-2px)}
+#winnerBig{font-size:clamp(40px,7vh,84px);font-weight:1000;letter-spacing:4px}
+#winnerBig.red{color:#d9403a}#winnerBig.blue{color:#2b7cd9}#winnerBig.tie{color:#5b6e68}
+.scoreRow{display:flex;justify-content:center;gap:clamp(18px,3vw,50px);margin:14px 0 6px}
+.scoreRow .s{text-align:center}
+.scoreRow .s .v{font-weight:1000;font-size:clamp(22px,3.4vh,40px);color:#22343a}
+.scoreRow .s .l{color:#8a9a93;font-weight:800;font-size:clamp(12px,1.4vh,16px)}
+.topbtn{position:fixed;bottom:.6%;right:.8%;z-index:30;padding:6px 13px;border-radius:999px;background:#ffffff22;color:#fff;
+  font-weight:900;font-size:clamp(12px,1.4vh,16px)}
+@media(max-width:900px){#panels{grid-template-columns:1fr 1fr;padding:6px}.fig .em{font-size:clamp(20px,3.4vh,34px)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="hpwrap" id="hpL"><div class="hpfill"></div><div class="hpnum"></div></div>
+    <div id="timer">--:--</div>
+    <div class="hpwrap" id="hpR"><div class="hpfill"></div><div class="hpnum"></div></div>
+  </div>
+  <div id="battle">
+    <div id="battle3d"></div>
+    <div id="battle2d">
+      <div class="ground"></div><div class="road"></div>
+      <div class="base" id="baseL"></div><div class="base" id="baseR"></div>
+      <div class="towerbox" id="towerL"></div><div class="towerbox" id="towerR"></div>
+      <div id="field"></div>
+    </div>
+  </div>
+  <div id="panels">
+    <div class="panel" id="panel0"></div>
+    <div class="panel blue" id="panel1"></div>
+  </div>
+  <button class="topbtn" id="homeBtn" style="right:8%">↮ 设置</button>
+  <button class="topbtn" id="fullBtn" style="right:8%">⛶ 全屏</button>
+</div>
+
+<div class="mask" id="setup">
+  <div class="mcard">
+    <div class="sub">一 年 级 · 看 图 列 式 + 连 加 连 减</div>
+    <h1>口算 推塔 对战</h1>
+    <div class="lab">答 对 出 兵 · 推 光 对 面 塔 获 胜</div>
+    <div class="lab">一 局 时 长</div>
+    <div class="seg" id="segTime"></div>
+    <div class="lab">题 型</div>
+    <div class="seg" id="segKind"></div>
+    <button class="go" id="goBtn">🚩 开始对战</button>
+  </div>
+</div>
+
+<div class="mask" id="over">
+  <div class="mcard">
+    <div class="sub">R O U N D · O V E R</div>
+    <div id="winnerBig">—</div>
+    <div class="scoreRow">
+      <div class="s"><div class="v" id="sL">—</div><div class="l">红方塔剩余</div></div>
+      <div class="s"><div class="v" id="sR">—</div><div class="l">蓝方塔剩余</div></div>
+      <div class="s"><div class="v" id="sT">—</div><div class="l">用时</div></div>
+    </div>
+    <button class="go" id="againBtn">🔁 再来一轮</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================= 工具 ================= */
+const $=id=>document.getElementById(id);
+const rand=n=>Math.floor(Math.random()*n);
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=rand(i+1);[r[i],r[j]]=[r[j],r[i]]}return r}
+const EMO=['🐒','🐻','🐰','🦊','🐸','🐙','🦋','🐝','🐞','🍎','🍓','🍊','🍇','🐤'];
+const FLIP_MS=790;
+
+/* ================= 状态 ================= */
+const S={phase:'setup',kind:'mix',secs:120,hp:[100,100],teams:[],timeLeft:0,t0:0,tEnd:0,graceUntil:0,ended:false};
+const NAMES=['红队','蓝队'];
+
+/* ================= 出题（10以内，与抓娃娃看图列式同源逻辑） ================= */
+function pickEmoji(exclude){let e=EMO[rand(EMO.length)],i=0;while(exclude&&exclude.includes(e)&&i++<8)e=EMO[rand(EMO.length)];return e}
+function buildQuestion(){
+  const kind=S.kind,roll=kind==='mix'?['add','part','add3','sub3','plain'][rand(5)]
+    :kind==='fig'?(['add','part'][rand(2)]):(['add3','sub3','plain'][rand(3)]);
+  const em=pickEmoji();
+  const fig=(groups,label)=>({groups,label,em});
+  if(roll==='add'){          /* 看图求总数 ▢+▢=▢ */
+    const a=1+rand(8),b=1+rand(10-a);
+    return {kind:roll,arity:2,op:'+',nums:[a,b],res:a+b,fig:fig([[a,false],[b,false]],'?'),qtext:'一共有几只？'};
+  }
+  if(roll==='part'){         /* 看图求另一部分 ▢-▢=▢（划掉 cut 只） */
+    const c=3+rand(8),cut=1+rand(c-2),left=c-cut;
+    return {kind:roll,arity:2,op:'-',nums:[c,cut],res:left,figMarked:{total:c,cut,em},qtext:'划掉了几只？'};
+  }
+  if(roll==='add3'){         /* 连加 ▢+▢+▢=▢ */
+    const a=1+rand(5),b=1+rand(8-a),c=1+rand(10-a-b);
+    return {kind:roll,arity:3,op:'+',nums:[a,b,c],res:a+b+c,fig:fig([[a,false],[b,false],[c,false]],'?'),qtext:'一共有几只？'};
+  }
+  if(roll==='sub3'){         /* 连减 ▢-▢-▢=▢（划掉两组） */
+    const t=5+rand(6),b1=1+rand(2),b2=1+rand(Math.max(1,Math.min(3,t-b1-1)));
+    return {kind:roll,arity:3,op:'-',nums:[t,b1,b2],res:t-b1-b2,fig:fig([[t-b1-b2,false],[b1,true],[b2,true]],'?'),qtext:'还剩几只？'};
+  }
+  /* plain：纯算式连加/连减 */
+  if(Math.random()<.5){
+    const a=1+rand(5),b=1+rand(8-a),c=1+rand(10-a-b);
+    return {kind:'plain',arity:3,op:'+',nums:[a,b,c],res:a+b+c,fig:null,qtext:''};
+  }
+  const t=5+rand(6),b1=1+rand(3),b2=1+rand(Math.max(1,Math.min(3,t-b1-1)));
+  return {kind:'plain',arity:3,op:'-',nums:[t,b1,b2],res:t-b1-b2,fig:null,qtext:''};
+}
+
+/* ================= 塔与基地 SVG ================= */
+function towerSVG(hp,side){
+  const layers=Math.max(1,Math.ceil(hp/20));       /* 满血5层，掉血从顶部先掉，底层永远在 */
+  const body=side==='L'?'#e8eef2':'#e9eff6', bodyD=side==='L'?'#c3ccd4':'#c6d2e2';
+  const roof=side==='L'?'#e05a52':'#3d8fe0', roofD=side==='L'?'#b32e28':'#1d5ea8';
+  const seg=(y,w,fill)=>`<rect x="${(120-w)/2}" y="${y}" width="${w}" height="42" rx="4" fill="${fill}" stroke="#5c6b74" stroke-width="2.5"/>
+    <rect x="${(120-w)/2}" y="${y}" width="${w}" height="8" rx="4" fill="${body}" stroke="#5c6b74" stroke-width="2"/>`;
+  const ys=[298,254,210,166,122], ws=[74,68,62,56,50];
+  let segs='';
+  for(let i=0;i<layers;i++)segs+=seg(ys[i],ws[i],i===layers-1?body:bodyD);
+  const topY=ys[layers-1], topW=ws[layers-1];
+  return `<svg viewBox="0 0 120 360" preserveAspectRatio="xMidYMax meet">
+    <rect x="4" y="326" width="112" height="30" rx="6" fill="#d7dee3" stroke="#5c6b74" stroke-width="2.5"/>
+    <rect x="52" y="294" width="16" height="34" rx="4" fill="#6d7e88"/>
+    ${segs}
+    <path d="M${60-topW/2-6} ${topY-2} L60 ${topY-40} L${60+topW/2+6} ${topY-2} Z" fill="${roof}" stroke="${roofD}" stroke-width="3"/>
+    <rect x="57" y="${topY-58}" width="5" height="20" fill="#5c6b74"/>
+    <circle cx="59.5" cy="${topY-60}" r="5" fill="${roof}"/>
+    <rect x="46" y="${topY+14}" width="28" height="22" rx="9" fill="#5c6b74" opacity=".9"/>
+  </svg>`;
+}
+function baseSVG(side){
+  const roof=side==='L'?'#d9403a':'#2b7cd9',body=side==='L'?'#e8b7b3':'#b3d1ea';
+  return `<svg viewBox="0 0 160 120"><rect x="20" y="52" width="120" height="62" rx="8" fill="${body}" stroke="#5c6b74" stroke-width="3"/>
+  <rect x="66" y="82" width="28" height="32" rx="4" fill="#6d7e88"/>
+  <path d="M12 54 L80 10 L148 54 Z" fill="${roof}" stroke="#5c6b74" stroke-width="3"/>
+  <rect x="70" y="2" width="5" height="16" fill="#5c6b74"/><path d="M75 3 L98 8 L75 14 Z" fill="${roof}"/></svg>`;
+}
+function soldierSVG(side){
+  const c=side==='L'?'#d9403a':'#2b7cd9',cd=side==='L'?'#b32e28':'#1d5ea8';
+  return `<svg viewBox="0 0 60 74">
+    <circle cx="30" cy="13" r="10" fill="#f8cba4" stroke="#7a5b40" stroke-width="2"/>
+    <path d="M21 11 a9 9 0 0 1 18 0 Z" fill="${c}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="26" cy="13" r="1.8" fill="#333"/><circle cx="34" cy="13" r="1.8" fill="#333"/>
+    <path d="M20 26 Q30 22 40 26 L44 48 Q30 54 16 48 Z" fill="${c}" stroke="#fff" stroke-width="2"/>
+    <rect x="24" y="48" width="5" height="16" rx="2" fill="#3d4a55"/><rect x="32" y="48" width="5" height="15" rx="2" fill="#3d4a55"/>
+    <path d="M41 30 L56 22" stroke="${cd}" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M56 12 L56 24" stroke="#8a5a33" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M52 12 L60 12 L58 20 L54 20 Z" fill="#c9ccd2" stroke="#7a8288" stroke-width="1.5"/>
+  </svg>`;
+}
+function treeRow(){
+  const spots=[24,32,44,52,60,68,76,84,93];
+  return spots.map((p,i)=>`<span class="tree" style="left:${p}%;top:${40+(i%3)*6}%">🌲</span>`).join('');
+}
+
+/* ================= 面板渲染 ================= */
+function eqHTML(t){
+  const q=t.q;if(!q)return '';
+  const n=q.arity+2;             /* 数字槽数 */
+  let h='';
+  for(let i=0;i<q.arity;i++){
+    h+=`<span class="slot${t.cur==='n'+i?' cur':''}" data-slot="n${i}">${t.ans['n'+i]!==undefined?t.ans['n'+i]:'?'}</span>`;
+    h+=`<span class="opslot${t.ops[i]?' set':''}${t.cur==='op'+i?' cur':''}" data-slot="op${i}">${t.ops[i]||'?'}</span>`;
+  }
+  h+=`<span class="eqc">=</span><span class="slot${t.cur==='res'?' cur':''}" data-slot="res">${t.ans['res']!==undefined?t.ans['res']:'?'}</span>`;
+  return h;
+}
+function figHTML(q){
+  if(!q.fig)return '';
+  const parts=[];
+  q.fig.groups.forEach((g,i)=>{
+    if(i>0)parts.push('<span class="plus">+</span>');
+    let ems='';
+    if(Array.isArray(g)){
+      g.forEach(cell=>{
+        if(typeof cell==='object')for(let k=0;k<cell.n;k++)ems+=`<span class="em${cell.cut?' cut':''}">${q.fig.em}</span>`;
+        else ems+=`<span class="em">${q.fig.em}</span>`;
+      });
+    }else for(let k=0;k<g;k++)ems+=`<span class="em">${q.fig.em}</span>`;
+    parts.push(`<span class="grp">${ems}</span>`);
+  });
+  return `<div class="figcol"><div class="fig">${parts.join('')}</div><div class="figlabel"><b>${q.fig.label}</b></div><div class="figsub">${q.qtext||''}</div></div>`;
+}
+function figPartHTML(t){
+  const q=t.q;if(!q||!q.figMarked)return '';
+  const {total,cut,em}=q.figMarked;
+  let ems='';
+  for(let i=0;i<total;i++)ems+=`<span class="em${i<cut?' cut':''}">${em}</span>`;
+  return `<div class="figcol"><div class="fig"><span class="grp">${ems}</span></div><div class="figlabel">共 ${total} 只</div><div class="figsub">划掉了几只？</div></div>`;
+}
+function renderPanel(ti){
+  const t=S.teams[ti],p=$('panel'+ti);
+  const doneAll=false;
+  p.innerHTML=`
+    <div class="phead"><span class="tag">${ti+1}号 · ${NAMES[ti]}</span><span>${t.solved} 砍</span></div>
+    <div class="figwrap" id="fig${ti}" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0">
+      ${t.q?(t.q.figMarked?figPartHTML(t):figHTML(t.q))||`<div class="figcol" style="flex:1;justify-content:center"><div style="font-weight:1000;color:#42564f;font-size:clamp(22px,3.4vh,40px);letter-spacing:2px">${t.q.nums.join(t.q.op==='+'?' + ':' − ')} = ?</div><div class="figlabel">${t.q.arity===3?'连'+(t.q.op==='+'?'加':'减')+' · 按顺序算':''}</div></div>`:''}
+    </div>
+    <div class="eq" id="eq${ti}">${t.q?eqHTML(t):'<span style="color:#b9c4be;font-weight:900">等待开局…</span>'}</div>
+    <div class="keys" id="keys${ti}">
+      ${[1,2,3,4,5].map(v=>kb(ti,v)).join('')}
+      ${[6,7,8,9,0].map(v=>kb(ti,v)).join('')}
+      <button class="op" data-k="+" data-t="${ti}">＋</button>
+      <button class="op" data-k="-" data-t="${ti}">－</button>
+      <button class="del" data-k="back" data-t="${ti}">退格</button>
+      <button class="ok" data-k="ok" data-t="${ti}">确定</button>
+    </div>
+    <div class="pfoot"><span>${t.msg||'答对出兵，推光对面塔！'}</span><span>剩余血量 ${S.hp[ti]}</span></div>`;
+  p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>pressKey(Number(b.dataset.t),b.dataset.k)));
+  p.querySelectorAll('.slot,.opslot').forEach(s=>s.addEventListener('click',()=>{
+    if(S.phase!=='run')return;
+    t.cur=s.dataset.slot;t.clicked=true;renderPanel(ti);
+  }));
+}
+function kb(ti,v){return `<button data-k="${v}" data-t="${ti}">${v}</button>`}
+
+/* ================= 输入与判定 ================= */
+function firstEmpty(t){
+  for(let i=0;i<t.q.arity;i++)if(t.ans['n'+i]===undefined)return 'n'+i;
+  if(t.ans['res']===undefined)return 'res';
+  return 'res';
+}
+function pressKey(ti,k){
+  if(S.phase!=='run')return;
+  const t=S.teams[ti];if(!t.q||t.judging)return;
+  if(k==='back'){
+    if(t.cur&&t.cur.startsWith('op')){t.ops[Number(t.cur[2])]=undefined;}
+    else{const s=t.cur||firstEmpty(t);delete t.ans[s];t.cur=s;t.clicked=false;}
+    renderPanel(ti);return;
+  }
+  if(k==='+'||k==='-'){
+    let oi=0;
+    if(t.cur&&t.cur.startsWith('op'))oi=Number(t.cur[2]);
+    else{while(oi<t.q.arity&&t.ops[oi])oi++;if(oi>=t.q.arity)oi=t.q.arity-1;}
+    t.ops[oi]=k;t.cur='op'+oi;renderPanel(ti);return;
+  }
+  /* 数字：点选过的槽直接改；顺序作答落第一个空槽；
+     刚落了 1 位的槽再按数字，能拼成 ≤10 的两位就拼（被减数 10 靠它输入） */
+  let slot;
+  if(t.clicked&&t.cur&&!t.cur.startsWith('op'))slot=t.cur;
+  else{
+    const order=[];for(let i=0;i<t.q.arity;i++)order.push('n'+i);order.push('res');
+    if(t.cur&&!t.cur.startsWith('op')){
+      const p=t.ans[t.cur];
+      if(p!==undefined&&String(p).length===1&&Number(String(p)+k)<=10)slot=t.cur;
+    }
+    if(slot===undefined)for(const sname of order){if(t.ans[sname]===undefined){slot=sname;break;}}
+    if(slot===undefined)slot=t.cur&&!t.cur.startsWith('op')?t.cur:'res';
+  }
+  const prev=t.ans[slot];
+  t.ans[slot]=(prev!==undefined&&String(prev).length===1&&Number(String(prev)+k)<=10)?Number(String(prev)+k):k;
+  t.cur=slot;t.clicked=false;
+  /* 已填满 → 自动判定 */
+  const filledNums=t.q.arity+1===Object.keys(t.ans).length;
+  const allOps=t.ops.slice(0,t.q.arity).every(Boolean);
+  if(filledNums&&allOps){judge(ti);return;}
+  renderPanel(ti);
+}
+function judge(ti){
+  const t=S.teams[ti],q=t.q;
+  const okOps=t.ops.slice(0,q.arity).every(o=>o===q.op);
+  const numsOk=q.nums.every((v,i)=>Number(t.ans['n'+i])===v);
+  const resOk=Number(t.ans['res'])===q.res;
+  /* 求另一部分宽容：想加算减（划掉+剩下=总数）也算对 */
+  const altOk=q.kind==='part'&&t.ops[0]==='+'&&Number(t.ans['res'])===q.nums[0]&&
+    ((Number(t.ans['n0'])===q.res&&Number(t.ans['n1'])===q.nums[1])||(Number(t.ans['n0'])===q.nums[1]&&Number(t.ans['n1'])===q.res));
+  const ok=(okOps&&numsOk&&resOk)||altOk;
+  if(ok){
+    t.judging=true;t.solved++;
+    const fl=document.createElement('div');fl.className='goodflash';fl.textContent='✓ 答对！出兵';
+    $('panel'+ti).appendChild(fl);setTimeout(()=>fl.remove(),900);
+    spawnSoldier(ti);
+    setTimeout(()=>{
+      t.judging=false;
+      if(S.phase==='run'){t.q=buildQuestion();t.ans={};t.ops=[];t.cur=null;renderPanel(ti);}
+    },1500);
+  }else{
+    const card=$('panel'+ti);
+    const firstBad=card.querySelector('.slot');
+    if(firstBad)firstBad.classList.add('bad');
+    setTimeout(()=>{const b=$('panel'+ti).querySelector('.slot.bad');if(b)b.classList.remove('bad');},420);
+    t.msg='再想一想，答对才能出兵！';
+    renderPanel(ti);
+  }
+}
+
+/* ================= 出兵 / 砍塔（2D 兜底 + 3D 主路） ================= */
+function spawnSoldier(ti){
+  const foe=1-ti;
+  if(B3D&&B3D.ready)spawn3D(ti);else spawn2D(ti);
+  setTimeout(()=>{
+    const chops=0;
+    const iv=setInterval(()=>{
+      hitTower(foe);
+      if(B3D&&B3D.ready)chopPulse3D(ti);
+    },450);
+    setTimeout(()=>{clearInterval(iv);},3*450+50);
+  },1700);
+}
+function spawn2D(ti){
+  const side=ti===0?'L':'R';
+  const s=document.createElement('div');
+  s.className='soldier walking';
+  s.innerHTML=soldierSVG(side);
+  const startX=side==='L'?6:91,endX=side==='L'?88:9;
+  s.style.left=startX+'%';
+  s.style.transform=side==='L'?'none':'scaleX(-1)';
+  $('field').appendChild(s);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{s.style.left=endX+'%';}));
+  setTimeout(()=>{s.classList.remove('walking');s.classList.add('atk');
+    setTimeout(()=>{s.classList.add('done');setTimeout(()=>s.remove(),520);},3*450);},1700);
+}
+function hitTower(ti){
+  S.hp[ti]=Math.max(0,S.hp[ti]-7);
+  renderHP();
+  if(B3D&&B3D.ready){hitTower3D(ti);}
+  else{
+    const box=$('tower'+(ti===0?'L':'R'));
+    box.classList.remove('hit');void box.offsetWidth;box.classList.add('hit');
+    const before=Math.ceil((S.hp[ti]+7)/20),after=Math.ceil(S.hp[ti]/20);
+    if(after<before)spawnDebris(ti,after);
+    if(box.querySelector('svg'))box.innerHTML=towerSVG(S.hp[ti],ti===0?'L':'R');
+  }
+  if(S.hp[ti]<=0&&!S.ended)towerFall(ti);
+}
+function spawnDebris(ti,layersLeft){
+  const box=$('tower'+(ti===0?'L':'R'));
+  const r=box.getBoundingClientRect(),base=$('battle').getBoundingClientRect();
+  const cx=r.left-base.left+r.width/2,cy=r.top-base.top+r.height*.28;
+  ['🧱','🧱','▫','🪨'].forEach((d,i)=>{
+    const de=document.createElement('span');de.className='debris';de.textContent=d;
+    de.style.left=cx+(Math.random()*40-20)+'px';de.style.top=cy+'px';de.style.fontSize=(14+Math.random()*14)+'px';
+    de.style.setProperty('--dx',(Math.random()*160-80)+'px');
+    de.style.setProperty('--dy',(-90+Math.random()*120)+'px');
+    de.style.animationDelay=(i*60)+'ms';
+    $('battle').appendChild(de);setTimeout(()=>de.remove(),1300);
+  });
+  const du=document.createElement('span');du.className='dust';
+  du.style.left=(cx-50)+'px';du.style.top=(cy+90)+'px';du.style.width='100px';du.style.height='40px';
+  $('battle').appendChild(du);setTimeout(()=>du.remove(),900);
+}
+function renderHP(){
+  [0,1].forEach(i=>{
+    const w=$('hp'+(i===0?'L':'R'));
+    w.querySelector('.hpfill').style.width=S.hp[i]+'%';
+    w.querySelector('.hpnum').textContent=S.hp[i];
+  });
+  if(!(B3D&&B3D.ready)){
+    $('towerL').innerHTML=towerSVG(S.hp[0],'L');
+    $('towerR').innerHTML=towerSVG(S.hp[1],'R');
+  }else{syncTower3D(0);syncTower3D(1);}
+  [0,1].forEach(i=>{const p=$('panel'+i);if(p){const f=p.querySelector('.pfoot span:last-child');if(f)f.textContent='剩余血量 '+S.hp[i];}});
+}
+function towerFall(loser){
+  S.ended=true;
+  if(B3D&&B3D.ready)fall3D(loser);
+  else{
+    const box=$('tower'+(loser===0?'L':'R'));
+    box.classList.add('fall');
+    const r=box.getBoundingClientRect(),base=$('battle').getBoundingClientRect();
+    for(let i=0;i<14;i++){
+      const de=document.createElement('span');de.className='debris';
+      de.textContent=i%3===0?'🧱':'▫';
+      de.style.left=(r.left-base.left+r.width*(.2+Math.random()*.6))+'px';
+      de.style.top=(r.top-base.top+r.height*(.3+Math.random()*.6))+'px';
+      de.style.fontSize=(16+Math.random()*18)+'px';
+      de.style.setProperty('--dx',(Math.random()*260-130)+'px');
+      de.style.setProperty('--dy',(-60+Math.random()*160)+'px');
+      de.style.animationDelay=(i*50)+'ms';
+      $('battle').appendChild(de);setTimeout(()=>de.remove(),1600);
+    }
+  }
+  setTimeout(()=>gameOver(loser===0?1:0,'推平了 '+NAMES[loser]+' 的塔'),1000);
+}
+
+/* ================= 3D 战场（three.js + 士兵骨骼动画素材） =================
+   素材：Soldier.glb（three.js 官方示例，MIT）经 GLTFLoader 载入，走路/待机骨骼动画；
+   塔与场景为低模组合（分层可掉层）。WebGL 不可用时自动退回上方 2D 场景。 */
+let B3D=null;
+function loadScript(src,ok,err){
+  const s=document.createElement('script');
+  s.src=src;s.onload=ok;s.onerror=err;
+  document.head.appendChild(s);
+}
+function boot3D(){
+  loadScript('three.min.js',()=>loadScript('GLTFLoader.js',()=>loadScript('SkeletonUtils.js',()=>loadScript('推塔素材/Soldier.glb.js',()=>{
+    try{
+      const loader=new THREE.GLTFLoader();
+      loader.load(window.SOLDIER_GLB,g=>{try{init3D(g.scene,g.animations);}catch(e){}},undefined,()=>{});
+    }catch(e){}
+  },()=>{}),()=>{}),()=>{}),()=>{});
+}
+const W2X=p=>(p-50)/46*44;               /* 面板百分比 → 世界x（±22 左右覆盖） */
+function init3D(proto,clips){
+  const holder=$('battle3d'),b=$('battle');
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));
+  // BISECT: shadow off
+  // BISECT: srgb off
+  holder.appendChild(r.domElement);
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xa9dcf5);
+  // BISECT: fog off
+  const cam=new THREE.PerspectiveCamera(28,2,0.1,400);
+  cam.position.set(0,24,46);cam.lookAt(0,5,0);
+  scene.add(new THREE.HemisphereLight(0xcfe8ff,0x6f9e5c,.95));
+  const sun=new THREE.DirectionalLight(0xfff2d0,1.05);
+  sun.position.set(-18,26,14);sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024);
+  Object.assign(sun.shadow.camera,{left:-38,right:38,top:26,bottom:-18});
+  scene.add(sun);
+  const M=(c,o)=>new THREE.MeshPhongMaterial(Object.assign({color:c,shininess:6,flatShading:true},o||{}));
+  /* 地面+路 */
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(140,60),M(0x7cc06f));
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(110,6.5),M(0xe2c98f));
+  road.rotation.x=-Math.PI/2;road.position.set(0,0.02,0);road.receiveShadow=true;scene.add(road);
+  /* 树 */
+  for(let i=0;i<22;i++){
+    const g=new THREE.Group();
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,1.6,6),M(0x8a5a33));tr.position.y=.8;g.add(tr);
+    const co=new THREE.Mesh(new THREE.ConeGeometry(1.5-i%3*.25,3.2,7),M(0x3f9e42));
+    co.position.y=3;co.castShadow=true;g.add(co);
+    const zx=(rand(2)?1:-1)*(5.5+rand(6));
+    g.position.set(-44+rand(88),0,zx);
+    if(Math.abs(g.position.x)>38)g.position.z=zx*0.6;
+    scene.add(g);
+  }
+  /* 云 */
+  const clouds=[];
+  for(let i=0;i<4;i++){
+    const c=new THREE.Group();
+    for(let k=0;k<3;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(1.6-k*.3,7,6),M(0xffffff,{transparent:true,opacity:.92}));s.position.x=k*1.9-1.9;s.scale.y=.55;c.add(s);}
+    c.position.set(-40+i*22,13+i*2.5,-14-i*3);scene.add(c);
+    clouds.push({g:c,v:.012+i*.006});
+  }
+  /* 塔 */
+  function buildTower(side){
+    const g=new THREE.Group();
+    const team=side==='L'?{roof:0xe05a52,dark:0xb32e28}:{roof:0x3d8fe0,dark:0x1d5ea8};
+    const plinth=new THREE.Mesh(new THREE.BoxGeometry(5.4,1.2,3.4),M(0xd7dee3));plinth.position.y=.6;plinth.castShadow=true;g.add(plinth);
+    const layers=[];
+    const ws=[4.4,4.0,3.6,3.2,2.9];
+    for(let i=0;i<5;i++){
+      const h=1.85,w=ws[i];
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),M(i===4?0xe8eef2:0xc9d3da));
+      m.position.y=1.2+h/2+i*h;m.castShadow=true;
+      g.add(m);layers.push(m);
+    }
+    const topY=1.2+5*1.85;
+    const door=new THREE.Mesh(new THREE.BoxGeometry(1.1,2,1.1),M(0x6d7e88));door.position.set(0,1.9,ws[0]/2-0.4);g.add(door);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(2.6,2.6,4),M(team.roof));
+    roof.rotation.y=Math.PI/4;roof.position.y=topY+1.3+1.3;roof.castShadow=true;g.add(roof);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.8,6),M(0x5c6b74));pole.position.y=topY+2.6+1.9;g.add(pole);
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.85),new THREE.MeshBasicMaterial({color:team.roof,side:THREE.DoubleSide}));
+    flag.position.set(.78,topY+2.6+2.5,0);g.add(flag);
+    g.userData={layers,roof,flag,baseY:0};
+    return g;
+  }
+  let towerL=buildTower('L');towerL.position.set(-16,0,0);scene.add(towerL);
+  let towerR=buildTower('R');towerR.position.set(16,0,0);scene.add(towerR);
+  /* 基地 */
+  function buildBase(side){
+    const team=side==='L'?{roof:0xe05a52}:{roof:0x3d8fe0};
+    const g=new THREE.Group();
+    const b=new THREE.Mesh(new THREE.BoxGeometry(5,3,3.6),M(0xece4d4));b.position.y=1.5;b.castShadow=true;g.add(b);
+    const rf=new THREE.Mesh(new THREE.ConeGeometry(4,2.6,4),M(team.roof));rf.rotation.y=Math.PI/4;rf.position.y=4.3;rf.castShadow=true;g.add(rf);
+    const d=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.9,0.4),M(0x6d7e88));d.position.set(0,1,1.85);g.add(d);
+    return g;
+  }
+  const baseL=buildBase('L');baseL.position.set(-26.5,0,0);scene.add(baseL);
+  const baseR=buildBase('R');baseR.position.set(26.5,0,0);scene.add(baseR);
+  /* 士兵原型 */
+  proto.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  proto.scale.setScalar(2.1);
+  const walkClip=clips.find(a=>/walk/i.test(a.name))||clips[0];
+  const idleClip=clips.find(a=>/idle/i.test(a.name))||walkClip;
+  const soldiers=[];
+  const debris=[];
+  /* 引擎就绪后把模块级空函数绑定为 3D 实现 */
+  spawn3D=function(ti){
+    const side=ti===0?"L":"R";
+    const inst=THREE.SkeletonUtils.clone(proto);
+    const mixer=new THREE.AnimationMixer(inst);
+    const act=mixer.clipAction(walkClip);act.play();
+    const x0=side==="L"?-26:26,xEnd=side==="L"?12.6:-12.6;
+    inst.position.set(x0,0,soldiers.length%2?-0.9:0.9);
+    inst.rotation.y=side==="L"?Math.PI/2:-Math.PI/2;
+    scene.add(inst);
+    const rec={g:inst,mixer,act,t0:performance.now(),x0,xEnd,side,foe:1-ti,phase:"walk",lean:0};
+    soldiers.push(rec);
+    setTimeout(()=>{rec.phase="chop";rec.act.fadeOut(.15);
+      const idle=mixer.clipAction(idleClip);idle.play();rec.idle=idle;},1700);
+    setTimeout(()=>{rec.phase="leave";},1700+3*450+120);
+  };
+  chopPulse3D=function(ti){const s=soldiers.find(x=>x.side===(ti===0?"L":"R")&&x.phase==="chop");if(s)s.lean=1;};
+  hitTower3D=function(ti){const g=ti===0?towerL:towerR;g.userData.shake=performance.now();
+    const want=Math.max(1,Math.ceil(S.hp[ti]/20));
+    while(g.userData.layers.length>want){const m=g.userData.layers.pop();dropDebris(g.position.x,m.position.y,0,6);g.remove(m);}};
+  fall3D=function(loser){const g=loser===0?towerL:towerR;g.userData.fall={t0:performance.now(),dir:loser===0?-1:1};dropDebris(g.position.x,2.5,0,16);};
+  syncTower3D=function(ti){const g=ti===0?towerL:towerR;const want=Math.max(1,Math.ceil(S.hp[ti]/20));
+    while(g.userData.layers.length>want){const m=g.userData.layers.pop();dropDebris(g.position.x,m.position.y,0,6);g.remove(m);}};
+  B3D={ready:true,soldiers,debris,scene,cam,r,
+    reset(){soldiers.forEach(x=>scene.remove(x.g));soldiers.length=0;debris.forEach(d=>scene.remove(d.m));debris.length=0;
+      scene.remove(towerL);scene.remove(towerR);
+      towerL=buildTower("L");towerL.position.set(-16,0,0);scene.add(towerL);
+      towerR=buildTower("R");towerR.position.set(16,0,0);scene.add(towerR);}};
+  b.classList.add("has3d");
+  syncTower3D(0);syncTower3D(1);
+}
+/* 3D 未就绪时这些名字是空函数（函数声明提升，运行期由 init3D 覆盖） */
+function spawn3D(){}
+function chopPulse3D(){}
+function hitTower3D(){}
+function fall3D(){}
+function syncTower3D(){}
+
+/* ================= 计时与流程 ================= */
+function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+let tickIv=null;
+function tick(){
+  if(S.phase!=='run')return;
+  S.timeLeft=(S.t0+S.secs*1000-Date.now())/1000;
+  const el=$('timer');
+  if(S.graceActive)el.textContent='加时 '+Math.ceil((S.graceUntil-Date.now())/1000)+'s';
+  else el.textContent=fmt(S.timeLeft);
+  el.classList.toggle('hurry',!S.graceActive&&S.timeLeft<=15);
+  if(!S.graceActive&&S.timeLeft<=0){
+    /* 铃响：正在答的题保留作"最后一题"，8 秒加时 */
+    S.graceActive=true;S.graceUntil=Date.now()+8000;
+    S.teams.forEach((t,i)=>{if(!t.judging){t.msg='最后一题！答完这题就结束';renderPanel(i);}});
+  }
+  if(S.graceActive&&Date.now()>S.graceUntil)gameOver();
+}
+function gameOver(forcedWin,why){
+  if(S.phase==='over')return;
+  S.phase='over';S.tEnd=Date.now();
+  clearInterval(tickIv);
+  S.teams.forEach((t,i)=>{t.judging=true;});
+  const win=forcedWin!==undefined?forcedWin:(S.hp[0]>S.hp[1]?0:S.hp[1]>S.hp[0]?1:-1);
+  const wb=$('winnerBig');
+  if(win===-1){wb.textContent='平局！';wb.className='tie';}
+  else{wb.textContent=NAMES[win]+' 获胜！';wb.className=win===0?'red':'blue';}
+  $('sL').textContent=S.hp[0];$('sR').textContent=S.hp[1];
+  $('sT').textContent=fmt((S.tEnd-S.t0)/1000);
+  const subEl=$('over').querySelector('.sub');if(subEl)subEl.textContent=why||'时 间 到 · 一 局 结 束';
+  $('over').classList.add('show');
+}
+function startRound(){
+  S.phase='run';S.hp=[100,100];S.ended=false;S.graceActive=false;
+  S.t0=Date.now();S.timeLeft=S.secs;
+  S.teams=NAMES.map(n=>({q:buildQuestion(),ans:{},ops:[],cur:null,solved:0,msg:'',judging:false}));
+  $('over').classList.remove('show');$('setup').classList.remove('show');
+  if(B3D&&B3D.ready)B3D.reset();
+  $('field').innerHTML='';
+  renderHP();renderPanel(0);renderPanel(1);
+  clearInterval(tickIv);tickIv=setInterval(tick,300);tick();
+}
+
+/* ================= 设置浮层 ================= */
+function segInit(id,key,items,parse){
+  const box=$(id);box.innerHTML='';
+  items.forEach(([v,l])=>{
+    const b=document.createElement('button');b.textContent=l;b.dataset.v=v;
+    if(String(S[key])===String(v))b.classList.add('on');
+    b.addEventListener('click',()=>{S[key]=parse(v);
+      box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));});
+    box.appendChild(b);
+  });
+}
+$('goBtn').addEventListener('click',()=>startRound());
+$('againBtn').addEventListener('click',()=>{$('over').classList.remove('show');$('setup').classList.add('show');});
+$('homeBtn').addEventListener('click',()=>{if(S.phase!=='over'){S.phase='setup';clearInterval(tickIv);$('setup').classList.add('show');}});
+$('fullBtn').addEventListener('click',async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen();}catch(e){alert('当前浏览器不支持全屏，请按 F11。')}});
+
+/* ================= 场景装饰 & 启动 ================= */
+function decorate(){
+  $('baseL').innerHTML=baseSVG('L');$('baseR').innerHTML=baseSVG('R');
+  const cl=document.createElement('span');cl.className='cloud';cl.textContent='☁️';cl.style.top='6%';cl.style.animationDuration='60s';
+  const cl2=document.createElement('span');cl2.className='cloud';cl2.textContent='☁️';cl2.style.top='22%';cl2.style.animationDuration='85s';cl2.style.animationDelay='-30s';
+  $('battle2d').prepend(cl2);$('battle2d').prepend(cl);
+  const tr=document.createElement('div');tr.innerHTML=treeRow();$('battle2d').appendChild(tr);
+}
+segInit('segTime','secs',[[120,'2 分钟'],[180,'3 分钟']],Number);
+segInit('segKind','kind',[['mix','混合'],['fig','看图列式'],['lian','连加连减']],v=>v);
+decorate();
+renderHP();
+S.teams=NAMES.map(n=>({q:buildQuestion(),ans:{},ops:[],cur:null,solved:0,msg:'',judging:false}));
+renderPanel(0);renderPanel(1);
+boot3D();
+/* ?demo=1 直接摆好对战画面（截图验收用）；&win=1 显示结算浮层 */
+let demoQs=null;
+try{demoQs=new URLSearchParams(location.search);}catch(e){}
+if(demoQs&&demoQs.has('still'))document.documentElement.classList.add('still');
+if(demoQs&&demoQs.has('demo')){
+  startRound();
+  if(demoQs.has('midway')){
+    /* 摆出中局：红方占优+小兵已在场上 */
+    S.hp=[75,100];renderHP();
+    const s=document.createElement('div');s.className='soldier walking';s.innerHTML=soldierSVG('L');
+    s.style.left='40%';$('field').appendChild(s);
+  }
+  if(demoQs.has('win')){
+    S.hp=[100,0];renderHP();S.phase='run';S.t0=Date.now()-95000;gameOver(0,'红 方 推 平 了 蓝 方 的 塔');
+  }
+}
+else $('setup').classList.add('show');
+
+/* 测试钩子 */
+window.__T={S,buildQuestion,pressKey,judge,startRound,gameOver,towerFall,renderHP,NAMES,
+  get panels(){return S.teams}};
+</script>
+</body>
+</html>
