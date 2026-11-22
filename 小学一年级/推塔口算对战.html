@@ -94,6 +94,7 @@ button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;tou
 .slot{cursor:pointer;color:#2b3f38}
 .slot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l)}
 .slot.bad{border-color:#e2604f;color:#d84b3e;animation:shk .4s}
+.opslot.bad{border-color:#e2604f;color:#d84b3e;animation:shk .4s}
 .opslot{border-style:dashed;cursor:pointer;color:#5b6e68}
 .opslot.set{border-style:solid;border-color:var(--pc-d);color:#22343a}
 .opslot.cur{border-color:var(--pc-d);box-shadow:0 0 0 3px var(--pc-l)}
@@ -287,11 +288,11 @@ function treeRow(){
 /* ================= 面板渲染 ================= */
 function eqHTML(t){
   const q=t.q;if(!q)return '';
-  const n=q.arity+2;             /* 数字槽数 */
+  const nOp=q.arity-1;           /* 运算符槽数 = 数字数-1（二元题只有 1 个，别多画） */
   let h='';
   for(let i=0;i<q.arity;i++){
     h+=`<span class="slot${t.cur==='n'+i?' cur':''}" data-slot="n${i}">${t.ans['n'+i]!==undefined?t.ans['n'+i]:'?'}</span>`;
-    h+=`<span class="opslot${t.ops[i]?' set':''}${t.cur==='op'+i?' cur':''}" data-slot="op${i}">${t.ops[i]||'?'}</span>`;
+    if(i<nOp)h+=`<span class="opslot${t.ops[i]?' set':''}${t.cur==='op'+i?' cur':''}" data-slot="op${i}">${t.ops[i]||'?'}</span>`;
   }
   h+=`<span class="eqc">=</span><span class="slot${t.cur==='res'?' cur':''}" data-slot="res">${t.ans['res']!==undefined?t.ans['res']:'?'}</span>`;
   return h;
@@ -362,7 +363,7 @@ function pressKey(ti,k){
   if(k==='+'||k==='-'){
     let oi=0;
     if(t.cur&&t.cur.startsWith('op'))oi=Number(t.cur[2]);
-    else{while(oi<t.q.arity&&t.ops[oi])oi++;if(oi>=t.q.arity)oi=t.q.arity-1;}
+    else{while(oi<t.q.arity-1&&t.ops[oi])oi++;if(oi>=t.q.arity-1)oi=t.q.arity-2;}
     t.ops[oi]=k;t.cur='op'+oi;renderPanel(ti);return;
   }
   /* 数字：点选过的槽直接改；顺序作答落第一个空槽；
@@ -383,13 +384,13 @@ function pressKey(ti,k){
   t.cur=slot;t.clicked=false;
   /* 已填满 → 自动判定 */
   const filledNums=t.q.arity+1===Object.keys(t.ans).length;
-  const allOps=t.ops.slice(0,t.q.arity).every(Boolean);
+  const allOps=t.ops.slice(0,t.q.arity-1).every(Boolean);
   if(filledNums&&allOps){judge(ti);return;}
   renderPanel(ti);
 }
 function judge(ti){
   const t=S.teams[ti],q=t.q;
-  const okOps=t.ops.slice(0,q.arity).every(o=>o===q.op);
+  const okOps=t.ops.slice(0,q.arity-1).every(o=>o===q.op);
   const numsOk=q.nums.every((v,i)=>Number(t.ans['n'+i])===v);
   const resOk=Number(t.ans['res'])===q.res;
   /* 求另一部分宽容：想加算减（划掉+剩下=总数）也算对 */
@@ -407,9 +408,10 @@ function judge(ti){
     },1500);
   }else{
     const card=$('panel'+ti);
-    const firstBad=card.querySelector('.slot');
-    if(firstBad)firstBad.classList.add('bad');
-    setTimeout(()=>{const b=$('panel'+ti).querySelector('.slot.bad');if(b)b.classList.remove('bad');},420);
+    const curName=t.cur||'res';
+    const bad=card.querySelector('[data-slot="'+curName+'"]')||card.querySelector('.slot');
+    if(bad)bad.classList.add('bad');
+    setTimeout(()=>{const b=$('panel'+ti).querySelector('.slot.bad, .opslot.bad');if(b)b.classList.remove('bad');},420);
     t.msg='再想一想，答对才能出兵！';
     renderPanel(ti);
   }

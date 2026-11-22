@@ -219,7 +219,12 @@ __okT($('panel0')._html.indexOf('确定') >= 0 && $('panel0')._html.indexOf('＋
 {
   S.teams[0].q = { kind:'part', arity:2, op:'-', nums:[8,3], res:5, figMarked:{total:8,cut:3,em:'🐒'} };
   S.teams[0].ans = {}; S.teams[0].ops = []; S.teams[0].cur = null;
-  /* 标准：8-3=5 */
+  renderPanel(0);
+  /* 槽布局：二元题只有 1 个运算符槽（之前多画了一个导致界面误导+永判错） */
+  const opCount0 = $('panel0').querySelectorAll('.opslot').length;
+  __okT(opCount0 === 1, '6a 二元题只有 1 个运算符槽', String(opCount0));
+  __okT($('panel0').querySelectorAll('.slot').length === 3, '6a 数字槽 3 个（含结果）');
+  /* 标准：8-3=5（填满+运算符齐 → 自动判定） */
   T.pressKey(0, '-'); T.pressKey(0, 8); T.pressKey(0, 3); T.pressKey(0, 5);
   __okT(S.teams[0].solved === 2, '6 标准减法判对');
   flush(6000);
