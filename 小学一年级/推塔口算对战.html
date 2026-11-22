@@ -603,7 +603,7 @@ function init3D(proto,clips){
   const baseR=buildBase('R');baseR.position.set(26.5,0,0);scene.add(baseR);
   /* 士兵原型 */
   proto.traverse(o=>{if(o.isMesh)o.castShadow=true;});
-  proto.scale.setScalar(2.1);
+  proto.scale.setScalar(3.4);
   const walkClip=clips.find(a=>/walk/i.test(a.name))||clips[0];
   const idleClip=clips.find(a=>/idle/i.test(a.name))||walkClip;
   const soldiers=[];
@@ -649,8 +649,11 @@ function init3D(proto,clips){
         s.mixer.update(dt);
       }else if(s.phase==='leave'){
         s.g.scale.multiplyScalar(1-dt*2.4);
-        if(s.g.scale.x<.06){scene.remove(s.g);soldiers.splice(i,1);}
+        s.ring.material.opacity*= (1-dt*2.4);s.sp.material.opacity*=(1-dt*2.4);
+        if(s.g.scale.x<.06){scene.remove(s.g);scene.remove(s.ring);scene.remove(s.sp);soldiers.splice(i,1);}
       }
+      s.ring.position.x=s.g.position.x;s.ring.position.z=s.g.position.z;
+      s.sp.position.x=s.g.position.x;s.sp.position.z=s.g.position.z;
     }
     for(let i=debris.length-1;i>=0;i--){
       const d=debris[i];d.t+=dt;
@@ -685,7 +688,16 @@ function init3D(proto,clips){
     inst.position.set(x0,0,soldiers.length%2?-0.9:0.9);
     inst.rotation.y=side==="L"?Math.PI/2:-Math.PI/2;
     scene.add(inst);
-    const rec={g:inst,mixer,act,t0:performance.now(),x0,xEnd,side,foe:1-ti,phase:"walk",lean:0};
+    const ring=new THREE.Mesh(new THREE.RingGeometry(1.1,1.5,20),new THREE.MeshBasicMaterial({color:side==="L"?0xe05a52:0x3d8fe0,transparent:true,opacity:.9,side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2;ring.position.set(x0,.15,inst.position.z);scene.add(ring);
+    const cv=document.createElement("canvas");cv.width=96;cv.height=96;
+    const cx2=cv.getContext("2d");
+    cx2.beginPath();cx2.arc(48,48,44,0,7);cx2.fillStyle=side==="L"?"#e05a52":"#3d8fe0";cx2.fill();
+    cx2.lineWidth=6;cx2.strokeStyle="#fff";cx2.stroke();
+    cx2.fillStyle="#fff";cx2.font="900 44px Microsoft YaHei";cx2.textAlign="center";cx2.textBaseline="middle";cx2.fillText("兵",48,50);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+    sp.scale.set(2.4,2.4,1);sp.position.set(x0,5.6,inst.position.z);scene.add(sp);
+    const rec={g:inst,ring,sp,mixer,act,t0:performance.now(),x0,xEnd,side,foe:1-ti,phase:"walk",lean:0};
     soldiers.push(rec);
     setTimeout(()=>{rec.phase="chop";rec.act.fadeOut(.15);
       const idle=mixer.clipAction(idleClip);idle.play();rec.idle=idle;},1700);
@@ -699,11 +711,12 @@ function init3D(proto,clips){
   syncTower3D=function(ti){const g=ti===0?towerL:towerR;const want=Math.max(1,Math.ceil(S.hp[ti]/20));
     while(g.userData.layers.length>want){const m=g.userData.layers.pop();dropDebris(g.position.x,m.position.y,0,6);g.remove(m);}};
   B3D={ready:true,soldiers,debris,scene,cam,r,
-    reset(){soldiers.forEach(x=>scene.remove(x.g));soldiers.length=0;debris.forEach(d=>scene.remove(d.m));debris.length=0;
+    reset(){soldiers.forEach(x=>{scene.remove(x.g);scene.remove(x.ring);scene.remove(x.sp);});soldiers.length=0;debris.forEach(d=>scene.remove(d.m));debris.length=0;
       scene.remove(towerL);scene.remove(towerR);
       towerL=buildTower("L");towerL.position.set(-16,0,0);scene.add(towerL);
       towerR=buildTower("R");towerR.position.set(16,0,0);scene.add(towerR);}};
   b.classList.add("has3d");
+  if(window.__demoSoldier){spawn3D(0);if(B3D.soldiers[0])B3D.soldiers[0].t0=performance.now()-800;}
   syncTower3D(0);syncTower3D(1);
 }
 /* 3D 未就绪时这些名字是空函数（函数声明提升，运行期由 init3D 覆盖） */
@@ -795,7 +808,7 @@ if(demoQs&&demoQs.has('demo')){
   if(demoQs.has('midway')){
     /* 摆出中局：红方占优+小兵已在场上 */
     S.hp=[75,100];renderHP();
-    spawn3D(0);if(B3D&&B3D.ready&&B3D.soldiers[0])B3D.soldiers[0].t0=performance.now()+900;
+    window.__demoSoldier=true;
   }
   if(demoQs.has('win')){
     S.hp=[100,0];renderHP();S.phase='run';S.t0=Date.now()-95000;gameOver(0,'红 方 推 平 了 蓝 方 的 塔');
