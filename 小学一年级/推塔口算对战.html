@@ -226,9 +226,10 @@ function buildQuestion(){
     const a=1+rand(5),b=1+rand(8-a),c=1+rand(10-a-b);
     return {kind:roll,arity:3,op:'+',nums:[a,b,c],res:a+b+c,fig:fig([[a,false],[b,false],[c,false]],'?'),qtext:'一共有几只？'};
   }
-  if(roll==='sub3'){         /* 连减 ▢-▢-▢=▢（划掉两组） */
-    const t=5+rand(6),b1=1+rand(2),b2=1+rand(Math.max(1,Math.min(3,t-b1-1)));
-    return {kind:roll,arity:3,op:'-',nums:[t,b1,b2],res:t-b1-b2,fig:fig([[t-b1-b2,false],[b1,true],[b2,true]],'?'),qtext:'还剩几只？'};
+  if(roll==='sub3'){         /* 连减 ▢-▢-▢=▢（总数在前不划 → 划掉组在后，防歧义画法） */
+    const t=5+rand(6),b1=1+rand(2),b2=1+rand(Math.max(1,Math.min(3,t-b1-2)));
+    return {kind:roll,arity:3,op:'-',nums:[t,b1,b2],res:t-b1-b2,
+      fig:fig([[t,false],[b1,true],[b2,true]],'共 '+t+' 只'),qtext:'还剩几只？'};
   }
   /* plain：纯算式连加/连减 */
   if(Math.random()<.5){
@@ -361,10 +362,11 @@ function pressKey(ti,k){
     renderPanel(ti);return;
   }
   if(k==='+'||k==='-'){
-    let oi=0;
-    if(t.cur&&t.cur.startsWith('op'))oi=Number(t.cur[2]);
-    else{while(oi<t.q.arity-1&&t.ops[oi])oi++;if(oi>=t.q.arity-1)oi=t.q.arity-2;}
-    t.ops[oi]=k;t.cur='op'+oi;renderPanel(ti);return;
+    const nOp=t.q.arity-1;
+    let oi;
+    if(t.clicked&&t.cur&&t.cur.startsWith('op'))oi=Number(t.cur[2]);   /* 点选了符号槽：改这一位 */
+    else{oi=0;while(oi<nOp&&t.ops[oi])oi++;if(oi>=nOp)oi=nOp-1;}       /* 顺序：落第一个空符号槽 */
+    t.ops[oi]=k;t.cur='op'+oi;t.clicked=false;renderPanel(ti);return;
   }
   /* 数字：点选过的槽直接改；顺序作答落第一个空槽；
      刚落了 1 位的槽再按数字，能拼成 ≤10 的两位就拼（被减数 10 靠它输入） */
@@ -388,15 +390,32 @@ function pressKey(ti,k){
   if(filledNums&&allOps){judge(ti);return;}
   renderPanel(ti);
 }
+/* ================= 判定规则表（⚠ 唯一口径，改规则只动这个函数 + 需求文档表 + 回归断言） =================
+   ① add     看图求总数：op 全 '+'，数字与结果全匹配
+   ② part    求另一部分：标准 total−cut=res 且 '-'；
+             宽容（想加算减）：cut+res=total 或 res+cut=total 且 '+'
+   ③ add3    连加：op 全 '+'，数字与结果全匹配
+   ④ sub3    连减：op 全 '-'，数字与结果全匹配（不留加法宽容，防歧义）
+   ⑤ plain   纯算式：同 ③/④ */
+function judgeEquation(q,ans,ops){
+  const n=q.arity;
+  const okOps=[];for(let i=0;i<n-1;i++)okOps.push(ops[i]===q.op);
+  const numsOk=[];for(let i=0;i<n;i++)numsOk.push(Number(ans['n'+i])===q.nums[i]);
+  const resOk=Number(ans['res'])===q.res;
+  const okOpsAll=okOps.every(Boolean),numsAll=numsOk.every(Boolean);
+  if(q.kind==='part'&&ops[0]==='+'){
+    const total=q.nums[0],cut=q.nums[1],res=q.res;
+    const n0=Number(ans['n0']),n1=Number(ans['n1']);
+    const alt=(n0===cut&&n1===res)||(n0===res&&n1===cut);
+    if(alt&&Number(ans['res'])===total)return {ok:true,rule:'part-alt'};
+  }
+  return {ok:okOpsAll&&numsAll&&resOk,rule:'std'};
+}
 function judge(ti){
   const t=S.teams[ti],q=t.q;
-  const okOps=t.ops.slice(0,q.arity-1).every(o=>o===q.op);
-  const numsOk=q.nums.every((v,i)=>Number(t.ans['n'+i])===v);
-  const resOk=Number(t.ans['res'])===q.res;
-  /* 求另一部分宽容：想加算减（划掉+剩下=总数）也算对 */
-  const altOk=q.kind==='part'&&t.ops[0]==='+'&&Number(t.ans['res'])===q.nums[0]&&
-    ((Number(t.ans['n0'])===q.res&&Number(t.ans['n1'])===q.nums[1])||(Number(t.ans['n0'])===q.nums[1]&&Number(t.ans['n1'])===q.res));
-  const ok=(okOps&&numsOk&&resOk)||altOk;
+  const r=judgeEquation(q,t.ans,t.ops);
+
+  const ok=r.ok;
   if(ok){
     t.judging=true;t.solved++;
     const fl=document.createElement('div');fl.className='goodflash';fl.textContent='✓ 答对！出兵';
@@ -422,10 +441,13 @@ function spawnSoldier(ti){
   const foe=1-ti;
   if(B3D&&B3D.ready)spawn3D(ti);else spawn2D(ti);
   setTimeout(()=>{
-    const chops=0;
+    /* 三挥伤害 6/6/5 → 每次答对 -51，答对 6 次推平 */
+    const dmgs=[6,6,5];let chops=0;
     const iv=setInterval(()=>{
-      hitTower(foe);
+      hitTower(foe,dmgs[Math.min(chops,dmgs.length-1)]);
+      chops++;
       if(B3D&&B3D.ready)chopPulse3D(ti);
+      if(chops>=3)clearInterval(iv);
     },450);
     setTimeout(()=>{clearInterval(iv);},3*450+50);
   },1700);
@@ -443,14 +465,16 @@ function spawn2D(ti){
   setTimeout(()=>{s.classList.remove('walking');s.classList.add('atk');
     setTimeout(()=>{s.classList.add('done');setTimeout(()=>s.remove(),520);},3*450);},1700);
 }
-function hitTower(ti){
-  S.hp[ti]=Math.max(0,S.hp[ti]-7);
+function hitTower(ti,dmg){
+  if(window.__hplog)window.__hplog.push(ti+":"+dmg+"→"+Math.max(0,S.hp[ti]-dmg));
+  dmg=dmg||7;
+  S.hp[ti]=Math.max(0,S.hp[ti]-dmg);
   renderHP();
   if(B3D&&B3D.ready){hitTower3D(ti);}
   else{
     const box=$('tower'+(ti===0?'L':'R'));
     box.classList.remove('hit');void box.offsetWidth;box.classList.add('hit');
-    const before=Math.ceil((S.hp[ti]+7)/20),after=Math.ceil(S.hp[ti]/20);
+    const before=Math.ceil((S.hp[ti]+dmg)/20),after=Math.ceil(S.hp[ti]/20);
     if(after<before)spawnDebris(ti,after);
     if(box.querySelector('svg'))box.innerHTML=towerSVG(S.hp[ti],ti===0?'L':'R');
   }

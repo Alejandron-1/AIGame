@@ -191,14 +191,14 @@ __okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋'
   const foe = 1;
   const hpBefore = S.hp[foe];
   const q = S.teams[0].q;
-  /* 依次按运算符与数字（自动判定） */
-  T.pressKey(0, q.op);
+    /* 依次按运算符与数字（自动判定） */
+  for(let oi=0;oi<q.arity-1;oi++)T.pressKey(0, q.op);
   q.nums.forEach(v => { String(v).split('').forEach(ch => T.pressKey(0, Number(ch))); });
   T.pressKey(0, Number(q.res));
-  __okT(S.teams[0].solved === 1, '4 答对计砍1次');
+      __okT(S.teams[0].solved === 1, '4 答对计砍1次');
   __okT($('field')._html.indexOf('soldier') >= 0 || $('field')._children.length > 0, '4 战场上出现小兵');
   flush(6000);   /* 走路1.7s+砍3次+换题 全部跑完 */
-  __okT(S.hp[foe] === hpBefore - 21, '4 出兵砍塔对面-21', S.hp[foe] + ' vs ' + hpBefore);
+  __okT(S.hp[foe] === hpBefore - 17, '4 出兵砍塔对面-17', S.hp[foe] + ' vs ' + hpBefore);
   __okT(!!S.teams[0].q, '4 判定后换新题');
 }
 
@@ -207,7 +207,7 @@ __okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋'
   const q = S.teams[1].q;
   const hpBefore = S.hp[0];
   /* 填一个必错的数：res 填 0（若 res 恰为 0 则填 1） */
-  T.pressKey(1, q.op);
+  for(let oi=0;oi<q.arity-1;oi++)T.pressKey(1, q.op);
   q.nums.forEach(v => String(v).split('').forEach(ch => T.pressKey(1, Number(ch))));
   T.pressKey(1, q.res + 2 <= 10 ? q.res + 2 : q.res - 3);
   __okT(S.hp[0] === hpBefore, '5 答错不掉对面血');
@@ -233,7 +233,7 @@ __okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋'
   S.teams[0].q = { kind:'part', arity:2, op:'-', nums:[8,3], res:5, figMarked:{total:8,cut:3,em:'🐒'} };
   S.teams[0].ans = {}; S.teams[0].ops = []; S.teams[0].cur = null;
   T.pressKey(0, '+'); T.pressKey(0, 5); T.pressKey(0, 3); T.pressKey(0, 8);
-  __okT(S.teams[0].solved === 3, '6 想加算减也算对');
+    __okT(S.teams[0].solved === 3, '6 想加算减也算对');
   flush(6000);
 }
 
@@ -246,16 +246,17 @@ __okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋'
   T.pressKey(1, 1);
     __okT(String(S.teams[1].ans['res']) === '1', '7 res 先落 1');
   T.pressKey(1, 0);
+        window.__hplog=[];
     __okT(Number(S.teams[1].ans['res']) === 10, '7 再按0组成10');
   flush(6000);
-  __okT(S.hp[0] === 79, '7 蓝队答对砍红方-21', String(S.hp[0]));
+    __okT(S.hp[0] === 83, '7 蓝队答对砍红方-17', String(S.hp[0]));
 }
 
 /* 7b. 被减数 10（两位数）连减输入：1 后按 0 拼进同一槽 */
 {
   S.teams[1].q = { kind:'plain', arity:3, op:'-', nums:[10,3,2], res:5, fig:null };
   S.teams[1].ans = {}; S.teams[1].ops = []; S.teams[1].cur = null; S.teams[1].clicked = false;
-  T.pressKey(1, '-');
+  T.pressKey(1, '-');T.pressKey(1, '-');
   T.pressKey(1, 1);
   __okT(String(S.teams[1].ans['n0']) === '1', '7b 先落 1');
   T.pressKey(1, 0);
@@ -268,10 +269,10 @@ __okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋'
 /* 8. 推平：对面血量打到 0 → 结算胜利 */
 {
   const startHp = S.hp[1];
-  S.hp[1] = 7; T.renderHP();
+  S.hp[1] = 17; T.renderHP();
   const hpLog=[]; S.hpLog=hpLog;
   const q = S.teams[0].q;
-    T.pressKey(0, q.op);
+    for(let oi=0;oi<q.arity-1;oi++)T.pressKey(0, q.op);
   q.nums.forEach(v => String(v).split('').forEach(ch => T.pressKey(0, Number(ch))));
   T.pressKey(0, Number(q.res));
     flush(6000);
