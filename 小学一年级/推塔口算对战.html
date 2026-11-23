@@ -334,10 +334,9 @@ function renderPanel(ti){
       ${[6,7,8,9,0].map(v=>kb(ti,v)).join('')}
       <button class="op" data-k="+" data-t="${ti}">＋</button>
       <button class="op" data-k="-" data-t="${ti}">－</button>
-      <button class="del" data-k="back" data-t="${ti}">退格</button>
-      <button class="ok" data-k="ok" data-t="${ti}">确定</button>
+      <button class="del" data-k="back" data-t="${ti}" style="grid-column:span 3">退格</button>
     </div>
-    <div class="pfoot"><span>${t.msg||'答对出兵，推光对面塔！'}</span><span>剩余血量 ${S.hp[ti]}</span></div>`;
+    <div class="pfoot"><span>${t.msg||'点数字作答 · 填满自动判'}</span><span>剩余血量 ${S.hp[ti]}</span></div>`;
   p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>pressKey(Number(b.dataset.t),b.dataset.k)));
   p.querySelectorAll('.slot,.opslot').forEach(s=>s.addEventListener('click',()=>{
     if(S.phase!=='run')return;
@@ -355,6 +354,7 @@ function firstEmpty(t){
 function pressKey(ti,k){
   if(S.phase!=='run')return;
   const t=S.teams[ti];if(!t.q||t.judging)return;
+  if(k==='ok'){return;}   /* 确定键已移除：填满自动判定，防御旧入口 */
   if(k==='back'){
     if(t.cur&&t.cur.startsWith('op')){t.ops[Number(t.cur[2])]=undefined;}
     else{const s=t.cur||firstEmpty(t);delete t.ans[s];t.cur=s;t.clicked=false;}

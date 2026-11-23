@@ -184,7 +184,7 @@ __okT(!!S.teams[0].q && !!S.teams[1].q, '1 两队面板已备题');
 /* 3. 开局：run 状态、面板渲染、键盘按钮就绪 */
 T.startRound();
 __okT(S.phase === 'run' && S.hp[0] === 100 && S.hp[1] === 100, '3 开局双方满血');
-__okT($('panel0')._html.indexOf('确定') >= 0 && $('panel0')._html.indexOf('＋') >= 0, '3 面板键盘含运算符与确定');
+__okT($('panel0')._html.indexOf('确定') < 0 && $('panel0')._html.indexOf('＋') >= 0, '3 键盘含运算符且无确定键');
 
 /* 4. 答对 → solved+1、出兵、对面掉血 */
 {
@@ -224,6 +224,7 @@ __okT($('panel0')._html.indexOf('确定') >= 0 && $('panel0')._html.indexOf('＋
   const opCount0 = $('panel0').querySelectorAll('.opslot').length;
   __okT(opCount0 === 1, '6a 二元题只有 1 个运算符槽', String(opCount0));
   __okT($('panel0').querySelectorAll('.slot').length === 3, '6a 数字槽 3 个（含结果）');
+  __okT($('panel0')._html.indexOf('data-k="ok"') < 0, '6a 无确定键（点数字即判）');
   /* 标准：8-3=5（填满+运算符齐 → 自动判定） */
   T.pressKey(0, '-'); T.pressKey(0, 8); T.pressKey(0, 3); T.pressKey(0, 5);
   __okT(S.teams[0].solved === 2, '6 标准减法判对');
